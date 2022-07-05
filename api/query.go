@@ -39,6 +39,10 @@ type Endpoint struct {
 	StorageURL string
 }
 
+func (e *Endpoint) Health(ctx *gin.Context) {
+	ctx.String(http.StatusOK, "I am up and running")
+}
+
 func (e *Endpoint) SliceMetadata(ctx *gin.Context) {
 	var query SliceQuery
 

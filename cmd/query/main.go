@@ -54,9 +54,11 @@ func main() {
 	}
 
 	app := gin.Default()
+	app.GET("/", endpoint.Health)
 	app.GET("slice", endpoint.Slice)
 	app.POST("slice", endpoint.Slice)
 	app.GET("slice/metadata", endpoint.SliceMetadata)
 	app.POST("slice/metadata", endpoint.SliceMetadata)
+
 	app.Run(fmt.Sprintf(":%s", opts.port))
 }

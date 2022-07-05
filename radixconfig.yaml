@@ -1,0 +1,32 @@
+
+apiVersion: radix.equinor.com/v1
+kind: RadixApplication
+metadata:
+  name: oneseismictest
+spec:
+  environments:
+    - name: dev
+      build:
+        from: radix
+  components:
+    - name: server
+      dockerfileName: Dockerfile
+      secrets:
+        - STORAGE_URL
+      ports:
+        - name: http
+          port: 8080
+      publicPort: http
+      environmentConfig:
+        - environment: dev
+          monitoring: false
+          resources:
+            requests:
+              memory: "2048Mi"
+              cpu: "500m"
+            limits:
+              memory: "4096Mi"
+              cpu: "2000m"
+          horizontalScaling:
+            minReplicas: 1
+            maxReplicas: 3
