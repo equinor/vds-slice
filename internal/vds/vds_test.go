@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defined = "file://../../tests/data/defined/defined_default.vds"
+	well_known = "file://../../testdata/wellknown/well_known_default.vds"
 )
 
 type Axis struct {
@@ -77,7 +77,7 @@ func TestSliceData(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		buf, err := Slice(defined, "", testcase.lineno, testcase.direction)
+		buf, err := Slice(well_known, "", testcase.lineno, testcase.direction)
 		if err != nil {
 			t.Errorf(
 				"[case: %v] Failed to fetch slice, err: %v",
@@ -128,7 +128,7 @@ func TestSliceOutOfBounds(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(defined, "", testcase.lineno, testcase.direction)
+		_, err := Slice(well_known, "", testcase.lineno, testcase.direction)
 		if err == nil {
 			t.Errorf(
 				"[case: %v] Expected slice to fail",
@@ -158,7 +158,7 @@ func TestSliceStridedLineno(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(defined, "", testcase.lineno, testcase.direction)
+		_, err := Slice(well_known, "", testcase.lineno, testcase.direction)
 		if err == nil {
 			t.Errorf(
 				"[case: %v] Expected slice to fail",
@@ -186,7 +186,7 @@ func TestSliceInvalidAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(defined, "", 0, testcase.direction)
+		_, err := Slice(well_known, "", 0, testcase.direction)
 
 		if err == nil {
 			t.Errorf(
@@ -224,7 +224,7 @@ func TestDepthAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(defined, "", 0, testcase.direction)
+		_, err := Slice(well_known, "", 0, testcase.direction)
 
 		if err == nil {
 			t.Errorf(
@@ -290,7 +290,7 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		buf, err := SliceMetadata(defined, "", testcase.lineno, testcase.direction)
+		buf, err := SliceMetadata(well_known, "", testcase.lineno, testcase.direction)
 
 		var meta Metadata
 		err = json.Unmarshal(buf, &meta)

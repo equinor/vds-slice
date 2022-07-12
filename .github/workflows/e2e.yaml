@@ -1,0 +1,31 @@
+name: E2E
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e_tests:
+    # Required secrets:
+    #
+    # ENDPOINT : URL where server is running
+    # STORAGE_ACCOUNT_NAME : name of the storage where server is assigned to (without blob.core.windows.net)
+    # STORAGE_ACCOUNT_KEY : key used to access storage
+    name: Integration tests on Azure
+    runs-on: ubuntu-latest
+    environment: Test
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run azure tests
+        env:
+          ENDPOINT: ${{ secrets.ENDPOINT }}
+          STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
+          STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
+        run: |
+          tag=e2e_tests
+          docker build -f tests/e2e/Dockerfile -t $tag .
+          docker run \
+            -e ENDPOINT \
+            -e STORAGE_ACCOUNT_NAME \
+            -e STORAGE_ACCOUNT_KEY \
+            $tag

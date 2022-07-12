@@ -1,0 +1,4 @@
+pytest
+requests
+numpy
+azure-storage-blob
