@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <string>
 #include <stdexcept>
+#include <iostream>
+#include <memory>
 
 #include "nlohmann/json.hpp"
 
@@ -412,6 +414,87 @@ struct vdsbuffer fetch_slice_metadata(
     return buffer;
 }
 
+struct vdsbuffer fetch_fence(
+    const std::string& vds,
+    const std::string& credentials,
+    const std::string& coordinate_system,
+    const float* coordinates,
+    size_t npoints
+) {
+    OpenVDS::Error error;
+    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(vds, credentials, error);
+
+    if (error.code != 0) {
+        throw std::runtime_error("Could not open VDS: " + error.string);
+    }
+
+    auto accessManager = OpenVDS::GetAccessManager(handle);
+    auto const *layout = accessManager.GetVolumeDataLayout();
+    const auto dimension_map =
+            layout->GetVDSIJKGridDefinitionFromMetadata().dimensionMap;
+
+    unique_ptr< float[][OpenVDS::Dimensionality_Max] > coords(
+        new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
+    );
+
+    auto coordinate_transformer = OpenVDS::IJKCoordinateTransformer(layout);
+    auto transform_coordinate = [&] (const float x, const float y) {
+        if (coordinate_system == "ij") {
+            return OpenVDS::Vector<double, 3> {x, y, 0};
+        }
+        else if (coordinate_system == "ilxl") {
+            return coordinate_transformer.AnnotationToIJKPosition({x, y, 0});
+        }
+        else if (coordinate_system == "cdp") {
+            return coordinate_transformer.WorldToIJKPosition({x, y, 0});
+        }
+        else {
+            const auto msg =
+                    "Coordinate system not recognized: " + coordinate_system;
+            throw std::runtime_error(msg);
+        }
+    };
+
+    for (size_t i = 0; i < npoints; i++) {
+        const float x = *(coordinates++);
+        const float y = *(coordinates++);
+
+        const auto coordinate = transform_coordinate(x, y);
+
+        coords[i][dimension_map[0]] = coordinate[0];
+        coords[i][dimension_map[1]] = coordinate[1];
+    }
+
+    // TODO: Verify that trace dimension is always 0
+    auto size = accessManager.GetVolumeTracesBufferSize(npoints, 0);
+
+    std::unique_ptr< char[] > data(new char[size]());
+
+    auto request = accessManager.RequestVolumeTraces(
+            (float*)data.get(),
+            size,
+            OpenVDS::Dimensions_012, 0, 0,
+            coords.get(),
+            npoints,
+            OpenVDS::InterpolationMethod::Nearest,
+            0
+    );
+    bool success = request.get()->WaitForCompletion();
+
+    if(!success) {
+        const auto msg = "Failed to fetch fence from VDS";
+        throw std::runtime_error(msg);
+    }
+
+    vdsbuffer buffer{};
+    buffer.size = size;
+    buffer.data = data.get();
+
+    data.release();
+
+    return buffer;
+}
+
 struct vdsbuffer slice(
     const char* vds,
     const char* credentials,
@@ -442,6 +525,27 @@ struct vdsbuffer slice_metadata(
 
     try {
         return fetch_slice_metadata(cube, cred, ax, lineno);
+    } catch (const std::exception& e) {
+        vdsbuffer buf{};
+        buf.err = new char[std::strlen(e.what()) + 1];
+        std::strcpy(buf.err, e.what());
+        return buf;
+    }
+}
+
+struct vdsbuffer fence(
+    const char* vds,
+    const char* credentials,
+    const char* coordinate_system,
+    const float* coordinates,
+    size_t npoints
+) {
+    try {
+        std::string cube(vds);
+        std::string cred(credentials);
+        std::string coord_system(coordinate_system);
+
+        return fetch_fence(cube, cred, coord_system, coordinates, npoints);
     } catch (const std::exception& e) {
         vdsbuffer buf {};
         buf.err = new char[std::strlen(e.what()) + 1];

@@ -7,12 +7,11 @@ package vds
 #include <stdlib.h>
 */
 import "C"
-import "unsafe"
-
 import (
 	"errors"
 	"fmt"
 	"strings"
+	"unsafe"
 )
 
 const (
@@ -128,6 +127,57 @@ func SliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
 		err := C.GoString(result.err)
 		return nil, errors.New(err)
 	}
+
+	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
+	return buf, nil
+}
+
+func Fence(
+	conn Connection,
+	coordinate_system string,
+	coordinates [][]float32,
+) ([]byte, error) {
+	cvds := C.CString(conn.Url)
+	defer C.free(unsafe.Pointer(cvds))
+
+	ccred := C.CString(conn.Credential)
+	defer C.free(unsafe.Pointer(ccred))
+
+	ccrd_system := C.CString(coordinate_system)
+	defer C.free(unsafe.Pointer(ccrd_system))
+
+	coordinate_len := 2
+	ccoordinates := make([]C.float, len(coordinates) * coordinate_len)
+	for i, _ := range coordinates {
+
+		if len(coordinates[i]) != coordinate_len  {
+			msg := fmt.Sprintf(
+				"Invalid coordinate %v at position %d, expected [x y] pair",
+				coordinates[i],
+				i,
+			)
+			return nil, errors.New(msg)
+		}
+
+		for j, _ := range coordinates[i] {
+			ccoordinates[i * coordinate_len  + j] = C.float(coordinates[i][j])
+		}
+	}
+
+    result := C.fence(
+		cvds,
+		ccred,
+		ccrd_system,
+		&ccoordinates[0],
+		C.size_t(len(coordinates)),
+    )
+
+	defer C.vdsbuffer_delete(&result)
+
+	if result.err != nil {
+		err := C.GoString(result.err)
+		return nil, errors.New(err)
+    }
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil

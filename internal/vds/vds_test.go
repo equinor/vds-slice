@@ -324,3 +324,100 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 		}
 	}
 }
+
+func TestFence(t *testing.T) {
+	expected := []float32{
+		108, 109, 110, 111, // il: 3, xl: 10, samples: all
+		112, 113, 114, 115, // il: 3, xl: 11, samples: all
+		100, 101, 102, 103, // il: 1, xl: 10, samples: all
+		108, 109, 110, 111, // il: 3, xl: 10, samples: all
+		116, 117, 118, 119, // il: 5, xl: 10, samples: all
+	}
+
+	testcases := []struct{
+		coordinate_system string
+		coordinates       [][]float32
+	} {
+		{
+			coordinate_system: "ij",
+			coordinates:
+				[][]float32{{1, 0}, {1, 1}, {0, 0}, {1, 0}, {2, 0}},
+		},
+		{
+			coordinate_system: "ilxl",
+			coordinates:
+				[][]float32{{3, 10}, {3, 11}, {1, 10}, {3, 10}, {5, 10}},
+		},
+		{
+			coordinate_system: "cdp",
+			coordinates:
+				[][]float32{{3.2, 3}, {3.2, 6.3}, {1, 3}, {3.2, 3}, {5.4, 3}},
+		},
+	}
+
+	for _, testcase := range testcases {
+		buf, err := Fence(
+			well_known,
+			testcase.coordinate_system,
+			testcase.coordinates,
+		)
+		if err != nil {
+			t.Errorf(
+				"[coordinate_system: %v] Failed to fetch fence, err: %v",
+				testcase.coordinate_system,
+				err,
+			)
+		}
+
+		fence, err := toFloat32(buf)
+		if err != nil {
+			t.Errorf(
+				"[coordinate_system: %v] Err: %v",
+				testcase.coordinate_system,
+				err,
+			)
+		}
+
+		if len(*fence) != len(expected) {
+			msg := "[coordinate_system: %v] Expected fence of len: %v, got: %v"
+			t.Errorf(
+				msg,
+				testcase.coordinate_system,
+				len(expected),
+				len(*fence),
+			)
+		}
+
+		for i, x := range(*fence) {
+			if (x == expected[i]) {
+				continue
+			}
+
+			msg := "[coordinate_system: %v] Expected %v in pos %v, got: %v"
+			t.Errorf(
+				msg,
+				testcase.coordinate_system,
+				expected[i],
+				i,
+				x,
+			)
+		}
+	}
+}
+
+func TestInvalidFence(t *testing.T) {
+	fence := [][]float32{{1, 0}, {1, 1, 0}, {0, 0}, {1, 0}, {2, 0}}
+
+	_, err := Fence(well_known, "ij", fence)
+
+	if err == nil {
+		msg := "Expected to fail given invalid fence %v"
+		t.Errorf(msg, fence)
+	} else {
+		expected := "Invalid coordinate [1 1 0] at position 1, expected [x y] pair" 
+		if err.Error() != expected {
+			msg := "Unexpected error message, expected \"%s\", was \"%s\""
+			t.Errorf(msg, expected, err.Error())
+		}
+	}
+}
