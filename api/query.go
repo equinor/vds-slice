@@ -13,6 +13,13 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
+type FenceQuery struct {
+	Vds              string      `json:"vds"               binding:"required"`
+	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
+	Fence            [][]float32 `json:"coordinates"       binding:"required"`
+	Sas              string      `json:"sas"               binding:"required"`
+
+}
 
 type SliceQuery struct {
 	Vds       string  `form:"vds"       json:"vds"       binding:"required"`
@@ -138,4 +145,68 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 		return
 	}
 	e.slice(ctx, *query)
+}
+
+func fenceParseGetReq(ctx *gin.Context) (*FenceQuery, error) {
+	var query FenceQuery
+
+	q, err := url.QueryUnescape(ctx.Query("query"))
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal([]byte(q), &query)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = binding.Validator.ValidateStruct(&query); err != nil {
+		return nil, err
+	}
+
+	return &query, nil
+}
+
+func fenceParsePostReq(ctx *gin.Context) (*FenceQuery, error) {
+	var query FenceQuery
+	if err := ctx.ShouldBind(&query); err != nil {
+		return nil, err
+	}
+	return &query, nil
+}
+
+func (e *Endpoint) FenceGet(ctx *gin.Context) {
+	query, err := fenceParseGetReq(ctx)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.fence(ctx, *query)
+}
+
+func (e *Endpoint) FencePost(ctx *gin.Context) {
+	query, err := fenceParsePostReq(ctx)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.fence(ctx, *query)
+}
+
+func (e *Endpoint) fence(ctx *gin.Context, query FenceQuery) {
+	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	buffer, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence)
+
+	if err != nil {
+		log.Println(err)
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	ctx.Data(http.StatusOK, "application/octet-stream", buffer)
 }

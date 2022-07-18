@@ -1,5 +1,6 @@
 #ifndef VDS_SLICE_CGO_VDS_H
 #define VDS_SLICE_CGO_VDS_H
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +35,14 @@ struct vdsbuffer slice_metadata(
     const char* credentials,
     int lineno,
     enum axis direction
+);
+
+struct vdsbuffer fence(
+    const char* vds,
+    const char* credentials,
+    const char* coordinate_system,
+    const float* points,
+    size_t npoints
 );
 
 void vdsbuffer_delete(struct vdsbuffer*);

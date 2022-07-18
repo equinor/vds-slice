@@ -61,5 +61,8 @@ func main() {
 	app.GET( "slice/metadata", endpoint.SliceMetadataGet)
 	app.POST("slice/metadata", endpoint.SliceMetadataPost)
 
+	app.GET("fence", endpoint.FenceGet)
+	app.POST("fence", endpoint.FencePost)
+
 	app.Run(fmt.Sprintf(":%s", opts.port))
 }
