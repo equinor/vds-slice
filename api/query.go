@@ -39,7 +39,7 @@ func (e *Endpoint) sliceMetadata(ctx *gin.Context, query SliceQuery) {
 		return
 	}
 
-	buffer, err := vds.SliceMetadata(conn.Url, conn.Credential, *query.Lineno, axis)
+	buffer, err := vds.SliceMetadata(*conn, *query.Lineno, axis)
 	if err != nil {
 		log.Println(err)
 		ctx.AbortWithStatus(http.StatusInternalServerError)
@@ -63,7 +63,7 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 		return
 	}
 
-	buffer, err := vds.Slice(conn.Url, conn.Credential, *query.Lineno, axis)
+	buffer, err := vds.Slice(*conn, *query.Lineno, axis)
 	if err != nil {
 		log.Println(err)
 		ctx.AbortWithStatus(http.StatusInternalServerError)

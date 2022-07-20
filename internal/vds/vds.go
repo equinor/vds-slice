@@ -74,15 +74,15 @@ func MakeConnection(
 	return &Connection{ Url: url, Credential: cred }, nil
 }
 
-func Slice(vds, credentials string, lineno, direction int) ([]byte, error) {
-	cvds := C.CString(vds)
-	defer C.free(unsafe.Pointer(cvds))
+func Slice(conn Connection, lineno, direction int) ([]byte, error) {
+	curl := C.CString(conn.Url)
+	defer C.free(unsafe.Pointer(curl))
 
-	ccred := C.CString(credentials)
+	ccred := C.CString(conn.Credential)
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.slice(
-		cvds,
+		curl,
 		ccred,
 		C.int(lineno),
 		C.enum_axis(direction),
@@ -99,15 +99,15 @@ func Slice(vds, credentials string, lineno, direction int) ([]byte, error) {
 	return buf, nil
 }
 
-func SliceMetadata(vds, credentials string, lineno, direction int) ([]byte, error) {
-	cvds := C.CString(vds)
-	defer C.free(unsafe.Pointer(cvds))
+func SliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
+	curl := C.CString(conn.Url)
+	defer C.free(unsafe.Pointer(curl))
 
-	ccred := C.CString(credentials)
+	ccred := C.CString(conn.Credential)
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.slice_metadata(
-		cvds,
+		curl,
 		ccred,
 		C.int(lineno),
 		C.enum_axis(direction),
