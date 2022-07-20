@@ -69,9 +69,9 @@ coord_system axis_tosystem(axis ax) {
 
 const std::string axis_tostring(axis ax) {
     switch (ax) {
-        case I:         return std::string( OpenVDS::KnownAxisNames::X()         );
-        case J:         return std::string( OpenVDS::KnownAxisNames::Y()         );
-        case K:         return std::string( OpenVDS::KnownAxisNames::Z()         );
+        case I:         return std::string( OpenVDS::KnownAxisNames::I()         );
+        case J:         return std::string( OpenVDS::KnownAxisNames::J()         );
+        case K:         return std::string( OpenVDS::KnownAxisNames::K()         );
         case INLINE:    return std::string( OpenVDS::KnownAxisNames::Inline()    );
         case CROSSLINE: return std::string( OpenVDS::KnownAxisNames::Crossline() );
         case DEPTH:     return std::string( OpenVDS::KnownAxisNames::Depth()     );
