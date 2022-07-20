@@ -322,9 +322,9 @@ struct vdsbuffer fetch_slice(
     auto format = layout->GetChannelFormat(0);
     auto size = access.GetVolumeSubsetBufferSize(vmin, vmax, format, 0, 0);
 
-    auto *data = new char[size];
+    std::unique_ptr< char[] > data(new char[size]());
     auto request = access.RequestVolumeSubset(
-        data,
+        data.get(),
         size,
         OpenVDS::Dimensions_012,
         0,
@@ -338,8 +338,10 @@ struct vdsbuffer fetch_slice(
 
     vdsbuffer buffer{};
     buffer.size = size;
-    buffer.data = data;
+    buffer.data = data.get();
 
+    /* The buffer should *not* be free'd on success, as it's returned to CGO */
+    data.release();
     return buffer;
 }
 
