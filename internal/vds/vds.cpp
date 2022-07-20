@@ -296,7 +296,7 @@ struct vdsbuffer fetch_slice(
     int lineno
 ) {
     OpenVDS::Error error;
-    OpenVDS::VDSHandle handle = OpenVDS::Open(url, credentials, error);
+    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
 
     if(error.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error.string);
@@ -350,7 +350,7 @@ struct vdsbuffer fetch_slice_metadata(
     int lineno
 ) {
     OpenVDS::Error error;
-    OpenVDS::VDSHandle handle = OpenVDS::Open(url, credentials, error);
+    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
 
     if(error.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error.string);
