@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,23 +15,6 @@ type SliceQuery struct {
 	Vds       string `form:"vds"       json:"vds"       binding:"required"`
 	Direction string `form:"direction" json:"direction" binding:"required"`
 	Lineno    *int   `form:"lineno"    json:"lineno"    binding:"required"`
-}
-
-func getAxis(direction string) (int, error) {
-	switch direction {
-		case "i":         return vds.AxisI,         nil
-		case "j":         return vds.AxisJ,         nil
-		case "k":         return vds.AxisK,         nil
-		case "inline":    return vds.AxisInline,    nil
-		case "crossline": return vds.AxisCrossline, nil
-		case "depth":     return vds.AxisDepth,     nil
-		case "time":      return vds.AxisTime,      nil
-		case "sample":    return vds.AxisSample,    nil
-		default:
-			options := "i, j, k, inline, crossline or depth/time/sample"
-			msg := "Invalid direction '%s', valid options are: %s"
-			return 0, errors.New(fmt.Sprintf(msg, direction, options))
-	}
 }
 
 type Endpoint struct {
@@ -69,7 +51,7 @@ func (e *Endpoint) sliceMetadata(ctx *gin.Context) {
 		querystr.Encode(),
 	)
 
-	axis, err := getAxis(strings.ToLower(query.Direction))
+	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
 
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
@@ -112,7 +94,7 @@ func (e *Endpoint) slice(ctx *gin.Context) {
 		querystr.Encode(),
 	)
 
-	axis, err := getAxis(strings.ToLower(query.Direction))
+	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
 
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)

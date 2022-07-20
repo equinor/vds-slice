@@ -11,6 +11,7 @@ import "unsafe"
 
 import (
 	"errors"
+	"fmt"
 )
 
 const (
@@ -23,6 +24,23 @@ const (
 	AxisTime      = C.TIME
 	AxisSample    = C.SAMPLE
 )
+
+func GetAxis(direction string) (int, error) {
+	switch direction {
+		case "i":         return AxisI,         nil
+		case "j":         return AxisJ,         nil
+		case "k":         return AxisK,         nil
+		case "inline":    return AxisInline,    nil
+		case "crossline": return AxisCrossline, nil
+		case "depth":     return AxisDepth,     nil
+		case "time":      return AxisTime,      nil
+		case "sample":    return AxisSample,    nil
+		default:
+			options := "i, j, k, inline, crossline or depth/time/sample"
+			msg := "Invalid direction '%s', valid options are: %s"
+			return 0, errors.New(fmt.Sprintf(msg, direction, options))
+	}
+}
 
 func Slice(vds, credentials string, lineno, direction int) ([]byte, error) {
 	cvds := C.CString(vds)
