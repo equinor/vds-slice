@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -27,13 +26,11 @@ type Endpoint struct {
 }
 
 func (e *Endpoint) sliceMetadata(ctx *gin.Context, query SliceQuery) {
-	url := fmt.Sprintf("azure://%v", query.Vds)
-
-	cred := fmt.Sprintf(
-		"BlobEndpoint=%v;SharedAccessSignature=?%v",
-		e.StorageURL,
-		query.Sas,
-	)
+	conn, err := vds.MakeConnection("azure://",  e.StorageURL, query.Vds, query.Sas)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 
 	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
 
@@ -42,7 +39,7 @@ func (e *Endpoint) sliceMetadata(ctx *gin.Context, query SliceQuery) {
 		return
 	}
 
-	buffer, err := vds.SliceMetadata(url, cred, *query.Lineno, axis)
+	buffer, err := vds.SliceMetadata(conn.Url, conn.Credential, *query.Lineno, axis)
 	if err != nil {
 		log.Println(err)
 		ctx.AbortWithStatus(http.StatusInternalServerError)
@@ -53,12 +50,11 @@ func (e *Endpoint) sliceMetadata(ctx *gin.Context, query SliceQuery) {
 }
 
 func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
-	url := fmt.Sprintf("azure://%v", query.Vds)
-	cred := fmt.Sprintf(
-		"BlobEndpoint=%v;SharedAccessSignature=?%v",
-		e.StorageURL,
-		query.Sas,
-	)
+	conn, err := vds.MakeConnection("azure://",  e.StorageURL, query.Vds, query.Sas)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 
 	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
 
@@ -67,7 +63,7 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 		return
 	}
 
-	buffer, err := vds.Slice(url, cred, *query.Lineno, axis)
+	buffer, err := vds.Slice(conn.Url, conn.Credential, *query.Lineno, axis)
 	if err != nil {
 		log.Println(err)
 		ctx.AbortWithStatus(http.StatusInternalServerError)

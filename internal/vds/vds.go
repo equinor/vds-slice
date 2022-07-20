@@ -42,6 +42,34 @@ func GetAxis(direction string) (int, error) {
 	}
 }
 
+type Connection struct {
+	Url        string
+	Credential string
+}
+
+func MakeConnection(
+	protocol,
+	storageURL,
+	vds,
+	sas string,
+) (*Connection, error) {
+	var url  string
+	var cred string
+
+	switch protocol {
+		case "azure://": {
+			cred = fmt.Sprintf("BlobEndpoint=%v;SharedAccessSignature=?%v", storageURL, sas)
+			url  = protocol + vds
+		}
+		default: {
+			msg := fmt.Sprintf("Unknown protocol: %v", protocol)
+			return nil, errors.New(msg)
+		}
+	}
+
+	return &Connection{ Url: url, Credential: cred }, nil
+}
+
 func Slice(vds, credentials string, lineno, direction int) ([]byte, error) {
 	cvds := C.CString(vds)
 	defer C.free(unsafe.Pointer(cvds))
