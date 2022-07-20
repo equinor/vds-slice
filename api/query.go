@@ -43,7 +43,7 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "I am up and running")
 }
 
-func (e *Endpoint) SliceMetadata(ctx *gin.Context) {
+func (e *Endpoint) sliceMetadata(ctx *gin.Context) {
 	var query SliceQuery
 
 	if err := ctx.ShouldBind(&query); err != nil {
@@ -86,7 +86,7 @@ func (e *Endpoint) SliceMetadata(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, "application/json", buffer)
 }
 
-func (e *Endpoint) Slice(ctx *gin.Context) {
+func (e *Endpoint) slice(ctx *gin.Context) {
 	var query SliceQuery
 
 	if err := ctx.ShouldBind(&query); err != nil {
@@ -127,4 +127,20 @@ func (e *Endpoint) Slice(ctx *gin.Context) {
 	}
 
 	ctx.Data(http.StatusOK, "application/octet-stream", buffer)
+}
+
+func (e *Endpoint) SliceMetadataGet(ctx *gin.Context) {
+	e.sliceMetadata(ctx)
+}
+
+func (e *Endpoint) SliceMetadataPost(ctx *gin.Context) {
+	e.sliceMetadata(ctx)
+}
+
+func (e *Endpoint) SliceGet(ctx *gin.Context) {
+	e.slice(ctx)
+}
+
+func (e *Endpoint) SlicePost(ctx *gin.Context) {
+	e.slice(ctx)
 }
