@@ -182,7 +182,7 @@ void axisvalidation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
     }
 }
 
-int dim_tovoxel(int dimension, const OpenVDS::VolumeDataLayout *layout) {
+int dim_tovoxel(int dimension) {
     /*
      * For now assume that the axis order is always depth/time/sample,
      * crossline, inline. This should be checked elsewhere.
@@ -262,7 +262,7 @@ void set_voxels(
     };
 
     int voxelline;
-    auto vdim   = dim_tovoxel(dimension, layout);
+    auto vdim   = dim_tovoxel(dimension);
     auto system = axis_tosystem(ax);
     switch (system) {
         case ANNOTATION: {
@@ -369,7 +369,7 @@ struct vdsbuffer fetch_slice_metadata(
     axisvalidation(ax, layout);
 
     auto dimension = axis_todim(ax);
-    auto vdim = dim_tovoxel(dimension, layout);
+    auto vdim = dim_tovoxel(dimension);
 
     nlohmann::json meta;
     meta["format"] = layout->GetChannelFormat(0); //TODO turn into numpy-style format?
