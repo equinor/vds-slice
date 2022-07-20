@@ -1,50 +1,38 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
+
 type SliceQuery struct {
-	Vds       string `form:"vds"       json:"vds"       binding:"required"`
-	Direction string `form:"direction" json:"direction" binding:"required"`
-	Lineno    *int   `form:"lineno"    json:"lineno"    binding:"required"`
+	Vds       string  `form:"vds"       json:"vds"       binding:"required"`
+	Direction string  `form:"direction" json:"direction" binding:"required"`
+	Lineno    *int    `form:"lineno"    json:"lineno"    binding:"required"`
+	Sas       string  `form:"sas"       json:"sas"       binding:"required"`
 }
 
 type Endpoint struct {
 	StorageURL string
 }
 
-func (e *Endpoint) sliceMetadata(ctx *gin.Context) {
-	var query SliceQuery
-
-	if err := ctx.ShouldBind(&query); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	querystr := ctx.Request.URL.Query()
-
-	delete(querystr, "vds")
-	delete(querystr, "direction")
-	delete(querystr, "lineno")
-
+func (e *Endpoint) sliceMetadata(ctx *gin.Context, query SliceQuery) {
 	url := fmt.Sprintf("azure://%v", query.Vds)
 
-	/*
-	 * This is super buggy as assumes that no other query-paramters are
-	 * present.
-	 */
 	cred := fmt.Sprintf(
 		"BlobEndpoint=%v;SharedAccessSignature=?%v",
 		e.StorageURL,
-		querystr.Encode(),
+		query.Sas,
 	)
 
 	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
@@ -64,30 +52,12 @@ func (e *Endpoint) sliceMetadata(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, "application/json", buffer)
 }
 
-func (e *Endpoint) slice(ctx *gin.Context) {
-	var query SliceQuery
-
-	if err := ctx.ShouldBind(&query); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	querystr := ctx.Request.URL.Query()
-
-	delete(querystr, "vds")
-	delete(querystr, "direction")
-	delete(querystr, "lineno")
-
+func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 	url := fmt.Sprintf("azure://%v", query.Vds)
-
-	/*
-	 * This is super buggy as assumes that no other query-paramters are
-	 * present.
-	 */
 	cred := fmt.Sprintf(
 		"BlobEndpoint=%v;SharedAccessSignature=?%v",
 		e.StorageURL,
-		querystr.Encode(),
+		query.Sas,
 	)
 
 	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
@@ -107,22 +77,70 @@ func (e *Endpoint) slice(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, "application/octet-stream", buffer)
 }
 
+func sliceParseGetReq(ctx *gin.Context) (*SliceQuery, error) {
+	var query SliceQuery
+
+	q, err := url.QueryUnescape(ctx.Query("query"))
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal([]byte(q), &query)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = binding.Validator.ValidateStruct(&query); err != nil {
+		return nil, err
+	}
+
+	return &query, nil
+}
+
+func sliceParsePostReq(ctx *gin.Context) (*SliceQuery, error) {
+	var query SliceQuery
+	if err := ctx.ShouldBind(&query); err != nil {
+		return nil, err
+	}
+	return &query, nil
+}
+
 func (e *Endpoint) Health(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "I am up and running")
 }
 
 func (e *Endpoint) SliceMetadataGet(ctx *gin.Context) {
-	e.sliceMetadata(ctx)
+	query, err := sliceParseGetReq(ctx)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.sliceMetadata(ctx, *query)
 }
 
 func (e *Endpoint) SliceMetadataPost(ctx *gin.Context) {
-	e.sliceMetadata(ctx)
+	query, err := sliceParsePostReq(ctx)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.sliceMetadata(ctx, *query)
 }
 
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
-	e.slice(ctx)
+	query, err := sliceParseGetReq(ctx)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.slice(ctx, *query)
 }
 
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
-	e.slice(ctx)
+	query, err := sliceParsePostReq(ctx)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.slice(ctx, *query)
 }

@@ -13,16 +13,16 @@ def getslice(lineno, direction):
     payload = {
         "direction": direction,
         "lineno": lineno,
-        "vds": "{}/{}".format(CONTAINER, VDS)
+        "vds": "{}/{}".format(CONTAINER, VDS),
+        # container sas is not enough?
+        # sas = generate_container_signature(STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
+        "sas": generate_account_signature(STORAGE_ACCOUNT_NAME, STORAGE_ACCOUNT_KEY)
     }
 
     print(payload)
 
-    # container sas is not enough?
-    # sas = generate_container_signature(STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-    sas = generate_account_signature(STORAGE_ACCOUNT_NAME, STORAGE_ACCOUNT_KEY)
-    rmeta = requests.post(f'{ENDPOINT}/slice/metadata?{sas}', data = payload)
-    rdata = requests.post(f'{ENDPOINT}/slice?{sas}', data = payload)
+    rmeta = requests.post(f'{ENDPOINT}/slice/metadata', data = payload)
+    rdata = requests.post(f'{ENDPOINT}/slice', data = payload)
     rmeta.raise_for_status()
 
     meta = rmeta.json()
