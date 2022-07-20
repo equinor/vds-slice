@@ -33,7 +33,6 @@ func (e *Endpoint) sliceMetadata(ctx *gin.Context, query SliceQuery) {
 	}
 
 	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
-
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -57,7 +56,6 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 	}
 
 	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
-
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
