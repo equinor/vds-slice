@@ -61,6 +61,10 @@ func MakeConnection(
 			cred = fmt.Sprintf("BlobEndpoint=%v;SharedAccessSignature=?%v", storageURL, sas)
 			url  = protocol + vds
 		}
+		case "file://": {
+			cred = ""
+			url  = protocol + vds
+		}
 		default: {
 			msg := fmt.Sprintf("Unknown protocol: %v", protocol)
 			return nil, errors.New(msg)
