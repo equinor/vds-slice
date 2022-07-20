@@ -126,10 +126,5 @@ func (e *Endpoint) Slice(ctx *gin.Context) {
 		return
 	}
 
-	/*
-	 * TODO: How should the data be returned? Returning a raw bytestream like
-	 * this does not provide the caller with enough information to re-create
-	 * the 2D array.
-	 */
 	ctx.Data(http.StatusOK, "application/octet-stream", buffer)
 }
