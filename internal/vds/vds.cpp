@@ -12,6 +12,7 @@
 
 #include <OpenVDS/OpenVDS.h>
 #include <OpenVDS/KnownMetadata.h>
+#include <OpenVDS/IJKCoordinateTransformer.h>
 
 using namespace std;
 
@@ -68,9 +69,9 @@ coord_system axis_tosystem(axis ax) {
 
 const std::string axis_tostring(axis ax) {
     switch (ax) {
-        case I:         return std::string( OpenVDS::KnownAxisNames::X()         );
-        case J:         return std::string( OpenVDS::KnownAxisNames::Y()         );
-        case K:         return std::string( OpenVDS::KnownAxisNames::Z()         );
+        case I:         return std::string( OpenVDS::KnownAxisNames::I()         );
+        case J:         return std::string( OpenVDS::KnownAxisNames::J()         );
+        case K:         return std::string( OpenVDS::KnownAxisNames::K()         );
         case INLINE:    return std::string( OpenVDS::KnownAxisNames::Inline()    );
         case CROSSLINE: return std::string( OpenVDS::KnownAxisNames::Crossline() );
         case DEPTH:     return std::string( OpenVDS::KnownAxisNames::Depth()     );
@@ -181,7 +182,7 @@ void axisvalidation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
     }
 }
 
-int dim_tovoxel(int dimension, const OpenVDS::VolumeDataLayout *layout) {
+int dim_tovoxel(int dimension) {
     /*
      * For now assume that the axis order is always depth/time/sample,
      * crossline, inline. This should be checked elsewhere.
@@ -261,10 +262,14 @@ void set_voxels(
     };
 
     int voxelline;
-    auto vdim   = dim_tovoxel(dimension, layout);
+    auto vdim   = dim_tovoxel(dimension);
     auto system = axis_tosystem(ax);
     switch (system) {
         case ANNOTATION: {
+            auto transformer = OpenVDS::IJKCoordinateTransformer(layout);
+            if (not transformer.AnnotationsDefined()) {
+                throw std::runtime_error("VDS doesn't define annotations");
+            }
             voxelline = lineno_annotation_to_voxel(lineno, vdim, layout);
             break;
         }
@@ -291,7 +296,7 @@ struct vdsbuffer fetch_slice(
     int lineno
 ) {
     OpenVDS::Error error;
-    OpenVDS::VDSHandle handle = OpenVDS::Open(url, credentials, error);
+    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
 
     if(error.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error.string);
@@ -317,9 +322,9 @@ struct vdsbuffer fetch_slice(
     auto format = layout->GetChannelFormat(0);
     auto size = access.GetVolumeSubsetBufferSize(vmin, vmax, format, 0, 0);
 
-    auto *data = new char[size];
+    std::unique_ptr< char[] > data(new char[size]());
     auto request = access.RequestVolumeSubset(
-        data,
+        data.get(),
         size,
         OpenVDS::Dimensions_012,
         0,
@@ -333,8 +338,10 @@ struct vdsbuffer fetch_slice(
 
     vdsbuffer buffer{};
     buffer.size = size;
-    buffer.data = data;
+    buffer.data = data.get();
 
+    /* The buffer should *not* be free'd on success, as it's returned to CGO */
+    data.release();
     return buffer;
 }
 
@@ -345,7 +352,7 @@ struct vdsbuffer fetch_slice_metadata(
     int lineno
 ) {
     OpenVDS::Error error;
-    OpenVDS::VDSHandle handle = OpenVDS::Open(url, credentials, error);
+    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
 
     if(error.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error.string);
@@ -364,7 +371,7 @@ struct vdsbuffer fetch_slice_metadata(
     axisvalidation(ax, layout);
 
     auto dimension = axis_todim(ax);
-    auto vdim = dim_tovoxel(dimension, layout);
+    auto vdim = dim_tovoxel(dimension);
 
     nlohmann::json meta;
     meta["format"] = layout->GetChannelFormat(0); //TODO turn into numpy-style format?

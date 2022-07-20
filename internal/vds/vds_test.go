@@ -52,14 +52,14 @@ func TestSliceData(t *testing.T) {
 
 	xl := []float32{
 		100, 101, 102, 103, // il: 1, xl: 10, samples: all
-		108, 109, 110, 111, // il: 2, xl: 10, samples: all
-		116, 117, 118, 119, // il: 3, xl: 10, samples: all
+		108, 109, 110, 111, // il: 3, xl: 10, samples: all
+		116, 117, 118, 119, // il: 5, xl: 10, samples: all
 	}
 
 	time := []float32{
 		101, 105, // il: 1, xl: all, samples: 1
-		109, 113, // il: 2, xl: all, samples: 1
-		117, 121, // il: 3, xl: all, samples: 1
+		109, 113, // il: 3, xl: all, samples: 1
+		117, 121, // il: 5, xl: all, samples: 1
 	}
 
 	testcases := []struct{
