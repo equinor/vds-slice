@@ -23,10 +23,11 @@ type SliceQuery struct {
 
 type Endpoint struct {
 	StorageURL string
+	Protocol   string
 }
 
 func (e *Endpoint) sliceMetadata(ctx *gin.Context, query SliceQuery) {
-	conn, err := vds.MakeConnection("azure://",  e.StorageURL, query.Vds, query.Sas)
+	conn, err := vds.MakeConnection(e.Protocol,  e.StorageURL, query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -49,7 +50,7 @@ func (e *Endpoint) sliceMetadata(ctx *gin.Context, query SliceQuery) {
 }
 
 func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
-	conn, err := vds.MakeConnection("azure://",  e.StorageURL, query.Vds, query.Sas)
+	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return

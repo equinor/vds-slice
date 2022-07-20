@@ -51,6 +51,7 @@ func main() {
 
 	endpoint := api.Endpoint{
 		StorageURL: opts.storageURL,
+		Protocol:   "azure://",
 	}
 
 	app := gin.Default()
