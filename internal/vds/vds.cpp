@@ -12,6 +12,7 @@
 
 #include <OpenVDS/OpenVDS.h>
 #include <OpenVDS/KnownMetadata.h>
+#include <OpenVDS/IJKCoordinateTransformer.h>
 
 using namespace std;
 
@@ -265,6 +266,10 @@ void set_voxels(
     auto system = axis_tosystem(ax);
     switch (system) {
         case ANNOTATION: {
+            auto transformer = OpenVDS::IJKCoordinateTransformer(layout);
+            if (not transformer.AnnotationsDefined()) {
+                throw std::runtime_error("VDS doesn't define annotations");
+            }
             voxelline = lineno_annotation_to_voxel(lineno, vdim, layout);
             break;
         }
