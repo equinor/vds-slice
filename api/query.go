@@ -160,7 +160,7 @@ func (e *Endpoint) SliceMetadataPost(ctx *gin.Context) {
 // @Param    query  query  string  True  "Urlencoded/escaped SliceQuery"
 // @Produce  application/octet-stream
 // @Success  200
-// @Router   /slice/metadata  [get]
+// @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	query, err := sliceParseGetReq(ctx)
 	if err != nil {
@@ -176,7 +176,7 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // @Accept   application/json
 // @Produce  application/octet-stream
 // @Success  200
-// @Router   /slice/metadata  [post]
+// @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	query, err := sliceParsePostReq(ctx)
 	if err != nil {
