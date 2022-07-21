@@ -25,6 +25,19 @@ const (
 	AxisSample    = C.SAMPLE
 )
 
+type Axis struct {
+	Annotation string  `json:"annotation"`
+	Min        float64 `json:"min"`
+	Max        float64 `json:"max"`
+	Sample     float64 `json:"sample"`
+	Unit       string  `json:"unit"`
+}
+
+type Metadata struct {
+	Format int     `json:"format"`
+	Axis   []*Axis `json:"axis"`
+}
+
 func GetAxis(direction string) (int, error) {
 	switch direction {
 		case "i":         return AxisI,         nil

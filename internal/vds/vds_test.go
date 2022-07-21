@@ -22,19 +22,6 @@ func make_well_known() Connection {
 
 var well_known = make_well_known()
 
-type Axis struct {
-	Annotation string  `json:"annotation"`
-	Min        float64 `json:"min"`
-	Max        float64 `json:"max"`
-	Sample     float64 `json:"sample"`
-	Unit       string  `json:"unit"`
-}
-
-type Metadata struct {
-	Format int     `json:"format"`
-	Axis   []*Axis `json:"axis"`
-}
-
 func toFloat32(buf []byte) (*[]float32, error) {
 	fsize := 4 // sizeof(float32)
 	if len(buf) % fsize != 0 {
