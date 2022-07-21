@@ -104,6 +104,12 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "I am up and running")
 }
 
+// SliceMetadata godoc
+// @Summary  Fetch metadata related to a single slice
+// @Param    query  query  string  True  "Urlencoded/escaped SliceQuery"
+// @Produce  application/json
+// @Success  200  {object}  vds.Metadata
+// @Router   /slice/metadata  [get]
 func (e *Endpoint) SliceMetadataGet(ctx *gin.Context) {
 	query, err := sliceParseGetReq(ctx)
 	if err != nil {
@@ -113,6 +119,13 @@ func (e *Endpoint) SliceMetadataGet(ctx *gin.Context) {
 	e.sliceMetadata(ctx, *query)
 }
 
+// SliceMetadata godoc
+// @Summary  Fetch metadata related to a single slice
+// @Param    body  body  SliceQuery  True  "Query Parameters"
+// @Accept   application/json
+// @Produce  application/json
+// @Success  200  {object}  vds.Metadata
+// @Router   /slice/metadata  [post]
 func (e *Endpoint) SliceMetadataPost(ctx *gin.Context) {
 	query, err := sliceParsePostReq(ctx)
 	if err != nil {
@@ -122,6 +135,12 @@ func (e *Endpoint) SliceMetadataPost(ctx *gin.Context) {
 	e.sliceMetadata(ctx, *query)
 }
 
+// Slice godoc
+// @Summary  Fetch a single slice in any cube direction
+// @Param    query  query  string  True  "Urlencoded/escaped SliceQuery"
+// @Produce  application/octet-stream
+// @Success  200
+// @Router   /slice/metadata  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	query, err := sliceParseGetReq(ctx)
 	if err != nil {
@@ -131,6 +150,13 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	e.slice(ctx, *query)
 }
 
+// Slice godoc
+// @Summary  Fetch a single slice in any cube direction
+// @Param    body  body  SliceQuery  True  "Query Parameters"
+// @Accept   application/json
+// @Produce  application/octet-stream
+// @Success  200
+// @Router   /slice/metadata  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	query, err := sliceParsePostReq(ctx)
 	if err != nil {
