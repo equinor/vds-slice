@@ -16,7 +16,7 @@ import (
 // Query for slice endpoints
 // @Description Query payload for slice endpoints /slice and /slice/metadata.
 type SliceQuery struct {
-	// The blob path to a vds on form: containter/subpath
+	// The blob path to a vds on form: container/subpath
 	Vds string `form:"vds" json:"vds" binding:"required"`
 
 	// Direction can be specified in two domains
