@@ -13,13 +13,33 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
-
+// Query for slice endpoints
+// @Description Query payload for slice endpoints /slice and /slice/metadata.
 type SliceQuery struct {
-	Vds       string  `form:"vds"       json:"vds"       binding:"required"`
-	Direction string  `form:"direction" json:"direction" binding:"required"`
-	Lineno    *int    `form:"lineno"    json:"lineno"    binding:"required"`
-	Sas       string  `form:"sas"       json:"sas"       binding:"required"`
-}
+	// The blob path to a vds on form: containter/subpath
+	Vds string `form:"vds" json:"vds" binding:"required"`
+
+	// Direction can be specified in two domains
+	// - Annotation. Valid options: Inline, Crossline and Depth/Time/Sample
+	// - Index. Valid options: i, j and k.
+	//
+	// Only one of Depth, Time and Sample is valid for a given VDS. Which one
+	// depends on the depth units. E.g. Depth is a valid option for a VDS with
+	// depth unit "m" or "ft", but not if the units are "ms", "s".
+	// Sample is valid when the depth is unitless.
+	//
+	// i, j, k are zero-indexed and correspond to Inline, Crossline,
+	// Depth/Time/Sample, respectably.
+	//
+	// All options are case-insensitive.
+	Direction string `form:"direction" json:"direction" binding:"required"`
+
+	// Linenumber of the slice
+	Lineno *int `form:"lineno" json:"lineno" binding:"required"`
+
+	// A valid sas-token with read access to the container specified in Vds
+	Sas string `form:"sas" json:"sas" binding:"required"`
+} //@name SliceQuery
 
 type Endpoint struct {
 	StorageURL string
