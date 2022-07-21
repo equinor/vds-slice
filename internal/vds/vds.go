@@ -11,6 +11,8 @@ import "unsafe"
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 )
 
 const (
@@ -24,15 +26,72 @@ const (
 	AxisSample    = C.SAMPLE
 )
 
-func Slice(vds, credentials string, lineno, direction int) ([]byte, error) {
-	cvds := C.CString(vds)
-	defer C.free(unsafe.Pointer(cvds))
+func GetAxis(direction string) (int, error) {
+	switch direction {
+		case "i":         return AxisI,         nil
+		case "j":         return AxisJ,         nil
+		case "k":         return AxisK,         nil
+		case "inline":    return AxisInline,    nil
+		case "crossline": return AxisCrossline, nil
+		case "depth":     return AxisDepth,     nil
+		case "time":      return AxisTime,      nil
+		case "sample":    return AxisSample,    nil
+		default:
+			options := "i, j, k, inline, crossline or depth/time/sample"
+			msg := "Invalid direction '%s', valid options are: %s"
+			return 0, errors.New(fmt.Sprintf(msg, direction, options))
+	}
+}
 
-	ccred := C.CString(credentials)
+type Connection struct {
+	Url        string
+	Credential string
+}
+
+func MakeConnection(
+	protocol,
+	storageURL,
+	vds,
+	sas string,
+) (*Connection, error) {
+	var url  string
+	var cred string
+
+	if strings.HasPrefix(sas, "?") {
+		sas = sas[1:]
+	}
+
+	if strings.HasSuffix(vds, "/") {
+		vds = vds[:len(vds)-1]
+	}
+
+	switch protocol {
+		case "azure://": {
+			cred = fmt.Sprintf("BlobEndpoint=%v;SharedAccessSignature=?%v", storageURL, sas)
+			url  = protocol + vds
+		}
+		case "file://": {
+			cred = ""
+			url  = protocol + vds
+		}
+		default: {
+			msg := fmt.Sprintf("Unknown protocol: %v", protocol)
+			return nil, errors.New(msg)
+		}
+	}
+
+	return &Connection{ Url: url, Credential: cred }, nil
+}
+
+func Slice(conn Connection, lineno, direction int) ([]byte, error) {
+	curl := C.CString(conn.Url)
+	defer C.free(unsafe.Pointer(curl))
+
+	ccred := C.CString(conn.Credential)
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.slice(
-		cvds,
+		curl,
 		ccred,
 		C.int(lineno),
 		C.enum_axis(direction),
@@ -49,15 +108,15 @@ func Slice(vds, credentials string, lineno, direction int) ([]byte, error) {
 	return buf, nil
 }
 
-func SliceMetadata(vds, credentials string, lineno, direction int) ([]byte, error) {
-	cvds := C.CString(vds)
-	defer C.free(unsafe.Pointer(cvds))
+func SliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
+	curl := C.CString(conn.Url)
+	defer C.free(unsafe.Pointer(curl))
 
-	ccred := C.CString(credentials)
+	ccred := C.CString(conn.Credential)
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.slice_metadata(
-		cvds,
+		curl,
 		ccred,
 		C.int(lineno),
 		C.enum_axis(direction),

@@ -51,14 +51,15 @@ func main() {
 
 	endpoint := api.Endpoint{
 		StorageURL: opts.storageURL,
+		Protocol:   "azure://",
 	}
 
 	app := gin.Default()
 	app.GET("/", endpoint.Health)
-	app.GET("slice", endpoint.Slice)
-	app.POST("slice", endpoint.Slice)
-	app.GET("slice/metadata", endpoint.SliceMetadata)
-	app.POST("slice/metadata", endpoint.SliceMetadata)
+	app.GET( "slice", endpoint.SliceGet)
+	app.POST("slice", endpoint.SlicePost)
+	app.GET( "slice/metadata", endpoint.SliceMetadataGet)
+	app.POST("slice/metadata", endpoint.SliceMetadataPost)
 
 	app.Run(fmt.Sprintf(":%s", opts.port))
 }
