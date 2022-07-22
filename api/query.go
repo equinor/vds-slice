@@ -29,12 +29,12 @@ type SliceQuery struct {
 	// Sample is valid when the depth is unitless.
 	//
 	// i, j, k are zero-indexed and correspond to Inline, Crossline,
-	// Depth/Time/Sample, respectably.
+	// Depth/Time/Sample, respectively.
 	//
 	// All options are case-insensitive.
 	Direction string `form:"direction" json:"direction" binding:"required"`
 
-	// Linenumber of the slice
+	// Line number of the slice
 	Lineno *int `form:"lineno" json:"lineno" binding:"required"`
 
 	// A valid sas-token with read access to the container specified in Vds
