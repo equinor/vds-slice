@@ -13,13 +13,33 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
-
+// Query for slice endpoints
+// @Description Query payload for slice endpoints /slice and /slice/metadata.
 type SliceQuery struct {
-	Vds       string  `form:"vds"       json:"vds"       binding:"required"`
-	Direction string  `form:"direction" json:"direction" binding:"required"`
-	Lineno    *int    `form:"lineno"    json:"lineno"    binding:"required"`
-	Sas       string  `form:"sas"       json:"sas"       binding:"required"`
-}
+	// The blob path to a vds in form: container/subpath
+	Vds string `form:"vds" json:"vds" binding:"required"`
+
+	// Direction can be specified in two domains
+	// - Annotation. Valid options: Inline, Crossline and Depth/Time/Sample
+	// - Index. Valid options: i, j and k.
+	//
+	// Only one of Depth, Time and Sample is valid for a given VDS. Which one
+	// depends on the depth units. E.g. Depth is a valid option for a VDS with
+	// depth unit "m" or "ft", but not if the units are "ms", "s".
+	// Sample is valid when the depth is unitless.
+	//
+	// i, j, k are zero-indexed and correspond to Inline, Crossline,
+	// Depth/Time/Sample, respectively.
+	//
+	// All options are case-insensitive.
+	Direction string `form:"direction" json:"direction" binding:"required"`
+
+	// Line number of the slice
+	Lineno *int `form:"lineno" json:"lineno" binding:"required"`
+
+	// A valid sas-token with read access to the container specified in Vds
+	Sas string `form:"sas" json:"sas" binding:"required"`
+} //@name SliceQuery
 
 type Endpoint struct {
 	StorageURL string
@@ -104,6 +124,12 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "I am up and running")
 }
 
+// SliceMetadata godoc
+// @Summary  Fetch metadata related to a single slice
+// @Param    query  query  string  True  "Urlencoded/escaped SliceQuery"
+// @Produce  application/json
+// @Success  200  {object}  vds.Metadata
+// @Router   /slice/metadata  [get]
 func (e *Endpoint) SliceMetadataGet(ctx *gin.Context) {
 	query, err := sliceParseGetReq(ctx)
 	if err != nil {
@@ -113,6 +139,14 @@ func (e *Endpoint) SliceMetadataGet(ctx *gin.Context) {
 	e.sliceMetadata(ctx, *query)
 }
 
+// SliceMetadata godoc
+// @Summary  Fetch metadata related to a single slice
+// @Param    body  body  SliceQuery  True  "Query Parameters"
+// @Accept   application/json
+// @Accept   application/x-www-form-urlencoded
+// @Produce  application/json
+// @Success  200  {object}  vds.Metadata
+// @Router   /slice/metadata  [post]
 func (e *Endpoint) SliceMetadataPost(ctx *gin.Context) {
 	query, err := sliceParsePostReq(ctx)
 	if err != nil {
@@ -122,6 +156,12 @@ func (e *Endpoint) SliceMetadataPost(ctx *gin.Context) {
 	e.sliceMetadata(ctx, *query)
 }
 
+// Slice godoc
+// @Summary  Fetch a single slice in any cube direction
+// @Param    query  query  string  True  "Urlencoded/escaped SliceQuery"
+// @Produce  application/octet-stream
+// @Success  200
+// @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	query, err := sliceParseGetReq(ctx)
 	if err != nil {
@@ -131,6 +171,14 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	e.slice(ctx, *query)
 }
 
+// Slice godoc
+// @Summary  Fetch a single slice in any cube direction
+// @Param    body  body  SliceQuery  True  "Query Parameters"
+// @Accept   application/json
+// @Accept   application/x-www-form-urlencoded
+// @Produce  application/octet-stream
+// @Success  200
+// @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	query, err := sliceParsePostReq(ctx)
 	if err != nil {
