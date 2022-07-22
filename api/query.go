@@ -143,6 +143,7 @@ func (e *Endpoint) SliceMetadataGet(ctx *gin.Context) {
 // @Summary  Fetch metadata related to a single slice
 // @Param    body  body  SliceQuery  True  "Query Parameters"
 // @Accept   application/json
+// @Accept   application/x-www-form-urlencoded
 // @Produce  application/json
 // @Success  200  {object}  vds.Metadata
 // @Router   /slice/metadata  [post]
@@ -174,6 +175,7 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // @Summary  Fetch a single slice in any cube direction
 // @Param    body  body  SliceQuery  True  "Query Parameters"
 // @Accept   application/json
+// @Accept   application/x-www-form-urlencoded
 // @Produce  application/octet-stream
 // @Success  200
 // @Router   /slice  [post]
