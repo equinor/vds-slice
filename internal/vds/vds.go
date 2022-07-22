@@ -52,7 +52,7 @@ type Metadata struct {
 
 	// Axis descriptions
 	//
-	// Describs the axes of the requested 2 dimensional slice.
+	// Describes the axes of the requested 2-dimensional slice.
 	Axis []*Axis `json:"axis"`
 } // @name SliceMetadata
 
