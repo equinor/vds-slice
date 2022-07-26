@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -82,12 +81,7 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 func sliceParseGetReq(ctx *gin.Context) (*SliceQuery, error) {
 	var query SliceQuery
 
-	q, err := url.QueryUnescape(ctx.Query("query"))
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal([]byte(q), &query)
+	err := json.Unmarshal([]byte(ctx.Query("query")), &query)
 	if err != nil {
 		return nil, err
 	}
@@ -150,12 +144,7 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 func fenceParseGetReq(ctx *gin.Context) (*FenceQuery, error) {
 	var query FenceQuery
 
-	q, err := url.QueryUnescape(ctx.Query("query"))
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal([]byte(q), &query)
+	err := json.Unmarshal([]byte(ctx.Query("query")), &query)
 	if err != nil {
 		return nil, err
 	}
