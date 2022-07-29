@@ -1,4 +1,5 @@
 pytest
 requests
+requests_toolbelt
 numpy
 azure-storage-blob
