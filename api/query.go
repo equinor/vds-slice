@@ -16,14 +16,13 @@ type FenceQuery struct {
 	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
 	Fence            [][]float32 `json:"coordinates"       binding:"required"`
 	Sas              string      `json:"sas"               binding:"required"`
-
 }
 
 type SliceQuery struct {
-	Vds       string  `form:"vds"       json:"vds"       binding:"required"`
-	Direction string  `form:"direction" json:"direction" binding:"required"`
-	Lineno    *int    `form:"lineno"    json:"lineno"    binding:"required"`
-	Sas       string  `form:"sas"       json:"sas"       binding:"required"`
+	Vds       string `form:"vds"       json:"vds"       binding:"required"`
+	Direction string `form:"direction" json:"direction" binding:"required"`
+	Lineno    int    `form:"lineno"    json:"lineno"    binding:"required"`
+	Sas       string `form:"sas"       json:"sas"       binding:"required"`
 }
 
 type Endpoint struct {
@@ -44,13 +43,13 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 		return
 	}
 
-	metadata, err := vds.SliceMetadata(*conn, *query.Lineno, axis)
+	metadata, err := vds.SliceMetadata(*conn, query.Lineno, axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusOK, err)
 		return
 	}
 
-	data, err := vds.Slice(*conn, *query.Lineno, axis)
+	data, err := vds.Slice(*conn, query.Lineno, axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusOK, err)
 		return
