@@ -25,12 +25,14 @@ def generate_container_signature(
     container_name,
     account_key,
     lifespan=120,
+    permission=None
 ):
     """
     Create container signature for azure request
     """
     expiry = datetime.datetime.utcnow() + datetime.timedelta(seconds=lifespan)
-    permission = blob.ContainerSasPermissions(read=True, list=True)
+    if permission == None:
+        permission = blob.ContainerSasPermissions(read=True, list=True)
 
     return blob.generate_container_sas(
         account_name=account_name,
