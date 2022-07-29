@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 
@@ -45,14 +44,21 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 		return
 	}
 
-	buffer, err := vds.Slice(*conn, *query.Lineno, axis)
+	metadata, err := vds.SliceMetadata(*conn, *query.Lineno, axis)
 	if err != nil {
-		log.Println(err)
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		ctx.AbortWithError(http.StatusOK, err)
 		return
 	}
 
-	ctx.Data(http.StatusOK, "application/octet-stream", buffer)
+	data, err := vds.Slice(*conn, *query.Lineno, axis)
+	if err != nil {
+		ctx.AbortWithError(http.StatusOK, err)
+		return
+	}
+	ctx.Set("format", "bytearray")
+	ctx.Set("metadata", metadata)
+	ctx.Set("data", data)
+	ctx.Status(http.StatusOK)
 }
 
 func sliceParseGetReq(ctx *gin.Context) (*SliceQuery, error) {
@@ -148,13 +154,12 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceQuery) {
 		return
 	}
 
-	buffer, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence)
-
+	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence)
 	if err != nil {
-		log.Println(err)
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		ctx.AbortWithError(http.StatusOK, err)
 		return
 	}
-
-	ctx.Data(http.StatusOK, "application/octet-stream", buffer)
+	ctx.Set("format", "bytearray")
+	ctx.Set("data", data)
+	ctx.Status(http.StatusOK)
 }
