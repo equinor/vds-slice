@@ -56,10 +56,9 @@ func main() {
 
 	app := gin.Default()
 	app.GET("/", endpoint.Health)
-	app.GET( "slice", endpoint.SliceGet)
+
+	app.GET("slice", endpoint.SliceGet)
 	app.POST("slice", endpoint.SlicePost)
-	app.GET( "slice/metadata", endpoint.SliceMetadataGet)
-	app.POST("slice/metadata", endpoint.SliceMetadataPost)
 
 	app.GET("fence", endpoint.FenceGet)
 	app.POST("fence", endpoint.FencePost)
