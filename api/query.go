@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 
@@ -17,14 +16,13 @@ type FenceQuery struct {
 	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
 	Fence            [][]float32 `json:"coordinates"       binding:"required"`
 	Sas              string      `json:"sas"               binding:"required"`
-
 }
 
 type SliceQuery struct {
-	Vds       string  `json:"vds"       binding:"required"`
-	Direction string  `json:"direction" binding:"required"`
-	Lineno    *int    `json:"lineno"    binding:"required"`
-	Sas       string  `json:"sas"       binding:"required"`
+	Vds       string `json:"vds"       binding:"required"`
+	Direction string `json:"direction" binding:"required"`
+	Lineno    *int   `json:"lineno"    binding:"required"`
+	Sas       string `json:"sas"       binding:"required"`
 }
 
 type Endpoint struct {
@@ -45,14 +43,18 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 		return
 	}
 
-	buffer, err := vds.Slice(*conn, *query.Lineno, axis)
+	metadata, err := vds.SliceMetadata(*conn, *query.Lineno, axis)
 	if err != nil {
-		log.Println(err)
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	ctx.Data(http.StatusOK, "application/octet-stream", buffer)
+	data, err := vds.Slice(*conn, *query.Lineno, axis)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	writeResponse(ctx, metadata, data)
 }
 
 func sliceParseGetReq(ctx *gin.Context) (*SliceQuery, error) {
@@ -148,13 +150,10 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceQuery) {
 		return
 	}
 
-	buffer, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence)
-
+	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence)
 	if err != nil {
-		log.Println(err)
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-
-	ctx.Data(http.StatusOK, "application/octet-stream", buffer)
+	writeResponse(ctx, []byte{}, data)
 }

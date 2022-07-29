@@ -55,6 +55,7 @@ func main() {
 	}
 
 	app := gin.Default()
+	app.Use(api.ErrorHandler)
 	app.GET("/", endpoint.Health)
 
 	app.GET("slice", endpoint.SliceGet)
