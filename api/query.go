@@ -32,29 +32,6 @@ type Endpoint struct {
 	Protocol   string
 }
 
-func (e *Endpoint) sliceMetadata(ctx *gin.Context, query SliceQuery) {
-	conn, err := vds.MakeConnection(e.Protocol,  e.StorageURL, query.Vds, query.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	buffer, err := vds.SliceMetadata(*conn, *query.Lineno, axis)
-	if err != nil {
-		log.Println(err)
-		ctx.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	ctx.Data(http.StatusOK, "application/json", buffer)
-}
-
 func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
 	if err != nil {
@@ -103,24 +80,6 @@ func sliceParsePostReq(ctx *gin.Context) (*SliceQuery, error) {
 
 func (e *Endpoint) Health(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "I am up and running")
-}
-
-func (e *Endpoint) SliceMetadataGet(ctx *gin.Context) {
-	query, err := sliceParseGetReq(ctx)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-	e.sliceMetadata(ctx, *query)
-}
-
-func (e *Endpoint) SliceMetadataPost(ctx *gin.Context) {
-	query, err := sliceParsePostReq(ctx)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-	e.sliceMetadata(ctx, *query)
 }
 
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
