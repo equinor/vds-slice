@@ -21,10 +21,10 @@ type FenceQuery struct {
 }
 
 type SliceQuery struct {
-	Vds       string  `form:"vds"       json:"vds"       binding:"required"`
-	Direction string  `form:"direction" json:"direction" binding:"required"`
-	Lineno    *int    `form:"lineno"    json:"lineno"    binding:"required"`
-	Sas       string  `form:"sas"       json:"sas"       binding:"required"`
+	Vds       string  `json:"vds"       binding:"required"`
+	Direction string  `json:"direction" binding:"required"`
+	Lineno    *int    `json:"lineno"    binding:"required"`
+	Sas       string  `json:"sas"       binding:"required"`
 }
 
 type Endpoint struct {
