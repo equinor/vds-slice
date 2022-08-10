@@ -1,0 +1,19 @@
+name: Unit tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  go_tests:
+    name: Run go tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run server tests
+        run: |
+          DOCKER_BUILDKIT=1 docker build -f Dockerfile --target tester .
