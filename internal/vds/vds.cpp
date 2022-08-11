@@ -395,7 +395,7 @@ struct vdsbuffer fetch_slice_metadata(
     for (int i = 2; i >= 0; i--) {
         if (i == vdim) continue;
         meta["axis"].push_back({
-            { "Annotation", layout->GetDimensionName(i)       },
+            { "annotation", layout->GetDimensionName(i)       },
             { "min",        layout->GetDimensionMin(i)        },
             { "max",        layout->GetDimensionMax(i)        },
             { "samples",    layout->GetDimensionNumSamples(i) },
