@@ -90,6 +90,13 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "I am up and running")
 }
 
+// SliceGet godoc
+// @Summary  Fetch a slice from a VDS
+// @description.markdown slice
+// @Param    query  query  string  True  "Urlencoded/escaped SliceQuery"
+// @Produce  multipart/mixed
+// @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	var query SliceQuery
 	if err := parseGetRequest(ctx, &query); err != nil {
@@ -99,6 +106,14 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	e.slice(ctx, query)
 }
 
+// SlicePost godoc
+// @Summary  Fetch metadata related to a single slice
+// @description.markdown slice
+// @Param    body  body  SliceQuery  True  "Query Parameters"
+// @Accept   application/json
+// @Produce  multipart/mixed
+// @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	var query SliceQuery
 	if err := ctx.ShouldBind(&query); err != nil {
