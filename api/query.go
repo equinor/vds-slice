@@ -57,27 +57,12 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
 	writeResponse(ctx, metadata, data)
 }
 
-func sliceParseGetReq(ctx *gin.Context) (*SliceQuery, error) {
-	var query SliceQuery
-
-	err := json.Unmarshal([]byte(ctx.Query("query")), &query)
-	if err != nil {
-		return nil, err
+func parseGetRequest(ctx *gin.Context, v interface{}) error {
+	if err := json.Unmarshal([]byte(ctx.Query("query")), v); err != nil {
+		return err
 	}
 
-	if err = binding.Validator.ValidateStruct(&query); err != nil {
-		return nil, err
-	}
-
-	return &query, nil
-}
-
-func sliceParsePostReq(ctx *gin.Context) (*SliceQuery, error) {
-	var query SliceQuery
-	if err := ctx.ShouldBind(&query); err != nil {
-		return nil, err
-	}
-	return &query, nil
+	return binding.Validator.ValidateStruct(v)
 }
 
 func (e *Endpoint) Health(ctx *gin.Context) {
@@ -85,62 +70,39 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 }
 
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
-	query, err := sliceParseGetReq(ctx)
-	if err != nil {
+	var query SliceQuery
+	if err := parseGetRequest(ctx, &query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.slice(ctx, *query)
+	e.slice(ctx, query)
 }
 
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
-	query, err := sliceParsePostReq(ctx)
-	if err != nil {
+	var query SliceQuery
+	if err := ctx.ShouldBind(&query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.slice(ctx, *query)
-}
-
-func fenceParseGetReq(ctx *gin.Context) (*FenceQuery, error) {
-	var query FenceQuery
-
-	err := json.Unmarshal([]byte(ctx.Query("query")), &query)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = binding.Validator.ValidateStruct(&query); err != nil {
-		return nil, err
-	}
-
-	return &query, nil
-}
-
-func fenceParsePostReq(ctx *gin.Context) (*FenceQuery, error) {
-	var query FenceQuery
-	if err := ctx.ShouldBind(&query); err != nil {
-		return nil, err
-	}
-	return &query, nil
+	e.slice(ctx, query)
 }
 
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
-	query, err := fenceParseGetReq(ctx)
-	if err != nil {
+	var query FenceQuery
+	if err := parseGetRequest(ctx, &query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.fence(ctx, *query)
+	e.fence(ctx, query)
 }
 
 func (e *Endpoint) FencePost(ctx *gin.Context) {
-	query, err := fenceParsePostReq(ctx)
-	if err != nil {
+	var query FenceQuery
+	if err := ctx.ShouldBind(&query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.fence(ctx, *query)
+	e.fence(ctx, query)
 }
 
 func (e *Endpoint) fence(ctx *gin.Context, query FenceQuery) {
