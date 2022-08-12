@@ -15,6 +15,7 @@ type FenceQuery struct {
 	Vds              string      `json:"vds"               binding:"required"`
 	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
 	Fence            [][]float32 `json:"coordinates"       binding:"required"`
+	Interpolation    string      `json:"interpolation"`
 	Sas              string      `json:"sas"               binding:"required"`
 }
 
@@ -148,7 +149,14 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceQuery) {
 		return
 	}
 
-	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence)
+	interpolation, err := vds.GetInterpolationMethod(query.Interpolation)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence, interpolation)
+
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return

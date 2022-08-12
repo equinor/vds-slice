@@ -23,6 +23,14 @@ enum axis {
     SAMPLE    = 7,
 };
 
+enum interpolation_method {
+    NEAREST,
+    LINEAR,
+    CUBIC,
+    ANGULAR,
+    TRIANGULAR
+};
+
 struct vdsbuffer slice(
     const char* vds,
     const char* credentials,
@@ -42,7 +50,8 @@ struct vdsbuffer fence(
     const char* credentials,
     const char* coordinate_system,
     const float* points,
-    size_t npoints
+    size_t npoints,
+    enum interpolation_method interpolation_method
 );
 
 void vdsbuffer_delete(struct vdsbuffer*);

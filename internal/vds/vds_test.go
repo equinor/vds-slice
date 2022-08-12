@@ -4,11 +4,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"strings"
 	"testing"
 )
-
 
 func make_well_known() Connection {
 	well_known, _ := MakeConnection(
@@ -342,11 +342,14 @@ func TestFence(t *testing.T) {
 		},
 	}
 
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
 	for _, testcase := range testcases {
 		buf, err := Fence(
 			well_known,
 			testcase.coordinate_system,
 			testcase.coordinates,
+			interpolationMethod,
 		)
 		if err != nil {
 			t.Errorf(
@@ -395,16 +398,82 @@ func TestFence(t *testing.T) {
 func TestInvalidFence(t *testing.T) {
 	fence := [][]float32{{1, 0}, {1, 1, 0}, {0, 0}, {1, 0}, {2, 0}}
 
-	_, err := Fence(well_known, "ij", fence)
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	_, err := Fence(well_known, "ij", fence, interpolationMethod)
 
 	if err == nil {
 		msg := "Expected to fail given invalid fence %v"
 		t.Errorf(msg, fence)
 	} else {
-		expected := "Invalid coordinate [1 1 0] at position 1, expected [x y] pair" 
+		expected := "Invalid coordinate [1 1 0] at position 1, expected [x y] pair"
 		if err.Error() != expected {
 			msg := "Unexpected error message, expected \"%s\", was \"%s\""
 			t.Errorf(msg, expected, err.Error())
 		}
+	}
+}
+
+/*
+We don't know the specifics of how OpenVDS implements the different
+interpolation algorithms, so we don't know what values to expect in
+return. As a substitute we pass in different interpolation values
+and check they yield different results.
+*/
+func TestFenceInterpolation(t *testing.T) {
+	fence := [][]float32{{3.2, 3}, {3.2, 6.3}, {1, 3}, {3.2, 3}, {5.4, 3}}
+	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular", "angular"}
+	for i, v1 := range interpolationMethods {
+		interpolationMethod, _ := GetInterpolationMethod(v1)
+		buf1, _ := Fence(well_known, "cdp", fence, interpolationMethod)
+		for _, v2 := range interpolationMethods[i+1:] {
+			interpolationMethod, _ := GetInterpolationMethod(v2)
+			buf2, _ := Fence(well_known, "cdp", fence, interpolationMethod)
+			different := false
+			for k := range buf1 {
+				if buf1[k] != buf2[k] {
+					different = true
+					break
+				}
+			}
+			if !different {
+				msg := "[fence_interpolation]Expected %v interpolation and %v interpolation to be different"
+				t.Errorf(msg, v1, v2)
+			}
+		}
+	}
+}
+
+func TestFenceInterpolationDefaultIsNearest(t *testing.T) {
+	defaultInterpolation, _ := GetInterpolationMethod("")
+	nearestInterpolation, _ := GetInterpolationMethod("nearest")
+	if defaultInterpolation != nearestInterpolation {
+		msg := "[fence_interpolation]Default interpolation is not nearest"
+		t.Error(msg)
+	}
+}
+
+func TestInvalidInterpolationMethod(t *testing.T) {
+	interpolation := "sand"
+	_, err := GetInterpolationMethod(interpolation)
+	if err == nil {
+		msg := "[fence_interpolation]Expected fail given invalid interpolation method: %v"
+		t.Errorf(msg, interpolation)
+	} else {
+		options := "nearest, linear, cubic, angular or triangular"
+		expected := fmt.Sprintf("Invalid interpolation method 'sand', valid options are: %s", options)
+		if err.Error() != expected {
+			msg := "Unexpected error message, expected \"%s\", was \"%s\""
+			t.Errorf(msg, expected, err.Error())
+		}
+	}
+}
+
+func TestFenceInterpolationCaseInsensitive(t *testing.T) {
+	expectedInterpolation, _ := GetInterpolationMethod("cubic")
+	interpolation, _ := GetInterpolationMethod("CuBiC")
+	if interpolation != expectedInterpolation {
+		msg := "[fence_interpolation]Fence interpolation is not case insensitive"
+		t.Error(msg)
 	}
 }
