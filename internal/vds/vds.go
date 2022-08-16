@@ -25,6 +25,36 @@ const (
 	AxisSample    = C.SAMPLE
 )
 
+// @Description Axis description
+type Axis struct {
+	// Name/Annotation of axis
+	Annotation string `json:"annotation"`
+
+	// Minimum axis value
+	Min float64 `json:"min"`
+
+	// Maximum axis value
+	Max float64 `json:"max"`
+
+	// Number of samples along the axis
+	Sample float64 `json:"sample"`
+
+	// Axis units
+	Unit string `json:"unit"`
+} // @name VdsAxis
+
+
+// @Description Slice metadata
+type Metadata struct {
+	// Data format. See https://osdu.pages.opengroup.org/platform/domain-data-mgmt-services/seismic/open-vds/cppdoc/enum/OpenVDS_VolumeDataFormat.html
+	Format int `json:"format"`
+
+	// Axis descriptions
+	//
+	// Describes the axes of the requested 2-dimensional slice.
+	Axis []*Axis `json:"axis"`
+} // @name SliceMetadata
+
 func GetAxis(direction string) (int, error) {
 	switch direction {
 		case "i":         return AxisI,         nil

@@ -6,7 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pborman/getopt/v2"
+	"github.com/swaggo/gin-swagger"
+	"github.com/swaggo/files"
 
+	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/api"
 )
 
@@ -46,6 +49,14 @@ func parseopts() opts {
 	return opts
 }
 
+// @title        VDS-slice API
+// @version      0.0
+// @description  Serves seismic slices and fences from VDS files.
+// @contact.name Equinor ASA
+// @contact.url  https://github.com/equinor/vds-slice/issues
+// @license.name GNU Affero General Public License
+// @license.url  https://www.gnu.org/licenses/agpl-3.0.en.html
+// @schemes      https
 func main() {
 	opts := parseopts()
 
@@ -64,5 +75,6 @@ func main() {
 	app.GET("fence", endpoint.FenceGet)
 	app.POST("fence", endpoint.FencePost)
 
+	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	app.Run(fmt.Sprintf(":%s", opts.port))
 }
