@@ -21,7 +21,7 @@ type FenceQuery struct {
 
 // Query for slice endpoints
 // @Description Query payload for slice endpoint /slice.
-type SliceQuery struct {
+type SliceRequest struct {
 	// The blob path to a vds in form: container/subpath
 	Vds string `json:"vds" binding:"required"`
 
@@ -45,14 +45,14 @@ type SliceQuery struct {
 
 	// A valid sas-token with read access to the container specified in Vds
 	Sas string `json:"sas" binding:"required"`
-} //@name SliceQuery
+} //@name SliceRequest
 
 type Endpoint struct {
 	StorageURL string
 	Protocol   string
 }
 
-func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
+func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
 	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
@@ -94,12 +94,12 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 // SliceGet godoc
 // @Summary  Fetch a slice from a VDS
 // @description.markdown slice
-// @Param    query  query  string  True  "Urlencoded/escaped SliceQuery"
+// @Param    query  query  string  True  "Urlencoded/escaped SliceRequest"
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
 // @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
-	var query SliceQuery
+	var query SliceRequest
 	if err := parseGetRequest(ctx, &query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -110,13 +110,13 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // SlicePost godoc
 // @Summary  Fetch metadata related to a single slice
 // @description.markdown slice
-// @Param    body  body  SliceQuery  True  "Query Parameters"
+// @Param    body  body  SliceRequest  True  "Query Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
 // @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
-	var query SliceQuery
+	var query SliceRequest
 	if err := ctx.ShouldBind(&query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
