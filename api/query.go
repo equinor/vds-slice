@@ -11,6 +11,11 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
+type MetadataRequest struct {
+	Vds string `json:"vds" binding:"required"`
+	Sas string `json:"sas" binding:"required"`
+} //@name MetadataRequest
+
 type FenceRequest struct {
 	Vds              string      `json:"vds"               binding:"required"`
 	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
@@ -52,6 +57,22 @@ type Endpoint struct {
 	Protocol   string
 }
 
+func (e *Endpoint) metadata(ctx *gin.Context, query MetadataRequest) {
+	conn, err := vds.MakeConnection(e.Protocol,  e.StorageURL, query.Vds, query.Sas)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	buffer, err := vds.GetMetadata(*conn)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.Data(http.StatusOK, "application/json", buffer)
+}
+
 func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
 	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
 	if err != nil {
@@ -89,6 +110,36 @@ func parseGetRequest(ctx *gin.Context, v interface{}) error {
 
 func (e *Endpoint) Health(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "I am up and running")
+}
+
+// MetadataGet godoc
+// @Summary  Return volumetric metadata about the VDS
+// @Param    query  query  string  True  "Urlencoded/escaped MetadataRequest"
+// @Produce  json
+// @Success  200 {object} vds.Metadata
+// @Router   /metadata  [get]
+func (e *Endpoint) MetadataGet(ctx *gin.Context) {
+	var query MetadataRequest
+	if err := parseGetRequest(ctx, &query); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.metadata(ctx, query)
+}
+
+// MetadataPost godoc
+// @Summary  Return volumetric metadata about the VDS
+// @Param    body  body  MetadataRequest  True  "Request parameters"
+// @Produce  json
+// @Success  200 {object} vds.Metadata
+// @Router   /metadata  [post]
+func (e *Endpoint) MetadataPost(ctx *gin.Context) {
+	var query MetadataRequest
+	if err := ctx.ShouldBind(&query); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.metadata(ctx, query)
 }
 
 // SliceGet godoc

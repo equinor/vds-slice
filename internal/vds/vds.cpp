@@ -518,6 +518,36 @@ struct vdsbuffer fetch_fence(
     return buffer;
 }
 
+struct vdsbuffer metadata(
+    const std::string& vds,
+    const std::string& credentials
+) {
+    OpenVDS::Error error;
+    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(vds, credentials, error);
+
+    if (error.code != 0) {
+        throw std::runtime_error("Could not open VDS: " + error.string);
+    }
+
+    auto access = OpenVDS::GetAccessManager(handle);
+    const auto *layout = access.GetVolumeDataLayout();
+
+    nlohmann::json meta;
+    meta["format"] = layout->GetChannelFormat(0); //TODO turn into numpy-style format?
+    for (int i = 2; i >= 0 ; i--) {
+        json_write_axis(meta["axis"], i, layout);
+    }
+    auto str = meta.dump();
+    auto *data = new char[str.size()];
+    std::copy(str.begin(), str.end(), data);
+
+    vdsbuffer buffer{};
+    buffer.size = str.size();
+    buffer.data = data;
+
+    return buffer;
+}
+
 struct vdsbuffer slice(
     const char* vds,
     const char* credentials,
@@ -570,6 +600,22 @@ struct vdsbuffer fence(
         std::string coord_system(coordinate_system);
 
         return fetch_fence(cube, cred, coord_system, coordinates, npoints, interpolation_method);
+    } catch (const std::exception& e) {
+        vdsbuffer buf {};
+        buf.err = new char[std::strlen(e.what()) + 1];
+        std::strcpy(buf.err, e.what());
+        return buf;
+    }
+}
+
+struct vdsbuffer metadata(
+    const char* vds,
+    const char* credentials
+) {
+    try {
+        std::string cube(vds);
+        std::string cred(credentials);
+        return metadata(cube, cred);
     } catch (const std::exception& e) {
         vdsbuffer buf {};
         buf.err = new char[std::strlen(e.what()) + 1];

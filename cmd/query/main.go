@@ -69,7 +69,10 @@ func main() {
 	app.Use(api.ErrorHandler)
 	app.GET("/", endpoint.Health)
 
-	app.GET("slice", endpoint.SliceGet)
+	app.GET( "metadata", endpoint.MetadataGet)
+	app.POST("metadata", endpoint.MetadataPost)
+
+	app.GET( "slice", endpoint.SliceGet)
 	app.POST("slice", endpoint.SlicePost)
 
 	app.GET("fence", endpoint.FenceGet)
