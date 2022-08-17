@@ -11,7 +11,7 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
-type FenceQuery struct {
+type FenceRequest struct {
 	Vds              string      `json:"vds"               binding:"required"`
 	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
 	Fence            [][]float32 `json:"coordinates"       binding:"required"`
@@ -125,7 +125,7 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 }
 
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
-	var query FenceQuery
+	var query FenceRequest
 	if err := parseGetRequest(ctx, &query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -134,7 +134,7 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 }
 
 func (e *Endpoint) FencePost(ctx *gin.Context) {
-	var query FenceQuery
+	var query FenceRequest
 	if err := ctx.ShouldBind(&query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -142,7 +142,7 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 	e.fence(ctx, query)
 }
 
-func (e *Endpoint) fence(ctx *gin.Context, query FenceQuery) {
+func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
