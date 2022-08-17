@@ -37,7 +37,7 @@ type Axis struct {
 	Max float64 `json:"max"`
 
 	// Number of samples along the axis
-	Sample float64 `json:"sample"`
+	Samples float64 `json:"samples"`
 
 	// Axis units
 	Unit string `json:"unit"`
