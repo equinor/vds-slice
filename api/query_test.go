@@ -27,6 +27,15 @@ type sliceTest struct {
 	expectedError  string
 }
 
+type fenceTest struct {
+	name           string
+	method         string
+	fence          testFenceQuery
+	fenceQuery     string
+	expectedStatus int
+	expectedError  string
+}
+
 // define own help types to assure separation between production and test code
 type testErrorResponse struct {
 	Error string `json:"error" binding:"required"`
@@ -37,6 +46,13 @@ type testSliceQuery struct {
 	Direction string `json:"direction"`
 	Lineno    int    `json:"lineno"`
 	Sas       string `json:"sas"`
+}
+
+type testFenceQuery struct {
+	Vds              string      `json:"vds"`
+	CoordinateSystem string      `json:"coordinate_system"`
+	Coordinates      [][]float32 `json:"coordinates"`
+	Sas              string      `json:"sas"`
 }
 
 type testSliceAxis struct {
@@ -246,6 +262,149 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 	}
 }
 
+func TestFenceHappyHTTPResponse(t *testing.T) {
+	testcases := []fenceTest{
+		{
+			name:   "Valid GET Query",
+			method: http.MethodGet,
+			fence: testFenceQuery{
+				Vds:              well_known,
+				CoordinateSystem: "ilxl",
+				Coordinates:      [][]float32{{3, 11}, {2, 10}},
+				Sas:              "n/a",
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:   "Valid json POST Query",
+			method: http.MethodPost,
+			fence: testFenceQuery{
+				Vds:              well_known,
+				CoordinateSystem: "ij",
+				Coordinates:      [][]float32{{0, 1}, {1, 1}, {1, 0}},
+				Sas:              "n/a",
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, testcase := range testcases {
+		w := httptest.NewRecorder()
+		ctx, r := gin.CreateTestContext(w)
+		setupTestServer(r)
+
+		prepareFenceRequest(ctx, t, testcase)
+		r.ServeHTTP(w, ctx.Request)
+
+		if w.Result().StatusCode != testcase.expectedStatus {
+			msg := "Got status %v; want %d %s in case '%s'"
+			t.Errorf(
+				msg,
+				w.Result().Status,
+				testcase.expectedStatus,
+				http.StatusText(testcase.expectedStatus),
+				testcase.name,
+			)
+		}
+		parts := readMultipartData(t, w)
+		if len(parts) != 2 {
+			msg := "Got %d parts in reply; want it to always contain 3 in case '%s'"
+			t.Errorf(
+				msg,
+				len(parts),
+				testcase.name,
+			)
+		}
+
+		if len(parts[0]) != 0 {
+			msg := "Got %d bytes in metadata reply; want it to always be 0 in case '%s'"
+			t.Errorf(
+				msg,
+				len(parts[1]),
+				testcase.name,
+			)
+		}
+		expectedDataLength := len(testcase.fence.Coordinates) * 4 * 4 //4 bytes, 4 samples per each requested
+		if len(parts[1]) != expectedDataLength {
+			msg := "Got %d bytes in data reply; want it to be %d in case '%s'"
+			t.Errorf(
+				msg,
+				len(parts[2]),
+				expectedDataLength,
+				testcase.name,
+			)
+		}
+	}
+}
+
+func TestFenceErrorHTTPResponse(t *testing.T) {
+	testcases := []fenceTest{
+		{
+			name:           "Invalid json GET query",
+			method:         http.MethodGet,
+			fenceQuery:     "help I am a duck",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid character",
+		},
+		{
+			name:           "Invalid json POST query",
+			method:         http.MethodPost,
+			fenceQuery:     "help I am a duck",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid character",
+		},
+		{
+			name:   "Missing parameters GET query",
+			method: http.MethodGet,
+			fenceQuery: "{\"vds\":\"" + well_known +
+				"\", \"coordinate_system\":\"ilxl\", \"coordinates\":[[0, 0]]}",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Error:Field validation for 'Sas'",
+		},
+		{
+			name:   "Missing parameters POST Query",
+			method: http.MethodPost,
+			fenceQuery: "{\"vds\":\"" + well_known +
+				"\", \"coordinate_system\":\"ilxl\", \"sas\": \"n/a\"}",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Error:Field validation for 'Fence'",
+		},
+		{
+			name:   "Query which passed all input checks but still should fail",
+			method: http.MethodPost,
+			fence: testFenceQuery{
+				Vds:              "unknown",
+				CoordinateSystem: "ilxl",
+				Coordinates:      [][]float32{{3, 12}, {2, 10}},
+				Sas:              "n/a",
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "Could not open VDS",
+		},
+	}
+
+	for _, testcase := range testcases {
+		w := httptest.NewRecorder()
+		ctx, r := gin.CreateTestContext(w)
+		setupTestServer(r)
+
+		prepareFenceRequest(ctx, t, testcase)
+		r.ServeHTTP(w, ctx.Request)
+
+		if w.Result().StatusCode != testcase.expectedStatus {
+			msg := "Got status %v; want %d %s in case '%s'"
+			t.Errorf(
+				msg,
+				w.Result().Status,
+				testcase.expectedStatus,
+				http.StatusText(testcase.expectedStatus),
+				testcase.name,
+			)
+		}
+		assertError(w, t, testcase.name, testcase.expectedError)
+	}
+}
+
 func setupTestServer(r *gin.Engine) {
 	r.Use(gin.Logger())
 	r.Use(ErrorHandler)
@@ -340,4 +499,8 @@ func prepareRequest(ctx *gin.Context, t *testing.T, endpoint string,
 
 func prepareSliceRequest(ctx *gin.Context, t *testing.T, testcase sliceTest) {
 	prepareRequest(ctx, t, "/slice", testcase.method, testcase.slice, testcase.sliceQuery)
+}
+
+func prepareFenceRequest(ctx *gin.Context, t *testing.T, testcase fenceTest) {
+	prepareRequest(ctx, t, "/fence", testcase.method, testcase.fence, testcase.fenceQuery)
 }
