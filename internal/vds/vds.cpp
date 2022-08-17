@@ -305,6 +305,20 @@ void set_voxels(
     }
 }
 
+void json_write_axis(
+    nlohmann::json& json,
+    int voxel_dim,
+    const OpenVDS::VolumeDataLayout *layout
+) {
+    json.push_back({
+        { "annotation", layout->GetDimensionName(voxel_dim)       },
+        { "min",        layout->GetDimensionMin(voxel_dim)        },
+        { "max",        layout->GetDimensionMax(voxel_dim)        },
+        { "samples",    layout->GetDimensionNumSamples(voxel_dim) },
+        { "unit",       layout->GetDimensionUnit(voxel_dim)       },
+    });
+}
+
 struct vdsbuffer fetch_slice(
     std::string url,
     std::string credentials,
@@ -408,13 +422,7 @@ struct vdsbuffer fetch_slice_metadata(
      */
     for (int i = 2; i >= 0; i--) {
         if (i == vdim) continue;
-        meta["axis"].push_back({
-            { "annotation", layout->GetDimensionName(i)       },
-            { "min",        layout->GetDimensionMin(i)        },
-            { "max",        layout->GetDimensionMax(i)        },
-            { "samples",    layout->GetDimensionNumSamples(i) },
-            { "unit",       layout->GetDimensionUnit(i)       },
-        });
+        json_write_axis(meta["axis"], i, layout);
     }
 
     auto str = meta.dump();
