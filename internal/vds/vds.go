@@ -72,6 +72,27 @@ func GetAxis(direction string) (int, error) {
 	}
 }
 
+func GetInterpolationMethod(interpolation string) (int, error) {
+	switch strings.ToLower(interpolation) {
+	case "":
+		fallthrough
+	case "nearest":
+		return C.NEAREST, nil
+	case "linear":
+		return C.LINEAR, nil
+	case "cubic":
+		return C.CUBIC, nil
+	case "angular":
+		return C.ANGULAR, nil
+	case "triangular":
+		return C.TRIANGULAR, nil
+	default:
+		options := "nearest, linear, cubic, angular or triangular"
+		msg := "Invalid interpolation method '%s', valid options are: %s"
+		return -1, errors.New(fmt.Sprintf(msg, interpolation, options))
+	}
+}
+
 type Connection struct {
 	Url        string
 	Credential string
@@ -166,6 +187,7 @@ func Fence(
 	conn Connection,
 	coordinate_system string,
 	coordinates [][]float32,
+	interpolation int,
 ) ([]byte, error) {
 	cvds := C.CString(conn.Url)
 	defer C.free(unsafe.Pointer(cvds))
@@ -200,7 +222,8 @@ func Fence(
 		ccrd_system,
 		&ccoordinates[0],
 		C.size_t(len(coordinates)),
-    )
+		C.enum_interpolation_method(interpolation),
+	)
 
 	defer C.vdsbuffer_delete(&result)
 

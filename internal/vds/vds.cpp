@@ -85,6 +85,20 @@ const std::string axis_tostring(axis ax) {
     }
 }
 
+OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation) {
+    switch (interpolation)
+    {
+        case NEAREST: return OpenVDS::InterpolationMethod::Nearest;
+        case LINEAR: return OpenVDS::InterpolationMethod::Linear;
+        case CUBIC: return OpenVDS::InterpolationMethod::Cubic;
+        case ANGULAR: return OpenVDS::InterpolationMethod::Angular;
+        case TRIANGULAR: return OpenVDS::InterpolationMethod::Triangular;
+        default: {
+            throw std::runtime_error("Unhandled interpolation method");
+        }
+    }
+}
+
 /*
  * Unit validation of Z-slices
  *
@@ -419,7 +433,8 @@ struct vdsbuffer fetch_fence(
     const std::string& credentials,
     const std::string& coordinate_system,
     const float* coordinates,
-    size_t npoints
+    size_t npoints,
+    enum interpolation_method interpolation_method
 ) {
     OpenVDS::Error error;
     OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(vds, credentials, error);
@@ -476,7 +491,7 @@ struct vdsbuffer fetch_fence(
             OpenVDS::Dimensions_012, 0, 0,
             coords.get(),
             npoints,
-            OpenVDS::InterpolationMethod::Nearest,
+            to_interpolation(interpolation_method),
             0
     );
     bool success = request.get()->WaitForCompletion();
@@ -538,14 +553,15 @@ struct vdsbuffer fence(
     const char* credentials,
     const char* coordinate_system,
     const float* coordinates,
-    size_t npoints
+    size_t npoints,
+    enum interpolation_method interpolation_method
 ) {
     try {
         std::string cube(vds);
         std::string cred(credentials);
         std::string coord_system(coordinate_system);
 
-        return fetch_fence(cube, cred, coord_system, coordinates, npoints);
+        return fetch_fence(cube, cred, coord_system, coordinates, npoints, interpolation_method);
     } catch (const std::exception& e) {
         vdsbuffer buf {};
         buf.err = new char[std::strlen(e.what()) + 1];
