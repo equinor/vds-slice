@@ -41,7 +41,7 @@ type Axis struct {
 
 	// Axis units
 	Unit string `json:"unit"`
-} // @name VdsAxis
+} // @name Axis
 
 
 // @Description Slice metadata
