@@ -24,10 +24,28 @@ type MetadataRequest struct {
 
 type FenceRequest struct {
 	BaseRequest
-	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
-	Fence            [][]float32 `json:"coordinates"       binding:"required"`
-	Interpolation    string      `json:"interpolation"`
-}
+	// Coordinate system for the requested fence
+	// Supported options are:
+	// ilxl : inline, crossline pairs
+	// ij   : Coordinates are given as in 0-indexed system, where the first
+	//        line in each direction is 0 and the last is number-of-lines - 1.
+	// cdp  : Coordinates are given as cdpx/cdpy pairs. In the original SEGY
+	//        this would correspond to the cdpx and cdpy fields in the
+	//        trace-headers after applying the scaling factor.
+	CoordinateSystem string `json:"coordinate_system" binding:"required"`
+
+	// A list of (x, y) points in the coordinate system specified in
+	// coordinate_system.
+	Fence [][]float32 `json:"coordinates" binding:"required"`
+
+	// Interpolation method
+	// Supported options are: nearest, linear, cubic, angular and triangular.
+	// Defaults to nearest.
+	// This field is passed on to OpenVDS, which does the actual interpolation.
+	// Please note that OpenVDS interpolation might not always do what you
+	// expect, even in the default case (nearest). Use with caution.
+	Interpolation string `json:"interpolation"`
+} //@name FenceRequest
 
 // Query for slice endpoints
 // @Description Query payload for slice endpoint /slice.
