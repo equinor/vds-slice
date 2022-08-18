@@ -200,7 +200,7 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 }
 
 // SlicePost godoc
-// @Summary  Fetch metadata related to a single slice
+// @Summary  Fetch a slice from a VDS
 // @description.markdown slice
 // @Param    body  body  SliceRequest  True  "Query Parameters"
 // @Accept   application/json
