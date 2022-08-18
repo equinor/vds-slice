@@ -1,4 +1,4 @@
-# Fetch a slice form a VDS
+# Fetch a slice from a VDS
 
 Fetch a slice in any direction. Supports 0-indexing of lines and
 index-by-annotation such as inline and crossline numbers and depth intervals.

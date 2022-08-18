@@ -41,7 +41,7 @@ type Axis struct {
 
 	// Axis units
 	Unit string `json:"unit"`
-} // @name VdsAxis
+} // @name Axis
 
 
 // @Description Slice metadata
@@ -53,7 +53,7 @@ type Metadata struct {
 	//
 	// Describes the axes of the requested 2-dimensional slice.
 	Axis []*Axis `json:"axis"`
-} // @name SliceMetadata
+} // @name Metadata
 
 func GetAxis(direction string) (int, error) {
 	switch direction {

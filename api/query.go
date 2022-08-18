@@ -11,24 +11,46 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
-type MetadataRequest struct {
+type BaseRequest struct {
+	// The blob path to a vds in form: container/subpath
 	Vds string `json:"vds" binding:"required"`
+	// A valid sas-token with read access to the container specified in Vds
 	Sas string `json:"sas" binding:"required"`
+}
+
+type MetadataRequest struct {
+	BaseRequest
 } //@name MetadataRequest
 
 type FenceRequest struct {
-	Vds              string      `json:"vds"               binding:"required"`
-	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
-	Fence            [][]float32 `json:"coordinates"       binding:"required"`
-	Interpolation    string      `json:"interpolation"`
-	Sas              string      `json:"sas"               binding:"required"`
-}
+	BaseRequest
+	// Coordinate system for the requested fence
+	// Supported options are:
+	// ilxl : inline, crossline pairs
+	// ij   : Coordinates are given as in 0-indexed system, where the first
+	//        line in each direction is 0 and the last is number-of-lines - 1.
+	// cdp  : Coordinates are given as cdpx/cdpy pairs. In the original SEGY
+	//        this would correspond to the cdpx and cdpy fields in the
+	//        trace-headers after applying the scaling factor.
+	CoordinateSystem string `json:"coordinate_system" binding:"required"`
+
+	// A list of (x, y) points in the coordinate system specified in
+	// coordinate_system.
+	Fence [][]float32 `json:"coordinates" binding:"required"`
+
+	// Interpolation method
+	// Supported options are: nearest, linear, cubic, angular and triangular.
+	// Defaults to nearest.
+	// This field is passed on to OpenVDS, which does the actual interpolation.
+	// Please note that OpenVDS interpolation might not always do what you
+	// expect, even in the default case (nearest). Use with caution.
+	Interpolation string `json:"interpolation"`
+} //@name FenceRequest
 
 // Query for slice endpoints
 // @Description Query payload for slice endpoint /slice.
 type SliceRequest struct {
-	// The blob path to a vds in form: container/subpath
-	Vds string `json:"vds" binding:"required"`
+	BaseRequest
 
 	// Direction can be specified in two domains
 	// - Annotation. Valid options: Inline, Crossline and Depth/Time/Sample
@@ -47,9 +69,6 @@ type SliceRequest struct {
 
 	// Line number of the slice
 	Lineno *int `json:"lineno" binding:"required"`
-
-	// A valid sas-token with read access to the container specified in Vds
-	Sas string `json:"sas" binding:"required"`
 } //@name SliceRequest
 
 type Endpoint struct {
@@ -98,6 +117,28 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
 		return
 	}
 	writeResponse(ctx, metadata, data)
+}
+
+func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
+	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	interpolation, err := vds.GetInterpolationMethod(query.Interpolation)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence, interpolation)
+
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	writeResponse(ctx, []byte{}, data)
 }
 
 func parseGetRequest(ctx *gin.Context, v interface{}) error {
@@ -159,7 +200,7 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 }
 
 // SlicePost godoc
-// @Summary  Fetch metadata related to a single slice
+// @Summary  Fetch a slice from a VDS
 // @description.markdown slice
 // @Param    body  body  SliceRequest  True  "Query Parameters"
 // @Accept   application/json
@@ -175,6 +216,14 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	e.slice(ctx, query)
 }
 
+// FenceGet godoc
+// @Summary  Returns traces along an arbitrary path, such as a well-path
+// @description.markdown fence
+// @Param    query  query  string  True  "Urlencoded/escaped FenceResponse"
+// @Accept   application/json
+// @Produce  multipart/mixed
+// @Success  200
+// @Router   /fence  [get]
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	var query FenceRequest
 	if err := parseGetRequest(ctx, &query); err != nil {
@@ -184,6 +233,14 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	e.fence(ctx, query)
 }
 
+// FencePost godoc
+// @Summary  Returns traces along an arbitrary path, such as a well-path
+// @description.markdown fence
+// @Param    body  body  FenceRequest  True  "Request Parameters"
+// @Accept   application/json
+// @Produce  multipart/mixed
+// @Success  200
+// @Router   /fence  [post]
 func (e *Endpoint) FencePost(ctx *gin.Context) {
 	var query FenceRequest
 	if err := ctx.ShouldBind(&query); err != nil {
@@ -191,26 +248,4 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 		return
 	}
 	e.fence(ctx, query)
-}
-
-func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
-	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	interpolation, err := vds.GetInterpolationMethod(query.Interpolation)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence, interpolation)
-
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	writeResponse(ctx, []byte{}, data)
 }
