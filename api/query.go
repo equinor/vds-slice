@@ -32,10 +32,10 @@ type FenceRequest struct {
 	// cdp  : Coordinates are given as cdpx/cdpy pairs. In the original SEGY
 	//        this would correspond to the cdpx and cdpy fields in the
 	//        trace-headers after applying the scaling factor.
-	CoordinateSystem string `json:"coordinate_system" binding:"required"`
+	CoordinateSystem string `json:"coordinateSystem" binding:"required"`
 
 	// A list of (x, y) points in the coordinate system specified in
-	// coordinate_system.
+	// coordinateSystem.
 	Coordinates [][]float32 `json:"coordinates" binding:"required"`
 
 	// Interpolation method
