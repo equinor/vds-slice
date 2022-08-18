@@ -216,6 +216,14 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	e.slice(ctx, query)
 }
 
+// FenceGet godoc
+// @Summary  Returns traces along an arbitrary path, such as a well-path
+// @description.markdown fence
+// @Param    query  query  string  True  "Urlencoded/escaped FenceResponse"
+// @Accept   application/json
+// @Produce  multipart/mixed
+// @Success  200
+// @Router   /fence  [get]
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	var query FenceRequest
 	if err := parseGetRequest(ctx, &query); err != nil {
@@ -225,6 +233,14 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	e.fence(ctx, query)
 }
 
+// FencePost godoc
+// @Summary  Returns traces along an arbitrary path, such as a well-path
+// @description.markdown fence
+// @Param    body  body  FenceRequest  True  "Request Parameters"
+// @Accept   application/json
+// @Produce  multipart/mixed
+// @Success  200
+// @Router   /fence  [post]
 func (e *Endpoint) FencePost(ctx *gin.Context) {
 	var query FenceRequest
 	if err := ctx.ShouldBind(&query); err != nil {
