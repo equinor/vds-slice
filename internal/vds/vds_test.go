@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -38,6 +39,32 @@ func toFloat32(buf []byte) (*[]float32, error) {
 	}
 
 	return &out, nil
+}
+
+func TestMetadata(t *testing.T) {
+	expected := Metadata{
+		Axis: []*Axis{
+			{ Annotation: "Inline",    Min: 1,  Max: 5,  Samples: 3, Unit: "unitless" },
+			{ Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, Unit: "unitless" },
+			{ Annotation: "Sample",    Min: 4,  Max: 16, Samples: 4, Unit: "ms"       },
+		},
+		Format: 3,
+	}
+
+	buf, err := GetMetadata(well_known)
+	if err != nil {
+		t.Fatalf("Failed to retrive metadata, err %v", err)
+	}
+
+	var meta Metadata
+	err = json.Unmarshal(buf, &meta)
+	if err != nil {
+		t.Fatalf("Failed to unmarshall response, err: %v", err)
+	}
+
+	if !reflect.DeepEqual(meta, expected) {
+		t.Fatalf("Expected %v, got  %v", expected, meta)
+	}
 }
 
 func TestSliceData(t *testing.T) {

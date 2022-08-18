@@ -37,7 +37,7 @@ type Axis struct {
 	Max float64 `json:"max"`
 
 	// Number of samples along the axis
-	Sample float64 `json:"sample"`
+	Samples float64 `json:"samples"`
 
 	// Axis units
 	Unit string `json:"unit"`
@@ -131,6 +131,26 @@ func MakeConnection(
 	}
 
 	return &Connection{ Url: url, Credential: cred }, nil
+}
+
+func GetMetadata(conn Connection) ([]byte, error) {
+	curl := C.CString(conn.Url)
+	defer C.free(unsafe.Pointer(curl))
+
+	ccred := C.CString(conn.Credential)
+	defer C.free(unsafe.Pointer(ccred))
+
+	result := C.metadata(curl, ccred)
+	
+	defer C.vdsbuffer_delete(&result)
+
+	if result.err != nil {
+		err := C.GoString(result.err)
+		return nil, errors.New(err)
+	}
+
+	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
+	return buf, nil
 }
 
 func Slice(conn Connection, lineno, direction int) ([]byte, error) {

@@ -31,6 +31,11 @@ enum interpolation_method {
     TRIANGULAR
 };
 
+struct vdsbuffer metadata(
+    const char* vds,
+    const char* credentials
+);
+
 struct vdsbuffer slice(
     const char* vds,
     const char* credentials,

@@ -11,7 +11,12 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
-type FenceQuery struct {
+type MetadataRequest struct {
+	Vds string `json:"vds" binding:"required"`
+	Sas string `json:"sas" binding:"required"`
+} //@name MetadataRequest
+
+type FenceRequest struct {
 	Vds              string      `json:"vds"               binding:"required"`
 	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
 	Fence            [][]float32 `json:"coordinates"       binding:"required"`
@@ -21,7 +26,7 @@ type FenceQuery struct {
 
 // Query for slice endpoints
 // @Description Query payload for slice endpoint /slice.
-type SliceQuery struct {
+type SliceRequest struct {
 	// The blob path to a vds in form: container/subpath
 	Vds string `json:"vds" binding:"required"`
 
@@ -45,14 +50,30 @@ type SliceQuery struct {
 
 	// A valid sas-token with read access to the container specified in Vds
 	Sas string `json:"sas" binding:"required"`
-} //@name SliceQuery
+} //@name SliceRequest
 
 type Endpoint struct {
 	StorageURL string
 	Protocol   string
 }
 
-func (e *Endpoint) slice(ctx *gin.Context, query SliceQuery) {
+func (e *Endpoint) metadata(ctx *gin.Context, query MetadataRequest) {
+	conn, err := vds.MakeConnection(e.Protocol,  e.StorageURL, query.Vds, query.Sas)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	buffer, err := vds.GetMetadata(*conn)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.Data(http.StatusOK, "application/json", buffer)
+}
+
+func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
 	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
@@ -91,15 +112,45 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "I am up and running")
 }
 
+// MetadataGet godoc
+// @Summary  Return volumetric metadata about the VDS
+// @Param    query  query  string  True  "Urlencoded/escaped MetadataRequest"
+// @Produce  json
+// @Success  200 {object} vds.Metadata
+// @Router   /metadata  [get]
+func (e *Endpoint) MetadataGet(ctx *gin.Context) {
+	var query MetadataRequest
+	if err := parseGetRequest(ctx, &query); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.metadata(ctx, query)
+}
+
+// MetadataPost godoc
+// @Summary  Return volumetric metadata about the VDS
+// @Param    body  body  MetadataRequest  True  "Request parameters"
+// @Produce  json
+// @Success  200 {object} vds.Metadata
+// @Router   /metadata  [post]
+func (e *Endpoint) MetadataPost(ctx *gin.Context) {
+	var query MetadataRequest
+	if err := ctx.ShouldBind(&query); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.metadata(ctx, query)
+}
+
 // SliceGet godoc
 // @Summary  Fetch a slice from a VDS
 // @description.markdown slice
-// @Param    query  query  string  True  "Urlencoded/escaped SliceQuery"
+// @Param    query  query  string  True  "Urlencoded/escaped SliceRequest"
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
 // @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
-	var query SliceQuery
+	var query SliceRequest
 	if err := parseGetRequest(ctx, &query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -110,13 +161,13 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // SlicePost godoc
 // @Summary  Fetch metadata related to a single slice
 // @description.markdown slice
-// @Param    body  body  SliceQuery  True  "Query Parameters"
+// @Param    body  body  SliceRequest  True  "Query Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
 // @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
-	var query SliceQuery
+	var query SliceRequest
 	if err := ctx.ShouldBind(&query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -125,7 +176,7 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 }
 
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
-	var query FenceQuery
+	var query FenceRequest
 	if err := parseGetRequest(ctx, &query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -134,7 +185,7 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 }
 
 func (e *Endpoint) FencePost(ctx *gin.Context) {
-	var query FenceQuery
+	var query FenceRequest
 	if err := ctx.ShouldBind(&query); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -142,7 +193,7 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 	e.fence(ctx, query)
 }
 
-func (e *Endpoint) fence(ctx *gin.Context, query FenceQuery) {
+func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
