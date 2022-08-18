@@ -367,7 +367,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			fenceQuery: "{\"vds\":\"" + well_known +
 				"\", \"coordinate_system\":\"ilxl\", \"sas\": \"n/a\"}",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Fence'",
+			expectedError:  "Error:Field validation for 'Coordinates'",
 		},
 		{
 			name:   "Query which passed all input checks but still should fail",

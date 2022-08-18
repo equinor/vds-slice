@@ -36,7 +36,7 @@ type FenceRequest struct {
 
 	// A list of (x, y) points in the coordinate system specified in
 	// coordinate_system.
-	Fence [][]float32 `json:"coordinates" binding:"required"`
+	Coordinates [][]float32 `json:"coordinates" binding:"required"`
 
 	// Interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
@@ -132,7 +132,12 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 		return
 	}
 
-	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence, interpolation)
+	data, err := vds.Fence(
+		*conn,
+		query.CoordinateSystem,
+		query.Coordinates,
+		interpolation,
+	)
 
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
