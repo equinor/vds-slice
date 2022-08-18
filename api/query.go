@@ -100,6 +100,28 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
 	writeResponse(ctx, metadata, data)
 }
 
+func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
+	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	interpolation, err := vds.GetInterpolationMethod(query.Interpolation)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence, interpolation)
+
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	writeResponse(ctx, []byte{}, data)
+}
+
 func parseGetRequest(ctx *gin.Context, v interface{}) error {
 	if err := json.Unmarshal([]byte(ctx.Query("query")), v); err != nil {
 		return err
@@ -191,26 +213,4 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 		return
 	}
 	e.fence(ctx, query)
-}
-
-func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
-	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	interpolation, err := vds.GetInterpolationMethod(query.Interpolation)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence, interpolation)
-
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	writeResponse(ctx, []byte{}, data)
 }
