@@ -11,24 +11,28 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
-type MetadataRequest struct {
+type BaseRequest struct {
+	// The blob path to a vds in form: container/subpath
 	Vds string `json:"vds" binding:"required"`
+	// A valid sas-token with read access to the container specified in Vds
 	Sas string `json:"sas" binding:"required"`
+}
+
+type MetadataRequest struct {
+	BaseRequest
 } //@name MetadataRequest
 
 type FenceRequest struct {
-	Vds              string      `json:"vds"               binding:"required"`
+	BaseRequest
 	CoordinateSystem string      `json:"coordinate_system" binding:"required"`
 	Fence            [][]float32 `json:"coordinates"       binding:"required"`
 	Interpolation    string      `json:"interpolation"`
-	Sas              string      `json:"sas"               binding:"required"`
 }
 
 // Query for slice endpoints
 // @Description Query payload for slice endpoint /slice.
 type SliceRequest struct {
-	// The blob path to a vds in form: container/subpath
-	Vds string `json:"vds" binding:"required"`
+	BaseRequest
 
 	// Direction can be specified in two domains
 	// - Annotation. Valid options: Inline, Crossline and Depth/Time/Sample
@@ -47,9 +51,6 @@ type SliceRequest struct {
 
 	// Line number of the slice
 	Lineno *int `json:"lineno" binding:"required"`
-
-	// A valid sas-token with read access to the container specified in Vds
-	Sas string `json:"sas" binding:"required"`
 } //@name SliceRequest
 
 type Endpoint struct {
