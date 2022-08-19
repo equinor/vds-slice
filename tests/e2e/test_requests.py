@@ -57,7 +57,7 @@ def test_fence(method):
     }),
     ("fence", {
         "vds": f'{CONTAINER}/{VDS}',
-        "coordinate_system": "ij",
+        "coordinateSystem": "ij",
         "coordinates": [[0, 0]]
     }),
 ])
@@ -108,7 +108,7 @@ def test_assure_no_unauthorized_access(path, query, sas, error_msg):
     ),
     (
         "fence",
-        {"vds": f'{CONTAINER}/{VDS}', "coordinate_system": "ij",
+        {"vds": f'{CONTAINER}/{VDS}', "coordinateSystem": "ij",
             "coordinates": [[1, 2, 3]], },
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "expected [x y] pair"
@@ -169,7 +169,7 @@ def request_fence(method, coordinates, coordinate_system):
 
     query = {
         "vds": vds,
-        "coordinate_system": coordinate_system,
+        "coordinateSystem": coordinate_system,
         "coordinates": coordinates,
         "sas": sas
     }

@@ -50,7 +50,7 @@ type testSliceQuery struct {
 
 type testFenceQuery struct {
 	Vds              string      `json:"vds"`
-	CoordinateSystem string      `json:"coordinate_system"`
+	CoordinateSystem string      `json:"coordinateSystem"`
 	Coordinates      [][]float32 `json:"coordinates"`
 	Sas              string      `json:"sas"`
 }
@@ -357,7 +357,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			name:   "Missing parameters GET query",
 			method: http.MethodGet,
 			fenceQuery: "{\"vds\":\"" + well_known +
-				"\", \"coordinate_system\":\"ilxl\", \"coordinates\":[[0, 0]]}",
+				"\", \"coordinateSystem\":\"ilxl\", \"coordinates\":[[0, 0]]}",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Error:Field validation for 'Sas'",
 		},
@@ -365,9 +365,9 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			name:   "Missing parameters POST Query",
 			method: http.MethodPost,
 			fenceQuery: "{\"vds\":\"" + well_known +
-				"\", \"coordinate_system\":\"ilxl\", \"sas\": \"n/a\"}",
+				"\", \"coordinateSystem\":\"ilxl\", \"sas\": \"n/a\"}",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Fence'",
+			expectedError:  "Error:Field validation for 'Coordinates'",
 		},
 		{
 			name:   "Query which passed all input checks but still should fail",

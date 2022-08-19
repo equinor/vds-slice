@@ -16,7 +16,7 @@ Not implemented yet. Content-Length is 0.
 A raw byte array containing the fence itself. The byte array needs to be parsed
 into a 2D array before use. The shape (x, y) is given by:
 
-**x**: the length of "coordinate" in the request
+**x**: the length of "coordinates" in the request
 **y**: number of samples in depth/time/sample/k direction. Can be found by
        querying /metadata
 

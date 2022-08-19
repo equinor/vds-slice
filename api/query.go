@@ -32,11 +32,11 @@ type FenceRequest struct {
 	// cdp  : Coordinates are given as cdpx/cdpy pairs. In the original SEGY
 	//        this would correspond to the cdpx and cdpy fields in the
 	//        trace-headers after applying the scaling factor.
-	CoordinateSystem string `json:"coordinate_system" binding:"required"`
+	CoordinateSystem string `json:"coordinateSystem" binding:"required"`
 
 	// A list of (x, y) points in the coordinate system specified in
-	// coordinate_system.
-	Fence [][]float32 `json:"coordinates" binding:"required"`
+	// coordinateSystem.
+	Coordinates [][]float32 `json:"coordinates" binding:"required"`
 
 	// Interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
@@ -132,7 +132,12 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 		return
 	}
 
-	data, err := vds.Fence(*conn, query.CoordinateSystem, query.Fence, interpolation)
+	data, err := vds.Fence(
+		*conn,
+		query.CoordinateSystem,
+		query.Coordinates,
+		interpolation,
+	)
 
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
