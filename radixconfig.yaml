@@ -1,4 +1,3 @@
-
 apiVersion: radix.equinor.com/v1
 kind: RadixApplication
 metadata:
@@ -8,6 +7,9 @@ spec:
     - name: dev
       build:
         from: radix
+    - name: test
+      build:
+        from: test
   components:
     - name: server
       dockerfileName: Dockerfile
@@ -29,4 +31,17 @@ spec:
               cpu: "2000m"
           horizontalScaling:
             minReplicas: 1
+            maxReplicas: 3
+        - environment: test
+          monitoring: false
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "200m"
+            limits:
+              memory: "2048Mi"
+              cpu: "500m"
+          horizontalScaling:
+            # Radix doesn't scale to 0, so this is just desired intention
+            minReplicas: 0
             maxReplicas: 3
