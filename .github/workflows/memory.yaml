@@ -1,0 +1,47 @@
+name: Memory leak check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # Required secrets:
+  #
+  # STORAGE_ACCOUNT_NAME : name of the storage where server is assigned to (without blob.core.windows.net)
+  # STORAGE_ACCOUNT_KEY : key used to access storage
+  leaks_in_our_code:
+    name: Check that our c++ code contains no memory leaks
+    # different setups leak on different environments
+    runs-on: ubuntu-latest
+    environment: Test
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run valgrind tests
+        env:
+          STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
+          STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
+          LOGPATH: "/out"
+          OPENVDS_AZURESDKFORCPP: 1
+          CATCH_PARAMS: "~[openvdsleak]"
+        run: |
+          DOCKER_BUILDKIT=1 docker build -f Dockerfile --target openvds  -t openvds .
+          DOCKER_BUILDKIT=1 docker build -f tests/memory/Dockerfile.alpine --target memoryrunner -t memoryrunner .
+          tag=memorytests
+          docker build -f tests/memory/Dockerfile -t $tag .
+          docker run \
+            -e STORAGE_ACCOUNT_NAME \
+            -e STORAGE_ACCOUNT_KEY \
+            -e LOGPATH \
+            -e OPENVDS_AZURESDKFORCPP \
+            -e CATCH_PARAMS \
+            -v $(pwd)/out:$LOGPATH \
+            $tag
+      - name: Print stderr
+        if: always()
+        continue-on-error: true
+        run: |
+          cat $(pwd)/out/stderr.txt
+      - name: Print stdout
+        if: always()
+        continue-on-error: true
+        run: |
+          cat $(pwd)/out/stdout.txt
