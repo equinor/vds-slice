@@ -1,0 +1,10 @@
+FROM python:3-alpine as memoryrunner
+RUN apk --no-cache add \
+    g++ \
+    gcc \
+    libuv \
+    libcurl \
+    libxml2 \
+    libuuid \
+    boost-log \
+    valgrind
