@@ -10,13 +10,13 @@ jobs:
     # ENDPOINT : URL where server is running
     # STORAGE_ACCOUNT_NAME : name of the storage where server is assigned to (without blob.core.windows.net)
     # STORAGE_ACCOUNT_KEY : key used to access storage
-    name: Integration tests on Azure
+    name: E2E tests with cloud
     runs-on: ubuntu-latest
     environment: Test
     steps:
       - uses: actions/checkout@v2
 
-      - name: Run azure tests
+      - name: Run E2E tests
         env:
           ENDPOINT: ${{ secrets.ENDPOINT }}
           STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
