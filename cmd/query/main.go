@@ -8,6 +8,7 @@ import (
 	"github.com/pborman/getopt/v2"
 	"github.com/swaggo/gin-swagger"
 	"github.com/swaggo/files"
+	"github.com/gin-contrib/gzip"
 
 	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/api"
@@ -66,7 +67,9 @@ func main() {
 	}
 
 	app := gin.Default()
+	app.Use(gzip.Gzip(gzip.BestSpeed))
 	app.Use(api.ErrorHandler)
+
 	app.GET("/", endpoint.Health)
 
 	app.GET( "metadata", endpoint.MetadataGet)
