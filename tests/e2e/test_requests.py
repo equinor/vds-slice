@@ -49,6 +49,25 @@ def test_fence(method):
     assert np.array_equal(data, expected)
 
 
+@pytest.mark.parametrize("method", [
+    ("get"),
+    ("post")
+])
+def test_metadata(method):
+    metadata = request_metadata(method)
+    expected_metadata = json.loads("""
+    {
+        "axis": [
+            {"annotation": "Inline", "max": 5.0, "min": 1.0, "samples" : 3, "unit": "unitless"},
+            {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
+            {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
+        ],
+        "format": 3
+    }
+    """)
+    assert metadata == expected_metadata
+
+
 @pytest.mark.parametrize("path, query", [
     ("slice", {
         "vds": f'{CONTAINER}/{VDS}',
@@ -59,6 +78,9 @@ def test_fence(method):
         "vds": f'{CONTAINER}/{VDS}',
         "coordinateSystem": "ij",
         "coordinates": [[0, 0]]
+    }),
+    ("metadata", {
+        "vds": f'{CONTAINER}/{VDS}',
     }),
 ])
 @pytest.mark.parametrize("sas, error_msg", [
@@ -101,6 +123,12 @@ def test_assure_no_unauthorized_access(path, query, sas, error_msg):
         "Error:Field validation for"
     ),
     (
+        "metadata",
+        {"param": "irrelevant"},
+        http.HTTPStatus.BAD_REQUEST,
+        "Error:Field validation for"
+    ),
+    (
         "slice",
         {"vds": f'{CONTAINER}/{VDS}', "direction": "inline", "lineno": 4, },
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -112,6 +140,12 @@ def test_assure_no_unauthorized_access(path, query, sas, error_msg):
             "coordinates": [[1, 2, 3]], },
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "expected [x y] pair"
+    ),
+    (
+        "metadata",
+        {"vds": f'{CONTAINER}/notfound'},
+        http.HTTPStatus.INTERNAL_SERVER_ERROR,
+        "The specified blob does not exist"
     ),
 ])
 def test_errors(path, query, error_code, error):
@@ -194,3 +228,27 @@ def request_fence(method, coordinates, coordinate_system):
 
     data = np.frombuffer(data, dtype="f4")
     return data
+
+
+def request_metadata(method):
+    vds = "{}/{}".format(CONTAINER, VDS)
+    sas = generate_container_signature(
+        STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
+
+    query = {
+        "vds": vds,
+        "sas": sas
+    }
+    json_query = json.dumps(query)
+    encoded_query = urllib.parse.quote(json_query)
+
+    if method == "get":
+        rdata = requests.get(f'{ENDPOINT}/metadata?query={encoded_query}')
+        rdata.raise_for_status()
+    elif method == "post":
+        rdata = requests.post(f'{ENDPOINT}/metadata', json=query)
+        rdata.raise_for_status()
+    else:
+        raise ValueError(f'Unknown method {method}')
+
+    return rdata.json()

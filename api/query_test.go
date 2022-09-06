@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -14,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/require"
 )
 
 const well_known = "../testdata/wellknown/well_known_default.vds"
@@ -36,6 +38,15 @@ type fenceTest struct {
 	expectedError  string
 }
 
+type metadataTest struct {
+	name           string
+	method         string
+	metadata       testMetadataQuery
+	metadataQuery  string
+	expectedStatus int
+	expectedError  string
+}
+
 // define own help types to assure separation between production and test code
 type testErrorResponse struct {
 	Error string `json:"error" binding:"required"`
@@ -53,6 +64,11 @@ type testFenceQuery struct {
 	CoordinateSystem string      `json:"coordinateSystem"`
 	Coordinates      [][]float32 `json:"coordinates"`
 	Sas              string      `json:"sas"`
+}
+
+type testMetadataQuery struct {
+	Vds string `json:"vds"`
+	Sas string `json:"sas"`
 }
 
 type testSliceAxis struct {
@@ -405,6 +421,127 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 	}
 }
 
+func TestMetadataHappyHTTPResponse(t *testing.T) {
+	testcases := []metadataTest{
+		{
+			name:   "Valid GET Query",
+			method: http.MethodGet,
+			metadata: testMetadataQuery{
+				Vds: well_known,
+				Sas: "n/a",
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:   "Valid json POST Query",
+			method: http.MethodPost,
+			metadata: testMetadataQuery{
+				Vds: well_known,
+				Sas: "n/a",
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, testcase := range testcases {
+		w := httptest.NewRecorder()
+		ctx, r := gin.CreateTestContext(w)
+		setupTestServer(r)
+
+		prepareMetadataRequest(ctx, t, testcase)
+		r.ServeHTTP(w, ctx.Request)
+
+		if w.Result().StatusCode != testcase.expectedStatus {
+			msg := "Got status %v; want %d %s in case '%s'"
+			t.Errorf(
+				msg,
+				w.Result().Status,
+				testcase.expectedStatus,
+				http.StatusText(testcase.expectedStatus),
+				testcase.name,
+			)
+		}
+		metadata := w.Body.String()
+		expectedMetadata := `{
+			"axis": [
+				{"annotation": "Inline", "max": 5.0, "min": 1.0, "samples" : 3, "unit": "unitless"},
+				{"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
+				{"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
+			],
+			"format": 3
+		}`
+
+		if metadata != expectedMetadata {
+			msg := "Metadata not equal in case '%s'"
+			require.JSONEq(t, expectedMetadata, metadata, fmt.Sprintf(msg, testcase.name))
+		}
+	}
+}
+
+func TestMetadataErrorHTTPResponse(t *testing.T) {
+	testcases := []metadataTest{
+		{
+			name:           "Invalid json GET query",
+			method:         http.MethodGet,
+			metadataQuery:  "help I am a duck",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid character",
+		},
+		{
+			name:           "Invalid json POST query",
+			method:         http.MethodPost,
+			metadataQuery:  "help I am a duck",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid character",
+		},
+		{
+			name:           "Missing parameters GET query",
+			method:         http.MethodGet,
+			metadataQuery:  "{\"vds\":\"" + well_known + "\"}",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Error:Field validation for 'Sas'",
+		},
+		{
+			name:           "Missing parameters POST Query",
+			method:         http.MethodPost,
+			metadataQuery:  "{\"sas\":\"somevalidsas\"}",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Error:Field validation for 'Vds'",
+		},
+		{
+			name:   "Query which passed all input checks but still should fail",
+			method: http.MethodPost,
+			metadata: testMetadataQuery{
+				Vds: "unknown",
+				Sas: "n/a",
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "Could not open VDS",
+		},
+	}
+
+	for _, testcase := range testcases {
+		w := httptest.NewRecorder()
+		ctx, r := gin.CreateTestContext(w)
+		setupTestServer(r)
+
+		prepareMetadataRequest(ctx, t, testcase)
+		r.ServeHTTP(w, ctx.Request)
+
+		if w.Result().StatusCode != testcase.expectedStatus {
+			msg := "Got status %v; want %d %s in case '%s'"
+			t.Errorf(
+				msg,
+				w.Result().Status,
+				testcase.expectedStatus,
+				http.StatusText(testcase.expectedStatus),
+				testcase.name,
+			)
+		}
+		assertError(w, t, testcase.name, testcase.expectedError)
+	}
+}
+
 func setupTestServer(r *gin.Engine) {
 	r.Use(gin.Logger())
 	r.Use(ErrorHandler)
@@ -416,6 +553,9 @@ func setupTestServer(r *gin.Engine) {
 
 	r.POST("/fence", endpoint.FencePost)
 	r.GET("/fence", endpoint.FenceGet)
+
+	r.POST("/metadata", endpoint.MetadataPost)
+	r.GET("/metadata", endpoint.MetadataGet)
 }
 
 func assertError(w *httptest.ResponseRecorder, t *testing.T, test_name string,
@@ -503,4 +643,8 @@ func prepareSliceRequest(ctx *gin.Context, t *testing.T, testcase sliceTest) {
 
 func prepareFenceRequest(ctx *gin.Context, t *testing.T, testcase fenceTest) {
 	prepareRequest(ctx, t, "/fence", testcase.method, testcase.fence, testcase.fenceQuery)
+}
+
+func prepareMetadataRequest(ctx *gin.Context, t *testing.T, testcase metadataTest) {
+	prepareRequest(ctx, t, "/metadata", testcase.method, testcase.metadata, testcase.metadataQuery)
 }
