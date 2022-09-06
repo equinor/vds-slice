@@ -1,0 +1,77 @@
+name: Performance (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: "Server URL"
+        required: true
+      vds:
+        description: "vds path (relative to the account)"
+        required: true
+      sas:
+        description: "SAS with read privileges for vds"
+        required: true
+      filepath:
+        description: "File to run in form /tests/performance/script-random-inlineslice.js"
+        required: true
+      medtime:
+        description: "Limit for median time for requests to succeed"
+        required: false
+        default: "30000"
+      maxtime:
+        description: "Limit for maximum time for requests to succeed"
+        required: false
+        default: "60000"
+
+jobs:
+  performance_tests:
+    name: Run performance check for a chosen file
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run performance tests
+        env:
+          VDS: ${{ github.event.inputs.vds }}
+          SAS: ${{ github.event.inputs.sas }}
+          ENDPOINT: ${{ github.event.inputs.endpoint }}
+          LOGPATH: "/out"
+          MEDTIME: ${{ github.event.inputs.medtime }}
+          MAXTIME: ${{ github.event.inputs.maxtime }}
+        run: |
+          tag=performance
+          docker build -f tests/performance/Dockerfile -t $tag .
+          docker run \
+            -e VDS \
+            -e SAS \
+            -e ENDPOINT \
+            -e MEDTIME \
+            -e MAXTIME \
+            -e LOGPATH \
+            -v $(pwd)/out:/out \
+            $tag \
+            /bin/sh -c 'python /tests/performance/performance.py ${{ github.event.inputs.filepath }}'
+
+      - name: Print stderr
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/stderr.txt
+
+      - name: Print stdout
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/stdout.txt
+
+      - name: Print logs
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/loadtest.log
+
+      - name: Print summary
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/summary.json

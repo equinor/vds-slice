@@ -1,0 +1,139 @@
+name: Performance tests
+
+on: workflow_dispatch
+
+jobs:
+  prepare_env:
+    name: Prepare build environment for Performance tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./tests/performance/Dockerfile
+          tags: performance_tests:latest
+          outputs: type=docker,dest=/tmp/performance_tests.tar
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: performance_tests
+          path: /tmp/performance_tests.tar
+
+  performance_tests:
+    # Required secrets:
+    #
+    # ENDPOINT : URL where server is running
+    # STORAGE_ACCOUNT_NAME : name of the storage where server is assigned to (without blob.core.windows.net)
+    # STORAGE_ACCOUNT_KEY : key used to access storage
+    name: Pattern
+    runs-on: ubuntu-latest
+    if: always()
+    environment: Test
+    needs: prepare_env
+
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - name: Same slice
+            filepath: "/tests/performance/script-constant-timeslice.js"
+            vds: "testdata/varsize/varsize_400_300_150"
+            medtime: "2000"
+            maxtime: "20000"
+          - name: Random inline slice (big file, small depth)
+            filepath: "/tests/performance/script-random-inlineslice.js"
+            vds: "testdata/varsize/varsize_4000_3000_5"
+            medtime: "1000"
+            maxtime: "10000"
+          - name: Sequential inline slices (big file, small depth)
+            filepath: "/tests/performance/script-sequential-inlineslice.js"
+            vds: "testdata/varsize/varsize_4000_3000_5"
+            medtime: "1000"
+            maxtime: "10000"
+          - name: Sequential inline slices (small file, big depth)
+            filepath: "/tests/performance/script-sequential-inlineslice.js"
+            vds: "testdata/varsize/varsize_500_300_2000"
+            medtime: "5000"
+            maxtime: "10000"
+          - name: Same fence across the whole cube
+            filepath: "/tests/performance/script-constant-fence.js"
+            vds: "testdata/varsize/varsize_400_300_150"
+            medtime: "2000"
+            maxtime: "5000"
+          - name: Random sequential fence line (big file, small depth)
+            filepath: "/tests/performance/script-random-fence.js"
+            vds: "testdata/varsize/varsize_4000_3000_5"
+            medtime: "1000"
+            maxtime: "5000"
+
+          # Multi-replica tests
+
+          - name: Several parallel random slice requests to same VDS
+            filepath: "/tests/performance/script-various-requests.js"
+            vds: "testdata/varsize/varsize_500_300_2000"
+            medtime: "30000"
+            maxtime: "60000"
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: performance_tests
+          path: /tmp
+      - name: Load Docker image
+        run: |
+          docker load --input /tmp/performance_tests.tar
+          docker image ls -a
+
+      - uses: actions/checkout@v2
+
+      - name: Run "${{ matrix.name }}" test
+        env:
+          VDS: ${{ matrix.vds }}
+          ENDPOINT: ${{ secrets.ENDPOINT }}
+          STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
+          STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
+          EXPECTED_RUN_TIME: "600"
+          LOGPATH: "/out"
+          MEDTIME: ${{ matrix.medtime }}
+          MAXTIME: ${{ matrix.maxtime }}
+        run: |
+          tag=performance_tests
+          docker run \
+            -e STORAGE_ACCOUNT_NAME \
+            -e STORAGE_ACCOUNT_KEY \
+            -e ENDPOINT \
+            -e VDS \
+            -e EXPECTED_RUN_TIME \
+            -e MEDTIME \
+            -e MAXTIME \
+            -e LOGPATH \
+            -v $(pwd)/out:/out \
+            $tag \
+            /bin/sh -c 'python /tests/performance/performance.py ${{ matrix.filepath }}'
+
+      - name: Print stderr
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/stderr.txt
+
+      - name: Print stdout
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/stdout.txt
+
+      - name: Print logs
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/loadtest.log
