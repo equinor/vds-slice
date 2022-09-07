@@ -33,7 +33,7 @@ func parseopts() opts {
 		"Storage URL, e.g. https://<account>.blob.core.windows.net",
 		"string",
 	)
-	opts.port = "8080"
+
 	getopt.FlagLong(
 		&opts.port,
 		"port",
