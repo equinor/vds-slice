@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pborman/getopt/v2"
@@ -31,7 +32,8 @@ func parseopts() opts {
 		&opts.storageURL,
 		"storage-url",
 		0,
-		"Storage URL, e.g. https://<account>.blob.core.windows.net",
+		"Comma-separated list of storage accounts that should be accepted by the API. " +
+		"E.g. https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net",
 		"string",
 	)
 
@@ -63,7 +65,7 @@ func main() {
 	opts := parseopts()
 
 	endpoint := api.Endpoint{
-		MakeVdsConnection: vds.MakeAzureConnection(opts.storageURL),
+		MakeVdsConnection: vds.MakeAzureConnection(strings.Split(opts.storageURL, ",")),
 	}
 
 	app := gin.Default()

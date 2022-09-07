@@ -12,7 +12,8 @@ import (
 )
 
 type BaseRequest struct {
-	// The blob path to a vds in form: container/subpath
+	// The blob url to a vds in form
+	// https://account.blob.core.windows.net/container/blob
 	Vds string `json:"vds" binding:"required"`
 	// A valid sas-token with read access to the container specified in Vds
 	Sas string `json:"sas" binding:"required"`
