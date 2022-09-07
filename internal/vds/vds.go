@@ -104,6 +104,13 @@ type Connection struct {
 	Credential string
 }
 
+/*
+ * Strip leading ? if present from the input SAS token
+ */
+func sanitizeSAS(sas string) string {
+	return strings.TrimPrefix(sas, "?")
+}
+
 func MakeConnection(
 	protocol,
 	storageURL,
@@ -113,9 +120,7 @@ func MakeConnection(
 	var url  string
 	var cred string
 
-	if strings.HasPrefix(sas, "?") {
-		sas = sas[1:]
-	}
+	sas = sanitizeSAS(sas)
 
 	if strings.HasSuffix(vds, "/") {
 		vds = vds[:len(vds)-1]
