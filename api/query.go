@@ -77,7 +77,7 @@ type Endpoint struct {
 }
 
 func (e *Endpoint) metadata(ctx *gin.Context, query MetadataRequest) {
-	conn, err := vds.MakeConnection(e.Protocol,  e.StorageURL, query.Vds, query.Sas)
+	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -132,6 +132,12 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 		return
 	}
 
+	metadata, err := vds.GetFenceMetadata(*conn, query.Coordinates)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
 	data, err := vds.Fence(
 		*conn,
 		query.CoordinateSystem,
@@ -143,7 +149,8 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	writeResponse(ctx, []byte{}, data)
+
+	writeResponse(ctx, metadata, data)
 }
 
 func parseGetRequest(ctx *gin.Context, v interface{}) error {
@@ -227,7 +234,7 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 // @Param    query  query  string  True  "Urlencoded/escaped FenceResponse"
 // @Accept   application/json
 // @Produce  multipart/mixed
-// @Success  200
+// @Success  200 {object} vds.FenceMetadata "(Example below only for metadata part)"
 // @Router   /fence  [get]
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	var query FenceRequest
@@ -244,7 +251,7 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 // @Param    body  body  FenceRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
-// @Success  200
+// @Success  200 {object} vds.FenceMetadata "(Example below only for metadata part)"
 // @Router   /fence  [post]
 func (e *Endpoint) FencePost(ctx *gin.Context) {
 	var query FenceRequest

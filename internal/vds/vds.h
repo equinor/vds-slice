@@ -59,6 +59,12 @@ struct vdsbuffer fence(
     enum interpolation_method interpolation_method
 );
 
+struct vdsbuffer fence_metadata(
+    const char* vds,
+    const char* credentials,
+    size_t npoints
+);
+
 void vdsbuffer_delete(struct vdsbuffer*);
 
 

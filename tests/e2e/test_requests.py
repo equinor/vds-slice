@@ -44,9 +44,18 @@ def test_slice(method):
     ("post")
 ])
 def test_fence(method):
-    data = request_fence(method, [[3, 10], [1, 11]], 'ilxl')
-    expected = np.array([108, 109, 110, 111, 104, 105, 106, 107])
-    assert np.array_equal(data, expected)
+    meta, fence = request_fence(method, [[3, 10], [1, 11]], 'ilxl')
+
+    expected = np.array([[108, 109, 110, 111],
+                         [104, 105, 106, 107]])
+    assert np.array_equal(fence, expected)
+
+    expected_meta = json.loads("""
+    {
+        "shape": [ 2, 4]
+    }
+    """)
+    assert meta == expected_meta
 
 
 @pytest.mark.parametrize("method", [
@@ -221,13 +230,11 @@ def request_fence(method, coordinates, coordinate_system):
 
     multipart_data = decoder.MultipartDecoder.from_response(rdata)
     assert len(multipart_data.parts) == 2
-    metadata = multipart_data.parts[0].content
+    metadata = json.loads(multipart_data.parts[0].content)
     data = multipart_data.parts[1].content
 
-    assert len(metadata) == 0
-
-    data = np.frombuffer(data, dtype="f4")
-    return data
+    data = np.ndarray(metadata['shape'], 'f4', data)
+    return metadata, data
 
 
 def request_metadata(method):

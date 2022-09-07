@@ -55,6 +55,12 @@ type Metadata struct {
 	Axis []*Axis `json:"axis"`
 } // @name Metadata
 
+// @Description Fence metadata
+type FenceMetadata struct {
+	// Shape of the returned data fence.
+	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
+} // @name FenceMetadata
+
 func GetAxis(direction string) (int, error) {
 	switch direction {
 		case "i":         return AxisI,         nil
@@ -251,6 +257,30 @@ func Fence(
 		err := C.GoString(result.err)
 		return nil, errors.New(err)
     }
+
+	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
+	return buf, nil
+}
+
+func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) {
+	curl := C.CString(conn.Url)
+	defer C.free(unsafe.Pointer(curl))
+
+	ccred := C.CString(conn.Credential)
+	defer C.free(unsafe.Pointer(ccred))
+
+	result := C.fence_metadata(
+		curl,
+		ccred,
+		C.size_t(len(coordinates)),
+	)
+
+	defer C.vdsbuffer_delete(&result)
+
+	if result.err != nil {
+		err := C.GoString(result.err)
+		return nil, errors.New(err)
+	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil

@@ -518,6 +518,42 @@ struct vdsbuffer fetch_fence(
     return buffer;
 }
 
+struct vdsbuffer fetch_fence_metadata(
+    std::string url,
+    std::string credentials,
+    size_t npoints
+) {
+    OpenVDS::Error error;
+    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
+
+    if(error.code != 0) {
+        throw std::runtime_error("Could not open VDS: " + error.string);
+    }
+
+    auto access = OpenVDS::GetAccessManager(handle);
+    auto const *layout = access.GetVolumeDataLayout();
+
+    if (layout->GetDimensionality() != 3) {
+        throw std::runtime_error(
+            "Unsupported VDS, expected 3 dimensions, got " +
+            std::to_string(layout->GetDimensionality())
+        );
+    }
+
+    nlohmann::json meta;
+    meta["shape"] = nlohmann::json::array({npoints, layout->GetDimensionNumSamples(0)});
+
+    auto str = meta.dump();
+    auto *data = new char[str.size()];
+    std::copy(str.begin(), str.end(), data);
+
+    vdsbuffer buffer{};
+    buffer.size = str.size();
+    buffer.data = data;
+
+    return buffer;
+}
+
 struct vdsbuffer metadata(
     const std::string& vds,
     const std::string& credentials
@@ -602,6 +638,24 @@ struct vdsbuffer fence(
         return fetch_fence(cube, cred, coord_system, coordinates, npoints, interpolation_method);
     } catch (const std::exception& e) {
         vdsbuffer buf {};
+        buf.err = new char[std::strlen(e.what()) + 1];
+        std::strcpy(buf.err, e.what());
+        return buf;
+    }
+}
+
+struct vdsbuffer fence_metadata(
+    const char* vds,
+    const char* credentials,
+    size_t npoints
+) {
+    std::string cube(vds);
+    std::string cred(credentials);
+
+    try {
+        return fetch_fence_metadata(cube, cred, npoints);
+    } catch (const std::exception& e) {
+        vdsbuffer buf{};
         buf.err = new char[std::strlen(e.what()) + 1];
         std::strcpy(buf.err, e.what());
         return buf;
