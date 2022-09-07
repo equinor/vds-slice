@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/api"
+	"github.com/equinor/vds-slice/internal/vds"
 )
 
 type opts struct {
@@ -62,8 +63,7 @@ func main() {
 	opts := parseopts()
 
 	endpoint := api.Endpoint{
-		StorageURL: opts.storageURL,
-		Protocol:   "azure://",
+		MakeVdsConnection: vds.MakeAzureConnection(opts.storageURL),
 	}
 
 	app := gin.Default()

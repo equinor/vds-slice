@@ -10,6 +10,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"unsafe"
 )
@@ -111,37 +112,30 @@ func sanitizeSAS(sas string) string {
 	return strings.TrimPrefix(sas, "?")
 }
 
-func MakeConnection(
-	protocol,
-	storageURL,
-	vds,
-	sas string,
-) (*Connection, error) {
-	var url  string
-	var cred string
+type ConnectionMaker func(blob, sas string) (*Connection, error)
 
-	sas = sanitizeSAS(sas)
-
-	if strings.HasSuffix(vds, "/") {
-		vds = vds[:len(vds)-1]
+func MakeAzureConnection(account string) ConnectionMaker {
+	accountURL, err := url.Parse(account)
+	if err != nil {
+		panic (err)
 	}
 
-	switch protocol {
-		case "azure://": {
-			cred = fmt.Sprintf("BlobEndpoint=%v;SharedAccessSignature=?%v", storageURL, sas)
-			url  = protocol + vds
+	return func(blob string, sas string) (*Connection, error) {
+		sas = sanitizeSAS(sas)
+		if strings.HasSuffix(blob, "/") {
+			blob = blob[:len(blob) - 1]
 		}
-		case "file://": {
-			cred = ""
-			url  = protocol + vds
-		}
-		default: {
-			msg := fmt.Sprintf("Unknown protocol: %v", protocol)
-			return nil, errors.New(msg)
-		}
-	}
 
-	return &Connection{ Url: url, Credential: cred }, nil
+		vdsCredentials := fmt.Sprintf("BlobEndpoint=%s://%s;SharedAccessSignature=?%s",
+			accountURL.Scheme,
+			accountURL.Host,
+			sas,
+		)
+
+		vdsPath := fmt.Sprintf("azure://%s", blob)
+
+		return &Connection{ Url: vdsPath, Credential: vdsCredentials }, nil
+	}
 }
 
 func GetMetadata(conn Connection) ([]byte, error) {
