@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pborman/getopt/v2"
@@ -12,28 +13,30 @@ import (
 
 	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/api"
+	"github.com/equinor/vds-slice/internal/vds"
 )
 
 type opts struct {
-	storageURL string
-	port       string
+	storageAccounts string
+	port            string
 }
 
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 	opts := opts{
-		storageURL: os.Getenv("STORAGE_URL"),
-		port:       "8080",
+		storageAccounts: os.Getenv("STORAGE_ACCOUNTS"),
+		port:            "8080",
 	}
 
 	getopt.FlagLong(
-		&opts.storageURL,
-		"storage-url",
+		&opts.storageAccounts,
+		"storage-accounts",
 		0,
-		"Storage URL, e.g. https://<account>.blob.core.windows.net",
+		"Comma-separated list of storage accounts that should be accepted by the API. " +
+		"E.g. https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net",
 		"string",
 	)
-	opts.port = "8080"
+
 	getopt.FlagLong(
 		&opts.port,
 		"port",
@@ -60,10 +63,10 @@ func parseopts() opts {
 // @schemes      https
 func main() {
 	opts := parseopts()
-
+	
+	storageAccounts := strings.Split(opts.storageAccounts, ",")
 	endpoint := api.Endpoint{
-		StorageURL: opts.storageURL,
-		Protocol:   "azure://",
+		MakeVdsConnection: vds.MakeAzureConnection(storageAccounts),
 	}
 
 	app := gin.Default()

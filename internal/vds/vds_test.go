@@ -12,13 +12,9 @@ import (
 )
 
 func make_well_known() Connection {
-	well_known, _ := MakeConnection(
-		"file://",
-		"",
-		"../../testdata/wellknown/well_known_default.vds",
-		"",
-	)
-	return *well_known
+	path :="../../testdata/wellknown/well_known_default.vds"
+	path = fmt.Sprintf("file://%s", path)
+	return Connection{Url: path}
 }
 
 var well_known = make_well_known()

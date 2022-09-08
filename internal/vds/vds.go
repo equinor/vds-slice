@@ -10,6 +10,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"unsafe"
 )
@@ -104,39 +105,74 @@ type Connection struct {
 	Credential string
 }
 
-func MakeConnection(
-	protocol,
-	storageURL,
-	vds,
-	sas string,
-) (*Connection, error) {
-	var url  string
-	var cred string
+/*
+ * Sanitize path and make the input path into a *url.URL type
+ *
+ * OpenVDS segfaults if the blobpath ends on a trailing slash. We don't want to
+ * propagate that behaviour to the user in any way, so we need to explicitly
+ * sanitize the input and strip trailing slashes before passing them on to
+ * OpenVDS.
+ */
+func makeUrl(path string) (*url.URL, error) {
+	path = strings.TrimSuffix(path, "/")
+	return url.Parse(path)
+}
 
-	if strings.HasPrefix(sas, "?") {
-		sas = sas[1:]
-	}
-
-	if strings.HasSuffix(vds, "/") {
-		vds = vds[:len(vds)-1]
-	}
-
-	switch protocol {
-		case "azure://": {
-			cred = fmt.Sprintf("BlobEndpoint=%v;SharedAccessSignature=?%v", storageURL, sas)
-			url  = protocol + vds
-		}
-		case "file://": {
-			cred = ""
-			url  = protocol + vds
-		}
-		default: {
-			msg := fmt.Sprintf("Unknown protocol: %v", protocol)
-			return nil, errors.New(msg)
+func isAllowed(allowlist []*url.URL, requested *url.URL) error {
+	for _, candidate := range allowlist {
+		if strings.EqualFold(requested.Host, candidate.Host) {
+			return nil
 		}
 	}
+	msg := "Unsupported storage account: %s. This API is configured to work "  +
+		"with a pre-defined set of storage accounts. Contact the system admin " +
+		"to get your storage account on the allowlist"
+	return fmt.Errorf(msg, requested.Host)
+}
+/*
+ * Strip leading ? if present from the input SAS token
+ */
+func sanitizeSAS(sas string) string {
+	return strings.TrimPrefix(sas, "?")
+}
 
-	return &Connection{ Url: url, Credential: cred }, nil
+type ConnectionMaker func(blob, sas string) (*Connection, error)
+
+func MakeAzureConnection(accounts []string) ConnectionMaker {
+	var allowlist []*url.URL
+	for _, account := range accounts {
+		account = strings.TrimSpace(account)
+		if len(account) == 0 {
+			panic("Empty storage-account not allowed")
+		}
+		url, err := url.Parse(account)
+		if err != nil {
+			panic(err)
+		}
+
+		allowlist = append(allowlist, url)
+	}
+
+	return func(blob string, sas string) (*Connection, error) {
+		blobUrl, err := makeUrl(blob)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := isAllowed(allowlist, blobUrl); err != nil {
+			return nil, err
+		}
+
+		vdsCredentials := fmt.Sprintf("BlobEndpoint=%s://%s;SharedAccessSignature=?%s",
+			blobUrl.Scheme,
+			blobUrl.Host,
+			sanitizeSAS(sas),
+		)
+
+		vdsPath := fmt.Sprintf("azure:/%s", blobUrl.Path)
+
+		return &Connection{ Url: vdsPath, Credential: vdsCredentials }, nil
+	}
 }
 
 func GetMetadata(conn Connection) ([]byte, error) {

@@ -12,7 +12,7 @@ spec:
     - name: server
       dockerfileName: Dockerfile
       secrets:
-        - STORAGE_URL
+        - STORAGE_ACCOUNTS
       ports:
         - name: http
           port: 8080

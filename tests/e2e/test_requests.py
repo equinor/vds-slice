@@ -14,6 +14,8 @@ STORAGE_ACCOUNT_KEY = os.getenv("STORAGE_ACCOUNT_KEY")
 ENDPOINT = os.getenv("ENDPOINT").rstrip("/")
 CONTAINER = "testdata"
 VDS = "wellknown/well_known_default"
+STORAGE_ACCOUNT = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
+VDSURL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
 
 
 @pytest.mark.parametrize("method", [
@@ -79,17 +81,17 @@ def test_metadata(method):
 
 @pytest.mark.parametrize("path, query", [
     ("slice", {
-        "vds": f'{CONTAINER}/{VDS}',
+        "vds": VDSURL,
         "direction": "inline",
         "lineno": 3
     }),
     ("fence", {
-        "vds": f'{CONTAINER}/{VDS}',
+        "vds": VDSURL,
         "coordinateSystem": "ij",
         "coordinates": [[0, 0]]
     }),
     ("metadata", {
-        "vds": f'{CONTAINER}/{VDS}',
+        "vds": VDSURL,
     }),
 ])
 @pytest.mark.parametrize("sas, error_msg", [
@@ -139,20 +141,20 @@ def test_assure_no_unauthorized_access(path, query, sas, error_msg):
     ),
     (
         "slice",
-        {"vds": f'{CONTAINER}/{VDS}', "direction": "inline", "lineno": 4, },
+        {"vds": VDSURL, "direction": "inline", "lineno": 4, },
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "Invalid lineno: 4, valid range: [1:5:2]"
     ),
     (
         "fence",
-        {"vds": f'{CONTAINER}/{VDS}', "coordinateSystem": "ij",
+        {"vds": VDSURL, "coordinateSystem": "ij",
             "coordinates": [[1, 2, 3]], },
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "expected [x y] pair"
     ),
     (
         "metadata",
-        {"vds": f'{CONTAINER}/notfound'},
+        {"vds": f'{STORAGE_ACCOUNT}/{CONTAINER}/notfound'},
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "The specified blob does not exist"
     ),
@@ -174,7 +176,7 @@ def request_slice(method, lineno, direction):
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
     query = {
-        "vds": vds,
+        "vds": VDSURL,
         "direction": direction,
         "lineno": lineno,
         "sas": sas
@@ -206,12 +208,11 @@ def request_slice(method, lineno, direction):
 
 
 def request_fence(method, coordinates, coordinate_system):
-    vds = "{}/{}".format(CONTAINER, VDS)
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
     query = {
-        "vds": vds,
+        "vds": VDSURL,
         "coordinateSystem": coordinate_system,
         "coordinates": coordinates,
         "sas": sas
@@ -238,12 +239,11 @@ def request_fence(method, coordinates, coordinate_system):
 
 
 def request_metadata(method):
-    vds = "{}/{}".format(CONTAINER, VDS)
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
     query = {
-        "vds": vds,
+        "vds": VDSURL,
         "sas": sas
     }
     json_query = json.dumps(query)

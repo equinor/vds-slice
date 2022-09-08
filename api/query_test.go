@@ -16,6 +16,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
+
+	"github.com/equinor/vds-slice/internal/vds"
 )
 
 const well_known = "../testdata/wellknown/well_known_default.vds"
@@ -544,11 +546,18 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 	}
 }
 
+func MakeFileConnection() vds.ConnectionMaker {
+	return func(path, sas string) (*vds.Connection, error) {
+		path = fmt.Sprintf("file://%s", path)
+		return &vds.Connection{ Url: path }, nil
+	}
+}
+
 func setupTestServer(r *gin.Engine) {
 	r.Use(gin.Logger())
 	r.Use(ErrorHandler)
 
-	endpoint := Endpoint{StorageURL: "", Protocol: "file://"}
+	endpoint := Endpoint{ MakeVdsConnection: MakeFileConnection() }
 
 	r.POST("/slice", endpoint.SlicePost)
 	r.GET("/slice", endpoint.SliceGet)

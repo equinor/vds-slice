@@ -12,7 +12,8 @@ import (
 )
 
 type BaseRequest struct {
-	// The blob path to a vds in form: container/subpath
+	// The blob url to a vds in form
+	// https://account.blob.core.windows.net/container/blob
 	Vds string `json:"vds" binding:"required"`
 	// A valid sas-token with read access to the container specified in Vds
 	Sas string `json:"sas" binding:"required"`
@@ -72,12 +73,11 @@ type SliceRequest struct {
 } //@name SliceRequest
 
 type Endpoint struct {
-	StorageURL string
-	Protocol   string
+	MakeVdsConnection vds.ConnectionMaker
 }
 
 func (e *Endpoint) metadata(ctx *gin.Context, query MetadataRequest) {
-	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
+	conn, err := e.MakeVdsConnection(query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -93,7 +93,7 @@ func (e *Endpoint) metadata(ctx *gin.Context, query MetadataRequest) {
 }
 
 func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
-	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
+	conn, err := e.MakeVdsConnection(query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -120,7 +120,7 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
 }
 
 func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
-	conn, err := vds.MakeConnection(e.Protocol, e.StorageURL, query.Vds, query.Sas)
+	conn, err := e.MakeVdsConnection(query.Vds, query.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
