@@ -129,6 +129,22 @@ def test_assure_no_unauthorized_access(path, query, sas, error_msg):
     assert error_msg in body['error']
 
 
+@pytest.mark.parametrize("path, query", [
+    ("slice", make_slice_request()),
+    ("fence", make_fence_request()),
+    ("metadata", make_metadata_request()),
+])
+def test_assure_only_allowed_storage_accounts(path, query):
+    query.update({
+        "vds": "https://dummy.blob.core.windows.net/container/blob",
+    })
+    res = requests.get(f'{ENDPOINT}/{path}',
+                       params={"query": json.dumps(query)})
+    assert res.status_code == http.HTTPStatus.BAD_REQUEST
+    body = json.loads(res.content)
+    assert "Unsupported storage account" in body['error']
+
+
 @pytest.mark.parametrize("path, query, error_code, error", [
     (
         "nonexisting",
