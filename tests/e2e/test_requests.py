@@ -18,6 +18,31 @@ STORAGE_ACCOUNT = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
 VDSURL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
 
 
+def make_slice_request(vds=VDSURL, direction="inline", lineno=3, sas="sas"):
+    return {
+        "vds": vds,
+        "direction": direction,
+        "lineno": lineno,
+        "sas": sas
+    }
+
+
+def make_fence_request(vds=VDSURL, coordinate_system="ij", coordinates=[[0, 0]], sas="sas"):
+    return {
+        "vds": vds,
+        "coordinateSystem": coordinate_system,
+        "coordinates": coordinates,
+        "sas": sas
+    }
+
+
+def make_metadata_request(vds=VDSURL, sas="sas"):
+    return {
+        "vds": vds,
+        "sas": sas
+    }
+
+
 @pytest.mark.parametrize("method", [
     ("get"),
     ("post")
@@ -80,19 +105,9 @@ def test_metadata(method):
 
 
 @pytest.mark.parametrize("path, query", [
-    ("slice", {
-        "vds": VDSURL,
-        "direction": "inline",
-        "lineno": 3
-    }),
-    ("fence", {
-        "vds": VDSURL,
-        "coordinateSystem": "ij",
-        "coordinates": [[0, 0]]
-    }),
-    ("metadata", {
-        "vds": VDSURL,
-    }),
+    ("slice", make_slice_request()),
+    ("fence", make_fence_request()),
+    ("metadata", make_metadata_request()),
 ])
 @pytest.mark.parametrize("sas, error_msg", [
     (
@@ -141,20 +156,19 @@ def test_assure_no_unauthorized_access(path, query, sas, error_msg):
     ),
     (
         "slice",
-        {"vds": VDSURL, "direction": "inline", "lineno": 4, },
+        make_slice_request(direction="inline", lineno=4),
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "Invalid lineno: 4, valid range: [1:5:2]"
     ),
     (
         "fence",
-        {"vds": VDSURL, "coordinateSystem": "ij",
-            "coordinates": [[1, 2, 3]], },
+        make_fence_request(coordinate_system="ij", coordinates=[[1, 2, 3]]),
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "expected [x y] pair"
     ),
     (
         "metadata",
-        {"vds": f'{STORAGE_ACCOUNT}/{CONTAINER}/notfound'},
+        make_metadata_request(vds=f'{STORAGE_ACCOUNT}/{CONTAINER}/notfound'),
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "The specified blob does not exist"
     ),
@@ -171,16 +185,10 @@ def test_errors(path, query, error_code, error):
 
 
 def request_slice(method, lineno, direction):
-    vds = "{}/{}".format(CONTAINER, VDS)
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    query = {
-        "vds": VDSURL,
-        "direction": direction,
-        "lineno": lineno,
-        "sas": sas
-    }
+    query = make_slice_request(VDSURL, direction, lineno, sas)
     json_query = json.dumps(query)
     encoded_query = urllib.parse.quote(json_query)
 
@@ -211,12 +219,7 @@ def request_fence(method, coordinates, coordinate_system):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    query = {
-        "vds": VDSURL,
-        "coordinateSystem": coordinate_system,
-        "coordinates": coordinates,
-        "sas": sas
-    }
+    query = make_fence_request(VDSURL, coordinate_system, coordinates, sas)
     json_query = json.dumps(query)
     encoded_query = urllib.parse.quote(json_query)
 
@@ -242,10 +245,7 @@ def request_metadata(method):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    query = {
-        "vds": VDSURL,
-        "sas": sas
-    }
+    query = make_metadata_request(VDSURL, sas)
     json_query = json.dumps(query)
     encoded_query = urllib.parse.quote(json_query)
 
