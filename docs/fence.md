@@ -9,7 +9,8 @@ On success (200) the response consists of two parts, metadata and data.
 
 ### Metadata part
 *Content-Type: application/json*
-Not implemented yet. Content-Length is 0.
+Metadata related to the returned fence, such as data shape. See the
+FenceMetadata data model.
 
 ### Data part
 *Content-Type: application/octet-stream*

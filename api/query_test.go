@@ -332,14 +332,16 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 			)
 		}
 
-		if len(parts[0]) != 0 {
-			msg := "Got %d bytes in metadata reply; want it to always be 0 in case '%s'"
-			t.Errorf(
-				msg,
-				len(parts[1]),
-				testcase.name,
-			)
+		metadata := string(parts[0])
+		expectedMetadata := `{
+			"shape": [` + fmt.Sprint(len(testcase.fence.Coordinates)) + `, 4]
+		}`
+
+		if metadata != expectedMetadata {
+			msg := "Metadata not equal in case '%s'"
+			require.JSONEq(t, expectedMetadata, metadata, fmt.Sprintf(msg, testcase.name))
 		}
+
 		expectedDataLength := len(testcase.fence.Coordinates) * 4 * 4 //4 bytes, 4 samples per each requested
 		if len(parts[1]) != expectedDataLength {
 			msg := "Got %d bytes in data reply; want it to be %d in case '%s'"
