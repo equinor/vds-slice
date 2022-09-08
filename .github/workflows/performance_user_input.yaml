@@ -7,7 +7,7 @@ on:
         description: "Server URL"
         required: true
       vds:
-        description: "vds path (relative to the account)"
+        description: "vds path (aka https://account.blob.core.windows.net/container/blob)"
         required: true
       sas:
         description: "SAS with read privileges for vds"
