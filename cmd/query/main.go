@@ -17,20 +17,20 @@ import (
 )
 
 type opts struct {
-	storageURL string
-	port       string
+	storageAccounts string
+	port            string
 }
 
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 	opts := opts{
-		storageURL: os.Getenv("STORAGE_URL"),
-		port:       "8080",
+		storageAccounts: os.Getenv("STORAGE_ACCOUNTS"),
+		port:            "8080",
 	}
 
 	getopt.FlagLong(
-		&opts.storageURL,
-		"storage-url",
+		&opts.storageAccounts,
+		"storage-accounts",
 		0,
 		"Comma-separated list of storage accounts that should be accepted by the API. " +
 		"E.g. https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net",
@@ -63,9 +63,10 @@ func parseopts() opts {
 // @schemes      https
 func main() {
 	opts := parseopts()
-
+	
+	storageAccounts := strings.Split(opts.storageAccounts, ",")
 	endpoint := api.Endpoint{
-		MakeVdsConnection: vds.MakeAzureConnection(strings.Split(opts.storageURL, ",")),
+		MakeVdsConnection: vds.MakeAzureConnection(storageAccounts),
 	}
 
 	app := gin.Default()
