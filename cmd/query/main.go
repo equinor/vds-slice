@@ -71,18 +71,17 @@ func main() {
 
 	app := gin.Default()
 	app.Use(gzip.Gzip(gzip.BestSpeed))
-	app.Use(api.ErrorHandler)
 
 	app.GET("/", endpoint.Health)
 
-	app.GET( "metadata", endpoint.MetadataGet)
-	app.POST("metadata", endpoint.MetadataPost)
+	app.GET("metadata", api.ErrorHandler, endpoint.MetadataGet)
+	app.POST("metadata", api.ErrorHandler, endpoint.MetadataPost)
 
-	app.GET( "slice", endpoint.SliceGet)
-	app.POST("slice", endpoint.SlicePost)
+	app.GET("slice", api.ErrorHandler, endpoint.SliceGet)
+	app.POST("slice", api.ErrorHandler, endpoint.SlicePost)
 
-	app.GET("fence", endpoint.FenceGet)
-	app.POST("fence", endpoint.FencePost)
+	app.GET("fence", api.ErrorHandler, endpoint.FenceGet)
+	app.POST("fence", api.ErrorHandler, endpoint.FencePost)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	app.Run(fmt.Sprintf(":%s", opts.port))

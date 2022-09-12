@@ -147,12 +147,6 @@ def test_assure_only_allowed_storage_accounts(path, query):
 
 @pytest.mark.parametrize("path, query, error_code, error", [
     (
-        "nonexisting",
-        {},
-        http.HTTPStatus.NOT_FOUND,
-        ""
-    ),
-    (
         "slice",
         {"param": "irrelevant"},
         http.HTTPStatus.BAD_REQUEST,
