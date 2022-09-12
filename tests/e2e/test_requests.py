@@ -13,7 +13,7 @@ STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")
 STORAGE_ACCOUNT_KEY = os.getenv("STORAGE_ACCOUNT_KEY")
 ENDPOINT = os.getenv("ENDPOINT").rstrip("/")
 CONTAINER = "testdata"
-VDS = "wellknown/well_known_default"
+VDS = "well_known/well_known_default"
 STORAGE_ACCOUNT = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
 VDSURL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
 

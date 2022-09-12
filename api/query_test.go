@@ -20,7 +20,7 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
-const well_known = "../testdata/wellknown/well_known_default.vds"
+const well_known = "../testdata/well_known/well_known_default.vds"
 
 type sliceTest struct {
 	name           string
