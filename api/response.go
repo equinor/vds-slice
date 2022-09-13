@@ -11,9 +11,11 @@ import (
 	"strings"
 )
 
-type errorResponse struct {
-	Error string `json:"error"`
-}
+// @Description Error response description
+type ErrorResponse struct {
+	// Textual description of encountered error
+	Error string `json:"error" example:"message"`
+} // @name ErrorResponse
 
 func writeResponse(ctx *gin.Context, metadata []byte, data []byte) {
 	response := &bytes.Buffer{}
@@ -80,5 +82,5 @@ func ErrorHandler(ctx *gin.Context) {
 	}
 	error := strings.Join(errors[:], ",")
 
-	ctx.JSON(status, &errorResponse{Error: error})
+	ctx.JSON(status, &ErrorResponse{Error: error})
 }

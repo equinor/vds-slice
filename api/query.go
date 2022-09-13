@@ -171,6 +171,8 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 // @Param    query  query  string  True  "Urlencoded/escaped MetadataRequest"
 // @Produce  json
 // @Success  200 {object} vds.Metadata
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /metadata  [get]
 func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 	var query MetadataRequest
@@ -187,6 +189,8 @@ func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 // @Param    body  body  MetadataRequest  True  "Request parameters"
 // @Produce  json
 // @Success  200 {object} vds.Metadata
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /metadata  [post]
 func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 	var query MetadataRequest
@@ -204,6 +208,8 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 // @Param    query  query  string  True  "Urlencoded/escaped SliceRequest"
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	var query SliceRequest
@@ -222,6 +228,8 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	var query SliceRequest
@@ -240,6 +248,8 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.FenceMetadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /fence  [get]
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	var query FenceRequest
@@ -258,6 +268,8 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.FenceMetadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /fence  [post]
 func (e *Endpoint) FencePost(ctx *gin.Context) {
 	var query FenceRequest
