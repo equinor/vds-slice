@@ -167,6 +167,7 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 
 // MetadataGet godoc
 // @Summary  Return volumetric metadata about the VDS
+// @Tags     metadata
 // @Param    query  query  string  True  "Urlencoded/escaped MetadataRequest"
 // @Produce  json
 // @Success  200 {object} vds.Metadata
@@ -182,6 +183,7 @@ func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 
 // MetadataPost godoc
 // @Summary  Return volumetric metadata about the VDS
+// @Tags     metadata
 // @Param    body  body  MetadataRequest  True  "Request parameters"
 // @Produce  json
 // @Success  200 {object} vds.Metadata
@@ -198,6 +200,7 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 // SliceGet godoc
 // @Summary  Fetch a slice from a VDS
 // @description.markdown slice
+// @Tags     slice
 // @Param    query  query  string  True  "Urlencoded/escaped SliceRequest"
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
@@ -214,6 +217,7 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // SlicePost godoc
 // @Summary  Fetch a slice from a VDS
 // @description.markdown slice
+// @Tags     slice
 // @Param    body  body  SliceRequest  True  "Query Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
@@ -231,6 +235,7 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 // FenceGet godoc
 // @Summary  Returns traces along an arbitrary path, such as a well-path
 // @description.markdown fence
+// @Tags     fence
 // @Param    query  query  string  True  "Urlencoded/escaped FenceResponse"
 // @Accept   application/json
 // @Produce  multipart/mixed
@@ -248,6 +253,7 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 // FencePost godoc
 // @Summary  Returns traces along an arbitrary path, such as a well-path
 // @description.markdown fence
+// @Tags     fence
 // @Param    body  body  FenceRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
