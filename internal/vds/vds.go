@@ -26,6 +26,12 @@ const (
 	AxisSample    = C.SAMPLE
 )
 
+const (
+	CoordinateSystemIndex      = C.INDEX
+	CoordinateSystemAnnotation = C.ANNOTATION
+	CoordinateSystemCdp        = C.CDP
+)
+
 // @Description Axis description
 type Axis struct {
 	// Name/Annotation of axis
@@ -76,6 +82,21 @@ func GetAxis(direction string) (int, error) {
 			options := "i, j, k, inline, crossline or depth/time/sample"
 			msg := "Invalid direction '%s', valid options are: %s"
 			return 0, errors.New(fmt.Sprintf(msg, direction, options))
+	}
+}
+
+func GetCoordinateSystem(coordinateSystem string) (int, error) {
+	switch strings.ToLower(coordinateSystem) {
+	case "ij":
+		return CoordinateSystemIndex, nil
+	case "ilxl":
+		return CoordinateSystemAnnotation, nil
+	case "cdp":
+		return CoordinateSystemCdp, nil
+	default:
+		options := "ij, ilxl, cdp"
+		msg := "coordinate system not recognized: '%s', valid options are: %s"
+		return -1, fmt.Errorf(msg, coordinateSystem, options)
 	}
 }
 
@@ -247,7 +268,7 @@ func SliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
 
 func Fence(
 	conn Connection,
-	coordinate_system string,
+	coordinateSystem int,
 	coordinates [][]float32,
 	interpolation int,
 ) ([]byte, error) {
@@ -256,9 +277,6 @@ func Fence(
 
 	ccred := C.CString(conn.Credential)
 	defer C.free(unsafe.Pointer(ccred))
-
-	ccrd_system := C.CString(coordinate_system)
-	defer C.free(unsafe.Pointer(ccrd_system))
 
 	coordinate_len := 2
 	ccoordinates := make([]C.float, len(coordinates) * coordinate_len)
@@ -281,7 +299,7 @@ func Fence(
     result := C.fence(
 		cvds,
 		ccred,
-		ccrd_system,
+		C.enum_coordinate_system(coordinateSystem),
 		&ccoordinates[0],
 		C.size_t(len(coordinates)),
 		C.enum_interpolation_method(interpolation),

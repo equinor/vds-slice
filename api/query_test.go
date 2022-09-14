@@ -390,6 +390,18 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			expectedError:  "Error:Field validation for 'Coordinates'",
 		},
 		{
+			name:   "Query with unknown coordinate system",
+			method: http.MethodPost,
+			fence: testFenceQuery{
+				Vds:              well_known,
+				CoordinateSystem: "unknown",
+				Coordinates:      [][]float32{{3, 12}, {2, 10}},
+				Sas:              "n/a",
+			},
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "coordinate system not recognized: 'unknown', valid options are",
+		},
+		{
 			name:   "Query which passed all input checks but still should fail",
 			method: http.MethodPost,
 			fence: testFenceQuery{

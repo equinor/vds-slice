@@ -345,21 +345,21 @@ func TestFence(t *testing.T) {
 	}
 
 	testcases := []struct{
-		coordinate_system string
+		coordinate_system int
 		coordinates       [][]float32
 	} {
 		{
-			coordinate_system: "ij",
+			coordinate_system: CoordinateSystemIndex,
 			coordinates:
 				[][]float32{{1, 0}, {1, 1}, {0, 0}, {1, 0}, {2, 0}},
 		},
 		{
-			coordinate_system: "ilxl",
+			coordinate_system: CoordinateSystemAnnotation,
 			coordinates:
 				[][]float32{{3, 10}, {3, 11}, {1, 10}, {3, 10}, {5, 10}},
 		},
 		{
-			coordinate_system: "cdp",
+			coordinate_system: CoordinateSystemCdp,
 			coordinates:
 				[][]float32{{3.2, 3}, {3.2, 6.3}, {1, 3}, {3.2, 3}, {5.4, 3}},
 		},
@@ -423,7 +423,7 @@ func TestInvalidFence(t *testing.T) {
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
-	_, err := Fence(well_known, "ij", fence, interpolationMethod)
+	_, err := Fence(well_known, CoordinateSystemIndex, fence, interpolationMethod)
 
 	if err == nil {
 		msg := "Expected to fail given invalid fence %v"
@@ -448,10 +448,10 @@ func TestFenceInterpolation(t *testing.T) {
 	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular", "angular"}
 	for i, v1 := range interpolationMethods {
 		interpolationMethod, _ := GetInterpolationMethod(v1)
-		buf1, _ := Fence(well_known, "cdp", fence, interpolationMethod)
+		buf1, _ := Fence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
 		for _, v2 := range interpolationMethods[i+1:] {
 			interpolationMethod, _ := GetInterpolationMethod(v2)
-			buf2, _ := Fence(well_known, "cdp", fence, interpolationMethod)
+			buf2, _ := Fence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
 			different := false
 			for k := range buf1 {
 				if buf1[k] != buf2[k] {

@@ -27,11 +27,6 @@ void vdsbuffer_delete(struct vdsbuffer* buf) {
     *buf = vdsbuffer {};
 }
 
-enum coord_system {
-    INDEX      = 0,
-    ANNOTATION = 1,
-};
-
 int axis_todim(axis ax) {
     switch (ax) {
         case I:
@@ -51,7 +46,7 @@ int axis_todim(axis ax) {
     }
 }
 
-coord_system axis_tosystem(axis ax) {
+coordinate_system axis_tosystem(axis ax) {
     switch (ax) {
         case I:
         case J:
@@ -442,7 +437,7 @@ struct vdsbuffer fetch_slice_metadata(
 struct vdsbuffer fetch_fence(
     const std::string& url,
     const std::string& credentials,
-    const std::string& coordinate_system,
+    enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method
@@ -460,19 +455,16 @@ struct vdsbuffer fetch_fence(
 
     auto coordinate_transformer = OpenVDS::IJKCoordinateTransformer(layout);
     auto transform_coordinate = [&] (const float x, const float y) {
-        if (coordinate_system == "ij") {
-            return OpenVDS::Vector<double, 3> {x, y, 0};
-        }
-        else if (coordinate_system == "ilxl") {
-            return coordinate_transformer.AnnotationToIJKPosition({x, y, 0});
-        }
-        else if (coordinate_system == "cdp") {
-            return coordinate_transformer.WorldToIJKPosition({x, y, 0});
-        }
-        else {
-            const auto msg =
-                    "Coordinate system not recognized: " + coordinate_system;
-            throw std::runtime_error(msg);
+        switch (coordinate_system) {
+            case INDEX:
+                return OpenVDS::Vector<double, 3> {x, y, 0};
+            case ANNOTATION:
+                return coordinate_transformer.AnnotationToIJKPosition({x, y, 0});
+            case CDP:
+                return coordinate_transformer.WorldToIJKPosition({x, y, 0});
+            default: {
+                throw std::runtime_error("Unhandled coordinate system");
+            }
         }
     };
 
@@ -616,17 +608,18 @@ struct vdsbuffer slice_metadata(
 struct vdsbuffer fence(
     const char* vds,
     const char* credentials,
-    const char* coordinate_system,
+    enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method
 ) {
-    try {
-        std::string cube(vds);
-        std::string cred(credentials);
-        std::string coord_system(coordinate_system);
+    std::string cube(vds);
+    std::string cred(credentials);
 
-        return fetch_fence(cube, cred, coord_system, coordinates, npoints, interpolation_method);
+    try {
+        return fetch_fence(
+            cube, cred, coordinate_system, coordinates, npoints,
+            interpolation_method);
     } catch (const std::exception& e) {
         return handle_error(e);
     }
