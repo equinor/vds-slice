@@ -572,6 +572,15 @@ struct vdsbuffer metadata(
     return buffer;
 }
 
+struct vdsbuffer handle_error(
+    const std::exception& e
+) {
+    vdsbuffer buf {};
+    buf.err = new char[std::strlen(e.what()) + 1];
+    std::strcpy(buf.err, e.what());
+    return buf;
+}
+
 struct vdsbuffer slice(
     const char* vds,
     const char* credentials,
@@ -584,10 +593,7 @@ struct vdsbuffer slice(
     try {
         return fetch_slice(cube, cred, ax, lineno);
     } catch (const std::exception& e) {
-        vdsbuffer buf {};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
 
@@ -603,10 +609,7 @@ struct vdsbuffer slice_metadata(
     try {
         return fetch_slice_metadata(cube, cred, ax, lineno);
     } catch (const std::exception& e) {
-        vdsbuffer buf{};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
 
@@ -625,10 +628,7 @@ struct vdsbuffer fence(
 
         return fetch_fence(cube, cred, coord_system, coordinates, npoints, interpolation_method);
     } catch (const std::exception& e) {
-        vdsbuffer buf {};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
 
@@ -643,10 +643,7 @@ struct vdsbuffer fence_metadata(
     try {
         return fetch_fence_metadata(cube, cred, npoints);
     } catch (const std::exception& e) {
-        vdsbuffer buf{};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
 
@@ -659,9 +656,6 @@ struct vdsbuffer metadata(
         std::string cred(credentials);
         return metadata(cube, cred);
     } catch (const std::exception& e) {
-        vdsbuffer buf {};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
