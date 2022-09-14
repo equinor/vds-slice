@@ -106,7 +106,7 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
  * E.g. a Time slice is only valid if the units of the Z-axis in the VDS is
  * "Seconds" or "Milliseconds"
  */
-bool unitvalidation(axis ax, const char* zunit) {
+bool unit_validation(axis ax, const char* zunit) {
     /* Define some convenient lookup tables for units */
     static const std::array< const char*, 3 > depthunits = {
         OpenVDS::KnownUnitNames::Meter(),
@@ -182,7 +182,7 @@ bool axis_order_validation(axis ax, const OpenVDS::VolumeDataLayout *layout) {
 }
 
 
-void axisvalidation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
+void axis_validation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
     if (not axis_order_validation(ax, layout)) {
         std::string msg = "Unsupported axis ordering in VDS, expected ";
         msg += "Depth/Time/Sample, Crossline, Inline";
@@ -191,7 +191,7 @@ void axisvalidation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
 
     auto zaxis = layout->GetAxisDescriptor(0);
     const char* zunit = zaxis.GetUnit();
-    if (not unitvalidation(ax, zunit)) {
+    if (not unit_validation(ax, zunit)) {
         std::string msg = "Unable to use " + axis_tostring(ax);
         msg += " on cube with depth units: " + std::string(zunit);
         throw std::runtime_error(msg);
@@ -342,7 +342,7 @@ struct vdsbuffer fetch_slice(
         );
     }
 
-    axisvalidation(ax, layout);
+    axis_validation(ax, layout);
 
     int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
     int vmax[OpenVDS::Dimensionality_Max] = { 1, 1, 1, 1, 1, 1};
@@ -398,7 +398,7 @@ struct vdsbuffer fetch_slice_metadata(
         );
     }
 
-    axisvalidation(ax, layout);
+    axis_validation(ax, layout);
 
     auto dimension = axis_todim(ax);
     auto vdim = dim_tovoxel(dimension);
