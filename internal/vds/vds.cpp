@@ -319,18 +319,26 @@ void json_write_axis(
     });
 }
 
-struct vdsbuffer fetch_slice(
+OpenVDS::ScopedVDSHandle open_vds(
     std::string url,
-    std::string credentials,
-    axis ax,
-    int lineno
-) {
+    std::string credentials
+){
     OpenVDS::Error error;
     OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
 
     if(error.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error.string);
     }
+    return handle;
+}
+
+struct vdsbuffer fetch_slice(
+    std::string url,
+    std::string credentials,
+    axis ax,
+    int lineno
+) {
+    auto handle = open_vds(url, credentials);
 
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
@@ -381,12 +389,7 @@ struct vdsbuffer fetch_slice_metadata(
     axis ax,
     int lineno
 ) {
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
-
-    if(error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
+    auto handle = open_vds(url, credentials);
 
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
@@ -437,19 +440,14 @@ struct vdsbuffer fetch_slice_metadata(
 }
 
 struct vdsbuffer fetch_fence(
-    const std::string& vds,
+    const std::string& url,
     const std::string& credentials,
     const std::string& coordinate_system,
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method
 ) {
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(vds, credentials, error);
-
-    if (error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
+    auto handle = open_vds(url, credentials);
 
     auto accessManager = OpenVDS::GetAccessManager(handle);
     auto const *layout = accessManager.GetVolumeDataLayout();
@@ -523,12 +521,7 @@ struct vdsbuffer fetch_fence_metadata(
     std::string credentials,
     size_t npoints
 ) {
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
-
-    if(error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
+    auto handle = open_vds(url, credentials);
 
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
@@ -555,15 +548,10 @@ struct vdsbuffer fetch_fence_metadata(
 }
 
 struct vdsbuffer metadata(
-    const std::string& vds,
+    const std::string& url,
     const std::string& credentials
 ) {
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(vds, credentials, error);
-
-    if (error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
+    auto handle = open_vds(url, credentials);
 
     auto access = OpenVDS::GetAccessManager(handle);
     const auto *layout = access.GetVolumeDataLayout();
