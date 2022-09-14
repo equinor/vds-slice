@@ -193,6 +193,15 @@ void axis_validation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
     }
 }
 
+void dimension_validation(const OpenVDS::VolumeDataLayout* layout) {
+    if (layout->GetDimensionality() != 3) {
+        throw std::runtime_error(
+            "Unsupported VDS, expected 3 dimensions, got " +
+            std::to_string(layout->GetDimensionality())
+        );
+    }
+}
+
 int dim_tovoxel(int dimension) {
     /*
      * For now assume that the axis order is always depth/time/sample,
@@ -338,13 +347,7 @@ struct vdsbuffer fetch_slice(
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
 
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
-
+    dimension_validation(layout);
     axis_validation(ax, layout);
 
     int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
@@ -389,13 +392,7 @@ struct vdsbuffer fetch_slice_metadata(
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
 
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
-
+    dimension_validation(layout);
     axis_validation(ax, layout);
 
     auto dimension = axis_todim(ax);
@@ -446,6 +443,9 @@ struct vdsbuffer fetch_fence(
 
     auto accessManager = OpenVDS::GetAccessManager(handle);
     auto const *layout = accessManager.GetVolumeDataLayout();
+
+    dimension_validation(layout);
+
     const auto dimension_map =
             layout->GetVDSIJKGridDefinitionFromMetadata().dimensionMap;
 
@@ -518,12 +518,7 @@ struct vdsbuffer fetch_fence_metadata(
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
 
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
+    dimension_validation(layout);
 
     nlohmann::json meta;
     meta["shape"] = nlohmann::json::array({npoints, layout->GetDimensionNumSamples(0)});
@@ -547,6 +542,8 @@ struct vdsbuffer metadata(
 
     auto access = OpenVDS::GetAccessManager(handle);
     const auto *layout = access.GetVolumeDataLayout();
+
+    dimension_validation(layout);
 
     nlohmann::json meta;
     meta["format"] = layout->GetChannelFormat(0); //TODO turn into numpy-style format?

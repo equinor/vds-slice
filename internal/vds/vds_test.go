@@ -11,13 +11,14 @@ import (
 	"testing"
 )
 
-func make_well_known() Connection {
-	path :="../../testdata/well_known/well_known_default.vds"
+func make_connection(name string) Connection {
+	path := fmt.Sprintf("../../testdata/%s/%s_default.vds", name, name)
 	path = fmt.Sprintf("file://%s", path)
 	return Connection{Url: path}
 }
 
-var well_known = make_well_known()
+var well_known = make_connection("well_known")
+var prestack = make_connection("prestack")
 
 func toFloat32(buf []byte) (*[]float32, error) {
 	fsize := 4 // sizeof(float32)
@@ -498,5 +499,52 @@ func TestFenceInterpolationCaseInsensitive(t *testing.T) {
 	if interpolation != expectedInterpolation {
 		msg := "[fence_interpolation]Fence interpolation is not case insensitive"
 		t.Error(msg)
+	}
+}
+
+func TestOnly3DSupported(t *testing.T) {
+	testcases := []struct {
+		name     string
+		function func() ([]byte, error)
+	}{
+		{
+			name:     "Slice",
+			function: func() ([]byte, error) { return Slice(prestack, 0, 0) },
+		},
+		{
+			name:     "SliceMetadata",
+			function: func() ([]byte, error) { return SliceMetadata(prestack, 0, 0) },
+		},
+		{
+			name:     "Fence",
+			function: func() ([]byte, error) { return Fence(prestack, 0, [][]float32{{0, 0}}, 0) },
+		},
+		{
+			name:     "FenceMetadata",
+			function: func() ([]byte, error) { return GetFenceMetadata(prestack, [][]float32{{0, 0}}) },
+		},
+		{
+			name:     "Metadata",
+			function: func() ([]byte, error) { return GetMetadata(prestack) },
+		},
+	}
+
+	for _, testcase := range testcases {
+		_, err := testcase.function()
+
+		if err == nil {
+			t.Errorf(
+				"[case: %v] Expected slice to fail",
+				testcase.name,
+			)
+		}
+
+		if !strings.Contains(err.Error(), "3 dimensions, got 4") {
+			t.Errorf(
+				"[case: %s] Expected error to contain '3 dimensions, got 4', was: %v",
+				testcase.name,
+				err,
+			)
+		}
 	}
 }
