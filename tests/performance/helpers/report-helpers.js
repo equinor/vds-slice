@@ -16,6 +16,10 @@ export function thresholds(defaultMed=30000, defaultMax=60000) {
   return thresholds
 }
 
+export function summaryTrendStats() {
+  return ["avg", "min", "med", "max", "p(95)", "p(99)", "count"];
+}
+
 export function createSummary(data) {
   const logpath = __ENV.LOGPATH;
   if (logpath) {
