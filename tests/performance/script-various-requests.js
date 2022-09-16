@@ -3,6 +3,7 @@ import { sendSetupMetadataRequest } from "./helpers/metadata-helpers.js";
 import { createSummary, thresholds, summaryTrendStats } from "./helpers/report-helpers.js";
 
 export const options = {
+  noVUConnectionReuse: true,
   scenarios: {
     ilineSlice: {
       exec: "randomIlineSliceRequest",
