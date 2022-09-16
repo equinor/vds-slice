@@ -43,8 +43,8 @@ export function sendRequest(path, payload) {
   const url = `${endpoint}/${path}`;
 
   const options = {
-    headers: { "Content-Type": "application/json" },
     responseType: "none",
+    headers: { "Content-Type": "application/json", "Accept-Encoding": "gzip" },
   };
   const res = http.post(url, JSON.stringify(payload), options);
 
