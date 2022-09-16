@@ -12,7 +12,7 @@ export function thresholds(defaultMed=30000, defaultMax=60000) {
 
   // note: if med limit fails, run fails, but threshold misleadingly shows green
   let thresholds = basicThresholds
-  thresholds['iteration_duration'] = [`med < ${medTime}`, `max < ${maxTime}`]
+  thresholds['iteration_duration'] = [`med < ${medTime}`, `p(95) < ${maxTime}`]
   return thresholds
 }
 
