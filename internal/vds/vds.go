@@ -29,26 +29,26 @@ const (
 // @Description Axis description
 type Axis struct {
 	// Name/Annotation of axis
-	Annotation string `json:"annotation"`
+	Annotation string `json:"annotation" example:"Sample"`
 
 	// Minimum axis value
-	Min float64 `json:"min"`
+	Min float64 `json:"min" example:"4.0"`
 
 	// Maximum axis value
-	Max float64 `json:"max"`
+	Max float64 `json:"max" example:"4500.0"`
 
 	// Number of samples along the axis
-	Samples float64 `json:"samples"`
+	Samples int `json:"samples" example:"1600"`
 
 	// Axis units
-	Unit string `json:"unit"`
+	Unit string `json:"unit" example:"ms"`
 } // @name Axis
 
 
 // @Description Slice metadata
 type Metadata struct {
 	// Data format. See https://osdu.pages.opengroup.org/platform/domain-data-mgmt-services/seismic/open-vds/cppdoc/enum/OpenVDS_VolumeDataFormat.html
-	Format int `json:"format"`
+	Format int `json:"format" example:"3"`
 
 	// Axis descriptions
 	//

@@ -5,7 +5,8 @@ index-by-annotation such as inline and crossline numbers and depth intervals.
 See model SliceData for more info on request parameters.
 
 ## Response
-On success (200) the response consists of two parts, metadata and data.
+On success (200) the multipart/mixed response consists of two parts, metadata
+and data.
 
 ### Metadata part
 *Content-Type: application/json*
@@ -17,3 +18,7 @@ units and data type. See the Metadata data model.
 A raw byte array containing the slice itself. The byte array needs to be parsed
 into a 2D array before use. Shape and type information is found in the metadata
 part. Data is always little endian.
+
+## Errors
+On failure (400, 500) the response is of *Content-Type: application/json*. See
+ErrorResponse model.

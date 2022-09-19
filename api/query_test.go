@@ -555,18 +555,16 @@ func MakeFileConnection() vds.ConnectionMaker {
 
 func setupTestServer(r *gin.Engine) {
 	r.Use(gin.Logger())
-	r.Use(ErrorHandler)
+	endpoint := Endpoint{MakeVdsConnection: MakeFileConnection()}
 
-	endpoint := Endpoint{ MakeVdsConnection: MakeFileConnection() }
+	r.POST("/slice", ErrorHandler, endpoint.SlicePost)
+	r.GET("/slice", ErrorHandler, endpoint.SliceGet)
 
-	r.POST("/slice", endpoint.SlicePost)
-	r.GET("/slice", endpoint.SliceGet)
+	r.POST("/fence", ErrorHandler, endpoint.FencePost)
+	r.GET("/fence", ErrorHandler, endpoint.FenceGet)
 
-	r.POST("/fence", endpoint.FencePost)
-	r.GET("/fence", endpoint.FenceGet)
-
-	r.POST("/metadata", endpoint.MetadataPost)
-	r.GET("/metadata", endpoint.MetadataGet)
+	r.POST("/metadata", ErrorHandler, endpoint.MetadataPost)
+	r.GET("/metadata", ErrorHandler, endpoint.MetadataGet)
 }
 
 func assertError(w *httptest.ResponseRecorder, t *testing.T, test_name string,

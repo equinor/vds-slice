@@ -5,7 +5,8 @@ wellbore. Coordinates can be specified in various coordinate systems, and
 multiple interpolation methods are available. 
 
 ## Response
-On success (200) the response consists of two parts, metadata and data.
+On success (200) the multipart/mixed response consists of two parts, metadata
+and data.
 
 ### Metadata part
 *Content-Type: application/json*
@@ -22,3 +23,7 @@ into a 2D array before use. The shape (x, y) is given by:
        querying /metadata
 
 Data is always 4 byte IEEE floating point, little endian.
+
+## Errors
+On failure (400, 500) the response is of *Content-Type: application/json*. See
+ErrorResponse model.

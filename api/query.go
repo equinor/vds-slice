@@ -14,9 +14,9 @@ import (
 type BaseRequest struct {
 	// The blob url to a vds in form
 	// https://account.blob.core.windows.net/container/blob
-	Vds string `json:"vds" binding:"required"`
+	Vds string `json:"vds" binding:"required" example:"https://account.blob.core.windows.net/container/blob"`
 	// A valid sas-token with read access to the container specified in Vds
-	Sas string `json:"sas" binding:"required"`
+	Sas string `json:"sas" binding:"required" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
 }
 
 type MetadataRequest struct {
@@ -33,10 +33,10 @@ type FenceRequest struct {
 	// cdp  : Coordinates are given as cdpx/cdpy pairs. In the original SEGY
 	//        this would correspond to the cdpx and cdpy fields in the
 	//        trace-headers after applying the scaling factor.
-	CoordinateSystem string `json:"coordinateSystem" binding:"required"`
+	CoordinateSystem string `json:"coordinateSystem" binding:"required" example:"cdp"`
 
 	// A list of (x, y) points in the coordinate system specified in
-	// coordinateSystem.
+	// coordinateSystem, for example [[2000.5, 100.5], [2050, 200], [10, 20]].
 	Coordinates [][]float32 `json:"coordinates" binding:"required"`
 
 	// Interpolation method
@@ -45,7 +45,7 @@ type FenceRequest struct {
 	// This field is passed on to OpenVDS, which does the actual interpolation.
 	// Please note that OpenVDS interpolation might not always do what you
 	// expect, even in the default case (nearest). Use with caution.
-	Interpolation string `json:"interpolation"`
+	Interpolation string `json:"interpolation" example:"linear"`
 } //@name FenceRequest
 
 // Query for slice endpoints
@@ -66,10 +66,10 @@ type SliceRequest struct {
 	// Depth/Time/Sample, respectively.
 	//
 	// All options are case-insensitive.
-	Direction string `json:"direction" binding:"required"`
+	Direction string `json:"direction" binding:"required" example:"inline"`
 
 	// Line number of the slice
-	Lineno *int `json:"lineno" binding:"required"`
+	Lineno *int `json:"lineno" binding:"required" example:"10000"`
 } //@name SliceRequest
 
 type Endpoint struct {
@@ -167,9 +167,12 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 
 // MetadataGet godoc
 // @Summary  Return volumetric metadata about the VDS
+// @Tags     metadata
 // @Param    query  query  string  True  "Urlencoded/escaped MetadataRequest"
 // @Produce  json
 // @Success  200 {object} vds.Metadata
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /metadata  [get]
 func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 	var query MetadataRequest
@@ -182,9 +185,12 @@ func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 
 // MetadataPost godoc
 // @Summary  Return volumetric metadata about the VDS
+// @Tags     metadata
 // @Param    body  body  MetadataRequest  True  "Request parameters"
 // @Produce  json
 // @Success  200 {object} vds.Metadata
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /metadata  [post]
 func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 	var query MetadataRequest
@@ -198,9 +204,12 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 // SliceGet godoc
 // @Summary  Fetch a slice from a VDS
 // @description.markdown slice
+// @Tags     slice
 // @Param    query  query  string  True  "Urlencoded/escaped SliceRequest"
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	var query SliceRequest
@@ -214,10 +223,13 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // SlicePost godoc
 // @Summary  Fetch a slice from a VDS
 // @description.markdown slice
+// @Tags     slice
 // @Param    body  body  SliceRequest  True  "Query Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	var query SliceRequest
@@ -231,10 +243,13 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 // FenceGet godoc
 // @Summary  Returns traces along an arbitrary path, such as a well-path
 // @description.markdown fence
+// @Tags     fence
 // @Param    query  query  string  True  "Urlencoded/escaped FenceResponse"
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.FenceMetadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /fence  [get]
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	var query FenceRequest
@@ -248,10 +263,13 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 // FencePost godoc
 // @Summary  Returns traces along an arbitrary path, such as a well-path
 // @description.markdown fence
+// @Tags     fence
 // @Param    body  body  FenceRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} vds.FenceMetadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /fence  [post]
 func (e *Endpoint) FencePost(ctx *gin.Context) {
 	var query FenceRequest
