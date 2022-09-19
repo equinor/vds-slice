@@ -81,7 +81,7 @@ func GetAxis(direction string) (int, error) {
 		default:
 			options := "i, j, k, inline, crossline or depth/time/sample"
 			msg := "Invalid direction '%s', valid options are: %s"
-			return 0, errors.New(fmt.Sprintf(msg, direction, options))
+			return -1, fmt.Errorf(msg, direction, options)
 	}
 }
 
