@@ -12,7 +12,7 @@ def runPerformanceTests(filepath):
         expected_run_time = int(os.environ["EXPECTED_RUN_TIME"])
         sas = generate_account_signature(
             storage_account_name, storage_account_key, expected_run_time)
-    os.environ["SAS"] = sas
+        os.environ["SAS"] = sas
 
     logpath = os.environ["LOGPATH"]
     logname = "{}/loadtest.log".format(logpath)

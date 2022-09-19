@@ -11,9 +11,13 @@ export function thresholds(defaultMed=30000, defaultMax=60000) {
   maxTime = maxTime ? maxTime : defaultMax
 
   // note: if med limit fails, run fails, but threshold misleadingly shows green
-  let thresholds = basicThresholds
-  thresholds['iteration_duration'] = [`med < ${medTime}`, `max < ${maxTime}`]
-  return thresholds
+  let thresholds = basicThresholds;
+  thresholds["request_time"] = [`med < ${medTime}`, `p(95) < ${maxTime}`];
+  return thresholds;
+}
+
+export function summaryTrendStats() {
+  return ["avg", "min", "med", "max", "p(95)", "p(99)", "count"];
 }
 
 export function createSummary(data) {

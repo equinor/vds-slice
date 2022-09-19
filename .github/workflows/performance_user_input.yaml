@@ -20,7 +20,7 @@ on:
         required: false
         default: "30000"
       maxtime:
-        description: "Limit for maximum time for requests to succeed"
+        description: "Limit for p(95) time for requests to succeed"
         required: false
         default: "60000"
 

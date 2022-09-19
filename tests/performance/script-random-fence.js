@@ -1,7 +1,7 @@
 import { getRandomIndexInDimension } from "./helpers/request-helpers.js";
 import { sendSetupMetadataRequest } from "./helpers/metadata-helpers.js";
 import { sendSequentialFenceRequest } from "./helpers/fence-helpers.js";
-import { createSummary, thresholds } from "./helpers/report-helpers.js";
+import { createSummary, thresholds, summaryTrendStats } from "./helpers/report-helpers.js";
 
 export const options = {
   scenarios: {
@@ -12,6 +12,7 @@ export const options = {
     },
   },
   thresholds: thresholds(),
+  summaryTrendStats: summaryTrendStats(),
 };
 
 export function setup() {

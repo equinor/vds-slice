@@ -1,8 +1,9 @@
 import { sendRandomSliceRequest } from "./helpers/slice-helpers.js";
 import { sendSetupMetadataRequest } from "./helpers/metadata-helpers.js";
-import { createSummary, thresholds } from "./helpers/report-helpers.js";
+import { createSummary, thresholds, summaryTrendStats } from "./helpers/report-helpers.js";
 
 export const options = {
+  noVUConnectionReuse: true,
   scenarios: {
     ilineSlice: {
       exec: "randomIlineSliceRequest",
@@ -38,6 +39,7 @@ export const options = {
   },
 
   thresholds: thresholds(),
+  summaryTrendStats: summaryTrendStats(),
 };
 
 export function setup() {
