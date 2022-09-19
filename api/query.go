@@ -126,6 +126,12 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 		return
 	}
 
+	coordinateSystem, err := vds.GetCoordinateSystem(strings.ToLower(query.CoordinateSystem))
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
 	interpolation, err := vds.GetInterpolationMethod(query.Interpolation)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
@@ -140,7 +146,7 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 
 	data, err := vds.Fence(
 		*conn,
-		query.CoordinateSystem,
+		coordinateSystem,
 		query.Coordinates,
 		interpolation,
 	)

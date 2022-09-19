@@ -23,6 +23,12 @@ enum axis {
     SAMPLE    = 7,
 };
 
+enum coordinate_system {
+    INDEX      = 0,
+    ANNOTATION = 1,
+    CDP        = 2,
+};
+
 enum interpolation_method {
     NEAREST,
     LINEAR,
@@ -53,7 +59,7 @@ struct vdsbuffer slice_metadata(
 struct vdsbuffer fence(
     const char* vds,
     const char* credentials,
-    const char* coordinate_system,
+    enum coordinate_system coordinate_system,
     const float* points,
     size_t npoints,
     enum interpolation_method interpolation_method

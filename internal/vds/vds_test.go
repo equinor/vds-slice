@@ -11,13 +11,14 @@ import (
 	"testing"
 )
 
-func make_well_known() Connection {
-	path :="../../testdata/well_known/well_known_default.vds"
+func make_connection(name string) Connection {
+	path := fmt.Sprintf("../../testdata/%s/%s_default.vds", name, name)
 	path = fmt.Sprintf("file://%s", path)
 	return Connection{Url: path}
 }
 
-var well_known = make_well_known()
+var well_known = make_connection("well_known")
+var prestack = make_connection("prestack")
 
 func toFloat32(buf []byte) (*[]float32, error) {
 	fsize := 4 // sizeof(float32)
@@ -345,21 +346,21 @@ func TestFence(t *testing.T) {
 	}
 
 	testcases := []struct{
-		coordinate_system string
+		coordinate_system int
 		coordinates       [][]float32
 	} {
 		{
-			coordinate_system: "ij",
+			coordinate_system: CoordinateSystemIndex,
 			coordinates:
 				[][]float32{{1, 0}, {1, 1}, {0, 0}, {1, 0}, {2, 0}},
 		},
 		{
-			coordinate_system: "ilxl",
+			coordinate_system: CoordinateSystemAnnotation,
 			coordinates:
 				[][]float32{{3, 10}, {3, 11}, {1, 10}, {3, 10}, {5, 10}},
 		},
 		{
-			coordinate_system: "cdp",
+			coordinate_system: CoordinateSystemCdp,
 			coordinates:
 				[][]float32{{3.2, 3}, {3.2, 6.3}, {1, 3}, {3.2, 3}, {5.4, 3}},
 		},
@@ -423,7 +424,7 @@ func TestInvalidFence(t *testing.T) {
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
-	_, err := Fence(well_known, "ij", fence, interpolationMethod)
+	_, err := Fence(well_known, CoordinateSystemIndex, fence, interpolationMethod)
 
 	if err == nil {
 		msg := "Expected to fail given invalid fence %v"
@@ -448,10 +449,10 @@ func TestFenceInterpolation(t *testing.T) {
 	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular", "angular"}
 	for i, v1 := range interpolationMethods {
 		interpolationMethod, _ := GetInterpolationMethod(v1)
-		buf1, _ := Fence(well_known, "cdp", fence, interpolationMethod)
+		buf1, _ := Fence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
 		for _, v2 := range interpolationMethods[i+1:] {
 			interpolationMethod, _ := GetInterpolationMethod(v2)
-			buf2, _ := Fence(well_known, "cdp", fence, interpolationMethod)
+			buf2, _ := Fence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
 			different := false
 			for k := range buf1 {
 				if buf1[k] != buf2[k] {
@@ -498,5 +499,52 @@ func TestFenceInterpolationCaseInsensitive(t *testing.T) {
 	if interpolation != expectedInterpolation {
 		msg := "[fence_interpolation]Fence interpolation is not case insensitive"
 		t.Error(msg)
+	}
+}
+
+func TestOnly3DSupported(t *testing.T) {
+	testcases := []struct {
+		name     string
+		function func() ([]byte, error)
+	}{
+		{
+			name:     "Slice",
+			function: func() ([]byte, error) { return Slice(prestack, 0, 0) },
+		},
+		{
+			name:     "SliceMetadata",
+			function: func() ([]byte, error) { return SliceMetadata(prestack, 0, 0) },
+		},
+		{
+			name:     "Fence",
+			function: func() ([]byte, error) { return Fence(prestack, 0, [][]float32{{0, 0}}, 0) },
+		},
+		{
+			name:     "FenceMetadata",
+			function: func() ([]byte, error) { return GetFenceMetadata(prestack, [][]float32{{0, 0}}) },
+		},
+		{
+			name:     "Metadata",
+			function: func() ([]byte, error) { return GetMetadata(prestack) },
+		},
+	}
+
+	for _, testcase := range testcases {
+		_, err := testcase.function()
+
+		if err == nil {
+			t.Errorf(
+				"[case: %v] Expected slice to fail",
+				testcase.name,
+			)
+		}
+
+		if !strings.Contains(err.Error(), "3 dimensions, got 4") {
+			t.Errorf(
+				"[case: %s] Expected error to contain '3 dimensions, got 4', was: %v",
+				testcase.name,
+				err,
+			)
+		}
 	}
 }

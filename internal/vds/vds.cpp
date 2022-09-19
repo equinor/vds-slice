@@ -27,11 +27,6 @@ void vdsbuffer_delete(struct vdsbuffer* buf) {
     *buf = vdsbuffer {};
 }
 
-enum coord_system {
-    INDEX      = 0,
-    ANNOTATION = 1,
-};
-
 int axis_todim(axis ax) {
     switch (ax) {
         case I:
@@ -51,7 +46,7 @@ int axis_todim(axis ax) {
     }
 }
 
-coord_system axis_tosystem(axis ax) {
+coordinate_system axis_tosystem(axis ax) {
     switch (ax) {
         case I:
         case J:
@@ -106,7 +101,7 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
  * E.g. a Time slice is only valid if the units of the Z-axis in the VDS is
  * "Seconds" or "Milliseconds"
  */
-bool unitvalidation(axis ax, const char* zunit) {
+bool unit_validation(axis ax, const char* zunit) {
     /* Define some convenient lookup tables for units */
     static const std::array< const char*, 3 > depthunits = {
         OpenVDS::KnownUnitNames::Meter(),
@@ -182,7 +177,7 @@ bool axis_order_validation(axis ax, const OpenVDS::VolumeDataLayout *layout) {
 }
 
 
-void axisvalidation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
+void axis_validation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
     if (not axis_order_validation(ax, layout)) {
         std::string msg = "Unsupported axis ordering in VDS, expected ";
         msg += "Depth/Time/Sample, Crossline, Inline";
@@ -191,10 +186,19 @@ void axisvalidation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
 
     auto zaxis = layout->GetAxisDescriptor(0);
     const char* zunit = zaxis.GetUnit();
-    if (not unitvalidation(ax, zunit)) {
+    if (not unit_validation(ax, zunit)) {
         std::string msg = "Unable to use " + axis_tostring(ax);
         msg += " on cube with depth units: " + std::string(zunit);
         throw std::runtime_error(msg);
+    }
+}
+
+void dimension_validation(const OpenVDS::VolumeDataLayout* layout) {
+    if (layout->GetDimensionality() != 3) {
+        throw std::runtime_error(
+            "Unsupported VDS, expected 3 dimensions, got " +
+            std::to_string(layout->GetDimensionality())
+        );
     }
 }
 
@@ -319,30 +323,32 @@ void json_write_axis(
     });
 }
 
-struct vdsbuffer fetch_slice(
+OpenVDS::ScopedVDSHandle open_vds(
     std::string url,
-    std::string credentials,
-    axis ax,
-    int lineno
-) {
+    std::string credentials
+){
     OpenVDS::Error error;
     OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
 
     if(error.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error.string);
     }
+    return handle;
+}
+
+struct vdsbuffer fetch_slice(
+    std::string url,
+    std::string credentials,
+    axis ax,
+    int lineno
+) {
+    auto handle = open_vds(url, credentials);
 
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
 
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
-
-    axisvalidation(ax, layout);
+    dimension_validation(layout);
+    axis_validation(ax, layout);
 
     int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
     int vmax[OpenVDS::Dimensionality_Max] = { 1, 1, 1, 1, 1, 1};
@@ -381,24 +387,13 @@ struct vdsbuffer fetch_slice_metadata(
     axis ax,
     int lineno
 ) {
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
-
-    if(error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
+    auto handle = open_vds(url, credentials);
 
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
 
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
-
-    axisvalidation(ax, layout);
+    dimension_validation(layout);
+    axis_validation(ax, layout);
 
     auto dimension = axis_todim(ax);
     auto vdim = dim_tovoxel(dimension);
@@ -437,22 +432,20 @@ struct vdsbuffer fetch_slice_metadata(
 }
 
 struct vdsbuffer fetch_fence(
-    const std::string& vds,
+    const std::string& url,
     const std::string& credentials,
-    const std::string& coordinate_system,
+    enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method
 ) {
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(vds, credentials, error);
-
-    if (error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
+    auto handle = open_vds(url, credentials);
 
     auto accessManager = OpenVDS::GetAccessManager(handle);
     auto const *layout = accessManager.GetVolumeDataLayout();
+
+    dimension_validation(layout);
+
     const auto dimension_map =
             layout->GetVDSIJKGridDefinitionFromMetadata().dimensionMap;
 
@@ -462,19 +455,16 @@ struct vdsbuffer fetch_fence(
 
     auto coordinate_transformer = OpenVDS::IJKCoordinateTransformer(layout);
     auto transform_coordinate = [&] (const float x, const float y) {
-        if (coordinate_system == "ij") {
-            return OpenVDS::Vector<double, 3> {x, y, 0};
-        }
-        else if (coordinate_system == "ilxl") {
-            return coordinate_transformer.AnnotationToIJKPosition({x, y, 0});
-        }
-        else if (coordinate_system == "cdp") {
-            return coordinate_transformer.WorldToIJKPosition({x, y, 0});
-        }
-        else {
-            const auto msg =
-                    "Coordinate system not recognized: " + coordinate_system;
-            throw std::runtime_error(msg);
+        switch (coordinate_system) {
+            case INDEX:
+                return OpenVDS::Vector<double, 3> {x, y, 0};
+            case ANNOTATION:
+                return coordinate_transformer.AnnotationToIJKPosition({x, y, 0});
+            case CDP:
+                return coordinate_transformer.WorldToIJKPosition({x, y, 0});
+            default: {
+                throw std::runtime_error("Unhandled coordinate system");
+            }
         }
     };
 
@@ -523,22 +513,12 @@ struct vdsbuffer fetch_fence_metadata(
     std::string credentials,
     size_t npoints
 ) {
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
-
-    if(error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
+    auto handle = open_vds(url, credentials);
 
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
 
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
+    dimension_validation(layout);
 
     nlohmann::json meta;
     meta["shape"] = nlohmann::json::array({npoints, layout->GetDimensionNumSamples(0)});
@@ -555,18 +535,15 @@ struct vdsbuffer fetch_fence_metadata(
 }
 
 struct vdsbuffer metadata(
-    const std::string& vds,
+    const std::string& url,
     const std::string& credentials
 ) {
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(vds, credentials, error);
-
-    if (error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
+    auto handle = open_vds(url, credentials);
 
     auto access = OpenVDS::GetAccessManager(handle);
     const auto *layout = access.GetVolumeDataLayout();
+
+    dimension_validation(layout);
 
     nlohmann::json meta;
     meta["format"] = layout->GetChannelFormat(0); //TODO turn into numpy-style format?
@@ -584,6 +561,15 @@ struct vdsbuffer metadata(
     return buffer;
 }
 
+struct vdsbuffer handle_error(
+    const std::exception& e
+) {
+    vdsbuffer buf {};
+    buf.err = new char[std::strlen(e.what()) + 1];
+    std::strcpy(buf.err, e.what());
+    return buf;
+}
+
 struct vdsbuffer slice(
     const char* vds,
     const char* credentials,
@@ -596,10 +582,7 @@ struct vdsbuffer slice(
     try {
         return fetch_slice(cube, cred, ax, lineno);
     } catch (const std::exception& e) {
-        vdsbuffer buf {};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
 
@@ -615,32 +598,27 @@ struct vdsbuffer slice_metadata(
     try {
         return fetch_slice_metadata(cube, cred, ax, lineno);
     } catch (const std::exception& e) {
-        vdsbuffer buf{};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
 
 struct vdsbuffer fence(
     const char* vds,
     const char* credentials,
-    const char* coordinate_system,
+    enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method
 ) {
-    try {
-        std::string cube(vds);
-        std::string cred(credentials);
-        std::string coord_system(coordinate_system);
+    std::string cube(vds);
+    std::string cred(credentials);
 
-        return fetch_fence(cube, cred, coord_system, coordinates, npoints, interpolation_method);
+    try {
+        return fetch_fence(
+            cube, cred, coordinate_system, coordinates, npoints,
+            interpolation_method);
     } catch (const std::exception& e) {
-        vdsbuffer buf {};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
 
@@ -655,10 +633,7 @@ struct vdsbuffer fence_metadata(
     try {
         return fetch_fence_metadata(cube, cred, npoints);
     } catch (const std::exception& e) {
-        vdsbuffer buf{};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
 
@@ -671,9 +646,6 @@ struct vdsbuffer metadata(
         std::string cred(credentials);
         return metadata(cube, cred);
     } catch (const std::exception& e) {
-        vdsbuffer buf {};
-        buf.err = new char[std::strlen(e.what()) + 1];
-        std::strcpy(buf.err, e.what());
-        return buf;
+        return handle_error(e);
     }
 }
