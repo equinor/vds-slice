@@ -310,7 +310,7 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		buf, err := SliceMetadata(well_known, testcase.lineno, testcase.direction)
+		buf, err := GetSliceMetadata(well_known, testcase.lineno, testcase.direction)
 
 		var meta Metadata
 		err = json.Unmarshal(buf, &meta)
@@ -513,7 +513,7 @@ func TestOnly3DSupported(t *testing.T) {
 		},
 		{
 			name:     "SliceMetadata",
-			function: func() ([]byte, error) { return SliceMetadata(prestack, 0, 0) },
+			function: func() ([]byte, error) { return GetSliceMetadata(prestack, 0, 0) },
 		},
 		{
 			name:     "Fence",

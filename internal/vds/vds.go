@@ -241,7 +241,7 @@ func Slice(conn Connection, lineno, direction int) ([]byte, error) {
 	return buf, nil
 }
 
-func SliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
+func GetSliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
 	curl := C.CString(conn.Url)
 	defer C.free(unsafe.Pointer(curl))
 
