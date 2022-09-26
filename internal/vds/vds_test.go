@@ -97,7 +97,7 @@ func TestSliceData(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		buf, err := Slice(well_known, testcase.lineno, testcase.direction)
+		buf, err := GetSlice(well_known, testcase.lineno, testcase.direction)
 		if err != nil {
 			t.Errorf(
 				"[case: %v] Failed to fetch slice, err: %v",
@@ -148,7 +148,7 @@ func TestSliceOutOfBounds(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(well_known, testcase.lineno, testcase.direction)
+		_, err := GetSlice(well_known, testcase.lineno, testcase.direction)
 		if err == nil {
 			t.Errorf(
 				"[case: %v] Expected slice to fail",
@@ -178,7 +178,7 @@ func TestSliceStridedLineno(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(well_known, testcase.lineno, testcase.direction)
+		_, err := GetSlice(well_known, testcase.lineno, testcase.direction)
 		if err == nil {
 			t.Errorf(
 				"[case: %v] Expected slice to fail",
@@ -206,7 +206,7 @@ func TestSliceInvalidAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(well_known, 0, testcase.direction)
+		_, err := GetSlice(well_known, 0, testcase.direction)
 
 		if err == nil {
 			t.Errorf(
@@ -244,7 +244,7 @@ func TestDepthAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(well_known, 0, testcase.direction)
+		_, err := GetSlice(well_known, 0, testcase.direction)
 
 		if err == nil {
 			t.Errorf(
@@ -509,7 +509,7 @@ func TestOnly3DSupported(t *testing.T) {
 	}{
 		{
 			name:     "Slice",
-			function: func() ([]byte, error) { return Slice(prestack, 0, 0) },
+			function: func() ([]byte, error) { return GetSlice(prestack, 0, 0) },
 		},
 		{
 			name:     "SliceMetadata",
