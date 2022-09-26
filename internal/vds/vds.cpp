@@ -309,18 +309,19 @@ void set_voxels(
     }
 }
 
-void json_write_axis(
-    nlohmann::json& json,
+nlohmann::json json_axis(
     int voxel_dim,
     const OpenVDS::VolumeDataLayout *layout
 ) {
-    json.push_back({
+    nlohmann::json doc;
+    doc = {
         { "annotation", layout->GetDimensionName(voxel_dim)       },
         { "min",        layout->GetDimensionMin(voxel_dim)        },
         { "max",        layout->GetDimensionMax(voxel_dim)        },
         { "samples",    layout->GetDimensionNumSamples(voxel_dim) },
         { "unit",       layout->GetDimensionUnit(voxel_dim)       },
-    });
+    };
+    return doc;
 }
 
 OpenVDS::ScopedVDSHandle open_vds(
@@ -417,7 +418,7 @@ struct vdsbuffer fetch_slice_metadata(
      */
     for (int i = 2; i >= 0; i--) {
         if (i == vdim) continue;
-        json_write_axis(meta["axis"], i, layout);
+        meta["axis"].push_back( json_axis(i, layout) );
     }
 
     auto str = meta.dump();
@@ -548,7 +549,7 @@ struct vdsbuffer metadata(
     nlohmann::json meta;
     meta["format"] = layout->GetChannelFormat(0); //TODO turn into numpy-style format?
     for (int i = 2; i >= 0 ; i--) {
-        json_write_axis(meta["axis"], i, layout);
+        meta["axis"].push_back(json_axis(i, layout));
     }
     auto str = meta.dump();
     auto *data = new char[str.size()];
