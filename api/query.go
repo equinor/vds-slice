@@ -144,7 +144,7 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 		return
 	}
 
-	data, err := vds.Fence(
+	data, err := vds.GetFence(
 		*conn,
 		coordinateSystem,
 		query.Coordinates,

@@ -369,7 +369,7 @@ func TestFence(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testcase := range testcases {
-		buf, err := Fence(
+		buf, err := GetFence(
 			well_known,
 			testcase.coordinate_system,
 			testcase.coordinates,
@@ -424,7 +424,7 @@ func TestInvalidFence(t *testing.T) {
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
-	_, err := Fence(well_known, CoordinateSystemIndex, fence, interpolationMethod)
+	_, err := GetFence(well_known, CoordinateSystemIndex, fence, interpolationMethod)
 
 	if err == nil {
 		msg := "Expected to fail given invalid fence %v"
@@ -449,10 +449,10 @@ func TestFenceInterpolation(t *testing.T) {
 	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular", "angular"}
 	for i, v1 := range interpolationMethods {
 		interpolationMethod, _ := GetInterpolationMethod(v1)
-		buf1, _ := Fence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
+		buf1, _ := GetFence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
 		for _, v2 := range interpolationMethods[i+1:] {
 			interpolationMethod, _ := GetInterpolationMethod(v2)
-			buf2, _ := Fence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
+			buf2, _ := GetFence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
 			different := false
 			for k := range buf1 {
 				if buf1[k] != buf2[k] {
@@ -517,7 +517,7 @@ func TestOnly3DSupported(t *testing.T) {
 		},
 		{
 			name:     "Fence",
-			function: func() ([]byte, error) { return Fence(prestack, 0, [][]float32{{0, 0}}, 0) },
+			function: func() ([]byte, error) { return GetFence(prestack, 0, [][]float32{{0, 0}}, 0) },
 		},
 		{
 			name:     "FenceMetadata",

@@ -266,7 +266,7 @@ func GetSliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
 	return buf, nil
 }
 
-func Fence(
+func GetFence(
 	conn Connection,
 	coordinateSystem int,
 	coordinates [][]float32,
