@@ -84,7 +84,7 @@ type testSliceAxis struct {
 type testSliceMetadata struct {
 	X      testSliceAxis `json:"x"      binding:"required"`
 	Y      testSliceAxis `json:"y"      binding:"required"`
-	Format int           `json:"format" binding:"required"`
+	Format string        `json:"format" binding:"required"`
 }
 
 func TestSliceHappyHTTPResponse(t *testing.T) {
@@ -150,7 +150,7 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 		sampleAxis := testSliceAxis{
 			Annotation: "Sample", Max: 16.0, Min: 4.0, Samples: 4, Unit: "ms",
 		}
-		expectedFormat := 3
+		expectedFormat := "<f4"
 
 		var expectedMetadata *testSliceMetadata
 		switch testcase.slice.Direction {
@@ -487,7 +487,7 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 				{"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
 				{"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
 			],
-			"format": 3
+			"format": "<f4"
 		}`
 
 		if metadata != expectedMetadata {

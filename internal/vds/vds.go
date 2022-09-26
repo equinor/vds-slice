@@ -53,8 +53,9 @@ type Axis struct {
 
 // @Description Slice metadata
 type SliceMetadata struct {
-	// Data format. See https://osdu.pages.opengroup.org/platform/domain-data-mgmt-services/seismic/open-vds/cppdoc/enum/OpenVDS_VolumeDataFormat.html
-	Format int `json:"format" example:"3"`
+	// Data format is represented by a numpy-style formatcodes. E.g. f4 is 4
+	// byte float, u1 is 1 byte unsinged int and u2 is 2 byte usigned int
+	Format string `json:"format" example:"<f4"`
 
 	// X-axis information
 	X Axis `json:"x"`
@@ -65,8 +66,10 @@ type SliceMetadata struct {
 
 // @Description Metadata
 type Metadata struct {
-	// Data format. See https://osdu.pages.opengroup.org/platform/domain-data-mgmt-services/seismic/open-vds/cppdoc/enum/OpenVDS_VolumeDataFormat.html
-	Format int `json:"format" example:"3"`
+	// Data format is represented by a numpy-style formatcodes. E.g. <f4 is 4
+	// byte float, <u1 is 1 byte unsinged int and <u2 is 2 byte usigned int.
+	// All little endian.
+	Format string `json:"format" example:"<f4"`
 
 	// Axis descriptions
 	//

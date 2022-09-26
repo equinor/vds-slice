@@ -57,8 +57,8 @@ def test_slice(method):
     expected_meta = json.loads("""
     {
         "x": {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
-        "y": {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
-        "format": 3
+        "y": {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"},
+        "format": "<f4"
     }
     """)
     assert meta == expected_meta
@@ -96,7 +96,7 @@ def test_metadata(method):
             {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
             {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
         ],
-        "format": 3
+        "format": "<f4"
     }
     """)
     assert metadata == expected_metadata
@@ -219,7 +219,7 @@ def request_slice(method, lineno, direction):
         metadata['y']['samples']
     )
 
-    data = np.ndarray(shape, 'f4', data)
+    data = np.ndarray(shape, metadata['format'], data)
     return metadata, data
 
 
