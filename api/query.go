@@ -213,7 +213,7 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 // @Tags     slice
 // @Param    query  query  string  True  "Urlencoded/escaped SliceRequest"
 // @Produce  multipart/mixed
-// @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Success  200 {object} vds.SliceMetadata "(Example below only for metadata part)"
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [get]
@@ -233,7 +233,7 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // @Param    body  body  SliceRequest  True  "Query Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
-// @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Success  200 {object} vds.SliceMetadata "(Example below only for metadata part)"
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [post]

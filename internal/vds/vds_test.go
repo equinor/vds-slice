@@ -312,7 +312,7 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 	for _, testcase := range testcases {
 		buf, err := GetSliceMetadata(well_known, testcase.lineno, testcase.direction)
 
-		var meta Metadata
+		var meta SliceMetadata
 		err = json.Unmarshal(buf, &meta)
 		if err != nil {
 			t.Fatalf(
