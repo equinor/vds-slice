@@ -56,10 +56,11 @@ type SliceMetadata struct {
 	// Data format. See https://osdu.pages.opengroup.org/platform/domain-data-mgmt-services/seismic/open-vds/cppdoc/enum/OpenVDS_VolumeDataFormat.html
 	Format int `json:"format" example:"3"`
 
-	// Axis descriptions
-	//
-	// Describes the axes of the requested 2-dimensional slice.
-	Axis []*Axis `json:"axis"`
+	// X-axis information
+	X Axis `json:"x"`
+
+	// Y-axis information
+	Y Axis `json:"y"`
 } // @name SliceMetadata
 
 // @Description Metadata

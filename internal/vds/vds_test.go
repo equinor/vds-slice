@@ -321,15 +321,15 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 				err,
 			)
 		}
-
-		for i, axis := range(meta.Axis) {
-			if testcase.expectedAxis[i] != axis.Annotation {
+		
+		axis := []string{ meta.X.Annotation, meta.Y.Annotation }
+		for i, ax := range(testcase.expectedAxis) {
+			if ax != axis[i] {
 				t.Fatalf(
-					"[case: %v] Expected axis %v to be %v, got %v",
+					"[case: %v] Expected axis to be %v, got %v",
 					testcase.name,
-					i,
-					testcase.expectedAxis[i],
-					axis.Annotation,
+					testcase.expectedAxis,
+					axis,
 				)
 			}
 		}

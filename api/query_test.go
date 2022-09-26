@@ -82,8 +82,9 @@ type testSliceAxis struct {
 }
 
 type testSliceMetadata struct {
-	Axis   []testSliceAxis `json:"axis"   binding:"required"`
-	Format int             `json:"format" binding:"required"`
+	X      testSliceAxis `json:"x"      binding:"required"`
+	Y      testSliceAxis `json:"y"      binding:"required"`
+	Format int           `json:"format" binding:"required"`
 }
 
 func TestSliceHappyHTTPResponse(t *testing.T) {
@@ -155,11 +156,13 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 		switch testcase.slice.Direction {
 		case "i":
 			expectedMetadata = &testSliceMetadata{
-				Axis:   []testSliceAxis{crosslineAxis, sampleAxis},
+				X:      crosslineAxis,
+				Y:      sampleAxis,
 				Format: expectedFormat}
 		case "crossline":
 			expectedMetadata = &testSliceMetadata{
-				Axis:   []testSliceAxis{inlineAxis, sampleAxis},
+				X:      inlineAxis,
+				Y:      sampleAxis,
 				Format: expectedFormat}
 		default:
 			t.Fatalf("Unhandled direction %s in case %s", testcase.slice.Direction, testcase.name)
@@ -186,8 +189,8 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 			)
 		}
 
-		expectedDataLength := expectedMetadata.Axis[0].Samples *
-			expectedMetadata.Axis[1].Samples * 4 //4 bytes each
+		expectedDataLength := expectedMetadata.X.Samples *
+			expectedMetadata.Y.Samples * 4 //4 bytes each
 		if len(parts[1]) != expectedDataLength {
 			msg := "Got %d bytes in data reply; want it to be %d in case '%s'"
 			t.Errorf(

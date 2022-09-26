@@ -56,10 +56,8 @@ def test_slice(method):
 
     expected_meta = json.loads("""
     {
-        "axis": [
-            {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
-            {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
-        ],
+        "x": {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
+        "y": {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
         "format": 3
     }
     """)
@@ -217,8 +215,8 @@ def request_slice(method, lineno, direction):
     data = multipart_data.parts[1].content
 
     shape = (
-        metadata['axis'][0]['samples'],
-        metadata['axis'][1]['samples']
+        metadata['x']['samples'],
+        metadata['y']['samples']
     )
 
     data = np.ndarray(shape, 'f4', data)

@@ -401,7 +401,6 @@ struct vdsbuffer fetch_slice_metadata(
 
     nlohmann::json meta;
     meta["format"] = layout->GetChannelFormat(0); //TODO turn into numpy-style format?
-    meta["axis"]   = nlohmann::json::array();
 
     /*
      * SEGYImport always writes annotation 'Sample' for axis K. We, on the
@@ -416,10 +415,13 @@ struct vdsbuffer fetch_slice_metadata(
      * would be quite suprising for people that use this API in conjunction
      * with the OpenVDS library.
      */
-    for (int i = 2; i >= 0; i--) {
+    std::vector< int > dims;
+    for (int i = 2; i >= 0; --i) {
         if (i == vdim) continue;
-        meta["axis"].push_back( json_axis(i, layout) );
+        dims.push_back(i);
     }
+    meta["x"] = json_axis(dims[0], layout);
+    meta["y"] = json_axis(dims[1], layout);
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
