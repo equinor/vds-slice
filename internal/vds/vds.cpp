@@ -561,6 +561,10 @@ struct vdsbuffer metadata(
 
     nlohmann::json meta;
     meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+
+    auto crs = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
+    meta["crs"] = layout->GetMetadataString(crs.GetCategory(), crs.GetName());
+
     for (int i = 2; i >= 0 ; i--) {
         meta["axis"].push_back(json_axis(i, layout));
     }

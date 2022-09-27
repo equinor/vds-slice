@@ -66,6 +66,9 @@ type SliceMetadata struct {
 
 // @Description Metadata
 type Metadata struct {
+	// Coordinate reference system
+	Crs string `json:"crs" example:"PROJCS[\"ED50 / UTM zone 31N\",..."`
+
 	// Data format is represented by a numpy-style formatcodes. E.g. <f4 is 4
 	// byte float, <u1 is 1 byte unsinged int and <u2 is 2 byte usigned int.
 	// All little endian.

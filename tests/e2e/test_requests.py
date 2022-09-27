@@ -96,6 +96,7 @@ def test_metadata(method):
             {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
             {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
         ],
+        "crs": "utmXX",
         "format": "<f4"
     }
     """)

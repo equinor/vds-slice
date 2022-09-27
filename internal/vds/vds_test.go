@@ -46,6 +46,7 @@ func TestMetadata(t *testing.T) {
 			{ Annotation: "Sample",    Min: 4,  Max: 16, Samples: 4, Unit: "ms"       },
 		},
 		Format: "<f4",
+		Crs: "utmXX",
 	}
 
 	buf, err := GetMetadata(well_known)
