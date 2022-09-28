@@ -308,6 +308,9 @@ void set_voxels(
             voxelline = lineno_index_to_voxel(lineno, vdim, layout);
             break;
         }
+        case CDP: {
+            break;
+        }
     }
 
     vmin[vdim] = voxelline;
