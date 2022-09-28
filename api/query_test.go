@@ -487,6 +487,11 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 				{"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
 				{"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
 			],
+			"boundingBox": {
+				"cdp": [[5,0],[9,8],[4,11],[0,3]],
+				"ilxl": [[1, 10], [5, 10], [5, 11], [1, 11]],
+				"ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
+			},
 			"crs": "utmXX",
 			"format": "<f4"
 		}`

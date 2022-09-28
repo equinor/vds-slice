@@ -45,6 +45,11 @@ func TestMetadata(t *testing.T) {
 			{ Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, Unit: "unitless" },
 			{ Annotation: "Sample",    Min: 4,  Max: 16, Samples: 4, Unit: "ms"       },
 		},
+		BoundingBox: BoundingBox{
+			Cdp:  [][]float64{ {5, 0}, {9, 8}, {4, 11}, {0, 3} },
+			Ilxl: [][]float64{ {1, 10}, {5, 10}, {5, 11}, {1, 11}},
+			Ij:   [][]float64{ {0, 0}, {2, 0}, {2, 1}, {0, 1}},
+		},
 		Format: "<f4",
 		Crs: "utmXX",
 	}

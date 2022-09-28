@@ -51,6 +51,17 @@ type Axis struct {
 } // @name Axis
 
 
+// @Description The bounding box of the survey, defined by its 4 corner
+// @Description coordinates. The bounding box is given in 3 different
+// @Description coordinate systems. The points are sorted in the same order for
+// @Description each system. E.g. [[1,2], [2,2], [2,3], [1,3]]
+type BoundingBox struct {
+	Cdp  [][]float64 `json:"cdp"`
+	Ilxl [][]float64 `json:"ilxl"`
+	Ij   [][]float64 `json:"ij"`
+} //@name BoundingBox
+
+
 // @Description Slice metadata
 type SliceMetadata struct {
 	// Data format is represented by a numpy-style formatcodes. E.g. f4 is 4
@@ -73,6 +84,9 @@ type Metadata struct {
 	// byte float, <u1 is 1 byte unsinged int and <u2 is 2 byte usigned int.
 	// All little endian.
 	Format string `json:"format" example:"<f4"`
+
+	// Bounding box
+	BoundingBox BoundingBox `json:"boundingBox"`
 
 	// Axis descriptions
 	//
