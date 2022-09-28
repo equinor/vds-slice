@@ -363,7 +363,7 @@ func TestFence(t *testing.T) {
 		{
 			coordinate_system: CoordinateSystemCdp,
 			coordinates:
-				[][]float32{{3.2, 3}, {3.2, 6.3}, {1, 3}, {3.2, 3}, {5.4, 3}},
+				[][]float32{{7, 4}, {2, 7}, {5, 0}, {7, 4}, {9, 8}},
 		},
 	}
 

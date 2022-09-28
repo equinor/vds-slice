@@ -12,8 +12,8 @@ def create_defined(path):
     UTM coordinates for headers:
     | xlines-ilines | 1           | 3             | 5             |
     |---------------|-------------|---------------|---------------|
-    | 10            | x=1, y=3    | x=3.2, y=3    | x=5.4, y=3    |
-    | 11            | x=1, y=6.3  | x=3.2, y=6.3  | x=5.4, y=6.3  |
+    | 10            | x=5, y=0    | x=7, y=4      | x=9, y=8      |
+    | 11            | x=0, y=3    | x=2, y=7      | x=4, y=11     |
     """
     spec = segyio.spec()
 
@@ -24,12 +24,12 @@ def create_defined(path):
     spec.xlines = [10, 11]
 
     # We use scaling constant of -10, meaning that values will be divided by 10
-    il_step_x = int(1.1 * 10)
-    il_step_y = int(0 * 10)
-    xl_step_x = int(0 * 10)
-    xl_step_y = int(3.3 * 10)
-    ori_x = int(1 * 10)
-    ori_y = int(3 * 10)
+    il_step_x = int(1 * 10)
+    il_step_y = int(2 * 10)
+    xl_step_x = int(-5 * 10)
+    xl_step_y = int(3 * 10)
+    ori_x = int(5 * 10)
+    ori_y = int(0 * 10)
 
     with segyio.create(path, spec) as f:
         data = 100
