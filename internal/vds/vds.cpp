@@ -312,6 +312,9 @@ void set_voxels(
         case CDP: {
             break;
         }
+        default: {
+            throw std::runtime_error("Unhandled coordinate system");
+        }
     }
 
     vmin[vdim] = voxelline;
