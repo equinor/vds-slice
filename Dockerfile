@@ -1,3 +1,5 @@
+ARG OPENVDS_IMAGE=openvds
+
 FROM golang:1.18-alpine as openvds
 RUN apk --no-cache add \
     git \
@@ -32,7 +34,7 @@ RUN cmake -S . \
 RUN cmake --build build   --config Release  --target install  -j 8 --verbose
 
 
-FROM openvds as builder
+FROM $OPENVDS_IMAGE as builder
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify

@@ -1,0 +1,60 @@
+name: E2E tests with local server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # The following secrets are required:
+  # AZURE_CONTAINER_REGISTRY : Container used to store helper images (somename.azurecr.io)
+  # AZURE_CLIENT_ID : client (application) id of the Service principal
+  # AZURE_CLIENT_SECRET : client secret of the Service Principal
+  # STORAGE_ACCOUNT_NAME : name of the storage where server is assigned to (without blob.core.windows.net)
+  # STORAGE_ACCOUNT_KEY : key used to access storage
+    # Service Principal should have access to the Resource group and "push" privileges to the container registry
+  e2e_local_tests:
+    name: Run e2e tests with local server
+    environment: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Login to Docker Registry with Service Principal
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Run server
+        env:
+          STORAGE_ACCOUNTS: https://${{ secrets.STORAGE_ACCOUNT_NAME }}.blob.core.windows.net
+        run: |
+          openvds_sha=$(git ls-remote https://community.opengroup.org/erha/open-vds.git refs/heads/enable-cache | cut -f 1)
+          openvds_image=${{ secrets.AZURE_CONTAINER_REGISTRY }}/openvds:$openvds_sha
+          if ! docker manifest inspect $openvds_image > /dev/null ; then
+            docker build -f Dockerfile --target openvds -t $openvds_image .
+            docker push $openvds_image
+          fi
+
+          tag=server
+          DOCKER_BUILDKIT=1 docker build -f Dockerfile --build-arg OPENVDS_IMAGE=$openvds_image --target runner -t $tag .
+          docker run \
+            -e STORAGE_ACCOUNTS \
+            -d \
+            -p 8080:8080 \
+            $tag
+
+      - name: Run E2E tests
+        env:
+          ENDPOINT: http://localhost:8080
+          STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
+          STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
+        run: |
+          tag=e2e_tests
+          docker build -f tests/e2e/Dockerfile -t $tag .
+          docker run \
+            -e ENDPOINT \
+            -e STORAGE_ACCOUNT_NAME \
+            -e STORAGE_ACCOUNT_KEY \
+            --network="host" \
+            $tag
