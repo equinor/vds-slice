@@ -601,6 +601,7 @@ struct vdsbuffer fetch_fence_metadata(
 
     nlohmann::json meta;
     meta["shape"] = nlohmann::json::array({npoints, layout->GetDimensionNumSamples(0)});
+    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
 
     auto str = meta.dump();
     auto *data = new char[str.size()];

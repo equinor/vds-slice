@@ -77,7 +77,8 @@ def test_fence(method):
 
     expected_meta = json.loads("""
     {
-        "shape": [ 2, 4]
+        "shape": [ 2, 4],
+        "format": "<f4"
     }
     """)
     assert meta == expected_meta
@@ -251,7 +252,7 @@ def request_fence(method, coordinates, coordinate_system):
     metadata = json.loads(multipart_data.parts[0].content)
     data = multipart_data.parts[1].content
 
-    data = np.ndarray(metadata['shape'], 'f4', data)
+    data = np.ndarray(metadata['shape'], metadata['format'], data)
     return metadata, data
 
 

@@ -96,6 +96,10 @@ type Metadata struct {
 
 // @Description Fence metadata
 type FenceMetadata struct {
+	// Data format is represented by numpy-style formatcodes. For fence the
+	// format is always 4-byte floats, little endian (<f4).
+	Format string `json:"format" example:"<f4"`
+
 	// Shape of the returned data fence.
 	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
 } // @name FenceMetadata

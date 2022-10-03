@@ -339,7 +339,8 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 
 		metadata := string(parts[0])
 		expectedMetadata := `{
-			"shape": [` + fmt.Sprint(len(testcase.fence.Coordinates)) + `, 4]
+			"shape": [` + fmt.Sprint(len(testcase.fence.Coordinates)) + `, 4],
+			"format": "<f4"
 		}`
 
 		if metadata != expectedMetadata {
