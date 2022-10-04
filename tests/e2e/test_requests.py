@@ -56,11 +56,9 @@ def test_slice(method):
 
     expected_meta = json.loads("""
     {
-        "axis": [
-            {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
-            {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
-        ],
-        "format": 3
+        "x": {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
+        "y": {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"},
+        "format": "<f4"
     }
     """)
     assert meta == expected_meta
@@ -79,7 +77,8 @@ def test_fence(method):
 
     expected_meta = json.loads("""
     {
-        "shape": [ 2, 4]
+        "shape": [ 2, 4],
+        "format": "<f4"
     }
     """)
     assert meta == expected_meta
@@ -98,7 +97,13 @@ def test_metadata(method):
             {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
             {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
         ],
-        "format": 3
+        "boundingBox": {
+            "cdp": [[5.0, 0.0], [9.0, 8.0], [4.0, 11.0], [0.0, 3.0]],
+            "ilxl": [[1, 10], [5, 10], [5, 11], [1, 11]],
+            "ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
+        },
+        "crs": "utmXX",
+        "format": "<f4"
     }
     """)
     assert metadata == expected_metadata
@@ -217,11 +222,11 @@ def request_slice(method, lineno, direction):
     data = multipart_data.parts[1].content
 
     shape = (
-        metadata['axis'][0]['samples'],
-        metadata['axis'][1]['samples']
+        metadata['x']['samples'],
+        metadata['y']['samples']
     )
 
-    data = np.ndarray(shape, 'f4', data)
+    data = np.ndarray(shape, metadata['format'], data)
     return metadata, data
 
 
@@ -247,7 +252,7 @@ def request_fence(method, coordinates, coordinate_system):
     metadata = json.loads(multipart_data.parts[0].content)
     data = multipart_data.parts[1].content
 
-    data = np.ndarray(metadata['shape'], 'f4', data)
+    data = np.ndarray(metadata['shape'], metadata['format'], data)
     return metadata, data
 
 

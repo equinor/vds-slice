@@ -51,10 +51,42 @@ type Axis struct {
 } // @name Axis
 
 
+// @Description The bounding box of the survey, defined by its 4 corner
+// @Description coordinates. The bounding box is given in 3 different
+// @Description coordinate systems. The points are sorted in the same order for
+// @Description each system. E.g. [[1,2], [2,2], [2,3], [1,3]]
+type BoundingBox struct {
+	Cdp  [][]float64 `json:"cdp"`
+	Ilxl [][]float64 `json:"ilxl"`
+	Ij   [][]float64 `json:"ij"`
+} //@name BoundingBox
+
+
 // @Description Slice metadata
+type SliceMetadata struct {
+	// Data format is represented by a numpy-style formatcodes. E.g. f4 is 4
+	// byte float, u1 is 1 byte unsinged int and u2 is 2 byte usigned int
+	Format string `json:"format" example:"<f4"`
+
+	// X-axis information
+	X Axis `json:"x"`
+
+	// Y-axis information
+	Y Axis `json:"y"`
+} // @name SliceMetadata
+
+// @Description Metadata
 type Metadata struct {
-	// Data format. See https://osdu.pages.opengroup.org/platform/domain-data-mgmt-services/seismic/open-vds/cppdoc/enum/OpenVDS_VolumeDataFormat.html
-	Format int `json:"format" example:"3"`
+	// Coordinate reference system
+	Crs string `json:"crs" example:"PROJCS[\"ED50 / UTM zone 31N\",..."`
+
+	// Data format is represented by a numpy-style formatcodes. E.g. <f4 is 4
+	// byte float, <u1 is 1 byte unsinged int and <u2 is 2 byte usigned int.
+	// All little endian.
+	Format string `json:"format" example:"<f4"`
+
+	// Bounding box
+	BoundingBox BoundingBox `json:"boundingBox"`
 
 	// Axis descriptions
 	//
@@ -64,6 +96,10 @@ type Metadata struct {
 
 // @Description Fence metadata
 type FenceMetadata struct {
+	// Data format is represented by numpy-style formatcodes. For fence the
+	// format is always 4-byte floats, little endian (<f4).
+	Format string `json:"format" example:"<f4"`
+
 	// Shape of the returned data fence.
 	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
 } // @name FenceMetadata
@@ -216,7 +252,7 @@ func GetMetadata(conn Connection) ([]byte, error) {
 	return buf, nil
 }
 
-func Slice(conn Connection, lineno, direction int) ([]byte, error) {
+func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
 	curl := C.CString(conn.Url)
 	defer C.free(unsafe.Pointer(curl))
 
@@ -241,7 +277,7 @@ func Slice(conn Connection, lineno, direction int) ([]byte, error) {
 	return buf, nil
 }
 
-func SliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
+func GetSliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
 	curl := C.CString(conn.Url)
 	defer C.free(unsafe.Pointer(curl))
 
@@ -266,7 +302,7 @@ func SliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
 	return buf, nil
 }
 
-func Fence(
+func GetFence(
 	conn Connection,
 	coordinateSystem int,
 	coordinates [][]float32,

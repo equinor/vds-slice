@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <memory>
+#include <utility>
 
 #include "nlohmann/json.hpp"
 
@@ -90,6 +91,17 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
         case TRIANGULAR: return OpenVDS::InterpolationMethod::Triangular;
         default: {
             throw std::runtime_error("Unhandled interpolation method");
+        }
+    }
+}
+
+std::string vdsformat_tostring(OpenVDS::VolumeDataFormat format) {
+    switch (format) {
+        case OpenVDS::VolumeDataFormat::Format_U8:  return "<u1";
+        case OpenVDS::VolumeDataFormat::Format_U16: return "<u2";
+        case OpenVDS::VolumeDataFormat::Format_R32: return "<f4";
+        default: {
+            throw std::runtime_error("unsupported VDS format type");
         }
     }
 }
@@ -297,6 +309,12 @@ void set_voxels(
             voxelline = lineno_index_to_voxel(lineno, vdim, layout);
             break;
         }
+        case CDP: {
+            break;
+        }
+        default: {
+            throw std::runtime_error("Unhandled coordinate system");
+        }
     }
 
     vmin[vdim] = voxelline;
@@ -309,18 +327,77 @@ void set_voxels(
     }
 }
 
-void json_write_axis(
-    nlohmann::json& json,
+
+class BoundingBox {
+public:
+    explicit BoundingBox(
+        const OpenVDS::VolumeDataLayout *layout
+    ) : layout(layout)
+    {
+        transformer = OpenVDS::IJKCoordinateTransformer(layout);
+    }
+
+    std::vector< std::pair<int, int> >       index()      noexcept (true);
+    std::vector< std::pair<int, int> >       annotation() noexcept (true);
+    std::vector< std::pair<double, double> > world()      noexcept (true);
+private:
+    OpenVDS::IJKCoordinateTransformer transformer;
+    const OpenVDS::VolumeDataLayout*  layout;
+};
+
+
+std::vector< std::pair<int, int> > BoundingBox::index() noexcept (true) {
+    auto ils = layout->GetDimensionNumSamples(2) - 1;
+    auto xls = layout->GetDimensionNumSamples(1) - 1;
+
+    return { {0, 0}, {ils, 0}, {ils, xls}, {0, xls} };
+}
+
+std::vector< std::pair<double, double> > BoundingBox::world() noexcept (true) {
+    std::vector< std::pair<double, double> > world_points;
+
+    auto points = this->index();
+    std::for_each(points.begin(), points.end(),
+        [&](const std::pair<int, int>& point) {
+            auto p = this->transformer.IJKIndexToWorld(
+                { point.first, point.second, 0 }
+            );
+            world_points.emplace_back(p[0], p[1]);
+        }
+    );
+
+    return world_points;
+};
+
+std::vector< std::pair<int, int> > BoundingBox::annotation() noexcept (true) {
+    auto points = this->index();
+    std::transform(points.begin(), points.end(), points.begin(),
+        [this](std::pair<int, int>& point) {
+            auto anno = this->transformer.IJKIndexToAnnotation({
+                point.first,
+                point.second,
+                0
+            });
+            return std::pair<int, int>{anno[0], anno[1]};
+        }
+    );
+
+    return points;
+};
+
+nlohmann::json json_axis(
     int voxel_dim,
     const OpenVDS::VolumeDataLayout *layout
 ) {
-    json.push_back({
+    nlohmann::json doc;
+    doc = {
         { "annotation", layout->GetDimensionName(voxel_dim)       },
         { "min",        layout->GetDimensionMin(voxel_dim)        },
         { "max",        layout->GetDimensionMax(voxel_dim)        },
         { "samples",    layout->GetDimensionNumSamples(voxel_dim) },
         { "unit",       layout->GetDimensionUnit(voxel_dim)       },
-    });
+    };
+    return doc;
 }
 
 OpenVDS::ScopedVDSHandle open_vds(
@@ -399,8 +476,7 @@ struct vdsbuffer fetch_slice_metadata(
     auto vdim = dim_tovoxel(dimension);
 
     nlohmann::json meta;
-    meta["format"] = layout->GetChannelFormat(0); //TODO turn into numpy-style format?
-    meta["axis"]   = nlohmann::json::array();
+    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
 
     /*
      * SEGYImport always writes annotation 'Sample' for axis K. We, on the
@@ -415,10 +491,13 @@ struct vdsbuffer fetch_slice_metadata(
      * would be quite suprising for people that use this API in conjunction
      * with the OpenVDS library.
      */
-    for (int i = 2; i >= 0; i--) {
+    std::vector< int > dims;
+    for (int i = 2; i >= 0; --i) {
         if (i == vdim) continue;
-        json_write_axis(meta["axis"], i, layout);
+        dims.push_back(i);
     }
+    meta["x"] = json_axis(dims[0], layout);
+    meta["y"] = json_axis(dims[1], layout);
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
@@ -522,6 +601,7 @@ struct vdsbuffer fetch_fence_metadata(
 
     nlohmann::json meta;
     meta["shape"] = nlohmann::json::array({npoints, layout->GetDimensionNumSamples(0)});
+    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
@@ -546,9 +626,18 @@ struct vdsbuffer metadata(
     dimension_validation(layout);
 
     nlohmann::json meta;
-    meta["format"] = layout->GetChannelFormat(0); //TODO turn into numpy-style format?
+    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+
+    auto crs = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
+    meta["crs"] = layout->GetMetadataString(crs.GetCategory(), crs.GetName());
+
+    auto bbox = BoundingBox(layout);
+    meta["boundingBox"]["ij"]   = bbox.index();
+    meta["boundingBox"]["cdp"]  = bbox.world();
+    meta["boundingBox"]["ilxl"] = bbox.annotation();
+
     for (int i = 2; i >= 0 ; i--) {
-        json_write_axis(meta["axis"], i, layout);
+        meta["axis"].push_back(json_axis(i, layout));
     }
     auto str = meta.dump();
     auto *data = new char[str.size()];

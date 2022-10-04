@@ -45,7 +45,13 @@ func TestMetadata(t *testing.T) {
 			{ Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, Unit: "unitless" },
 			{ Annotation: "Sample",    Min: 4,  Max: 16, Samples: 4, Unit: "ms"       },
 		},
-		Format: 3,
+		BoundingBox: BoundingBox{
+			Cdp:  [][]float64{ {5, 0}, {9, 8}, {4, 11}, {0, 3} },
+			Ilxl: [][]float64{ {1, 10}, {5, 10}, {5, 11}, {1, 11}},
+			Ij:   [][]float64{ {0, 0}, {2, 0}, {2, 1}, {0, 1}},
+		},
+		Format: "<f4",
+		Crs: "utmXX",
 	}
 
 	buf, err := GetMetadata(well_known)
@@ -97,7 +103,7 @@ func TestSliceData(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		buf, err := Slice(well_known, testcase.lineno, testcase.direction)
+		buf, err := GetSlice(well_known, testcase.lineno, testcase.direction)
 		if err != nil {
 			t.Errorf(
 				"[case: %v] Failed to fetch slice, err: %v",
@@ -148,7 +154,7 @@ func TestSliceOutOfBounds(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(well_known, testcase.lineno, testcase.direction)
+		_, err := GetSlice(well_known, testcase.lineno, testcase.direction)
 		if err == nil {
 			t.Errorf(
 				"[case: %v] Expected slice to fail",
@@ -178,7 +184,7 @@ func TestSliceStridedLineno(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(well_known, testcase.lineno, testcase.direction)
+		_, err := GetSlice(well_known, testcase.lineno, testcase.direction)
 		if err == nil {
 			t.Errorf(
 				"[case: %v] Expected slice to fail",
@@ -206,7 +212,7 @@ func TestSliceInvalidAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(well_known, 0, testcase.direction)
+		_, err := GetSlice(well_known, 0, testcase.direction)
 
 		if err == nil {
 			t.Errorf(
@@ -244,7 +250,7 @@ func TestDepthAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := Slice(well_known, 0, testcase.direction)
+		_, err := GetSlice(well_known, 0, testcase.direction)
 
 		if err == nil {
 			t.Errorf(
@@ -310,9 +316,9 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		buf, err := SliceMetadata(well_known, testcase.lineno, testcase.direction)
+		buf, err := GetSliceMetadata(well_known, testcase.lineno, testcase.direction)
 
-		var meta Metadata
+		var meta SliceMetadata
 		err = json.Unmarshal(buf, &meta)
 		if err != nil {
 			t.Fatalf(
@@ -321,15 +327,15 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 				err,
 			)
 		}
-
-		for i, axis := range(meta.Axis) {
-			if testcase.expectedAxis[i] != axis.Annotation {
+		
+		axis := []string{ meta.X.Annotation, meta.Y.Annotation }
+		for i, ax := range(testcase.expectedAxis) {
+			if ax != axis[i] {
 				t.Fatalf(
-					"[case: %v] Expected axis %v to be %v, got %v",
+					"[case: %v] Expected axis to be %v, got %v",
 					testcase.name,
-					i,
-					testcase.expectedAxis[i],
-					axis.Annotation,
+					testcase.expectedAxis,
+					axis,
 				)
 			}
 		}
@@ -362,14 +368,14 @@ func TestFence(t *testing.T) {
 		{
 			coordinate_system: CoordinateSystemCdp,
 			coordinates:
-				[][]float32{{3.2, 3}, {3.2, 6.3}, {1, 3}, {3.2, 3}, {5.4, 3}},
+				[][]float32{{7, 4}, {2, 7}, {5, 0}, {7, 4}, {9, 8}},
 		},
 	}
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testcase := range testcases {
-		buf, err := Fence(
+		buf, err := GetFence(
 			well_known,
 			testcase.coordinate_system,
 			testcase.coordinates,
@@ -424,7 +430,7 @@ func TestInvalidFence(t *testing.T) {
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
-	_, err := Fence(well_known, CoordinateSystemIndex, fence, interpolationMethod)
+	_, err := GetFence(well_known, CoordinateSystemIndex, fence, interpolationMethod)
 
 	if err == nil {
 		msg := "Expected to fail given invalid fence %v"
@@ -449,10 +455,10 @@ func TestFenceInterpolation(t *testing.T) {
 	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular", "angular"}
 	for i, v1 := range interpolationMethods {
 		interpolationMethod, _ := GetInterpolationMethod(v1)
-		buf1, _ := Fence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
+		buf1, _ := GetFence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
 		for _, v2 := range interpolationMethods[i+1:] {
 			interpolationMethod, _ := GetInterpolationMethod(v2)
-			buf2, _ := Fence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
+			buf2, _ := GetFence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
 			different := false
 			for k := range buf1 {
 				if buf1[k] != buf2[k] {
@@ -509,15 +515,15 @@ func TestOnly3DSupported(t *testing.T) {
 	}{
 		{
 			name:     "Slice",
-			function: func() ([]byte, error) { return Slice(prestack, 0, 0) },
+			function: func() ([]byte, error) { return GetSlice(prestack, 0, 0) },
 		},
 		{
 			name:     "SliceMetadata",
-			function: func() ([]byte, error) { return SliceMetadata(prestack, 0, 0) },
+			function: func() ([]byte, error) { return GetSliceMetadata(prestack, 0, 0) },
 		},
 		{
 			name:     "Fence",
-			function: func() ([]byte, error) { return Fence(prestack, 0, [][]float32{{0, 0}}, 0) },
+			function: func() ([]byte, error) { return GetFence(prestack, 0, [][]float32{{0, 0}}, 0) },
 		},
 		{
 			name:     "FenceMetadata",

@@ -82,8 +82,9 @@ type testSliceAxis struct {
 }
 
 type testSliceMetadata struct {
-	Axis   []testSliceAxis `json:"axis"   binding:"required"`
-	Format int             `json:"format" binding:"required"`
+	X      testSliceAxis `json:"x"      binding:"required"`
+	Y      testSliceAxis `json:"y"      binding:"required"`
+	Format string        `json:"format" binding:"required"`
 }
 
 func TestSliceHappyHTTPResponse(t *testing.T) {
@@ -149,17 +150,19 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 		sampleAxis := testSliceAxis{
 			Annotation: "Sample", Max: 16.0, Min: 4.0, Samples: 4, Unit: "ms",
 		}
-		expectedFormat := 3
+		expectedFormat := "<f4"
 
 		var expectedMetadata *testSliceMetadata
 		switch testcase.slice.Direction {
 		case "i":
 			expectedMetadata = &testSliceMetadata{
-				Axis:   []testSliceAxis{crosslineAxis, sampleAxis},
+				X:      crosslineAxis,
+				Y:      sampleAxis,
 				Format: expectedFormat}
 		case "crossline":
 			expectedMetadata = &testSliceMetadata{
-				Axis:   []testSliceAxis{inlineAxis, sampleAxis},
+				X:      inlineAxis,
+				Y:      sampleAxis,
 				Format: expectedFormat}
 		default:
 			t.Fatalf("Unhandled direction %s in case %s", testcase.slice.Direction, testcase.name)
@@ -186,8 +189,8 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 			)
 		}
 
-		expectedDataLength := expectedMetadata.Axis[0].Samples *
-			expectedMetadata.Axis[1].Samples * 4 //4 bytes each
+		expectedDataLength := expectedMetadata.X.Samples *
+			expectedMetadata.Y.Samples * 4 //4 bytes each
 		if len(parts[1]) != expectedDataLength {
 			msg := "Got %d bytes in data reply; want it to be %d in case '%s'"
 			t.Errorf(
@@ -336,7 +339,8 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 
 		metadata := string(parts[0])
 		expectedMetadata := `{
-			"shape": [` + fmt.Sprint(len(testcase.fence.Coordinates)) + `, 4]
+			"shape": [` + fmt.Sprint(len(testcase.fence.Coordinates)) + `, 4],
+			"format": "<f4"
 		}`
 
 		if metadata != expectedMetadata {
@@ -484,7 +488,13 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 				{"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
 				{"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
 			],
-			"format": 3
+			"boundingBox": {
+				"cdp": [[5,0],[9,8],[4,11],[0,3]],
+				"ilxl": [[1, 10], [5, 10], [5, 11], [1, 11]],
+				"ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
+			},
+			"crs": "utmXX",
+			"format": "<f4"
 		}`
 
 		if metadata != expectedMetadata {

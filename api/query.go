@@ -105,13 +105,13 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
 		return
 	}
 
-	metadata, err := vds.SliceMetadata(*conn, *query.Lineno, axis)
+	metadata, err := vds.GetSliceMetadata(*conn, *query.Lineno, axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	data, err := vds.Slice(*conn, *query.Lineno, axis)
+	data, err := vds.GetSlice(*conn, *query.Lineno, axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -144,7 +144,7 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 		return
 	}
 
-	data, err := vds.Fence(
+	data, err := vds.GetFence(
 		*conn,
 		coordinateSystem,
 		query.Coordinates,
@@ -213,7 +213,7 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 // @Tags     slice
 // @Param    query  query  string  True  "Urlencoded/escaped SliceRequest"
 // @Produce  multipart/mixed
-// @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Success  200 {object} vds.SliceMetadata "(Example below only for metadata part)"
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [get]
@@ -233,7 +233,7 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // @Param    body  body  SliceRequest  True  "Query Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
-// @Success  200 {object} vds.Metadata "(Example below only for metadata part)"
+// @Success  200 {object} vds.SliceMetadata "(Example below only for metadata part)"
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [post]
