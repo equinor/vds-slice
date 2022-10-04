@@ -10,6 +10,7 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <cmath>
 
 #include "nlohmann/json.hpp"
 
@@ -551,7 +552,16 @@ struct vdsbuffer fetch_fence(
         const float x = *(coordinates++);
         const float y = *(coordinates++);
 
-        const auto coordinate = transform_coordinate(x, y);
+        auto coordinate = transform_coordinate(x, y);
+
+        /* openvds uses rounding down for Nearest interpolation.
+         * As it is counterintuitive, we fix it by snapping to nearest index
+         * and rounding half-up.
+         */
+        if (interpolation_method == NEAREST) {
+            coordinate[0] = std::round(coordinate[0] + 1) - 1;
+            coordinate[1] = std::round(coordinate[1] + 1) - 1;
+        }
 
         coords[i][dimension_map[0]] = coordinate[0];
         coords[i][dimension_map[1]] = coordinate[1];
