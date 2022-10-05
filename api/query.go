@@ -37,6 +37,8 @@ type FenceRequest struct {
 
 	// A list of (x, y) points in the coordinate system specified in
 	// coordinateSystem, for example [[2000.5, 100.5], [2050, 200], [10, 20]].
+	// All coordinates are expected to be inside the bounding box (with outer margin
+	// of half a distance between consecutive lines).
 	Coordinates [][]float32 `json:"coordinates" binding:"required"`
 
 	// Interpolation method

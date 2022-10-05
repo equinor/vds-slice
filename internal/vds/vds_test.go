@@ -425,6 +425,62 @@ func TestFence(t *testing.T) {
 	}
 }
 
+func TestFenceBorders(t *testing.T) {
+	testcases := []struct {
+		name              string
+		coordinate_system int
+		coordinates       [][]float32
+		interpolation     string
+		error             string
+	}{
+		{
+			name:              "coordinate 2 is just-out-of-upper-bound in direction 0",
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{5, 9.5}, {6, 11.25}},
+			error:             "is out of boundaries in dimension 0.",
+		},
+		{
+			name:              "coordinate 1 is just-out-of-upper-bound in direction 1",
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{5.5, 11.5}, {3, 10}},
+			error:             "is out of boundaries in dimension 1.",
+		},
+		{
+			name:              "coordinate is long way out of upper-bound in both directions",
+			coordinate_system: CoordinateSystemCdp,
+			coordinates:       [][]float32{{700, 1200}},
+			error:             "is out of boundaries in dimension 0.",
+		},
+		{
+			name:              "coordinate 2 is just-out-of-lower-bound in direction 1",
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{0, 11}, {5.9999, 10}, {0.0001, 9.4999}},
+			error:             "is out of boundaries in dimension 1.",
+		},
+		{
+			name:              "negative coordinate 1 is out-of-lower-bound in direction 0",
+			coordinate_system: CoordinateSystemIndex,
+			coordinates:       [][]float32{{-1, 0}, {-3, 0}},
+			error:             "is out of boundaries in dimension 0.",
+		},
+	}
+
+	for _, testcase := range testcases {
+		interpolationMethod, _ := GetInterpolationMethod("linear")
+		_, err := GetFence(well_known, testcase.coordinate_system, testcase.coordinates, interpolationMethod)
+
+		if err == nil {
+			msg := "in testcase \"%s\" expected to fail given fence is out of bounds %v"
+			t.Errorf(msg, testcase.name, testcase.coordinates)
+		} else {
+			if !strings.Contains(err.Error(), testcase.error) {
+				msg := "Unexpected error message in testcase \"%s\", expected \"%s\", was \"%s\""
+				t.Errorf(msg, testcase.name, testcase.error, err.Error())
+			}
+		}
+	}
+}
+
 func TestFenceNearestInterpolationSnap(t *testing.T) {
 	testcases := []struct {
 		coordinate_system int
