@@ -37,14 +37,16 @@ type FenceRequest struct {
 
 	// A list of (x, y) points in the coordinate system specified in
 	// coordinateSystem, for example [[2000.5, 100.5], [2050, 200], [10, 20]].
+	// All coordinates are expected to be inside the bounding box (with outer margin
+	// of half a distance between consecutive lines).
 	Coordinates [][]float32 `json:"coordinates" binding:"required"`
 
 	// Interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
 	// Defaults to nearest.
 	// This field is passed on to OpenVDS, which does the actual interpolation.
-	// Please note that OpenVDS interpolation might not always do what you
-	// expect, even in the default case (nearest). Use with caution.
+	// Note: For nearest interpolation result will snap to the nearest point
+	// as per "half up" rounding. This is different from openvds logic.
 	Interpolation string `json:"interpolation" example:"linear"`
 } //@name FenceRequest
 

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <cmath>
 
 #include "nlohmann/json.hpp"
 
@@ -220,6 +221,21 @@ int dim_tovoxel(int dimension) {
      * crossline, inline. This should be checked elsewhere.
      */
     switch (dimension) {
+        case 0: return 2;
+        case 1: return 1;
+        case 2: return 0;
+        default: {
+            throw std::runtime_error("Unhandled axis");
+        }
+    }
+}
+
+int voxel_todim(int voxel) {
+    /*
+     * For now assume that the axis order is always depth/time/sample,
+     * crossline, inline. This should be checked elsewhere.
+     */
+    switch (voxel) {
         case 0: return 2;
         case 1: return 1;
         case 2: return 0;
@@ -551,7 +567,33 @@ struct vdsbuffer fetch_fence(
         const float x = *(coordinates++);
         const float y = *(coordinates++);
 
-        const auto coordinate = transform_coordinate(x, y);
+        auto coordinate = transform_coordinate(x, y);
+
+        auto validate_boundary = [&] (const int voxel) {
+            const auto min = -0.5;
+            const auto max = layout->GetDimensionNumSamples(voxel_todim(voxel))
+                            - 0.5;
+            if(coordinate[voxel] < min || coordinate[voxel] >= max) {
+                const std::string coordinate_str =
+                    "(" +std::to_string(x) + "," + std::to_string(y) + ")";
+                throw std::runtime_error(
+                    "Coordinate " + coordinate_str + " is out of boundaries "+
+                    "in dimension "+ std::to_string(voxel)+ "."
+                );
+            }
+        };
+
+        validate_boundary(0);
+        validate_boundary(1);
+
+        /* openvds uses rounding down for Nearest interpolation.
+         * As it is counterintuitive, we fix it by snapping to nearest index
+         * and rounding half-up.
+         */
+        if (interpolation_method == NEAREST) {
+            coordinate[0] = std::round(coordinate[0] + 1) - 1;
+            coordinate[1] = std::round(coordinate[1] + 1) - 1;
+        }
 
         coords[i][dimension_map[0]] = coordinate[0];
         coords[i][dimension_map[1]] = coordinate[1];

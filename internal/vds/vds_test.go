@@ -425,6 +425,173 @@ func TestFence(t *testing.T) {
 	}
 }
 
+func TestFenceBorders(t *testing.T) {
+	testcases := []struct {
+		name              string
+		coordinate_system int
+		coordinates       [][]float32
+		interpolation     string
+		error             string
+	}{
+		{
+			name:              "coordinate 2 is just-out-of-upper-bound in direction 0",
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{5, 9.5}, {6, 11.25}},
+			error:             "is out of boundaries in dimension 0.",
+		},
+		{
+			name:              "coordinate 1 is just-out-of-upper-bound in direction 1",
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{5.5, 11.5}, {3, 10}},
+			error:             "is out of boundaries in dimension 1.",
+		},
+		{
+			name:              "coordinate is long way out of upper-bound in both directions",
+			coordinate_system: CoordinateSystemCdp,
+			coordinates:       [][]float32{{700, 1200}},
+			error:             "is out of boundaries in dimension 0.",
+		},
+		{
+			name:              "coordinate 2 is just-out-of-lower-bound in direction 1",
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{0, 11}, {5.9999, 10}, {0.0001, 9.4999}},
+			error:             "is out of boundaries in dimension 1.",
+		},
+		{
+			name:              "negative coordinate 1 is out-of-lower-bound in direction 0",
+			coordinate_system: CoordinateSystemIndex,
+			coordinates:       [][]float32{{-1, 0}, {-3, 0}},
+			error:             "is out of boundaries in dimension 0.",
+		},
+	}
+
+	for _, testcase := range testcases {
+		interpolationMethod, _ := GetInterpolationMethod("linear")
+		_, err := GetFence(well_known, testcase.coordinate_system, testcase.coordinates, interpolationMethod)
+
+		if err == nil {
+			msg := "in testcase \"%s\" expected to fail given fence is out of bounds %v"
+			t.Errorf(msg, testcase.name, testcase.coordinates)
+		} else {
+			if !strings.Contains(err.Error(), testcase.error) {
+				msg := "Unexpected error message in testcase \"%s\", expected \"%s\", was \"%s\""
+				t.Errorf(msg, testcase.name, testcase.error, err.Error())
+			}
+		}
+	}
+}
+
+func TestFenceNearestInterpolationSnap(t *testing.T) {
+	testcases := []struct {
+		coordinate_system int
+		coordinates       [][]float32
+		expected          []float32
+	}{
+		{
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{3, 10}},
+			expected:          []float32{108, 109, 110, 111},
+		},
+		{
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{3.5, 10.25}},
+			expected:          []float32{108, 109, 110, 111},
+		},
+		{
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{3.9999, 10.4999}},
+			expected:          []float32{108, 109, 110, 111},
+		},
+		{
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{4, 10.5}},
+			expected:          []float32{120, 121, 122, 123},
+		},
+		{
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{4.5, 10.75}},
+			expected:          []float32{120, 121, 122, 123},
+		},
+		{
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{5, 11}},
+			expected:          []float32{120, 121, 122, 123},
+		},
+		{
+			coordinate_system: CoordinateSystemAnnotation,
+			coordinates:       [][]float32{{5.5, 11.25}},
+			expected:          []float32{120, 121, 122, 123},
+		},
+		{
+			coordinate_system: CoordinateSystemIndex,
+			coordinates:       [][]float32{{-0.5, -0.5}},
+			expected:          []float32{100, 101, 102, 103},
+		},
+		{
+			coordinate_system: CoordinateSystemCdp,
+			coordinates:       [][]float32{{8, 5}},
+			expected:          []float32{108, 109, 110, 111},
+		},
+		{
+			coordinate_system: CoordinateSystemCdp,
+			coordinates:       [][]float32{{5.5, 7.5}},
+			expected:          []float32{120, 121, 122, 123},
+		},
+	}
+
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	for _, testcase := range testcases {
+		buf, err := GetFence(
+			well_known,
+			testcase.coordinate_system,
+			testcase.coordinates,
+			interpolationMethod,
+		)
+		if err != nil {
+			t.Errorf(
+				"[coordinate_system: %v] Failed to fetch fence, err: %v",
+				testcase.coordinate_system,
+				err,
+			)
+		}
+
+		fence, err := toFloat32(buf)
+		if err != nil {
+			t.Errorf(
+				"[coordinate_system: %v] Err: %v",
+				testcase.coordinate_system,
+				err,
+			)
+		}
+
+		if len(*fence) != len(testcase.expected) {
+			msg := "[coordinate_system: %v] Expected fence of len: %v, got: %v"
+			t.Errorf(
+				msg,
+				testcase.coordinate_system,
+				len(testcase.expected),
+				len(*fence),
+			)
+		}
+
+		for i, x := range *fence {
+			if x == testcase.expected[i] {
+				continue
+			}
+
+			msg := "[coordinate_system: %v] Expected %v in pos %v, got: %v"
+			t.Errorf(
+				msg,
+				testcase.coordinate_system,
+				testcase.expected[i],
+				i,
+				x,
+			)
+		}
+	}
+}
+
 func TestInvalidFence(t *testing.T) {
 	fence := [][]float32{{1, 0}, {1, 1, 0}, {0, 0}, {1, 0}, {2, 0}}
 
