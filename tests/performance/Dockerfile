@@ -1,4 +1,6 @@
-FROM python:3.8-buster
+FROM python:3.10.7-slim
+RUN apt-get update && apt-get install -y \
+    curl
 
 ENV version 0.38.0
 RUN mkdir k6
