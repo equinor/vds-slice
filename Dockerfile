@@ -12,9 +12,9 @@ RUN apk --no-cache add \
     util-linux-dev
 
 WORKDIR /
-RUN git clone https://community.opengroup.org/erha/open-vds.git
+RUN git clone https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds.git
 WORKDIR /open-vds
-RUN git checkout enable-cache
+RUN git checkout cbcd7b6163768118805dbcd080a5b0e386b82a6a
 
 RUN cmake -S . \
     -B build \
