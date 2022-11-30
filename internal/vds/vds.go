@@ -164,7 +164,7 @@ func GetMetadata(conn Connection) ([]byte, error) {
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.metadata(curl, ccred)
-	
+
 	defer C.vdsbuffer_delete(&result)
 
 	if result.err != nil {
@@ -187,7 +187,7 @@ func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
 		curl,
 		ccred,
 		C.int(lineno),
-		C.enum_axis(direction),
+		C.enum_Axis(direction),
 	)
 
 	defer C.vdsbuffer_delete(&result)
@@ -212,7 +212,7 @@ func GetSliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
 		curl,
 		ccred,
 		C.int(lineno),
-		C.enum_axis(direction),
+		C.enum_Axis(direction),
 	)
 
 	defer C.vdsbuffer_delete(&result)
@@ -259,10 +259,10 @@ func GetFence(
     result := C.fence(
 		cvds,
 		ccred,
-		C.enum_coordinate_system(coordinateSystem),
+		C.enum_CoordinateSystem(coordinateSystem),
 		&ccoordinates[0],
 		C.size_t(len(coordinates)),
-		C.enum_interpolation_method(interpolation),
+		C.enum_InterpolationMethod(interpolation),
 	)
 
 	defer C.vdsbuffer_delete(&result)

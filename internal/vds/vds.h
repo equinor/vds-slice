@@ -12,7 +12,7 @@ struct vdsbuffer {
     unsigned long size;
 };
 
-enum axis {
+enum Axis {
     I         = 0,
     J         = 1,
     K         = 2,
@@ -23,13 +23,13 @@ enum axis {
     SAMPLE    = 7,
 };
 
-enum coordinate_system {
+enum CoordinateSystem {
     INDEX      = 0,
     ANNOTATION = 1,
     CDP        = 2,
 };
 
-enum interpolation_method {
+enum InterpolationMethod {
     NEAREST,
     LINEAR,
     CUBIC,
@@ -46,23 +46,23 @@ struct vdsbuffer slice(
     const char* vds,
     const char* credentials,
     int lineno,
-    enum axis direction
+    enum Axis direction
 );
 
 struct vdsbuffer slice_metadata(
     const char* vds,
     const char* credentials,
     int lineno,
-    enum axis direction
+    enum Axis direction
 );
 
 struct vdsbuffer fence(
     const char* vds,
     const char* credentials,
-    enum coordinate_system coordinate_system,
+    enum CoordinateSystem coordinate_system,
     const float* points,
     size_t npoints,
-    enum interpolation_method interpolation_method
+    enum InterpolationMethod interpolation_method
 );
 
 struct vdsbuffer fence_metadata(
