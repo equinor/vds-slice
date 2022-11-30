@@ -164,7 +164,7 @@ bool unit_validation(Axis ax, const char* zunit) {
  *
  * This function will return 0 if that's not the case
  */
-bool axis_order_validation(Axis ax, const OpenVDS::VolumeDataLayout *layout) {
+bool axis_order_validation(const OpenVDS::VolumeDataLayout *layout) {
     if (std::strcmp(layout->GetDimensionName(2), OpenVDS::KnownAxisNames::Inline())) {
         return false;
     }
@@ -191,7 +191,7 @@ bool axis_order_validation(Axis ax, const OpenVDS::VolumeDataLayout *layout) {
 
 
 void axis_validation(Axis ax, const OpenVDS::VolumeDataLayout* layout) {
-    if (not axis_order_validation(ax, layout)) {
+    if (not axis_order_validation(layout)) {
         std::string msg = "Unsupported axis ordering in VDS, expected ";
         msg += "Depth/Time/Sample, Crossline, Inline";
         throw std::runtime_error(msg);
@@ -477,8 +477,7 @@ struct vdsbuffer fetch_slice(
 struct vdsbuffer fetch_slice_metadata(
     std::string url,
     std::string credentials,
-    Axis ax,
-    int lineno
+    Axis ax
 ) {
     auto handle = open_vds(url, credentials);
 
@@ -720,14 +719,13 @@ struct vdsbuffer slice(
 struct vdsbuffer slice_metadata(
     const char* vds,
     const char* credentials,
-    int lineno,
     Axis ax
 ) {
     std::string cube(vds);
     std::string cred(credentials);
 
     try {
-        return fetch_slice_metadata(cube, cred, ax, lineno);
+        return fetch_slice_metadata(cube, cred, ax);
     } catch (const std::exception& e) {
         return handle_error(e);
     }
