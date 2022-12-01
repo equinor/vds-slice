@@ -153,7 +153,7 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 	default:
 		options := "nearest, linear, cubic, angular or triangular"
 		msg := "invalid interpolation method '%s', valid options are: %s"
-		return -1, errors.New(fmt.Sprintf(msg, interpolation, options))
+		return -1, fmt.Errorf(msg, interpolation, options)
 	}
 }
 
