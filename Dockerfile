@@ -1,5 +1,6 @@
 FROM golang:1.18-alpine as openvds
 RUN apk --no-cache add \
+    curl \
     git \
     g++ \
     gcc \
@@ -40,7 +41,7 @@ COPY . .
 ARG CGO_CPPFLAGS="-I/open-vds/Dist/OpenVDS/include"
 ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
 RUN go build -a ./...
-RUN GOBIN=/tools go install github.com/swaggo/swag/cmd/swag@latest
+RUN GOBIN=/tools go install github.com/swaggo/swag/cmd/swag@v1.8.4
 RUN /tools/swag init -g cmd/query/main.go --md docs
 
 
@@ -50,6 +51,17 @@ ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
 ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
 ARG OPENVDS_AZURESDKFORCPP=1
 RUN go test -race ./...
+
+
+FROM builder as static_analyzer
+ARG CGO_CPPFLAGS="-I/open-vds/Dist/OpenVDS/include"
+ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
+ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
+RUN curl \
+    -L https://github.com/dominikh/go-tools/releases/download/v0.3.3/staticcheck_linux_amd64.tar.gz \
+    -o staticcheck-0.3.3.tar.gz
+RUN tar xf staticcheck-0.3.3.tar.gz
+RUN ./staticcheck/staticcheck ./...
 
 
 FROM builder as installer
