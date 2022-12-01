@@ -316,7 +316,7 @@ func GetFence(
 
 	coordinate_len := 2
 	ccoordinates := make([]C.float, len(coordinates) * coordinate_len)
-	for i, _ := range coordinates {
+	for i := range coordinates {
 
 		if len(coordinates[i]) != coordinate_len  {
 			msg := fmt.Sprintf(
@@ -327,7 +327,7 @@ func GetFence(
 			return nil, errors.New(msg)
 		}
 
-		for j, _ := range coordinates[i] {
+		for j := range coordinates[i] {
 			ccoordinates[i * coordinate_len  + j] = C.float(coordinates[i][j])
 		}
 	}
