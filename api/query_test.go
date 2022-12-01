@@ -245,7 +245,7 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				Sas:       "n/a",
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Invalid direction 'unknown', valid options are",
+			expectedError:  "invalid direction 'unknown', valid options are",
 		},
 		{
 			name:   "Query which passed all input checks but still should fail",
