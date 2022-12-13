@@ -317,6 +317,13 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 
 	for _, testcase := range testcases {
 		buf, err := GetSliceMetadata(well_known, testcase.lineno, testcase.direction)
+		if err != nil {
+			t.Fatalf(
+				"[case: %v] Failed to get slice metadata, err: %v",
+				testcase.name,
+				err,
+			)
+		}
 
 		var meta SliceMetadata
 		err = json.Unmarshal(buf, &meta)
@@ -603,7 +610,7 @@ func TestInvalidFence(t *testing.T) {
 		msg := "Expected to fail given invalid fence %v"
 		t.Errorf(msg, fence)
 	} else {
-		expected := "Invalid coordinate [1 1 0] at position 1, expected [x y] pair"
+		expected := "invalid coordinate [1 1 0] at position 1, expected [x y] pair"
 		if err.Error() != expected {
 			msg := "Unexpected error message, expected \"%s\", was \"%s\""
 			t.Errorf(msg, expected, err.Error())
@@ -658,7 +665,7 @@ func TestInvalidInterpolationMethod(t *testing.T) {
 		t.Errorf(msg, interpolation)
 	} else {
 		options := "nearest, linear, cubic, angular or triangular"
-		expected := fmt.Sprintf("Invalid interpolation method 'sand', valid options are: %s", options)
+		expected := fmt.Sprintf("invalid interpolation method 'sand', valid options are: %s", options)
 		if err.Error() != expected {
 			msg := "Unexpected error message, expected \"%s\", was \"%s\""
 			t.Errorf(msg, expected, err.Error())

@@ -116,7 +116,7 @@ func GetAxis(direction string) (int, error) {
 		case "sample":    return AxisSample,    nil
 		default:
 			options := "i, j, k, inline, crossline or depth/time/sample"
-			msg := "Invalid direction '%s', valid options are: %s"
+			msg := "invalid direction '%s', valid options are: %s"
 			return -1, fmt.Errorf(msg, direction, options)
 	}
 }
@@ -152,8 +152,8 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 		return C.TRIANGULAR, nil
 	default:
 		options := "nearest, linear, cubic, angular or triangular"
-		msg := "Invalid interpolation method '%s', valid options are: %s"
-		return -1, errors.New(fmt.Sprintf(msg, interpolation, options))
+		msg := "invalid interpolation method '%s', valid options are: %s"
+		return -1, fmt.Errorf(msg, interpolation, options)
 	}
 }
 
@@ -181,7 +181,7 @@ func isAllowed(allowlist []*url.URL, requested *url.URL) error {
 			return nil
 		}
 	}
-	msg := "Unsupported storage account: %s. This API is configured to work "  +
+	msg := "unsupported storage account: %s. This API is configured to work "  +
 		"with a pre-defined set of storage accounts. Contact the system admin " +
 		"to get your storage account on the allowlist"
 	return fmt.Errorf(msg, requested.Host)
@@ -316,18 +316,18 @@ func GetFence(
 
 	coordinate_len := 2
 	ccoordinates := make([]C.float, len(coordinates) * coordinate_len)
-	for i, _ := range coordinates {
+	for i := range coordinates {
 
 		if len(coordinates[i]) != coordinate_len  {
 			msg := fmt.Sprintf(
-				"Invalid coordinate %v at position %d, expected [x y] pair",
+				"invalid coordinate %v at position %d, expected [x y] pair",
 				coordinates[i],
 				i,
 			)
 			return nil, errors.New(msg)
 		}
 
-		for j, _ := range coordinates[i] {
+		for j := range coordinates[i] {
 			ccoordinates[i * coordinate_len  + j] = C.float(coordinates[i][j])
 		}
 	}
