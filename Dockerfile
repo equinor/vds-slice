@@ -71,7 +71,7 @@ ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
 RUN GOBIN=/server go install -a ./...
 
 
-FROM golang:1.18-alpine as runner
+FROM golang:1.18-alpine3.16 as runner
 RUN apk --no-cache add \
     g++ \
     gcc \
