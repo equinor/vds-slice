@@ -281,37 +281,37 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 			name: "Inline",
 			direction: AxisInline,
 			lineno: 3,
-			expectedAxis: []string{"Crossline", "Sample"},
+			expectedAxis: []string{"Sample", "Crossline"},
 		},
 		{
 			name: "I",
 			lineno: 0,
 			direction: AxisI,
-			expectedAxis: []string{"Crossline", "Sample"},
+			expectedAxis: []string{"Sample", "Crossline"},
 		},
 		{
 			name: "Crossline",
 			direction: AxisCrossline,
 			lineno: 10,
-			expectedAxis: []string{"Inline", "Sample"},
+			expectedAxis: []string{"Sample", "Inline"},
 		},
 		{
 			name: "J",
 			lineno: 0,
 			direction: AxisJ,
-			expectedAxis: []string{"Inline", "Sample"},
+			expectedAxis: []string{"Sample", "Inline"},
 		},
 		{
 			name: "Time",
 			direction: AxisTime,
 			lineno: 4,
-			expectedAxis: []string{"Inline", "Crossline"},
+			expectedAxis: []string{"Crossline", "Inline"},
 		},
 		{
 			name: "K",
 			lineno: 0,
 			direction: AxisK,
-			expectedAxis: []string{"Inline", "Crossline"},
+			expectedAxis: []string{"Crossline", "Inline"},
 		},
 	}
 
