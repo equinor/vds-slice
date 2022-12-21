@@ -508,7 +508,7 @@ struct vdsbuffer fetch_slice_metadata(
      * with the OpenVDS library.
      */
     std::vector< int > dims;
-    for (int i = 2; i >= 0; --i) {
+    for (int i = 0; i < 3; ++i) {
         if (i == vdim) continue;
         dims.push_back(i);
     }

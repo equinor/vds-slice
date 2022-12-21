@@ -156,13 +156,13 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 		switch testcase.slice.Direction {
 		case "i":
 			expectedMetadata = &testSliceMetadata{
-				X:      crosslineAxis,
-				Y:      sampleAxis,
+				X:      sampleAxis,
+				Y:      crosslineAxis,
 				Format: expectedFormat}
 		case "crossline":
 			expectedMetadata = &testSliceMetadata{
-				X:      inlineAxis,
-				Y:      sampleAxis,
+				X:      sampleAxis,
+				Y:      inlineAxis,
 				Format: expectedFormat}
 		default:
 			t.Fatalf("Unhandled direction %s in case %s", testcase.slice.Direction, testcase.name)
