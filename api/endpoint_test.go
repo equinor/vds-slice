@@ -25,8 +25,8 @@ const well_known = "../testdata/well_known/well_known_default.vds"
 type sliceTest struct {
 	name           string
 	method         string
-	slice          testSliceQuery
-	sliceQuery     string
+	slice          testSliceRequest
+	sliceRequest   string
 	expectedStatus int
 	expectedError  string
 }
@@ -34,19 +34,19 @@ type sliceTest struct {
 type fenceTest struct {
 	name           string
 	method         string
-	fence          testFenceQuery
-	fenceQuery     string
+	fence          testFenceRequest
+	fenceRequest   string
 	expectedStatus int
 	expectedError  string
 }
 
 type metadataTest struct {
-	name           string
-	method         string
-	metadata       testMetadataQuery
-	metadataQuery  string
-	expectedStatus int
-	expectedError  string
+	name            string
+	method          string
+	metadata        testMetadataRequest
+	metadataRequest string
+	expectedStatus  int
+	expectedError   string
 }
 
 // define own help types to assure separation between production and test code
@@ -54,21 +54,21 @@ type testErrorResponse struct {
 	Error string `json:"error" binding:"required"`
 }
 
-type testSliceQuery struct {
+type testSliceRequest struct {
 	Vds       string `json:"vds"`
 	Direction string `json:"direction"`
 	Lineno    int    `json:"lineno"`
 	Sas       string `json:"sas"`
 }
 
-type testFenceQuery struct {
+type testFenceRequest struct {
 	Vds              string      `json:"vds"`
 	CoordinateSystem string      `json:"coordinateSystem"`
 	Coordinates      [][]float32 `json:"coordinates"`
 	Sas              string      `json:"sas"`
 }
 
-type testMetadataQuery struct {
+type testMetadataRequest struct {
 	Vds string `json:"vds"`
 	Sas string `json:"sas"`
 }
@@ -90,9 +90,9 @@ type testSliceMetadata struct {
 func TestSliceHappyHTTPResponse(t *testing.T) {
 	testcases := []sliceTest{
 		{
-			name:   "Valid GET Query",
+			name:   "Valid GET Request",
 			method: http.MethodGet,
-			slice: testSliceQuery{
+			slice: testSliceRequest{
 				Vds:       well_known,
 				Direction: "i",
 				Lineno:    0, //side-effect assurance that 0 is accepted
@@ -101,9 +101,9 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:   "Valid json POST Query",
+			name:   "Valid json POST Request",
 			method: http.MethodPost,
-			slice: testSliceQuery{
+			slice: testSliceRequest{
 				Vds:       well_known,
 				Direction: "crossline",
 				Lineno:    10,
@@ -206,39 +206,39 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 func TestSliceErrorHTTPResponse(t *testing.T) {
 	testcases := []sliceTest{
 		{
-			name:           "Invalid json GET query",
+			name:           "Invalid json GET request",
 			method:         http.MethodGet,
-			sliceQuery:     "help I am a duck",
+			sliceRequest:   "help I am a duck",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "invalid character",
 		},
 		{
-			name:           "Invalid json POST query",
+			name:           "Invalid json POST request",
 			method:         http.MethodPost,
-			sliceQuery:     "help I am a duck",
+			sliceRequest:   "help I am a duck",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "invalid character",
 		},
 		{
-			name:   "Missing parameters GET query",
+			name:   "Missing parameters GET request",
 			method: http.MethodGet,
-			sliceQuery: "{\"vds\":\"" + well_known +
+			sliceRequest: "{\"vds\":\"" + well_known +
 				"\", \"direction\":\"i\", \"sas\": \"n/a\"}",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Error:Field validation for 'Lineno'",
 		},
 		{
-			name:   "Missing parameters POST Query",
+			name:   "Missing parameters POST Request",
 			method: http.MethodPost,
-			sliceQuery: "{\"vds\":\"" + well_known +
+			sliceRequest: "{\"vds\":\"" + well_known +
 				"\", \"lineno\":1, \"sas\": \"n/a\"}",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Error:Field validation for 'Direction'",
 		},
 		{
-			name:   "Query with unknown axis",
+			name:   "Request with unknown axis",
 			method: http.MethodPost,
-			slice: testSliceQuery{
+			slice: testSliceRequest{
 				Vds:       well_known,
 				Direction: "unknown",
 				Lineno:    1,
@@ -248,9 +248,9 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 			expectedError:  "invalid direction 'unknown', valid options are",
 		},
 		{
-			name:   "Query which passed all input checks but still should fail",
+			name:   "Request which passed all input checks but still should fail",
 			method: http.MethodPost,
-			slice: testSliceQuery{
+			slice: testSliceRequest{
 				Vds:       well_known,
 				Direction: "i",
 				Lineno:    10,
@@ -286,9 +286,9 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 func TestFenceHappyHTTPResponse(t *testing.T) {
 	testcases := []fenceTest{
 		{
-			name:   "Valid GET Query",
+			name:   "Valid GET Request",
 			method: http.MethodGet,
-			fence: testFenceQuery{
+			fence:  testFenceRequest{
 				Vds:              well_known,
 				CoordinateSystem: "ilxl",
 				Coordinates:      [][]float32{{3, 11}, {2, 10}},
@@ -297,9 +297,9 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:   "Valid json POST Query",
+			name:   "Valid json POST Request",
 			method: http.MethodPost,
-			fence: testFenceQuery{
+			fence:  testFenceRequest{
 				Vds:              well_known,
 				CoordinateSystem: "ij",
 				Coordinates:      [][]float32{{0, 1}, {1, 1}, {1, 0}},
@@ -364,39 +364,39 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 func TestFenceErrorHTTPResponse(t *testing.T) {
 	testcases := []fenceTest{
 		{
-			name:           "Invalid json GET query",
+			name:           "Invalid json GET request",
 			method:         http.MethodGet,
-			fenceQuery:     "help I am a duck",
+			fenceRequest:   "help I am a duck",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "invalid character",
 		},
 		{
-			name:           "Invalid json POST query",
+			name:           "Invalid json POST request",
 			method:         http.MethodPost,
-			fenceQuery:     "help I am a duck",
+			fenceRequest:   "help I am a duck",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "invalid character",
 		},
 		{
-			name:   "Missing parameters GET query",
+			name:   "Missing parameters GET request",
 			method: http.MethodGet,
-			fenceQuery: "{\"vds\":\"" + well_known +
+			fenceRequest: "{\"vds\":\"" + well_known +
 				"\", \"coordinateSystem\":\"ilxl\", \"coordinates\":[[0, 0]]}",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Error:Field validation for 'Sas'",
 		},
 		{
-			name:   "Missing parameters POST Query",
+			name:   "Missing parameters POST Request",
 			method: http.MethodPost,
-			fenceQuery: "{\"vds\":\"" + well_known +
+			fenceRequest: "{\"vds\":\"" + well_known +
 				"\", \"coordinateSystem\":\"ilxl\", \"sas\": \"n/a\"}",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Error:Field validation for 'Coordinates'",
 		},
 		{
-			name:   "Query with unknown coordinate system",
+			name:   "Request with unknown coordinate system",
 			method: http.MethodPost,
-			fence: testFenceQuery{
+			fence:  testFenceRequest{
 				Vds:              well_known,
 				CoordinateSystem: "unknown",
 				Coordinates:      [][]float32{{3, 12}, {2, 10}},
@@ -406,9 +406,9 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			expectedError:  "coordinate system not recognized: 'unknown', valid options are",
 		},
 		{
-			name:   "Query which passed all input checks but still should fail",
+			name:   "Request which passed all input checks but still should fail",
 			method: http.MethodPost,
-			fence: testFenceQuery{
+			fence:  testFenceRequest{
 				Vds:              "unknown",
 				CoordinateSystem: "ilxl",
 				Coordinates:      [][]float32{{3, 12}, {2, 10}},
@@ -444,18 +444,18 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 func TestMetadataHappyHTTPResponse(t *testing.T) {
 	testcases := []metadataTest{
 		{
-			name:   "Valid GET Query",
+			name:   "Valid GET Request",
 			method: http.MethodGet,
-			metadata: testMetadataQuery{
+			metadata: testMetadataRequest{
 				Vds: well_known,
 				Sas: "n/a",
 			},
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:   "Valid json POST Query",
+			name:   "Valid json POST Request",
 			method: http.MethodPost,
-			metadata: testMetadataQuery{
+			metadata: testMetadataRequest{
 				Vds: well_known,
 				Sas: "n/a",
 			},
@@ -507,37 +507,37 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 func TestMetadataErrorHTTPResponse(t *testing.T) {
 	testcases := []metadataTest{
 		{
-			name:           "Invalid json GET query",
-			method:         http.MethodGet,
-			metadataQuery:  "help I am a duck",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid character",
+			name:            "Invalid json GET request",
+			method:          http.MethodGet,
+			metadataRequest: "help I am a duck",
+			expectedStatus:  http.StatusBadRequest,
+			expectedError:   "invalid character",
 		},
 		{
-			name:           "Invalid json POST query",
-			method:         http.MethodPost,
-			metadataQuery:  "help I am a duck",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid character",
+			name:            "Invalid json POST request",
+			method:          http.MethodPost,
+			metadataRequest: "help I am a duck",
+			expectedStatus:  http.StatusBadRequest,
+			expectedError:   "invalid character",
 		},
 		{
-			name:           "Missing parameters GET query",
-			method:         http.MethodGet,
-			metadataQuery:  "{\"vds\":\"" + well_known + "\"}",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Sas'",
+			name:            "Missing parameters GET request",
+			method:          http.MethodGet,
+			metadataRequest: "{\"vds\":\"" + well_known + "\"}",
+			expectedStatus:  http.StatusBadRequest,
+			expectedError:   "Error:Field validation for 'Sas'",
 		},
 		{
-			name:           "Missing parameters POST Query",
-			method:         http.MethodPost,
-			metadataQuery:  "{\"sas\":\"somevalidsas\"}",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Vds'",
+			name:            "Missing parameters POST Request",
+			method:          http.MethodPost,
+			metadataRequest: "{\"sas\":\"somevalidsas\"}",
+			expectedStatus:  http.StatusBadRequest,
+			expectedError:   "Error:Field validation for 'Vds'",
 		},
 		{
-			name:   "Query which passed all input checks but still should fail",
-			method: http.MethodPost,
-			metadata: testMetadataQuery{
+			name:     "Request which passed all input checks but still should fail",
+			method:   http.MethodPost,
+			metadata: testMetadataRequest{
 				Vds: "unknown",
 				Sas: "n/a",
 			},
@@ -634,10 +634,10 @@ func readMultipartData(t *testing.T, w *httptest.ResponseRecorder) [][]byte {
 }
 
 func prepareRequest(ctx *gin.Context, t *testing.T, endpoint string,
-	method string, query interface{}, jsonQuery string) {
-	jsonRequest := jsonQuery
-	if jsonQuery == "" {
-		req, err := json.Marshal(query)
+	method string, request interface{}, jsonReq string) {
+	jsonRequest := jsonReq
+	if jsonRequest == "" {
+		req, err := json.Marshal(request)
 		if err != nil {
 			t.Fatalf("Cannot marshal request")
 		}
@@ -669,13 +669,34 @@ func prepareRequest(ctx *gin.Context, t *testing.T, endpoint string,
 }
 
 func prepareSliceRequest(ctx *gin.Context, t *testing.T, testcase sliceTest) {
-	prepareRequest(ctx, t, "/slice", testcase.method, testcase.slice, testcase.sliceQuery)
+	prepareRequest(
+		ctx,
+		t,
+		"/slice",
+		testcase.method,
+		testcase.slice,
+		testcase.sliceRequest,
+	)
 }
 
 func prepareFenceRequest(ctx *gin.Context, t *testing.T, testcase fenceTest) {
-	prepareRequest(ctx, t, "/fence", testcase.method, testcase.fence, testcase.fenceQuery)
+	prepareRequest(
+		ctx,
+		t,
+		"/fence",
+		testcase.method,
+		testcase.fence,
+		testcase.fenceRequest,
+	)
 }
 
 func prepareMetadataRequest(ctx *gin.Context, t *testing.T, testcase metadataTest) {
-	prepareRequest(ctx, t, "/metadata", testcase.method, testcase.metadata, testcase.metadataQuery)
+	prepareRequest(
+		ctx,
+		t,
+		"/metadata",
+		testcase.method,
+		testcase.metadata,
+		testcase.metadataRequest,
+	)
 }
