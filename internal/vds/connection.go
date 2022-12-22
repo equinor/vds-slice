@@ -6,9 +6,45 @@ import (
 	"net/url"
 )
 
-type Connection struct {
-	Url              string
-	ConnectionString string
+type Connection interface {
+	Url()              string
+	ConnectionString() string
+}
+
+type AzureConnection struct {
+	url              string
+	connectionString string
+}
+
+func (c *AzureConnection) Url() string {
+	return c.url
+}
+
+func (c *AzureConnection) ConnectionString() string {
+	return c.connectionString
+}
+
+func NewAzureConnection(url string, connectionString string) *AzureConnection {
+	return &AzureConnection{
+		url:              url,
+		connectionString: connectionString,
+	}
+}
+
+type FileConnection struct {
+	url string
+}
+
+func (f *FileConnection) Url() string {
+	return f.url
+}
+
+func (f *FileConnection) ConnectionString() string {
+	return ""
+}
+
+func NewFileConnection(path string) *FileConnection {
+	return &FileConnection{ url: path }
 }
 
 /*
@@ -42,7 +78,7 @@ func sanitizeSAS(sas string) string {
 	return strings.TrimPrefix(sas, "?")
 }
 
-type ConnectionMaker func(blob, sas string) (*Connection, error)
+type ConnectionMaker func(blob, sas string) (Connection, error)
 
 func MakeAzureConnection(accounts []string) ConnectionMaker {
 	var allowlist []*url.URL
@@ -59,7 +95,7 @@ func MakeAzureConnection(accounts []string) ConnectionMaker {
 		allowlist = append(allowlist, url)
 	}
 
-	return func(blob string, sas string) (*Connection, error) {
+	return func(blob string, sas string) (Connection, error) {
 		blobUrl, err := makeUrl(blob)
 		if err != nil {
 			return nil, err
@@ -77,6 +113,6 @@ func MakeAzureConnection(accounts []string) ConnectionMaker {
 
 		vdsPath := fmt.Sprintf("azure:/%s", blobUrl.Path)
 
-		return &Connection{ Url: vdsPath, ConnectionString: vdsCredentials }, nil
+		return NewAzureConnection(vdsPath, vdsCredentials), nil
 	}
 }

@@ -569,15 +569,15 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 }
 
 func MakeFileConnection() vds.ConnectionMaker {
-	return func(path, sas string) (*vds.Connection, error) {
+	return func(path, sas string) (vds.Connection, error) {
 		path = fmt.Sprintf("file://%s", path)
-		return &vds.Connection{ Url: path }, nil
+		return vds.NewFileConnection(path), nil
 	}
 }
 
 func setupTestServer(r *gin.Engine) {
 	r.Use(gin.Logger())
-	endpoint := Endpoint{MakeVdsConnection: MakeFileConnection()}
+	endpoint := Endpoint{ MakeVdsConnection: MakeFileConnection() }
 
 	r.POST("/slice", ErrorHandler, endpoint.SlicePost)
 	r.GET("/slice", ErrorHandler, endpoint.SliceGet)

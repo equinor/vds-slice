@@ -22,7 +22,7 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 		return
 	}
 
-	buffer, err := vds.GetMetadata(*conn)
+	buffer, err := vds.GetMetadata(conn)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -44,13 +44,13 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		return
 	}
 
-	metadata, err := vds.GetSliceMetadata(*conn, *request.Lineno, axis)
+	metadata, err := vds.GetSliceMetadata(conn, *request.Lineno, axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	data, err := vds.GetSlice(*conn, *request.Lineno, axis)
+	data, err := vds.GetSlice(conn, *request.Lineno, axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -79,14 +79,14 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 		return
 	}
 
-	metadata, err := vds.GetFenceMetadata(*conn, request.Coordinates)
+	metadata, err := vds.GetFenceMetadata(conn, request.Coordinates)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	data, err := vds.GetFence(
-		*conn,
+		conn,
 		coordinateSystem,
 		request.Coordinates,
 		interpolation,

@@ -157,10 +157,10 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 }
 
 func GetMetadata(conn Connection) ([]byte, error) {
-	curl := C.CString(conn.Url)
+	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
-	ccred := C.CString(conn.ConnectionString)
+	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.metadata(curl, ccred)
@@ -177,10 +177,10 @@ func GetMetadata(conn Connection) ([]byte, error) {
 }
 
 func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
-	curl := C.CString(conn.Url)
+	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
-	ccred := C.CString(conn.ConnectionString)
+	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.slice(
@@ -202,10 +202,10 @@ func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
 }
 
 func GetSliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
-	curl := C.CString(conn.Url)
+	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
-	ccred := C.CString(conn.ConnectionString)
+	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.slice_metadata(
@@ -232,10 +232,10 @@ func GetFence(
 	coordinates [][]float32,
 	interpolation int,
 ) ([]byte, error) {
-	cvds := C.CString(conn.Url)
+	cvds := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(cvds))
 
-	ccred := C.CString(conn.ConnectionString)
+	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
 	coordinate_len := 2
@@ -277,10 +277,10 @@ func GetFence(
 }
 
 func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) {
-	curl := C.CString(conn.Url)
+	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
-	ccred := C.CString(conn.ConnectionString)
+	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.fence_metadata(
