@@ -1,9 +1,12 @@
 package vds
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"net/url"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 )
 
 func srtContainsObject(srt string) bool {
@@ -51,6 +54,7 @@ func validateSasSrt(connection *AzureConnection) error {
 type Connection interface {
 	Url()              string
 	ConnectionString() string
+	HasReadAccess()    bool
 }
 
 type AzureConnection struct {
@@ -69,6 +73,47 @@ func (c *AzureConnection) ConnectionString() string {
 		c.host,
 		c.sas,
 	)
+}
+
+/** Verify that the connection has enough access to read a VDS from Blob Store
+ *
+ * The minimum required access in a SAS token in order to read a VDS file from
+ * Blob Store is:
+ *
+ * sp  (Signed Premissions)    : 'r' (Read)
+ * srt (Signed Resource Types) : 'c' and 'o' (Container and Object/blob)
+ *
+ * This function does a HEAD request to the VolumeDataLayout in the VDS, in
+ * form of a get properties request [1] in order to verify read access, and
+ * that the token is generally valid.
+ *
+ * The HEAD request itself is not sufficient though, as it will not verify
+ * the container requirement in 'srt'. The container requirement is verified
+ * by manually inspecting the value of 'srt'.
+ *
+ * [1] https://learn.microsoft.com/en-us/rest/api/storageservices/get-blob-properties
+ */
+func (c *AzureConnection) HasReadAccess() bool {
+	if err := validateSasSrt(c); err != nil {
+		return false
+	}
+
+	client, err := blob.NewClientWithNoCredential(
+		fmt.Sprintf("https://%s/%s/%s/VolumeDataLayout?%s",
+			c.host,
+			c.container,
+			c.blobPath,
+			c.sas,
+		),
+		nil,
+	)
+
+	if err != nil {
+		return false
+	}
+
+	_, err = client.GetProperties(context.Background(), nil);
+	return err == nil
 }
 
 func NewAzureConnection(
@@ -95,6 +140,10 @@ func (f *FileConnection) Url() string {
 
 func (f *FileConnection) ConnectionString() string {
 	return ""
+}
+
+func (c *FileConnection) HasReadAccess() bool {
+	return true
 }
 
 func NewFileConnection(path string) *FileConnection {
