@@ -7,8 +7,8 @@ import (
 )
 
 type Connection struct {
-	Url        string
-	Credential string
+	Url              string
+	ConnectionString string
 }
 
 /*
@@ -77,6 +77,6 @@ func MakeAzureConnection(accounts []string) ConnectionMaker {
 
 		vdsPath := fmt.Sprintf("azure:/%s", blobUrl.Path)
 
-		return &Connection{ Url: vdsPath, Credential: vdsCredentials }, nil
+		return &Connection{ Url: vdsPath, ConnectionString: vdsCredentials }, nil
 	}
 }
