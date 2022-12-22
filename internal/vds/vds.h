@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-struct vdsbuffer {
+struct requestdata {
     char*         data;
     char*         err;
     unsigned long size;
@@ -37,25 +37,25 @@ enum InterpolationMethod {
     TRIANGULAR
 };
 
-struct vdsbuffer metadata(
+struct requestdata metadata(
     const char* vds,
     const char* credentials
 );
 
-struct vdsbuffer slice(
+struct requestdata slice(
     const char* vds,
     const char* credentials,
     int lineno,
     enum Axis direction
 );
 
-struct vdsbuffer slice_metadata(
+struct requestdata slice_metadata(
     const char* vds,
     const char* credentials,
     enum Axis direction
 );
 
-struct vdsbuffer fence(
+struct requestdata fence(
     const char* vds,
     const char* credentials,
     enum CoordinateSystem coordinate_system,
@@ -64,13 +64,13 @@ struct vdsbuffer fence(
     enum InterpolationMethod interpolation_method
 );
 
-struct vdsbuffer fence_metadata(
+struct requestdata fence_metadata(
     const char* vds,
     const char* credentials,
     size_t npoints
 );
 
-void vdsbuffer_delete(struct vdsbuffer*);
+void requestdata_delete(struct requestdata*);
 
 
 #ifdef __cplusplus
