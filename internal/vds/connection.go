@@ -12,22 +12,34 @@ type Connection interface {
 }
 
 type AzureConnection struct {
-	url              string
-	connectionString string
+	blobPath  string
+	container string
+	host      string
+	sas       string
 }
 
 func (c *AzureConnection) Url() string {
-	return c.url
+	return fmt.Sprintf("azure://%s/%s", c.container, c.blobPath)
 }
 
 func (c *AzureConnection) ConnectionString() string {
-	return c.connectionString
+	return fmt.Sprintf("BlobEndpoint=https://%s;SharedAccessSignature=?%s",
+		c.host,
+		c.sas,
+	)
 }
 
-func NewAzureConnection(url string, connectionString string) *AzureConnection {
+func NewAzureConnection(
+	blobPath  string,
+	container string,
+	host      string,
+	sas       string,
+) *AzureConnection {
 	return &AzureConnection{
-		url:              url,
-		connectionString: connectionString,
+		blobPath:  blobPath,
+		container: container,
+		host:      host,
+		sas:       sas,
 	}
 }
 
@@ -78,6 +90,12 @@ func sanitizeSAS(sas string) string {
 	return strings.TrimPrefix(sas, "?")
 }
 
+func splitAzureUrl(path string) (string, string) {
+	path = strings.TrimPrefix(path, "/")
+	container, blobPath, _ := strings.Cut(path, "/")
+	return container, blobPath
+}
+
 type ConnectionMaker func(blob, sas string) (Connection, error)
 
 func MakeAzureConnection(accounts []string) ConnectionMaker {
@@ -105,14 +123,7 @@ func MakeAzureConnection(accounts []string) ConnectionMaker {
 			return nil, err
 		}
 
-		vdsCredentials := fmt.Sprintf("BlobEndpoint=%s://%s;SharedAccessSignature=?%s",
-			blobUrl.Scheme,
-			blobUrl.Host,
-			sanitizeSAS(sas),
-		)
-
-		vdsPath := fmt.Sprintf("azure:/%s", blobUrl.Path)
-
-		return NewAzureConnection(vdsPath, vdsCredentials), nil
+		container, blobPath := splitAzureUrl(blobUrl.Path)
+		return NewAzureConnection(blobPath, container, blobUrl.Host, sanitizeSAS(sas)), nil
 	}
 }
