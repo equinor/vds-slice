@@ -109,7 +109,7 @@ def test_metadata(method):
     assert metadata == expected_metadata
 
 
-@pytest.mark.parametrize("path, query", [
+@pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
@@ -125,32 +125,32 @@ def test_metadata(method):
         "403 Server failed to authenticate"
     )
 ])
-def test_assure_no_unauthorized_access(path, query, sas, error_msg):
-    query.update({"sas": sas})
+def test_assure_no_unauthorized_access(path, payload, sas, error_msg):
+    payload.update({"sas": sas})
     res = requests.get(f'{ENDPOINT}/{path}',
-                       params={"query": json.dumps(query)})
+                       params={"query": json.dumps(payload)})
     assert res.status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR
     body = json.loads(res.content)
     assert error_msg in body['error']
 
 
-@pytest.mark.parametrize("path, query", [
+@pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
 ])
-def test_assure_only_allowed_storage_accounts(path, query):
-    query.update({
+def test_assure_only_allowed_storage_accounts(path, payload):
+    payload.update({
         "vds": "https://dummy.blob.core.windows.net/container/blob",
     })
     res = requests.get(f'{ENDPOINT}/{path}',
-                       params={"query": json.dumps(query)})
+                       params={"query": json.dumps(payload)})
     assert res.status_code == http.HTTPStatus.BAD_REQUEST
     body = json.loads(res.content)
     assert "Unsupported storage account" in body['error']
 
 
-@pytest.mark.parametrize("path, query, error_code, error", [
+@pytest.mark.parametrize("path, payload, error_code, error", [
     (
         "slice",
         {"param": "irrelevant"},
@@ -188,11 +188,11 @@ def test_assure_only_allowed_storage_accounts(path, query):
         "The specified blob does not exist"
     ),
 ])
-def test_errors(path, query, error_code, error):
+def test_errors(path, payload, error_code, error):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-    query.update({"sas": sas})
-    res = requests.post(f'{ENDPOINT}/{path}', json=query)
+    payload.update({"sas": sas})
+    res = requests.post(f'{ENDPOINT}/{path}', json=payload)
     assert res.status_code == error_code
 
     body = json.loads(res.content)
@@ -203,15 +203,15 @@ def request_slice(method, lineno, direction):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    query = make_slice_request(VDSURL, direction, lineno, sas)
-    json_query = json.dumps(query)
-    encoded_query = urllib.parse.quote(json_query)
+    payload = make_slice_request(VDSURL, direction, lineno, sas)
+    json_payload = json.dumps(payload)
+    encoded_payload = urllib.parse.quote(json_payload)
 
     if method == "get":
-        rdata = requests.get(f'{ENDPOINT}/slice?query={encoded_query}')
+        rdata = requests.get(f'{ENDPOINT}/slice?query={encoded_payload}')
         rdata.raise_for_status()
     elif method == "post":
-        rdata = requests.post(f'{ENDPOINT}/slice', json=query)
+        rdata = requests.post(f'{ENDPOINT}/slice', json=payload)
         rdata.raise_for_status()
     else:
         raise ValueError(f'Unknown method {method}')
@@ -234,15 +234,15 @@ def request_fence(method, coordinates, coordinate_system):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    query = make_fence_request(VDSURL, coordinate_system, coordinates, sas)
-    json_query = json.dumps(query)
-    encoded_query = urllib.parse.quote(json_query)
+    payload = make_fence_request(VDSURL, coordinate_system, coordinates, sas)
+    json_payload = json.dumps(payload)
+    encoded_payload = urllib.parse.quote(json_payload)
 
     if method == "get":
-        rdata = requests.get(f'{ENDPOINT}/fence?query={encoded_query}')
+        rdata = requests.get(f'{ENDPOINT}/fence?query={encoded_payload}')
         rdata.raise_for_status()
     elif method == "post":
-        rdata = requests.post(f'{ENDPOINT}/fence', json=query)
+        rdata = requests.post(f'{ENDPOINT}/fence', json=payload)
         rdata.raise_for_status()
     else:
         raise ValueError(f'Unknown method {method}')
@@ -260,15 +260,15 @@ def request_metadata(method):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    query = make_metadata_request(VDSURL, sas)
-    json_query = json.dumps(query)
-    encoded_query = urllib.parse.quote(json_query)
+    payload = make_metadata_request(VDSURL, sas)
+    json_payload = json.dumps(payload)
+    encoded_payload = urllib.parse.quote(json_payload)
 
     if method == "get":
-        rdata = requests.get(f'{ENDPOINT}/metadata?query={encoded_query}')
+        rdata = requests.get(f'{ENDPOINT}/metadata?query={encoded_payload}')
         rdata.raise_for_status()
     elif method == "post":
-        rdata = requests.post(f'{ENDPOINT}/metadata', json=query)
+        rdata = requests.post(f'{ENDPOINT}/metadata', json=payload)
         rdata.raise_for_status()
     else:
         raise ValueError(f'Unknown method {method}')
