@@ -15,8 +15,8 @@ type Endpoint struct {
 	MakeVdsConnection vds.ConnectionMaker
 }
 
-func (e *Endpoint) metadata(ctx *gin.Context, query MetadataRequest) {
-	conn, err := e.MakeVdsConnection(query.Vds, query.Sas)
+func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
+	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -31,26 +31,26 @@ func (e *Endpoint) metadata(ctx *gin.Context, query MetadataRequest) {
 	ctx.Data(http.StatusOK, "application/json", buffer)
 }
 
-func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
-	conn, err := e.MakeVdsConnection(query.Vds, query.Sas)
+func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
+	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	axis, err := vds.GetAxis(strings.ToLower(query.Direction))
+	axis, err := vds.GetAxis(strings.ToLower(request.Direction))
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	metadata, err := vds.GetSliceMetadata(*conn, *query.Lineno, axis)
+	metadata, err := vds.GetSliceMetadata(*conn, *request.Lineno, axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	data, err := vds.GetSlice(*conn, *query.Lineno, axis)
+	data, err := vds.GetSlice(*conn, *request.Lineno, axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -58,26 +58,28 @@ func (e *Endpoint) slice(ctx *gin.Context, query SliceRequest) {
 	writeResponse(ctx, metadata, data)
 }
 
-func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
-	conn, err := e.MakeVdsConnection(query.Vds, query.Sas)
+func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
+	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	coordinateSystem, err := vds.GetCoordinateSystem(strings.ToLower(query.CoordinateSystem))
+	coordinateSystem, err := vds.GetCoordinateSystem(
+		strings.ToLower(request.CoordinateSystem),
+	)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	interpolation, err := vds.GetInterpolationMethod(query.Interpolation)
+	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	metadata, err := vds.GetFenceMetadata(*conn, query.Coordinates)
+	metadata, err := vds.GetFenceMetadata(*conn, request.Coordinates)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -86,7 +88,7 @@ func (e *Endpoint) fence(ctx *gin.Context, query FenceRequest) {
 	data, err := vds.GetFence(
 		*conn,
 		coordinateSystem,
-		query.Coordinates,
+		request.Coordinates,
 		interpolation,
 	)
 
@@ -120,12 +122,12 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /metadata  [get]
 func (e *Endpoint) MetadataGet(ctx *gin.Context) {
-	var query MetadataRequest
-	if err := parseGetRequest(ctx, &query); err != nil {
+	var request MetadataRequest
+	if err := parseGetRequest(ctx, &request); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.metadata(ctx, query)
+	e.metadata(ctx, request)
 }
 
 // MetadataPost godoc
@@ -138,12 +140,12 @@ func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /metadata  [post]
 func (e *Endpoint) MetadataPost(ctx *gin.Context) {
-	var query MetadataRequest
-	if err := ctx.ShouldBind(&query); err != nil {
+	var request MetadataRequest
+	if err := ctx.ShouldBind(&request); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.metadata(ctx, query)
+	e.metadata(ctx, request)
 }
 
 // SliceGet godoc
@@ -157,12 +159,12 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
-	var query SliceRequest
-	if err := parseGetRequest(ctx, &query); err != nil {
+	var request SliceRequest
+	if err := parseGetRequest(ctx, &request); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.slice(ctx, query)
+	e.slice(ctx, request)
 }
 
 // SlicePost godoc
@@ -177,12 +179,12 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
-	var query SliceRequest
-	if err := ctx.ShouldBind(&query); err != nil {
+	var request SliceRequest
+	if err := ctx.ShouldBind(&request); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.slice(ctx, query)
+	e.slice(ctx, request)
 }
 
 // FenceGet godoc
@@ -197,12 +199,12 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /fence  [get]
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
-	var query FenceRequest
-	if err := parseGetRequest(ctx, &query); err != nil {
+	var request FenceRequest
+	if err := parseGetRequest(ctx, &request); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.fence(ctx, query)
+	e.fence(ctx, request)
 }
 
 // FencePost godoc
@@ -217,10 +219,10 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /fence  [post]
 func (e *Endpoint) FencePost(ctx *gin.Context) {
-	var query FenceRequest
-	if err := ctx.ShouldBind(&query); err != nil {
+	var request FenceRequest
+	if err := ctx.ShouldBind(&request); err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	e.fence(ctx, query)
+	e.fence(ctx, request)
 }
