@@ -15,7 +15,7 @@ RUN apk --no-cache add \
 WORKDIR /
 RUN git clone https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds.git
 WORKDIR /open-vds
-RUN git checkout cbcd7b6163768118805dbcd080a5b0e386b82a6a
+RUN git checkout 3.1.2
 
 RUN cmake -S . \
     -B build \
