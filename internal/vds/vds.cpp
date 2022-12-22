@@ -325,9 +325,7 @@ void set_voxels(
             voxelline = lineno_index_to_voxel(lineno, vdim, layout);
             break;
         }
-        case CDP: {
-            break;
-        }
+        case CDP: 
         default: {
             throw std::runtime_error("Unhandled coordinate system");
         }
