@@ -6,6 +6,40 @@ import (
 	"net/url"
 )
 
+func srtContainsObject(srt string) bool {
+	return strings.Contains(srt, "o");
+}
+
+func srtContainsContainer(srt string) bool {
+	return strings.Contains(srt, "c");
+}
+
+/** Validate 'srt' (Signed Resource Types)
+ *
+ * Validate that the srt parameter in the sas token contains both 'c'
+ * (container) and 'o' (object/blob). This is the minimum set of resource types
+ * needed by OpenVDS to read a VDS from Blob Store.
+ */
+func validateSasSrt(connection *AzureConnection) error {
+	query, err := url.ParseQuery(connection.sas)
+	if err != nil {
+		return fmt.Errorf(
+			"illegal sas-token, was: '%s',  err: %v",
+			connection.sas,
+			err,
+		)
+	}
+
+	srt := query.Get("srt")
+	if srtContainsObject(srt) && srtContainsContainer(srt) {
+		return nil
+	}
+	return fmt.Errorf(
+		"invalid sas-token, expected 'c' and 'o' in 'srt', found: '%s'",
+		srt,
+	)
+}
+
 type Connection interface {
 	Url()              string
 	ConnectionString() string
@@ -124,6 +158,25 @@ func MakeAzureConnection(accounts []string) ConnectionMaker {
 		}
 
 		container, blobPath := splitAzureUrl(blobUrl.Path)
-		return NewAzureConnection(blobPath, container, blobUrl.Host, sanitizeSAS(sas)), nil
+		connection := NewAzureConnection(
+			blobPath,
+			container,
+			blobUrl.Host,
+			sanitizeSAS(sas),
+		)
+
+		/*
+		 * OpenVDS (v3.0.3) segfaults on sas-tokens where the srt-field (allowed
+		 * resource types) contains 'c' (container) but _not_ 'o' (object/blob).
+		 * Such as tokens are valid in a general sense, but does not provide enough
+		 * access in order to read a VDS.
+		 *
+		 * Once this bug is fixed upstream this manual check can go way
+		 */
+		if err := validateSasSrt(connection); err != nil {
+			return nil, err
+		}
+
+		return connection, nil
 	}
 }
