@@ -38,36 +38,36 @@ enum InterpolationMethod {
 };
 
 struct requestdata metadata(
-    const char* vds,
-    const char* credentials
+    char const * const vds,
+    char const * const credentials
 );
 
 struct requestdata slice(
-    const char* vds,
-    const char* credentials,
-    int lineno,
-    enum Axis direction
+    char const * const vds,
+    char const * const credentials,
+    const int lineno,
+    const enum Axis direction
 );
 
 struct requestdata slice_metadata(
-    const char* vds,
-    const char* credentials,
-    enum Axis direction
+    char const * const vds,
+    char const * const credentials,
+    const enum Axis direction
 );
 
 struct requestdata fence(
-    const char* vds,
-    const char* credentials,
-    enum CoordinateSystem coordinate_system,
-    const float* points,
-    size_t npoints,
-    enum InterpolationMethod interpolation_method
+    char const * const vds,
+    char const * const credentials,
+    const enum CoordinateSystem coordinate_system,
+    float const * const points,
+    const size_t npoints,
+    const enum InterpolationMethod interpolation_method
 );
 
 struct requestdata fence_metadata(
-    const char* vds,
-    const char* credentials,
-    size_t npoints
+    char const * const vds,
+    char const * const credentials,
+    const size_t npoints
 );
 
 void requestdata_delete(struct requestdata*);

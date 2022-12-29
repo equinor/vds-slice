@@ -325,7 +325,7 @@ void set_voxels(
             voxelline = lineno_index_to_voxel(lineno, vdim, layout);
             break;
         }
-        case CDP: 
+        case CDP:
         default: {
             throw std::runtime_error("Unhandled coordinate system");
         }
@@ -699,10 +699,10 @@ struct requestdata handle_error(
 }
 
 struct requestdata slice(
-    const char* vds,
-    const char* credentials,
-    int lineno,
-    Axis ax
+    char const * const vds,
+    char const * const credentials,
+    const int lineno,
+    const Axis ax
 ) {
     std::string cube(vds);
     std::string cred(credentials);
@@ -715,9 +715,9 @@ struct requestdata slice(
 }
 
 struct requestdata slice_metadata(
-    const char* vds,
-    const char* credentials,
-    Axis ax
+    char const * const vds,
+    char const * const credentials,
+    const Axis ax
 ) {
     std::string cube(vds);
     std::string cred(credentials);
@@ -730,12 +730,12 @@ struct requestdata slice_metadata(
 }
 
 struct requestdata fence(
-    const char* vds,
-    const char* credentials,
-    enum CoordinateSystem coordinate_system,
-    const float* coordinates,
-    size_t npoints,
-    enum InterpolationMethod interpolation_method
+    char const * const vds,
+    char const * const credentials,
+    const enum CoordinateSystem coordinate_system,
+    float const * const coordinates,
+    const size_t npoints,
+    const enum InterpolationMethod interpolation_method
 ) {
     std::string cube(vds);
     std::string cred(credentials);
@@ -750,9 +750,9 @@ struct requestdata fence(
 }
 
 struct requestdata fence_metadata(
-    const char* vds,
-    const char* credentials,
-    size_t npoints
+    char const * const vds,
+    char const * const credentials,
+    const size_t npoints
 ) {
     std::string cube(vds);
     std::string cred(credentials);
@@ -765,8 +765,8 @@ struct requestdata fence_metadata(
 }
 
 struct requestdata metadata(
-    const char* vds,
-    const char* credentials
+    char const * const vds,
+    char const * const credentials
 ) {
     try {
         std::string cube(vds);
