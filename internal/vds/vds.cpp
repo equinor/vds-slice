@@ -698,6 +698,19 @@ struct requestdata handle_error(
     return buf;
 }
 
+struct requestdata metadata(
+    char const * const vds,
+    char const * const credentials
+) {
+    try {
+        std::string cube(vds);
+        std::string cred(credentials);
+        return metadata(cube, cred);
+    } catch (const std::exception& e) {
+        return handle_error(e);
+    }
+}
+
 struct requestdata slice(
     char const * const vds,
     char const * const credentials,
@@ -759,19 +772,6 @@ struct requestdata fence_metadata(
 
     try {
         return fetch_fence_metadata(cube, cred, npoints);
-    } catch (const std::exception& e) {
-        return handle_error(e);
-    }
-}
-
-struct requestdata metadata(
-    char const * const vds,
-    char const * const credentials
-) {
-    try {
-        std::string cube(vds);
-        std::string cred(credentials);
-        return metadata(cube, cred);
     } catch (const std::exception& e) {
         return handle_error(e);
     }
