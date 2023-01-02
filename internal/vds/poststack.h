@@ -22,6 +22,11 @@ public:
         const LevelOfDetail level_of_detail = LevelOfDetail::Default,
         const Channel       channel = Channel::Default
     );
+
+    //TODO: Remove this function in the future
+    const OpenVDS::VolumeDataLayout* get_layout() {
+        return this->layout_;
+    }
 };
 
 #endif /* POSTSTACK_H */
