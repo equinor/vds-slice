@@ -5,6 +5,35 @@
 
 #include <OpenVDS/KnownMetadata.h>
 
+AxisMetadata::AxisMetadata(
+    const OpenVDS::VolumeDataLayout* layout,
+    const int voxel_dimension
+) noexcept
+    : axis_descriptor_(layout->GetAxisDescriptor(voxel_dimension))
+{}
+
+int AxisMetadata::min() const {
+    return this->axis_descriptor_.GetCoordinateMin();
+}
+
+int AxisMetadata::max() const {
+    return this->axis_descriptor_.GetCoordinateMax();
+}
+
+int AxisMetadata::number_of_samples() const {
+    return this->axis_descriptor_.GetNumSamples();
+}
+
+std::string AxisMetadata::name() const {
+    std::string name = this->axis_descriptor_.GetName();
+    return name;
+}
+
+std::string AxisMetadata::unit() const {
+    std::string unit = this->axis_descriptor_.GetUnit();
+    return unit;
+}
+
 void SeismicHandle::SeismicValidator::validate( const SeismicHandle& vds_handle ) {
     if (vds_handle.layout_->GetDimensionality() != expected_dimensionality_) {
         throw std::runtime_error(

@@ -1,6 +1,8 @@
 #ifndef POSTSTACK_H
 #define POSTSTACK_H
 
+#include<array>
+
 #include "seismichandle.h"
 #include "vds.h"
 
@@ -27,6 +29,8 @@ public:
     const OpenVDS::VolumeDataLayout* get_layout() {
         return this->layout_;
     }
+
+    std::array<AxisMetadata, 2> get_axis_metadata(const Axis axis) const;
 };
 
 #endif /* POSTSTACK_H */

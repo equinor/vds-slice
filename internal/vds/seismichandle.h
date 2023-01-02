@@ -19,6 +19,22 @@ enum class LevelOfDetail : int {
     Default = Level0
 };
 
+class AxisMetadata {
+protected:
+    OpenVDS::VolumeDataAxisDescriptor axis_descriptor_;
+public:
+    AxisMetadata(
+        const OpenVDS::VolumeDataLayout* layout,
+        const int voxel_dimension
+    ) noexcept;
+
+    int min() const;
+    int max() const;
+    int number_of_samples() const;
+
+    std::string name() const;
+    std::string unit() const;
+};
 
 class SeismicHandle {
 public:

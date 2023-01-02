@@ -199,21 +199,6 @@ void dimension_validation(const OpenVDS::VolumeDataLayout* layout) {
     }
 }
 
-int dim_tovoxel(int dimension) {
-    /*
-     * For now assume that the axis order is always depth/time/sample,
-     * crossline, inline. This should be checked elsewhere.
-     */
-    switch (dimension) {
-        case 0: return 2;
-        case 1: return 1;
-        case 2: return 0;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
 int voxel_todim(int voxel) {
     /*
      * For now assume that the axis order is always depth/time/sample,
@@ -241,6 +226,20 @@ nlohmann::json json_axis(
         { "max",        layout->GetDimensionMax(voxel_dim)        },
         { "samples",    layout->GetDimensionNumSamples(voxel_dim) },
         { "unit",       layout->GetDimensionUnit(voxel_dim)       },
+    };
+    return doc;
+}
+
+nlohmann::json convert_axis_descriptor_to_json(
+    const AxisMetadata& axis_metadata
+) {
+    nlohmann::json doc;
+    doc = {
+        { "annotation", axis_metadata.name()              },
+        { "min",        axis_metadata.min()               },
+        { "max",        axis_metadata.max()               },
+        { "samples",    axis_metadata.number_of_samples() },
+        { "unit",       axis_metadata.unit()              },
     };
     return doc;
 }
@@ -472,29 +471,10 @@ struct requestdata slice_metadata(
         nlohmann::json meta;
         meta["format"] = poststackdata.get_format(Channel::Sample);
 
-        // TODO: Move this into the axis descriptor or VDS handle
-        auto dimension = axis_todim(ax);
-        auto vdim = dim_tovoxel(dimension);
-        /*
-         * SEGYImport always writes annotation 'Sample' for axis K. We, on the
-         * other hand, decided that we base the valid input direction on the units
-         * of said axis. E.g. ms/s -> Time, etc. This leads to an inconsistency
-         * between what we require as input for axis K and what we return as
-         * metadata. In the ms/s case we require the input to be asked for in axis
-         * 'Time', but the return metadata can potentially say 'Sample'.
-         *
-         * TODO: Either revert the 'clever' unit validation, or patch the
-         * K-annotation here. IMO the later is too clever for it's own good and
-         * would be quite suprising for people that use this API in conjunction
-         * with the OpenVDS library.
-         */
-        std::vector< int > dims;
-        for (int i = 0; i < 3; ++i) {
-            if (i == vdim) continue;
-            dims.push_back(i);
-        }
-        meta["x"] = json_axis(dims[0], poststackdata.get_layout() );
-        meta["y"] = json_axis(dims[1], poststackdata.get_layout() );
+        const auto axis_metadata = poststackdata.get_axis_metadata( ax );
+
+        meta["x"] = convert_axis_descriptor_to_json( axis_metadata[AxisDirection::X] );
+        meta["y"] = convert_axis_descriptor_to_json( axis_metadata[AxisDirection::Y] );
 
         auto bbox = poststackdata.get_bounding_box();
         meta["boundingBox"]["ij"]   = bbox.index();

@@ -261,3 +261,33 @@ requestdata PostStackHandle::get_slice(const Axis          axis,
     data.release();
     return buffer;
 }
+
+std::array<AxisMetadata, 2> PostStackHandle::get_axis_metadata(const Axis axis) const {
+    using namespace internal;
+    auto dimension = axis_todim(axis);
+    auto vdim = dim_tovoxel(dimension);
+    /*
+        * SEGYImport always writes annotation 'Sample' for axis K. We, on the
+        * other hand, decided that we base the valid input direction on the units
+        * of said axis. E.g. ms/s -> Time, etc. This leads to an inconsistency
+        * between what we require as input for axis K and what we return as
+        * metadata. In the ms/s case we require the input to be asked for in axis
+        * 'Time', but the return metadata can potentially say 'Sample'.
+        *
+        * TODO: Either revert the 'clever' unit validation, or patch the
+        * K-annotation here. IMO the later is too clever for it's own good and
+        * would be quite suprising for people that use this API in conjunction
+        * with the OpenVDS library.
+        */
+    std::vector< int > dims;
+    for (int i = 0; i < 3; ++i) {
+        if (i == vdim) continue;
+        dims.push_back(i);
+    }
+
+    std::array<AxisMetadata, 2> axis_metadata{
+        AxisMetadata( this->layout_, dims[AxisDirection::X] ),
+        AxisMetadata( this->layout_, dims[AxisDirection::Y] )
+    };
+    return axis_metadata;
+}
