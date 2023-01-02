@@ -37,6 +37,12 @@ enum InterpolationMethod {
     TRIANGULAR
 };
 
+//TODO: Remove this after handling has fully moved into the data handler
+int axis_todim(enum Axis ax);
+#include <stdbool.h>
+bool unit_validation(enum Axis ax, const char* zunit);
+// End TODO
+
 struct requestdata metadata(
     char const * const vds,
     char const * const credentials

@@ -16,13 +16,12 @@ class PostStackHandle : public SeismicHandle {
 public:
     PostStackHandle(std::string url, std::string conn);
 
-    requestdata slice(
+    requestdata get_slice(
         const Axis          axis,
         const int           line_number,
         const LevelOfDetail level_of_detail = LevelOfDetail::Default,
         const Channel       channel = Channel::Default
     );
-
 };
 
 #endif /* POSTSTACK_H */

@@ -19,6 +19,7 @@
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
 #include "boundingbox.h"
+#include "poststack.h"
 
 using namespace std;
 
@@ -44,24 +45,6 @@ int axis_todim(Axis ax) {
         case TIME:
         case SAMPLE:
             return 2;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-CoordinateSystem axis_tosystem(Axis ax) {
-    switch (ax) {
-        case I:
-        case J:
-        case K:
-            return INDEX;
-        case INLINE:
-        case CROSSLINE:
-        case DEPTH:
-        case TIME:
-        case SAMPLE:
-            return ANNOTATION;
         default: {
             throw std::runtime_error("Unhandled axis");
         }
@@ -191,7 +174,6 @@ bool axis_order_validation(const OpenVDS::VolumeDataLayout *layout) {
     return std::any_of(depth.begin(), depth.end(), isoneof);
 }
 
-
 void axis_validation(Axis ax, const OpenVDS::VolumeDataLayout* layout) {
     if (not axis_order_validation(layout)) {
         std::string msg = "Unsupported axis ordering in VDS, expected ";
@@ -247,101 +229,6 @@ int voxel_todim(int voxel) {
     }
 }
 
-int lineno_annotation_to_voxel(
-    int lineno,
-    int vdim,
-    const OpenVDS::VolumeDataLayout *layout
-) {
-    /* Assume that annotation coordinates are integers */
-    int min      = layout->GetDimensionMin(vdim);
-    int max      = layout->GetDimensionMax(vdim);
-    int nsamples = layout->GetDimensionNumSamples(vdim);
-
-    auto stride = (max - min) / (nsamples - 1);
-
-    if (lineno < min || lineno > max || (lineno - min) % stride) {
-        throw std::runtime_error(
-            "Invalid lineno: " + std::to_string(lineno) +
-            ", valid range: [" + std::to_string(min) +
-            ":" + std::to_string(max) +
-            ":" + std::to_string(stride) + "]"
-        );
-    }
-
-    int voxelline = (lineno - min) / stride;
-    return voxelline;
-}
-
-int lineno_index_to_voxel(
-    int lineno,
-    int vdim,
-    const OpenVDS::VolumeDataLayout *layout
-) {
-    /* Line-numbers in IJK match Voxel - do bound checking and return*/
-    int min = 0;
-    int max = layout->GetDimensionNumSamples(vdim) - 1;
-
-    if (lineno < min || lineno > max) {
-        throw std::runtime_error(
-            "Invalid lineno: " + std::to_string(lineno) +
-            ", valid range: [" + std::to_string(min) +
-            ":" + std::to_string(max) +
-            ":1]"
-        );
-    }
-
-    return lineno;
-}
-
-/*
- * Convert target dimension/axis + lineno to VDS voxel coordinates.
- */
-void set_voxels(
-    Axis ax,
-    int dimension,
-    int lineno,
-    const OpenVDS::VolumeDataLayout *layout,
-    int (&voxelmin)[OpenVDS::VolumeDataLayout::Dimensionality_Max],
-    int (&voxelmax)[OpenVDS::VolumeDataLayout::Dimensionality_Max]
-) {
-    auto vmin = OpenVDS::IntVector3 { 0, 0, 0 };
-    auto vmax = OpenVDS::IntVector3 {
-        layout->GetDimensionNumSamples(0),
-        layout->GetDimensionNumSamples(1),
-        layout->GetDimensionNumSamples(2)
-    };
-
-    int voxelline;
-    auto vdim   = dim_tovoxel(dimension);
-    auto system = axis_tosystem(ax);
-    switch (system) {
-        case ANNOTATION: {
-            auto transformer = OpenVDS::IJKCoordinateTransformer(layout);
-            if (not transformer.AnnotationsDefined()) {
-                throw std::runtime_error("VDS doesn't define annotations");
-            }
-            voxelline = lineno_annotation_to_voxel(lineno, vdim, layout);
-            break;
-        }
-        case INDEX: {
-            voxelline = lineno_index_to_voxel(lineno, vdim, layout);
-            break;
-        }
-        case CDP:
-        default: {
-            throw std::runtime_error("Unhandled coordinate system");
-        }
-    }
-
-    vmin[vdim] = voxelline;
-    vmax[vdim] = voxelline + 1;
-
-    /* Commit */
-    for (int i = 0; i < 3; i++) {
-        voxelmin[i] = vmin[i];
-        voxelmax[i] = vmax[i];
-    }
-}
 
 nlohmann::json json_axis(
     int voxel_dim,
@@ -369,51 +256,6 @@ OpenVDS::ScopedVDSHandle open_vds(
         throw std::runtime_error("Could not open VDS: " + error.string);
     }
     return handle;
-}
-
-struct requestdata fetch_slice(
-    std::string url,
-    std::string credentials,
-    Axis ax,
-    int lineno
-) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    auto const *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
-    axis_validation(ax, layout);
-
-    int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
-    int vmax[OpenVDS::Dimensionality_Max] = { 1, 1, 1, 1, 1, 1};
-    auto dimension = axis_todim(ax);
-    set_voxels(ax, dimension, lineno, layout, vmin, vmax);
-
-    auto format = layout->GetChannelFormat(0);
-    auto size = access.GetVolumeSubsetBufferSize(vmin, vmax, format, 0, 0);
-
-    std::unique_ptr< char[] > data(new char[size]());
-    auto request = access.RequestVolumeSubset(
-        data.get(),
-        size,
-        OpenVDS::Dimensions_012,
-        0,
-        0,
-        vmin,
-        vmax,
-        format
-    );
-
-    request.get()->WaitForCompletion();
-
-    requestdata buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    /* The buffer should *not* be free'd on success, as it's returned to CGO */
-    data.release();
-    return buffer;
 }
 
 struct requestdata fetch_slice_metadata(
@@ -661,12 +503,11 @@ struct requestdata slice(
     const int lineno,
     const Axis ax
 ) {
-    std::string cube(vds);
-    std::string cred(credentials);
-
     try {
-        return fetch_slice(cube, cred, ax, lineno);
+        PostStackHandle poststackdata( vds, credentials );
+        return poststackdata.get_slice(ax, lineno);
     } catch (const std::exception& e) {
+        std::cerr << "Fetching error " << e.what() << std::endl;
         return handle_error(e);
     }
 }
