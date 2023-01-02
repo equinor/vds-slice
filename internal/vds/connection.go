@@ -6,9 +6,91 @@ import (
 	"net/url"
 )
 
-type Connection struct {
-	Url        string
-	Credential string
+func srtContainsObject(srt string) bool {
+	return strings.Contains(srt, "o");
+}
+
+func srtContainsContainer(srt string) bool {
+	return strings.Contains(srt, "c");
+}
+
+/** Validate 'srt' (Signed Resource Types)
+ *
+ * Validate that the srt parameter in the sas token contains both 'c'
+ * (container) and 'o' (object/blob). This is the minimum set of resource types
+ * needed by OpenVDS to read a VDS from Blob Store.
+ */
+func validateSasSrt(connection *AzureConnection) error {
+	query, err := url.ParseQuery(connection.sas)
+	if err != nil {
+		return fmt.Errorf(
+			"illegal sas-token, was: '%s',  err: %v",
+			connection.sas,
+			err,
+		)
+	}
+
+	srt := query.Get("srt")
+	if srtContainsObject(srt) && srtContainsContainer(srt) {
+		return nil
+	}
+	return fmt.Errorf(
+		"invalid sas-token, expected 'c' and 'o' in 'srt', found: '%s'",
+		srt,
+	)
+}
+
+type Connection interface {
+	Url()              string
+	ConnectionString() string
+}
+
+type AzureConnection struct {
+	blobPath  string
+	container string
+	host      string
+	sas       string
+}
+
+func (c *AzureConnection) Url() string {
+	return fmt.Sprintf("azure://%s/%s", c.container, c.blobPath)
+}
+
+func (c *AzureConnection) ConnectionString() string {
+	return fmt.Sprintf("BlobEndpoint=https://%s;SharedAccessSignature=?%s",
+		c.host,
+		c.sas,
+	)
+}
+
+func NewAzureConnection(
+	blobPath  string,
+	container string,
+	host      string,
+	sas       string,
+) *AzureConnection {
+	return &AzureConnection{
+		blobPath:  blobPath,
+		container: container,
+		host:      host,
+		sas:       sas,
+	}
+}
+
+type FileConnection struct {
+	url string
+}
+
+func (f *FileConnection) Url() string {
+	return f.url
+}
+
+func (f *FileConnection) ConnectionString() string {
+	return ""
+}
+
+func NewFileConnection(path string) *FileConnection {
+	return &FileConnection{ url: path }
 }
 
 /*
@@ -42,7 +124,13 @@ func sanitizeSAS(sas string) string {
 	return strings.TrimPrefix(sas, "?")
 }
 
-type ConnectionMaker func(blob, sas string) (*Connection, error)
+func splitAzureUrl(path string) (string, string) {
+	path = strings.TrimPrefix(path, "/")
+	container, blobPath, _ := strings.Cut(path, "/")
+	return container, blobPath
+}
+
+type ConnectionMaker func(blob, sas string) (Connection, error)
 
 func MakeAzureConnection(accounts []string) ConnectionMaker {
 	var allowlist []*url.URL
@@ -59,7 +147,7 @@ func MakeAzureConnection(accounts []string) ConnectionMaker {
 		allowlist = append(allowlist, url)
 	}
 
-	return func(blob string, sas string) (*Connection, error) {
+	return func(blob string, sas string) (Connection, error) {
 		blobUrl, err := makeUrl(blob)
 		if err != nil {
 			return nil, err
@@ -69,14 +157,26 @@ func MakeAzureConnection(accounts []string) ConnectionMaker {
 			return nil, err
 		}
 
-		vdsCredentials := fmt.Sprintf("BlobEndpoint=%s://%s;SharedAccessSignature=?%s",
-			blobUrl.Scheme,
+		container, blobPath := splitAzureUrl(blobUrl.Path)
+		connection := NewAzureConnection(
+			blobPath,
+			container,
 			blobUrl.Host,
 			sanitizeSAS(sas),
 		)
 
-		vdsPath := fmt.Sprintf("azure:/%s", blobUrl.Path)
+		/*
+		 * OpenVDS (v3.0.3) segfaults on sas-tokens where the srt-field (allowed
+		 * resource types) contains 'c' (container) but _not_ 'o' (object/blob).
+		 * Such as tokens are valid in a general sense, but does not provide enough
+		 * access in order to read a VDS.
+		 *
+		 * Once this bug is fixed upstream this manual check can go way
+		 */
+		if err := validateSasSrt(connection); err != nil {
+			return nil, err
+		}
 
-		return &Connection{ Url: vdsPath, Credential: vdsCredentials }, nil
+		return connection, nil
 	}
 }

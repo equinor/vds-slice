@@ -14,7 +14,7 @@ import (
 func make_connection(name string) Connection {
 	path := fmt.Sprintf("../../testdata/%s/%s_default.vds", name, name)
 	path = fmt.Sprintf("file://%s", path)
-	return Connection{Url: path}
+	return NewFileConnection(path)
 }
 
 var well_known = make_connection("well_known")
