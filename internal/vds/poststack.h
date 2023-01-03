@@ -25,10 +25,14 @@ public:
         const Channel       channel = Channel::Default
     );
 
-    //TODO: Remove this function in the future
-    const OpenVDS::VolumeDataLayout* get_layout() {
-        return this->layout_;
-    }
+    requestdata get_fence(
+        const CoordinateSystem    coordinate_system,
+        float const *             coordinates,
+        const size_t              npoints,
+        const InterpolationMethod interpolation_method,
+        const LevelOfDetail       level_of_detail = LevelOfDetail::Default,
+        const Channel             channel = Channel::Default
+    );
 
     std::array<AxisMetadata, 2> get_slice_axis_metadata(const Axis axis) const;
     std::array<AxisMetadata, 3> get_all_axes_metadata() const;

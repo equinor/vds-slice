@@ -67,19 +67,6 @@ const std::string axis_tostring(Axis ax) {
     }
 }
 
-OpenVDS::InterpolationMethod to_interpolation(InterpolationMethod interpolation) {
-    switch (interpolation)
-    {
-        case NEAREST: return OpenVDS::InterpolationMethod::Nearest;
-        case LINEAR: return OpenVDS::InterpolationMethod::Linear;
-        case CUBIC: return OpenVDS::InterpolationMethod::Cubic;
-        case ANGULAR: return OpenVDS::InterpolationMethod::Angular;
-        case TRIANGULAR: return OpenVDS::InterpolationMethod::Triangular;
-        default: {
-            throw std::runtime_error("Unhandled interpolation method");
-        }
-    }
-}
 
 std::string vdsformat_tostring(OpenVDS::VolumeDataFormat format) {
     switch (format) {
@@ -190,31 +177,6 @@ void axis_validation(Axis ax, const OpenVDS::VolumeDataLayout* layout) {
     }
 }
 
-void dimension_validation(const OpenVDS::VolumeDataLayout* layout) {
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
-}
-
-int voxel_todim(int voxel) {
-    /*
-     * For now assume that the axis order is always depth/time/sample,
-     * crossline, inline. This should be checked elsewhere.
-     */
-    switch (voxel) {
-        case 0: return 2;
-        case 1: return 1;
-        case 2: return 0;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-
 nlohmann::json json_axis(
     int voxel_dim,
     const OpenVDS::VolumeDataLayout *layout
@@ -255,109 +217,6 @@ OpenVDS::ScopedVDSHandle open_vds(
         throw std::runtime_error("Could not open VDS: " + error.string);
     }
     return handle;
-}
-
-struct requestdata fetch_fence(
-    const std::string& url,
-    const std::string& credentials,
-    enum CoordinateSystem coordinate_system,
-    const float* coordinates,
-    size_t npoints,
-    enum InterpolationMethod interpolation_method
-) {
-    auto handle = open_vds(url, credentials);
-
-    auto accessManager = OpenVDS::GetAccessManager(handle);
-    auto const *layout = accessManager.GetVolumeDataLayout();
-
-    dimension_validation(layout);
-
-    const auto dimension_map =
-            layout->GetVDSIJKGridDefinitionFromMetadata().dimensionMap;
-
-    unique_ptr< float[][OpenVDS::Dimensionality_Max] > coords(
-        new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
-    );
-
-    auto coordinate_transformer = OpenVDS::IJKCoordinateTransformer(layout);
-    auto transform_coordinate = [&] (const float x, const float y) {
-        switch (coordinate_system) {
-            case INDEX:
-                return OpenVDS::Vector<double, 3> {x, y, 0};
-            case ANNOTATION:
-                return coordinate_transformer.AnnotationToIJKPosition({x, y, 0});
-            case CDP:
-                return coordinate_transformer.WorldToIJKPosition({x, y, 0});
-            default: {
-                throw std::runtime_error("Unhandled coordinate system");
-            }
-        }
-    };
-
-    for (size_t i = 0; i < npoints; i++) {
-        const float x = *(coordinates++);
-        const float y = *(coordinates++);
-
-        auto coordinate = transform_coordinate(x, y);
-
-        auto validate_boundary = [&] (const int voxel) {
-            const auto min = -0.5;
-            const auto max = layout->GetDimensionNumSamples(voxel_todim(voxel))
-                            - 0.5;
-            if(coordinate[voxel] < min || coordinate[voxel] >= max) {
-                const std::string coordinate_str =
-                    "(" +std::to_string(x) + "," + std::to_string(y) + ")";
-                throw std::runtime_error(
-                    "Coordinate " + coordinate_str + " is out of boundaries "+
-                    "in dimension "+ std::to_string(voxel)+ "."
-                );
-            }
-        };
-
-        validate_boundary(0);
-        validate_boundary(1);
-
-        /* openvds uses rounding down for Nearest interpolation.
-         * As it is counterintuitive, we fix it by snapping to nearest index
-         * and rounding half-up.
-         */
-        if (interpolation_method == NEAREST) {
-            coordinate[0] = std::round(coordinate[0] + 1) - 1;
-            coordinate[1] = std::round(coordinate[1] + 1) - 1;
-        }
-
-        coords[i][dimension_map[0]] = coordinate[0];
-        coords[i][dimension_map[1]] = coordinate[1];
-    }
-
-    // TODO: Verify that trace dimension is always 0
-    auto size = accessManager.GetVolumeTracesBufferSize(npoints, 0);
-
-    std::unique_ptr< char[] > data(new char[size]());
-
-    auto request = accessManager.RequestVolumeTraces(
-            (float*)data.get(),
-            size,
-            OpenVDS::Dimensions_012, 0, 0,
-            coords.get(),
-            npoints,
-            to_interpolation(interpolation_method),
-            0
-    );
-    bool success = request.get()->WaitForCompletion();
-
-    if(!success) {
-        const auto msg = "Failed to fetch fence from VDS";
-        throw std::runtime_error(msg);
-    }
-
-    requestdata buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    data.release();
-
-    return buffer;
 }
 
 struct requestdata handle_error(
@@ -467,13 +326,13 @@ struct requestdata fence(
     const size_t npoints,
     const enum InterpolationMethod interpolation_method
 ) {
-    std::string cube(vds);
-    std::string cred(credentials);
-
     try {
-        return fetch_fence(
-            cube, cred, coordinate_system, coordinates, npoints,
-            interpolation_method);
+        PostStackHandle poststackdata( vds, credentials );
+        return poststackdata.get_fence(
+            coordinate_system,
+            coordinates,
+            npoints,
+            interpolation_method );
     } catch (const std::exception& e) {
         return handle_error(e);
     }
