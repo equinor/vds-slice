@@ -31,6 +31,11 @@ function createPoints(start, end, segmentCount) {
   return points;
 }
 
+/**
+ * Sends fence request where points are roughly even-spaced between
+ * (il1, xl1) and (il2, xl2) inclusively. Points number is maximum coordinate
+ * difference across dimensions.
+ */
 export function sendSequentialFenceRequest(il1, il2, xl1, xl2) {
   const count = Math.max(Math.abs(il1 - il2), Math.abs(xl1 - xl2));
   const pointsInline = createPoints(il1, il2, count);

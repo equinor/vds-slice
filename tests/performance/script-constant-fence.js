@@ -16,8 +16,8 @@ export const options = {
 };
 export function setup() {
   const metadata = sendSetupMetadataRequest();
-  const maxInline = getMaxIndexInDimension(metadata, "Inline");
-  const maxCrossline = getMaxIndexInDimension(metadata, "Crossline");
+  const maxInline = getMaxIndexInDimension(metadata, "Inline") - 1;
+  const maxCrossline = getMaxIndexInDimension(metadata, "Crossline") - 1;
   return [maxInline, maxCrossline];
 }
 export default function (params) {
