@@ -360,33 +360,6 @@ struct requestdata fetch_fence(
     return buffer;
 }
 
-struct requestdata fetch_fence_metadata(
-    std::string url,
-    std::string credentials,
-    size_t npoints
-) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    auto const *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
-
-    nlohmann::json meta;
-    meta["shape"] = nlohmann::json::array({npoints, layout->GetDimensionNumSamples(0)});
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
-
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    requestdata buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
-}
-
 struct requestdata handle_error(
     const std::exception& e
 ) {
@@ -511,11 +484,25 @@ struct requestdata fence_metadata(
     char const * const credentials,
     const size_t npoints
 ) {
-    std::string cube(vds);
-    std::string cred(credentials);
-
     try {
-        return fetch_fence_metadata(cube, cred, npoints);
+        PostStackHandle poststackdata( vds, credentials );
+
+        nlohmann::json meta;
+        {
+            const auto axis_metadata = poststackdata.get_all_axes_metadata();
+            meta["shape"] = nlohmann::json::array({npoints, axis_metadata[0].number_of_samples() });
+        }
+        meta["format"] = poststackdata.get_format(Channel::Sample);
+
+        auto str = meta.dump();
+        auto *data = new char[str.size()];
+        std::copy(str.begin(), str.end(), data);
+
+        requestdata buffer{};
+        buffer.size = str.size();
+        buffer.data = data;
+
+        return buffer;
     } catch (const std::exception& e) {
         return handle_error(e);
     }
