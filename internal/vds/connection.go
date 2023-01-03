@@ -19,6 +19,10 @@ func srtContainsContainer(srt string) bool {
  * Validate that the srt parameter in the sas token contains both 'c'
  * (container) and 'o' (object/blob). This is the minimum set of resource types
  * needed by OpenVDS to read a VDS from Blob Store.
+ *
+ * Only Account SAS use the srt field, while Service SAS and User Delegation
+ * SAS use Signed Resource (sr). In that case there is nothing to check for and
+ * this function will return nil.
  */
 func validateSasSrt(connection *AzureConnection) error {
 	query, err := url.ParseQuery(connection.sas)
@@ -28,6 +32,10 @@ func validateSasSrt(connection *AzureConnection) error {
 			connection.sas,
 			err,
 		)
+	}
+
+	if !query.Has("srt") {
+		return nil
 	}
 
 	srt := query.Get("srt")
