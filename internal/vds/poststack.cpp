@@ -28,6 +28,72 @@ CoordinateSystem axis_tosystem(Axis ax) {
     }
 }
 
+int axis_todim(Axis ax) {
+    switch (ax) {
+        case I:
+        case INLINE:
+            return 0;
+        case J:
+        case CROSSLINE:
+            return 1;
+        case K:
+        case DEPTH:
+        case TIME:
+        case SAMPLE:
+            return 2;
+        default: {
+            throw std::runtime_error("Unhandled axis");
+        }
+    }
+}
+
+/*
+ * Unit validation of Z-slices
+ *
+ * Verify that the units of the VDS' Z axis matches the requested slice axis.
+ * E.g. a Time slice is only valid if the units of the Z-axis in the VDS is
+ * "Seconds" or "Milliseconds"
+ */
+bool unit_validation(Axis ax, const char* zunit) {
+    /* Define some convenient lookup tables for units */
+    static const std::array< const char*, 3 > depthunits = {
+        OpenVDS::KnownUnitNames::Meter(),
+        OpenVDS::KnownUnitNames::Foot(),
+        OpenVDS::KnownUnitNames::USSurveyFoot()
+    };
+
+    static const std::array< const char*, 2 > timeunits = {
+        OpenVDS::KnownUnitNames::Millisecond(),
+        OpenVDS::KnownUnitNames::Second()
+    };
+
+    static const std::array< const char*, 1 > sampleunits = {
+        OpenVDS::KnownUnitNames::Unitless(),
+    };
+
+    auto isoneof = [zunit](const char* x) {
+        return !std::strcmp(x, zunit);
+    };
+
+    switch (ax) {
+        case I:
+        case J:
+        case K:
+        case INLINE:
+        case CROSSLINE:
+            return true;
+        case DEPTH:
+            return std::any_of(depthunits.begin(), depthunits.end(), isoneof);
+        case TIME:
+            return std::any_of(timeunits.begin(), timeunits.end(), isoneof);
+        case SAMPLE:
+            return std::any_of(sampleunits.begin(), sampleunits.end(), isoneof);
+        default: {
+            throw std::runtime_error("Unhandled axis");
+        }
+    }
+};
+
 int lineno_annotation_to_voxel(
     int lineno,
     int vdim,
