@@ -32,6 +32,12 @@ void requestdata_delete(struct requestdata* buf) {
     *buf = requestdata {};
 }
 
+static requestdata wrap_as_requestdata( const nlohmann::json::string_t& dump ) {
+    requestdata tmp{ new char[dump.size()], nullptr, dump.size() };
+    std::copy(dump.begin(), dump.end(), tmp.data);
+    return tmp;
+}
+
 nlohmann::json convert_axis_descriptor_to_json(
     const AxisMetadata& axis_metadata
 ) {
@@ -81,15 +87,7 @@ struct requestdata metadata(
             }
         }
 
-        auto str = meta.dump();
-        auto *data = new char[str.size()];
-        std::copy(str.begin(), str.end(), data);
-
-        requestdata buffer{};
-        buffer.size = str.size();
-        buffer.data = data;
-
-        return buffer;
+        return wrap_as_requestdata( meta.dump() );
     } catch (const std::exception& e) {
         return handle_error(e);
     }
@@ -131,15 +129,7 @@ struct requestdata slice_metadata(
         meta["boundingBox"]["cdp"]  = bbox.world();
         meta["boundingBox"]["ilxl"] = bbox.annotation();
 
-        auto str = meta.dump();
-        auto *data = new char[str.size()];
-        std::copy(str.begin(), str.end(), data);
-
-        requestdata buffer{};
-        buffer.size = str.size();
-        buffer.data = data;
-
-        return buffer;
+        return wrap_as_requestdata( meta.dump() );
     } catch (const std::exception& e) {
         return handle_error(e);
     }
@@ -180,15 +170,7 @@ struct requestdata fence_metadata(
         }
         meta["format"] = poststackdata.get_format(Channel::Sample);
 
-        auto str = meta.dump();
-        auto *data = new char[str.size()];
-        std::copy(str.begin(), str.end(), data);
-
-        requestdata buffer{};
-        buffer.size = str.size();
-        buffer.data = data;
-
-        return buffer;
+        return wrap_as_requestdata( meta.dump() );
     } catch (const std::exception& e) {
         return handle_error(e);
     }
