@@ -1,7 +1,10 @@
 #ifndef POSTSTACK_H
 #define POSTSTACK_H
 
-#include<array>
+#include <array>
+#include <list>
+#include <string>
+#include <unordered_map>
 
 #include "seismichandle.h"
 #include "vds.h"
@@ -36,6 +39,36 @@ public:
 
     std::array<AxisMetadata, 2> get_slice_axis_metadata(const Axis axis) const;
     std::array<AxisMetadata, 3> get_all_axes_metadata() const;
+
+protected:
+    class PostStackValidator {
+
+        static const std::unordered_map<std::string, std::list<std::string>> valid_z_axis_combinations_;
+
+        const PostStackHandle& handle_;
+        void validate_axes_order();
+
+    public:
+
+        PostStackValidator( const PostStackHandle& handle );
+
+        void validate();
+
+        static const std::unordered_map<std::string, std::list<std::string>>&
+        get_valid_z_axis_combinations() {
+            return valid_z_axis_combinations_;
+        }
+    };
+
+    class SliceRequestValidator {
+
+        public:
+
+        SliceRequestValidator();
+
+        void validate(const AxisDescriptor& axis_desc);
+
+    };
 };
 
 #endif /* POSTSTACK_H */

@@ -49,6 +49,7 @@ public:
     Axis value() const noexcept;
     int space_dimension() const;
     int voxel_dimension() const;
+    std::string api_name() const;
 };
 
 class SeismicHandle {
