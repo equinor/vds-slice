@@ -387,42 +387,6 @@ struct requestdata fetch_fence_metadata(
     return buffer;
 }
 
-struct requestdata metadata(
-    const std::string& url,
-    const std::string& credentials
-) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    const auto *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
-
-    nlohmann::json meta;
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
-
-    auto crs = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
-    meta["crs"] = layout->GetMetadataString(crs.GetCategory(), crs.GetName());
-
-    auto bbox = BoundingBox(layout);
-    meta["boundingBox"]["ij"]   = bbox.index();
-    meta["boundingBox"]["cdp"]  = bbox.world();
-    meta["boundingBox"]["ilxl"] = bbox.annotation();
-
-    for (int i = 2; i >= 0 ; i--) {
-        meta["axis"].push_back(json_axis(i, layout));
-    }
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    requestdata buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
-}
-
 struct requestdata handle_error(
     const std::exception& e
 ) {
@@ -437,9 +401,36 @@ struct requestdata metadata(
     char const * const credentials
 ) {
     try {
-        std::string cube(vds);
-        std::string cred(credentials);
-        return metadata(cube, cred);
+        PostStackHandle poststackdata( vds, credentials );
+
+        nlohmann::json meta;
+        meta["format"] = poststackdata.get_format(Channel::Sample);
+
+        meta["crs"] = poststackdata.get_crs();
+
+        auto bbox = poststackdata.get_bounding_box();
+        meta["boundingBox"]["ij"]   = bbox.index();
+        meta["boundingBox"]["cdp"]  = bbox.world();
+        meta["boundingBox"]["ilxl"] = bbox.annotation();
+
+        {
+            const auto axis_descriptor = poststackdata.get_all_axes_metadata();
+            for (auto it = axis_descriptor.rbegin(); it != axis_descriptor.rend(); ++it) {
+                meta["axis"].push_back(
+                    convert_axis_descriptor_to_json( *it )
+                );
+            }
+        }
+
+        auto str = meta.dump();
+        auto *data = new char[str.size()];
+        std::copy(str.begin(), str.end(), data);
+
+        requestdata buffer{};
+        buffer.size = str.size();
+        buffer.data = data;
+
+        return buffer;
     } catch (const std::exception& e) {
         return handle_error(e);
     }
@@ -471,7 +462,7 @@ struct requestdata slice_metadata(
         nlohmann::json meta;
         meta["format"] = poststackdata.get_format(Channel::Sample);
 
-        const auto axis_metadata = poststackdata.get_axis_metadata( ax );
+        const auto axis_metadata = poststackdata.get_slice_axis_metadata( ax );
 
         meta["x"] = convert_axis_descriptor_to_json( axis_metadata[AxisDirection::X] );
         meta["y"] = convert_axis_descriptor_to_json( axis_metadata[AxisDirection::Y] );

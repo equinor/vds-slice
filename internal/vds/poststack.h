@@ -30,7 +30,8 @@ public:
         return this->layout_;
     }
 
-    std::array<AxisMetadata, 2> get_axis_metadata(const Axis axis) const;
+    std::array<AxisMetadata, 2> get_slice_axis_metadata(const Axis axis) const;
+    std::array<AxisMetadata, 3> get_all_axes_metadata() const;
 };
 
 #endif /* POSTSTACK_H */

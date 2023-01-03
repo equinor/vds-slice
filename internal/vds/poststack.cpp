@@ -262,7 +262,7 @@ requestdata PostStackHandle::get_slice(const Axis          axis,
     return buffer;
 }
 
-std::array<AxisMetadata, 2> PostStackHandle::get_axis_metadata(const Axis axis) const {
+std::array<AxisMetadata, 2> PostStackHandle::get_slice_axis_metadata(const Axis axis) const {
     using namespace internal;
     auto dimension = axis_todim(axis);
     auto vdim = dim_tovoxel(dimension);
@@ -285,9 +285,16 @@ std::array<AxisMetadata, 2> PostStackHandle::get_axis_metadata(const Axis axis) 
         dims.push_back(i);
     }
 
-    std::array<AxisMetadata, 2> axis_metadata{
+    return {
         AxisMetadata( this->layout_, dims[AxisDirection::X] ),
         AxisMetadata( this->layout_, dims[AxisDirection::Y] )
     };
-    return axis_metadata;
+}
+
+std::array<AxisMetadata, 3> PostStackHandle::get_all_axes_metadata() const {
+    return {
+        AxisMetadata( this->layout_, AxisDirection::X ),
+        AxisMetadata( this->layout_, AxisDirection::Y ),
+        AxisMetadata( this->layout_, AxisDirection::Z )
+    };
 }
