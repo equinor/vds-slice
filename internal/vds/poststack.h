@@ -47,6 +47,12 @@ protected:
         const int lineno
     ) const;
 
+    std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > fence_as_point_list(
+        const CoordinateSystem    coordinate_system,
+        float const *             coordinates,
+        const std::size_t         npoints,
+        const InterpolationMethod interpolation_method) const;
+
     requestdata get_subvolume(
         const SubVolume subvolume,
         const LevelOfDetail level_of_detail,
