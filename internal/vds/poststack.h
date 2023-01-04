@@ -3,6 +3,7 @@
 
 #include <array>
 #include <list>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 
@@ -65,6 +66,13 @@ protected:
         const LevelOfDetail level_of_detail,
         const Channel channel );
 
+    template <typename REQUEST_TYPE>
+    requestdata finalize_request(
+        const std::shared_ptr<REQUEST_TYPE>& request,
+        const std::string                    error_message,
+        std::unique_ptr<char[]>&             data,
+        const std::size_t                    size) const;
+
     class PostStackValidator {
 
         static const std::unordered_map<std::string, std::list<std::string>> valid_z_axis_combinations_;
@@ -94,5 +102,23 @@ protected:
 
     };
 };
+
+template <typename REQUEST_TYPE>
+requestdata PostStackHandle::finalize_request(
+    const std::shared_ptr<REQUEST_TYPE>& request,
+    const std::string                    error_message,
+    std::unique_ptr<char[]>&             data,
+    const std::size_t                    size) const {
+
+    const bool success = request.get()->WaitForCompletion();
+    if (not success) {
+        throw std::runtime_error(error_message);
+    }
+
+    requestdata tmp{data.get(), nullptr, size};
+    data.release();
+
+    return tmp;
+}
 
 #endif /* POSTSTACK_H */

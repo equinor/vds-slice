@@ -332,15 +332,7 @@ requestdata PostStackHandle::get_subvolume(
         subvolume.bounds.upper,
         format );
 
-    request.get()->WaitForCompletion();
-
-    requestdata buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    /* The buffer should *not* be free'd on success, as it's returned to CGO */
-    data.release();
-    return buffer;
+    return finalize_request( request, "Failed to fetch slice from VDS", data, size );
 }
 
 requestdata PostStackHandle::get_volume_trace(
@@ -371,18 +363,6 @@ requestdata PostStackHandle::get_volume_trace(
             get_interpolation(interpolation_method),
             0 // Replacement value
     );
-    bool success = request.get()->WaitForCompletion();
 
-    if(!success) {
-        const auto msg = "Failed to fetch fence from VDS";
-        throw std::runtime_error(msg);
-    }
-
-    requestdata buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    data.release();
-
-    return buffer;
+    return finalize_request( request, "Failed to fetch fence from VDS", data, size );
 }
