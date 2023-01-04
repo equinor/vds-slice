@@ -41,6 +41,15 @@ public:
     std::array<AxisMetadata, 3> get_all_axes_metadata() const;
 
 protected:
+
+    void set_voxels(
+        const AxisDescriptor& axis_desc,
+        int lineno,
+        const OpenVDS::VolumeDataLayout *layout,
+        int (&voxelmin)[OpenVDS::VolumeDataLayout::Dimensionality_Max],
+        int (&voxelmax)[OpenVDS::VolumeDataLayout::Dimensionality_Max]
+    ) const ;
+
     class PostStackValidator {
 
         static const std::unordered_map<std::string, std::list<std::string>> valid_z_axis_combinations_;

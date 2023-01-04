@@ -15,6 +15,10 @@ public:
     virtual int sample() const = 0;
     /// @brief Optional: Dimension index of "Offset" axis in VDS coordinate system
     virtual int offset() const = 0; // Planing for a future of Prestack support
+    /// @brief Maps a VDS voxel dimension to spatial (request) dimension
+    virtual int dimension_from( const int voxel ) const = 0;
+    /// @brief Maps a spatial (request) dimension to VDS voxel dimension
+    virtual int voxel_from( const int dimension ) const = 0;
 
     virtual ~SeismicAxisMap() {}
 };
@@ -35,6 +39,8 @@ public:
     int xline()  const override final;
     int sample() const override final;
     int offset() const override final;
+    int dimension_from( const int voxel ) const override final;
+    int voxel_from( const int dimension ) const override final;
 
 private:
     const int inline_axis_id_;
