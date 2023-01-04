@@ -194,3 +194,33 @@ std::string SeismicHandle::get_format(Channel ch) const {
             throw std::runtime_error("unsupported VDS format type");
     }
 }
+
+int SeismicHandle::to_voxel(
+    const AxisDescriptor& axis_desc,
+    const int lineno) const {
+
+    /* Assume that annotation coordinates are integers
+     * Line-numbers in IJK match Voxel - do bound checking and return
+     */
+    const bool is_annnotation_system = (axis_desc.system() == CoordinateSystem::ANNOTATION);
+    const int nsamples = axis_desc.number_of_samples();
+
+    const int min    = (is_annnotation_system) ? axis_desc.min() : 0;
+    const int max    = (is_annnotation_system) ? axis_desc.max() : nsamples-1;
+    const int stride = (is_annnotation_system) ? (max - min) / (nsamples - 1) : 1;
+
+    if (lineno < min || lineno > max || (lineno - min) % stride ) {
+        std::string msg = "Invalid lineno: " + std::to_string(lineno) +
+                          ", valid range: [" + std::to_string(min) +
+                          ":" + std::to_string(max);
+        if  (axis_desc.system() == CoordinateSystem::ANNOTATION) {
+            msg += ":" + std::to_string(stride) + "]";
+        }
+        else {
+            msg += ":1]";
+        }
+
+        throw std::runtime_error(msg);
+    }
+    return (lineno - min) / stride;
+}

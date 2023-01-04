@@ -83,6 +83,8 @@ protected:
     std::unique_ptr<SeismicAxisMap> axis_map_;
     const Channel default_channel_;
     const LevelOfDetail default_lod_;
+
+    int to_voxel( const AxisDescriptor& axis_desc, const int lineno ) const;
 };
 
 #endif /* SEISMICHANDLE_H */

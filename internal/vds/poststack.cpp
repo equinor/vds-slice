@@ -11,89 +11,6 @@
 
 namespace internal {
 
-CoordinateSystem axis_tosystem(Axis ax) {
-    switch (ax) {
-        case I:
-        case J:
-        case K:
-            return INDEX;
-        case INLINE:
-        case CROSSLINE:
-        case DEPTH:
-        case TIME:
-        case SAMPLE:
-            return ANNOTATION;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-int axis_todim(Axis ax) {
-    switch (ax) {
-        case I:
-        case INLINE:
-            return 0;
-        case J:
-        case CROSSLINE:
-            return 1;
-        case K:
-        case DEPTH:
-        case TIME:
-        case SAMPLE:
-            return 2;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-int lineno_annotation_to_voxel(
-    int lineno,
-    int vdim,
-    const OpenVDS::VolumeDataLayout *layout
-) {
-    /* Assume that annotation coordinates are integers */
-    int min      = layout->GetDimensionMin(vdim);
-    int max      = layout->GetDimensionMax(vdim);
-    int nsamples = layout->GetDimensionNumSamples(vdim);
-
-    auto stride = (max - min) / (nsamples - 1);
-
-    if (lineno < min || lineno > max || (lineno - min) % stride) {
-        throw std::runtime_error(
-            "Invalid lineno: " + std::to_string(lineno) +
-            ", valid range: [" + std::to_string(min) +
-            ":" + std::to_string(max) +
-            ":" + std::to_string(stride) + "]"
-        );
-    }
-
-    int voxelline = (lineno - min) / stride;
-    return voxelline;
-}
-
-int lineno_index_to_voxel(
-    int lineno,
-    int vdim,
-    const OpenVDS::VolumeDataLayout *layout
-) {
-    /* Line-numbers in IJK match Voxel - do bound checking and return*/
-    int min = 0;
-    int max = layout->GetDimensionNumSamples(vdim) - 1;
-
-    if (lineno < min || lineno > max) {
-        throw std::runtime_error(
-            "Invalid lineno: " + std::to_string(lineno) +
-            ", valid range: [" + std::to_string(min) +
-            ":" + std::to_string(max) +
-            ":1]"
-        );
-    }
-
-    return lineno;
-}
-
 OpenVDS::InterpolationMethod to_interpolation(InterpolationMethod interpolation) {
     switch (interpolation)
     {
@@ -416,20 +333,15 @@ void PostStackHandle::set_voxels(
         layout->GetDimensionNumSamples(2)
     };
 
-    int voxelline;
-    const int vdim = axis_desc.voxel_dimension();
-    using namespace internal;
     switch (axis_desc.system()) {
         case ANNOTATION: {
             auto transformer = OpenVDS::IJKCoordinateTransformer(layout);
             if (not transformer.AnnotationsDefined()) {
                 throw std::runtime_error("VDS doesn't define annotations");
             }
-            voxelline = lineno_annotation_to_voxel(lineno, vdim, layout);
             break;
         }
         case INDEX: {
-            voxelline = lineno_index_to_voxel(lineno, vdim, layout);
             break;
         }
         case CDP:
@@ -438,6 +350,8 @@ void PostStackHandle::set_voxels(
         }
     }
 
+    const int voxelline = to_voxel( axis_desc, lineno );
+    const int vdim = axis_desc.voxel_dimension();
     vmin[vdim] = voxelline;
     vmax[vdim] = voxelline + 1;
 
