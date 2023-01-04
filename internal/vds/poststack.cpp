@@ -154,49 +154,19 @@ requestdata PostStackHandle::get_fence(
     const LevelOfDetail       level_of_detail,
     const Channel             channel) {
 
-    std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > coords =
+    std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > point_list =
         fence_as_point_list(
             coordinate_system,
             coordinates,
             npoints,
             interpolation_method);
 
-
-    // TODO: Verify that trace dimension is always 0
-    auto size = this->access_manager_.GetVolumeTracesBufferSize(
-        npoints,
-        0, //Trace dimension
-        static_cast<int>(level_of_detail),
-        static_cast<int>(channel)
-    );
-
-    std::unique_ptr< char[] > data(new char[size]());
-
-    auto request = this->access_manager_.RequestVolumeTraces(
-            (float*)data.get(),
-            size,
-            OpenVDS::Dimensions_012,
-            static_cast<int>(level_of_detail),
-            static_cast<int>(channel),
-            coords.get(),
-            npoints,
-            get_interpolation(interpolation_method),
-            0 // Replacement value
-    );
-    bool success = request.get()->WaitForCompletion();
-
-    if(!success) {
-        const auto msg = "Failed to fetch fence from VDS";
-        throw std::runtime_error(msg);
-    }
-
-    requestdata buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    data.release();
-
-    return buffer;
+    return get_volume_trace(
+               std::move(point_list),
+               npoints,
+               interpolation_method,
+               level_of_detail,
+               channel);
 }
 
 std::array<AxisMetadata, 2> PostStackHandle::get_slice_axis_metadata(const Axis axis) const {
@@ -370,5 +340,49 @@ requestdata PostStackHandle::get_subvolume(
 
     /* The buffer should *not* be free'd on success, as it's returned to CGO */
     data.release();
+    return buffer;
+}
+
+requestdata PostStackHandle::get_volume_trace(
+        const std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > points,
+        const std::size_t npoints,
+        const InterpolationMethod interpolation_method,
+        const LevelOfDetail level_of_detail,
+        const Channel channel ) {
+
+    // TODO: Verify that trace dimension is always 0
+    const auto size = this->access_manager_.GetVolumeTracesBufferSize(
+        npoints,
+        0, //Trace dimension
+        static_cast<int>(level_of_detail),
+        static_cast<int>(channel)
+    );
+
+    std::unique_ptr< char[] > data(new char[size]());
+
+    auto request = this->access_manager_.RequestVolumeTraces(
+            (float*)data.get(),
+            size,
+            OpenVDS::Dimensions_012,
+            static_cast<int>(level_of_detail),
+            static_cast<int>(channel),
+            points.get(),
+            npoints,
+            get_interpolation(interpolation_method),
+            0 // Replacement value
+    );
+    bool success = request.get()->WaitForCompletion();
+
+    if(!success) {
+        const auto msg = "Failed to fetch fence from VDS";
+        throw std::runtime_error(msg);
+    }
+
+    requestdata buffer{};
+    buffer.size = size;
+    buffer.data = data.get();
+
+    data.release();
+
     return buffer;
 }

@@ -56,7 +56,14 @@ protected:
     requestdata get_subvolume(
         const SubVolume subvolume,
         const LevelOfDetail level_of_detail,
-        const Channel channel ) ;
+        const Channel channel );
+
+    requestdata get_volume_trace(
+        const std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > points,
+        const std::size_t npoints,
+        const InterpolationMethod interpolation_method,
+        const LevelOfDetail level_of_detail,
+        const Channel channel );
 
     class PostStackValidator {
 
