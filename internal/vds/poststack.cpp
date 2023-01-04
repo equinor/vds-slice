@@ -123,15 +123,6 @@ OpenVDS::InterpolationMethod to_interpolation(InterpolationMethod interpolation)
     }
 }
 
-void dimension_validation(const OpenVDS::VolumeDataLayout* layout) {
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
-}
-
 int voxel_todim(int voxel) {
     /*
      * For now assume that the axis order is always depth/time/sample,
@@ -355,8 +346,6 @@ requestdata PostStackHandle::get_fence(
     const Channel             channel) {
 
     using namespace internal;
-
-    dimension_validation(this->layout_);
 
     const auto dimension_map =
             this->layout_->GetVDSIJKGridDefinitionFromMetadata().dimensionMap;
