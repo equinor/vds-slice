@@ -36,6 +36,21 @@ public:
     std::string unit() const;
 };
 
+class AxisDescriptor : public AxisMetadata {
+    Axis axis_;
+    int voxel_dimension_;
+public:
+    AxisDescriptor(
+        const Axis axis,
+        const OpenVDS::VolumeDataLayout* layout,
+        const int voxel_dimension
+    ) noexcept;
+    CoordinateSystem system() const;
+    Axis value() const noexcept;
+    int space_dimension() const;
+    int voxel_dimension() const;
+};
+
 class SeismicHandle {
 public:
     SeismicHandle(
@@ -49,7 +64,7 @@ public:
     /// @brief  Maps from our Axis to a VDS axisDescriptor.
     /// @param axis
     /// @return
-    OpenVDS::VolumeDataAxisDescriptor get_axis(Axis axis) const;
+    AxisDescriptor get_axis(Axis axis) const;
     BoundingBox get_bounding_box() const;
     std::string get_crs() const;
     std::string get_format(Channel ch = Channel::Default) const;

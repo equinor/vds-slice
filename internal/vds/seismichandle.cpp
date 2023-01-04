@@ -34,6 +34,62 @@ std::string AxisMetadata::unit() const {
     return unit;
 }
 
+
+AxisDescriptor::AxisDescriptor(
+    const Axis axis,
+    const OpenVDS::VolumeDataLayout* layout,
+    const int voxel_dimension
+) noexcept
+    : AxisMetadata( layout, voxel_dimension ),
+    axis_(axis),
+    voxel_dimension_(voxel_dimension)
+{}
+
+CoordinateSystem AxisDescriptor::system() const {
+    switch (this->axis_) {
+        case I:
+        case J:
+        case K:
+            return CoordinateSystem::INDEX;
+        case INLINE:
+        case CROSSLINE:
+        case DEPTH:
+        case TIME:
+        case SAMPLE:
+            return CoordinateSystem::ANNOTATION;
+        default: {
+            throw std::runtime_error("Unhandled axis");
+        }
+    }
+}
+
+Axis AxisDescriptor::value() const noexcept {
+    return this->axis_;
+}
+
+int AxisDescriptor::space_dimension() const {
+    switch (this->axis_) {
+        case I:
+        case INLINE:
+            return 0;
+        case J:
+        case CROSSLINE:
+            return 1;
+        case K:
+        case DEPTH:
+        case TIME:
+        case SAMPLE:
+            return 2;
+        default: {
+            throw std::runtime_error("Unhandled axis");
+        }
+    }
+}
+
+int AxisDescriptor::voxel_dimension() const {
+    return this->voxel_dimension_;
+}
+
 void SeismicHandle::SeismicValidator::validate( const SeismicHandle& vds_handle ) {
     if (vds_handle.layout_->GetDimensionality() != expected_dimensionality_) {
         throw std::runtime_error(
@@ -65,9 +121,33 @@ SeismicHandle::SeismicHandle(
     SeismicValidator().validate(*this);
 }
 
-// Maps from our Axis to a VDS axisDescriptor.
-OpenVDS::VolumeDataAxisDescriptor SeismicHandle::get_axis(Axis axis) const {
-    throw std::runtime_error("Not implemented");
+// Maps from our Axis to an axis descriptor.
+AxisDescriptor SeismicHandle::get_axis(Axis axis) const {
+    switch (axis) {
+        case Axis::I:
+        case Axis::INLINE: {
+            return AxisDescriptor(
+                axis, this->layout_, this->axis_map_->iline()
+            );
+        }
+        case Axis::J:
+        case Axis::CROSSLINE: {
+            return AxisDescriptor(
+                axis, this->layout_, this->axis_map_->xline()
+            );
+        }
+        case Axis::K:
+        case Axis::DEPTH:
+        case Axis::TIME:
+        case Axis::SAMPLE: {
+            return AxisDescriptor(
+                axis, this->layout_, this->axis_map_->sample()
+            );
+        }
+        default: {
+            throw std::runtime_error("Unhandled axis");
+        }
+    }
 }
 
 BoundingBox SeismicHandle::get_bounding_box() const {

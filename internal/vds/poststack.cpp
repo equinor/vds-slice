@@ -10,43 +10,6 @@
 
 namespace internal {
 
-CoordinateSystem axis_tosystem(Axis ax) {
-    switch (ax) {
-        case I:
-        case J:
-        case K:
-            return INDEX;
-        case INLINE:
-        case CROSSLINE:
-        case DEPTH:
-        case TIME:
-        case SAMPLE:
-            return ANNOTATION;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-int axis_todim(Axis ax) {
-    switch (ax) {
-        case I:
-        case INLINE:
-            return 0;
-        case J:
-        case CROSSLINE:
-            return 1;
-        case K:
-        case DEPTH:
-        case TIME:
-        case SAMPLE:
-            return 2;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
 /*
  * Unit validation of Z-slices
  *
@@ -154,7 +117,8 @@ int dim_tovoxel(int dimension) {
         }
     }
 }
-
+//TODO: This function has to stay until the unit validation is going into class that
+//      can create an AxisDescriptor.
 const std::string axis_tostring(Axis ax) {
     switch (ax) {
         case I:         return std::string( OpenVDS::KnownAxisNames::I()         );
@@ -264,8 +228,7 @@ int voxel_todim(int voxel) {
  * Convert target dimension/axis + lineno to VDS voxel coordinates.
  */
 void set_voxels(
-    Axis ax,
-    int dimension,
+    const AxisDescriptor& axis_desc,
     int lineno,
     const OpenVDS::VolumeDataLayout *layout,
     int (&voxelmin)[OpenVDS::VolumeDataLayout::Dimensionality_Max],
@@ -279,9 +242,8 @@ void set_voxels(
     };
 
     int voxelline;
-    auto vdim   = dim_tovoxel(dimension);
-    auto system = axis_tosystem(ax);
-    switch (system) {
+    const int vdim = axis_desc.voxel_dimension();
+    switch (axis_desc.system()) {
         case ANNOTATION: {
             auto transformer = OpenVDS::IJKCoordinateTransformer(layout);
             if (not transformer.AnnotationsDefined()) {
@@ -332,8 +294,7 @@ requestdata PostStackHandle::get_slice(const Axis          axis,
 
     int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
     int vmax[OpenVDS::Dimensionality_Max] = { 1, 1, 1, 1, 1, 1};
-    auto dimension = axis_todim(axis);
-    set_voxels(axis, dimension, line_number, this->layout_, vmin, vmax);
+    set_voxels( this->get_axis(axis), line_number, this->layout_, vmin, vmax);
 
     auto format = this->layout_->GetChannelFormat(static_cast<int>(channel));
     auto size = this->access_manager_.GetVolumeSubsetBufferSize(
@@ -473,9 +434,9 @@ requestdata PostStackHandle::get_fence(
 }
 
 std::array<AxisMetadata, 2> PostStackHandle::get_slice_axis_metadata(const Axis axis) const {
-    using namespace internal;
-    auto dimension = axis_todim(axis);
-    auto vdim = dim_tovoxel(dimension);
+
+    const AxisDescriptor axis_desc = this->get_axis(axis);
+    auto vdim = axis_desc.voxel_dimension();
     /*
         * SEGYImport always writes annotation 'Sample' for axis K. We, on the
         * other hand, decided that we base the valid input direction on the units
