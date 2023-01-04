@@ -140,38 +140,9 @@ requestdata PostStackHandle::get_slice(const Axis          axis,
     const AxisDescriptor axis_desc = this->get_axis(axis);
     SliceRequestValidator().validate(axis_desc);
 
-    int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
-    int vmax[OpenVDS::Dimensionality_Max] = { 1, 1, 1, 1, 1, 1};
-    set_voxels( axis_desc, line_number, this->layout_, vmin, vmax);
+    const SubVolume subvolume = slice_as_subvolume( axis_desc, line_number );
 
-    auto format = this->layout_->GetChannelFormat(static_cast<int>(channel));
-    auto size = this->access_manager_.GetVolumeSubsetBufferSize(
-        vmin,
-        vmax,
-        format,
-        static_cast<int>(level_of_detail),
-        static_cast<int>(channel) );
-
-    std::unique_ptr< char[] > data(new char[size]());
-    auto request = this->access_manager_.RequestVolumeSubset(
-        data.get(),
-        size,
-        OpenVDS::Dimensions_012,
-        static_cast<int>(level_of_detail),
-        static_cast<int>(channel),
-        vmin,
-        vmax,
-        format );
-
-    request.get()->WaitForCompletion();
-
-    requestdata buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    /* The buffer should *not* be free'd on success, as it's returned to CGO */
-    data.release();
-    return buffer;
+    return get_subvolume(subvolume, level_of_detail, channel);
 }
 
 requestdata PostStackHandle::get_fence(
@@ -316,23 +287,18 @@ std::array<AxisMetadata, 3> PostStackHandle::get_all_axes_metadata() const {
 /*
  * Convert target dimension/axis + lineno to VDS voxel coordinates.
  */
-void PostStackHandle::set_voxels(
+SubVolume PostStackHandle::slice_as_subvolume(
     const AxisDescriptor& axis_desc,
-    int lineno,
-    const OpenVDS::VolumeDataLayout *layout,
-    int (&voxelmin)[OpenVDS::VolumeDataLayout::Dimensionality_Max],
-    int (&voxelmax)[OpenVDS::VolumeDataLayout::Dimensionality_Max]
+    const int lineno
 ) const {
-    auto vmin = OpenVDS::IntVector3 { 0, 0, 0 };
-    auto vmax = OpenVDS::IntVector3 {
-        layout->GetDimensionNumSamples(0),
-        layout->GetDimensionNumSamples(1),
-        layout->GetDimensionNumSamples(2)
-    };
+    SubVolume subvolume;
+    for (int i = 0; i < 3; ++i) {
+        subvolume.bounds.upper[i] = this->layout_->GetDimensionNumSamples(i);
+    }
 
     switch (axis_desc.system()) {
         case ANNOTATION: {
-            auto transformer = OpenVDS::IJKCoordinateTransformer(layout);
+            auto transformer = OpenVDS::IJKCoordinateTransformer(this->layout_);
             if (not transformer.AnnotationsDefined()) {
                 throw std::runtime_error("VDS doesn't define annotations");
             }
@@ -349,12 +315,43 @@ void PostStackHandle::set_voxels(
 
     const int voxelline = to_voxel( axis_desc, lineno );
     const int vdim = axis_desc.voxel_dimension();
-    vmin[vdim] = voxelline;
-    vmax[vdim] = voxelline + 1;
+    subvolume.bounds.lower[vdim] = voxelline;
+    subvolume.bounds.upper[vdim] = voxelline + 1;
 
-    /* Commit */
-    for (int i = 0; i < 3; i++) {
-        voxelmin[i] = vmin[i];
-        voxelmax[i] = vmax[i];
-    }
+    return subvolume;
+}
+
+requestdata PostStackHandle::get_subvolume(
+    const SubVolume subvolume,
+    const LevelOfDetail level_of_detail,
+    const Channel channel ) {
+
+    const auto format = this->layout_->GetChannelFormat(static_cast<int>(channel));
+    const auto size = this->access_manager_.GetVolumeSubsetBufferSize(
+        subvolume.bounds.lower,
+        subvolume.bounds.upper,
+        format,
+        static_cast<int>(level_of_detail),
+        static_cast<int>(channel) );
+
+    std::unique_ptr< char[] > data(new char[size]());
+    auto request = this->access_manager_.RequestVolumeSubset(
+        data.get(),
+        size,
+        OpenVDS::Dimensions_012,
+        static_cast<int>(level_of_detail),
+        static_cast<int>(channel),
+        subvolume.bounds.lower,
+        subvolume.bounds.upper,
+        format );
+
+    request.get()->WaitForCompletion();
+
+    requestdata buffer{};
+    buffer.size = size;
+    buffer.data = data.get();
+
+    /* The buffer should *not* be free'd on success, as it's returned to CGO */
+    data.release();
+    return buffer;
 }

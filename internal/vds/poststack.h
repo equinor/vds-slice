@@ -42,13 +42,15 @@ public:
 
 protected:
 
-    void set_voxels(
+    SubVolume slice_as_subvolume(
         const AxisDescriptor& axis_desc,
-        int lineno,
-        const OpenVDS::VolumeDataLayout *layout,
-        int (&voxelmin)[OpenVDS::VolumeDataLayout::Dimensionality_Max],
-        int (&voxelmax)[OpenVDS::VolumeDataLayout::Dimensionality_Max]
-    ) const ;
+        const int lineno
+    ) const;
+
+    requestdata get_subvolume(
+        const SubVolume subvolume,
+        const LevelOfDetail level_of_detail,
+        const Channel channel ) ;
 
     class PostStackValidator {
 

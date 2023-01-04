@@ -36,6 +36,13 @@ public:
     std::string unit() const;
 };
 
+struct SubVolume {
+    struct {
+        int lower[OpenVDS::VolumeDataLayout::Dimensionality_Max]{0, 0, 0, 0, 0, 0};
+        int upper[OpenVDS::VolumeDataLayout::Dimensionality_Max]{1, 1, 1, 1, 1, 1};
+    } bounds;
+};
+
 class AxisDescriptor : public AxisMetadata {
     Axis axis_;
     int voxel_dimension_;
