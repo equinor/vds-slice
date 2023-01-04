@@ -137,8 +137,6 @@ requestdata PostStackHandle::get_slice(const Axis          axis,
                                        const int           line_number,
                                        const LevelOfDetail level_of_detail,
                                        const Channel       channel) {
-    using namespace internal;
-
     const AxisDescriptor axis_desc = this->get_axis(axis);
     SliceRequestValidator().validate(axis_desc);
 
@@ -184,7 +182,6 @@ requestdata PostStackHandle::get_fence(
     const LevelOfDetail       level_of_detail,
     const Channel             channel) {
 
-    using namespace internal;
     std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > coords(
         new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
     );
@@ -260,7 +257,7 @@ requestdata PostStackHandle::get_fence(
             static_cast<int>(channel),
             coords.get(),
             npoints,
-            to_interpolation(interpolation_method),
+            get_interpolation(interpolation_method),
             0 // Replacement value
     );
     bool success = request.get()->WaitForCompletion();

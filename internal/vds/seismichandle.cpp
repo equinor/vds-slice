@@ -224,3 +224,19 @@ int SeismicHandle::to_voxel(
     }
     return (lineno - min) / stride;
 }
+
+OpenVDS::InterpolationMethod SeismicHandle::get_interpolation(
+    InterpolationMethod interpolation
+) {
+    switch (interpolation)
+    {
+        case NEAREST: return OpenVDS::InterpolationMethod::Nearest;
+        case LINEAR: return OpenVDS::InterpolationMethod::Linear;
+        case CUBIC: return OpenVDS::InterpolationMethod::Cubic;
+        case ANGULAR: return OpenVDS::InterpolationMethod::Angular;
+        case TRIANGULAR: return OpenVDS::InterpolationMethod::Triangular;
+        default: {
+            throw std::runtime_error("Unhandled interpolation method");
+        }
+    }
+}

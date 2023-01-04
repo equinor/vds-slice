@@ -85,6 +85,8 @@ protected:
     const LevelOfDetail default_lod_;
 
     int to_voxel( const AxisDescriptor& axis_desc, const int lineno ) const;
+    static OpenVDS::InterpolationMethod get_interpolation(
+        InterpolationMethod interpolation);
 };
 
 #endif /* SEISMICHANDLE_H */
