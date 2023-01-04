@@ -1,6 +1,6 @@
 package api
 
-type BaseRequest struct {
+type RequestedResource struct {
 	// The blob url to a vds in form
 	// https://account.blob.core.windows.net/container/blob
 	Vds string `json:"vds" binding:"required" example:"https://account.blob.core.windows.net/container/blob"`
@@ -9,11 +9,11 @@ type BaseRequest struct {
 }
 
 type MetadataRequest struct {
-	BaseRequest
+	RequestedResource
 } //@name MetadataRequest
 
 type FenceRequest struct {
-	BaseRequest
+	RequestedResource
 	// Coordinate system for the requested fence
 	// Supported options are:
 	// ilxl : inline, crossline pairs
@@ -42,7 +42,7 @@ type FenceRequest struct {
 // Query for slice endpoints
 // @Description Query payload for slice endpoint /slice.
 type SliceRequest struct {
-	BaseRequest
+	RequestedResource
 
 	// Direction can be specified in two domains
 	// - Annotation. Valid options: Inline, Crossline and Depth/Time/Sample
