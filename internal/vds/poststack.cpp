@@ -10,24 +10,6 @@
 
 #include "vds.h"
 
-namespace internal {
-
-OpenVDS::InterpolationMethod to_interpolation(InterpolationMethod interpolation) {
-    switch (interpolation)
-    {
-        case NEAREST: return OpenVDS::InterpolationMethod::Nearest;
-        case LINEAR: return OpenVDS::InterpolationMethod::Linear;
-        case CUBIC: return OpenVDS::InterpolationMethod::Cubic;
-        case ANGULAR: return OpenVDS::InterpolationMethod::Angular;
-        case TRIANGULAR: return OpenVDS::InterpolationMethod::Triangular;
-        default: {
-            throw std::runtime_error("Unhandled interpolation method");
-        }
-    }
-}
-
-} /* namespace internal */
-
 const std::unordered_map<std::string, std::list<std::string>>
 PostStackHandle::PostStackValidator::valid_z_axis_combinations_ = {
   { std::string( OpenVDS::KnownAxisNames::Depth() ),
@@ -167,43 +149,6 @@ requestdata PostStackHandle::get_fence(
                interpolation_method,
                level_of_detail,
                channel);
-}
-
-std::array<AxisMetadata, 2> PostStackHandle::get_slice_axis_metadata(const Axis axis) const {
-
-    const AxisDescriptor axis_desc = this->get_axis(axis);
-    auto vdim = axis_desc.voxel_dimension();
-    /*
-        * SEGYImport always writes annotation 'Sample' for axis K. We, on the
-        * other hand, decided that we base the valid input direction on the units
-        * of said axis. E.g. ms/s -> Time, etc. This leads to an inconsistency
-        * between what we require as input for axis K and what we return as
-        * metadata. In the ms/s case we require the input to be asked for in axis
-        * 'Time', but the return metadata can potentially say 'Sample'.
-        *
-        * TODO: Either revert the 'clever' unit validation, or patch the
-        * K-annotation here. IMO the later is too clever for it's own good and
-        * would be quite suprising for people that use this API in conjunction
-        * with the OpenVDS library.
-        */
-    std::vector< int > dims;
-    for (int i = 0; i < 3; ++i) {
-        if (i == vdim) continue;
-        dims.push_back(i);
-    }
-
-    return {
-        AxisMetadata( this->layout_, dims[AxisDirection::X] ),
-        AxisMetadata( this->layout_, dims[AxisDirection::Y] )
-    };
-}
-
-std::array<AxisMetadata, 3> PostStackHandle::get_all_axes_metadata() const {
-    return {
-        AxisMetadata( this->layout_, AxisDirection::X ),
-        AxisMetadata( this->layout_, AxisDirection::Y ),
-        AxisMetadata( this->layout_, AxisDirection::Z )
-    };
 }
 
 /*

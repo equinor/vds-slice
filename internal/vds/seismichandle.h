@@ -76,6 +76,7 @@ public:
     BoundingBox get_bounding_box() const;
     std::string get_crs() const;
     std::string get_format(Channel ch = Channel::Default) const;
+    std::vector<AxisMetadata> get_all_axes_metadata() const;
 
 protected:
     class SeismicValidator {

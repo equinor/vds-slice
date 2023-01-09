@@ -79,12 +79,13 @@ struct requestdata metadata(
         meta["boundingBox"]["ilxl"] = bbox.annotation();
 
         {
-            const auto axis_descriptor = poststackdata.get_all_axes_metadata();
-            for (auto it = axis_descriptor.rbegin(); it != axis_descriptor.rend(); ++it) {
-                meta["axis"].push_back(
-                    convert_axis_descriptor_to_json( *it )
-                );
-            }
+            auto axis_metadata = poststackdata.get_all_axes_metadata();
+            std::reverse( axis_metadata.begin(), axis_metadata.end() );
+            std::for_each( axis_metadata.begin(), axis_metadata.end(),
+                [&meta](const AxisMetadata& desc) {
+                    meta["axis"].push_back( convert_axis_descriptor_to_json( desc ) );
+                }
+            );
         }
 
         return wrap_as_requestdata( meta.dump() );
@@ -119,7 +120,18 @@ struct requestdata slice_metadata(
         nlohmann::json meta;
         meta["format"] = poststackdata.get_format(Channel::Sample);
 
-        const auto axis_metadata = poststackdata.get_slice_axis_metadata( ax );
+        auto axis_metadata = poststackdata.get_all_axes_metadata();
+        {
+            const std::string axis_name_to_delete = poststackdata.get_axis(ax).name();
+            auto axis_to_delete = std::find_if(
+                                    axis_metadata.begin(),
+                                    axis_metadata.end(),
+                                    [&axis_name_to_delete](const AxisMetadata& am) {
+                                        return am.name() == axis_name_to_delete;
+                                    }
+                                );
+            axis_metadata.erase(axis_to_delete);
+        }
 
         meta["x"] = convert_axis_descriptor_to_json( axis_metadata[AxisDirection::X] );
         meta["y"] = convert_axis_descriptor_to_json( axis_metadata[AxisDirection::Y] );
@@ -166,7 +178,9 @@ struct requestdata fence_metadata(
         nlohmann::json meta;
         {
             const auto axis_metadata = poststackdata.get_all_axes_metadata();
-            meta["shape"] = nlohmann::json::array({npoints, axis_metadata[0].number_of_samples() });
+            meta["shape"] = nlohmann::json::array(
+                                {npoints, axis_metadata.front().number_of_samples() }
+                            );
         }
         meta["format"] = poststackdata.get_format(Channel::Sample);
 

@@ -1,7 +1,6 @@
 #ifndef POSTSTACK_H
 #define POSTSTACK_H
 
-#include <array>
 #include <list>
 #include <stdexcept>
 #include <string>
@@ -37,9 +36,6 @@ public:
         const LevelOfDetail       level_of_detail = LevelOfDetail::Default,
         const Channel             channel = Channel::Default
     );
-
-    std::array<AxisMetadata, 2> get_slice_axis_metadata(const Axis axis) const;
-    std::array<AxisMetadata, 3> get_all_axes_metadata() const;
 
 protected:
 

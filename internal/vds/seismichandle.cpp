@@ -195,6 +195,14 @@ std::string SeismicHandle::get_format(Channel ch) const {
     }
 }
 
+std::vector<AxisMetadata> SeismicHandle::get_all_axes_metadata() const {
+    return {
+        AxisMetadata( this->layout_, Axis::I ),
+        AxisMetadata( this->layout_, Axis::J ),
+        AxisMetadata( this->layout_, Axis::K ),
+    };
+}
+
 int SeismicHandle::to_voxel(
     const AxisDescriptor& axis_desc,
     const int lineno) const {
