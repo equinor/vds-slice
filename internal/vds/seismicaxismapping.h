@@ -2,8 +2,8 @@
 #define SEISMICMAP_H
 
 
-/// @brief Mapping between API coordinate system and VDS coordinate system axis indices
-////       base class
+/// @brief Mapping between API coordinate system and VDS coordinate system axis
+////        indices base class
 class SeismicAxisMap {
 
 public:
@@ -13,8 +13,11 @@ public:
     virtual int xline()  const = 0;
     /// @brief Dimension index of "Sample" axis in VDS coordinate system
     virtual int sample() const = 0;
-    /// @brief Optional: Dimension index of "Offset" axis in VDS coordinate system
-    virtual int offset() const = 0; // Planing for a future of Prestack support
+    /// @brief Optional: Dimension index of "Offset" axis in VDS coordinate
+    ///        system
+    ///
+    /// This function could be used for future pre-stack implementations.
+    virtual int offset() const = 0;
     /// @brief Maps a VDS voxel dimension to spatial (request) dimension
     virtual int dimension_from( const int voxel ) const = 0;
     /// @brief Maps a spatial (request) dimension to VDS voxel dimension
@@ -23,13 +26,13 @@ public:
     virtual ~SeismicAxisMap() {}
 };
 
-/// @brief Mapping between API coordinate system and VDS coordinate system axis indices
-///        for post stack data.
+/// @brief Mapping between API coordinate system and VDS coordinate system axis
+///        indices for post stack data.
 ///
-/// For post-stack data it is expected that one has a three dimensional coordinate
-/// system and that the inline, crossline and sample direction are present in the VDS
-/// dataset. In the setting of VDS it means that one expects the annotation system to
-/// be defined.
+/// For post-stack data it is expected that one has a three dimensional
+/// coordinate system and that the inline, crossline and sample direction are
+/// present in the VDS dataset. In the setting of VDS it means that one expects
+/// the annotation system to be defined.
 class PostStackAxisMap : public SeismicAxisMap {
 public:
 
@@ -43,8 +46,11 @@ public:
     int voxel_from( const int dimension ) const override final;
 
 private:
+    /// @brief Axis id of inline dimension in OpenVDS' coordinate system
     const int inline_axis_id_;
+    /// @brief Axis id of crossline dimension in OpenVDS' coordinate system
     const int crossline_axis_id_;
+    /// @brief Axis id of sample dimension in OpenVDS' coordinate system
     const int sample_axis_id_;
 };
 
