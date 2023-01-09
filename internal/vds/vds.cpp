@@ -97,8 +97,8 @@ struct requestdata metadata(
 struct requestdata slice(
     char const * const vds,
     char const * const credentials,
-    const int lineno,
-    const Axis ax
+    const int          lineno,
+    const Axis         ax
 ) {
     try {
         PostStackHandle poststackdata( vds, credentials );
@@ -112,7 +112,7 @@ struct requestdata slice(
 struct requestdata slice_metadata(
     char const * const vds,
     char const * const credentials,
-    const Axis ax
+    const Axis         ax
 ) {
     try {
         PostStackHandle poststackdata( vds, credentials );
@@ -148,11 +148,11 @@ struct requestdata slice_metadata(
 }
 
 struct requestdata fence(
-    char const * const vds,
-    char const * const credentials,
-    const enum CoordinateSystem coordinate_system,
-    float const * const coordinates,
-    const size_t npoints,
+    char const * const             vds,
+    char const * const             credentials,
+    const enum CoordinateSystem    coordinate_system,
+    float const * const            coordinates,
+    const size_t                   npoints,
     const enum InterpolationMethod interpolation_method
 ) {
     try {
@@ -170,7 +170,7 @@ struct requestdata fence(
 struct requestdata fence_metadata(
     char const * const vds,
     char const * const credentials,
-    const size_t npoints
+    const size_t       npoints
 ) {
     try {
         PostStackHandle poststackdata( vds, credentials );

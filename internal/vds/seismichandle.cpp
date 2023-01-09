@@ -117,10 +117,10 @@ void SeismicHandle::SeismicValidator::validate( const SeismicHandle& vds_handle 
 }
 
 SeismicHandle::SeismicHandle(
-    const std::string    url,
-    const std::string    connection,
-    const Channel        default_channel,
-    const LevelOfDetail  default_lod,
+    const std::string               url,
+    const std::string               connection,
+    const Channel                   default_channel,
+    const LevelOfDetail             default_lod,
     std::unique_ptr<SeismicAxisMap> axis_map ) : axis_map_(std::move(axis_map)),
                                                  default_channel_(default_channel),
                                                  default_lod_(default_lod) {
@@ -177,7 +177,7 @@ std::string SeismicHandle::get_crs() const {
 
 std::string SeismicHandle::get_format(Channel ch) const {
     const OpenVDS::VolumeDataFormat format =
-        this->layout_->GetChannelFormat(static_cast<int>(ch)); //TODO: Check if we can avoid the casting
+        this->layout_->GetChannelFormat(static_cast<int>(ch));
 
     switch (format) {
         case OpenVDS::VolumeDataFormat::Format_U8:
@@ -205,12 +205,13 @@ std::vector<AxisMetadata> SeismicHandle::get_all_axes_metadata() const {
 
 int SeismicHandle::to_voxel(
     const AxisDescriptor& axis_desc,
-    const int lineno) const {
-
+    const int lineno
+) const {
     /* Assume that annotation coordinates are integers
      * Line-numbers in IJK match Voxel - do bound checking and return
      */
-    const bool is_annnotation_system = (axis_desc.system() == CoordinateSystem::ANNOTATION);
+    const bool is_annnotation_system =
+        (axis_desc.system() == CoordinateSystem::ANNOTATION);
     const int nsamples = axis_desc.number_of_samples();
 
     const int min    = (is_annnotation_system) ? axis_desc.min() : 0;

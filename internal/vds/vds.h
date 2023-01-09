@@ -45,29 +45,29 @@ struct requestdata metadata(
 struct requestdata slice(
     char const * const vds,
     char const * const credentials,
-    const int lineno,
-    const enum Axis direction
+    const int          lineno,
+    const enum Axis    direction
 );
 
 struct requestdata slice_metadata(
     char const * const vds,
     char const * const credentials,
-    const enum Axis direction
+    const enum Axis    direction
 );
 
 struct requestdata fence(
-    char const * const vds,
-    char const * const credentials,
-    const enum CoordinateSystem coordinate_system,
-    float const * const points,
-    const size_t npoints,
+    char const * const             vds,
+    char const * const             credentials,
+    const enum CoordinateSystem    coordinate_system,
+    float const * const            points,
+    const size_t                   npoints,
     const enum InterpolationMethod interpolation_method
 );
 
 struct requestdata fence_metadata(
     char const * const vds,
     char const * const credentials,
-    const size_t npoints
+    const size_t       npoints
 );
 
 void requestdata_delete(struct requestdata*);

@@ -12,14 +12,16 @@
 
 const std::unordered_map<std::string, std::list<std::string>>
 PostStackHandle::PostStackValidator::valid_z_axis_combinations_ = {
-  { std::string( OpenVDS::KnownAxisNames::Depth() ),
+  {
+    std::string( OpenVDS::KnownAxisNames::Depth() ),
     {
         std::string(OpenVDS::KnownUnitNames::Meter()),
         std::string(OpenVDS::KnownUnitNames::Foot()),
         std::string(OpenVDS::KnownUnitNames::USSurveyFoot())
     }
   },
-  { std::string( OpenVDS::KnownAxisNames::Time() ),
+  {
+    std::string( OpenVDS::KnownAxisNames::Time() ),
     {
         std::string(OpenVDS::KnownUnitNames::Millisecond()),
         std::string(OpenVDS::KnownUnitNames::Second())
@@ -33,9 +35,11 @@ PostStackHandle::PostStackValidator::valid_z_axis_combinations_ = {
   }
 };
 
-PostStackHandle::PostStackValidator::PostStackValidator( const PostStackHandle& handle ) noexcept (true):
-    handle_(handle) {
-}
+PostStackHandle::PostStackValidator::PostStackValidator(
+    const PostStackHandle& handle
+) noexcept (true) : handle_(handle)
+{}
+
 
 void PostStackHandle::PostStackValidator::validate_axes_order() {
     const std::string msg = "Unsupported axis ordering in VDS, expected "
@@ -62,16 +66,16 @@ void PostStackHandle::PostStackValidator::validate_axes_order() {
         throw std::runtime_error(msg);
 }
 
-
-
 void PostStackHandle::PostStackValidator::validate() {
     validate_axes_order();
 }
 
+PostStackHandle::SliceRequestValidator::SliceRequestValidator() noexcept (true)
+{}
 
-PostStackHandle::SliceRequestValidator::SliceRequestValidator() noexcept (true) {}
-
-void PostStackHandle::SliceRequestValidator::validate(const AxisDescriptor& axis_desc) {
+void PostStackHandle::SliceRequestValidator::validate(
+    const AxisDescriptor& axis_desc
+) {
     switch (axis_desc.value()) {
         case I:
         case J:
@@ -88,11 +92,17 @@ void PostStackHandle::SliceRequestValidator::validate(const AxisDescriptor& axis
             const std::string msg = "Unable to use " + axis_name +
                                     " on cube with depth units: " + axis_unit;
 
-            const std::list<std::string>& units =
-                PostStackValidator::get_valid_z_axis_combinations().find(axis_name)->second;
+            const auto& valid_combinations =
+                PostStackValidator::get_valid_z_axis_combinations();
+            const auto axis_it = valid_combinations.find(axis_name);
 
+            if (axis_it == valid_combinations.end()) {
+                throw std::runtime_error(msg);
+            }
+
+            const std::list<std::string>& units = axis_it->second;
             auto legal_units_contain = [&units] (const std::string name) {
-                return std::find(units.begin(), units.end(), name) != units.end() ;
+                return std::find(units.begin(), units.end(), name) != units.end();
             };
 
             if (not legal_units_contain(axis_unit)) {
@@ -107,48 +117,51 @@ void PostStackHandle::SliceRequestValidator::validate(const AxisDescriptor& axis
 }
 
 PostStackHandle::PostStackHandle(std::string url, std::string conn)
-    : SeismicHandle(url,
-                    conn,
-                    Channel::Sample,
-                    LevelOfDetail::Default,
-                    std::make_unique<PostStackAxisMap>( 2, 1, 0 ))  // hardcode axis map, this assumption will be validated
+    : SeismicHandle(
+        url,
+        conn,
+        Channel::Sample,
+        LevelOfDetail::Default,
+        std::make_unique<PostStackAxisMap>( 2, 1, 0 ) // hardcode axis map, this assumption will be validated
+    )
 {
     PostStackValidator(*this).validate();
 }
 
-requestdata PostStackHandle::get_slice(const Axis          axis,
-                                       const int           line_number,
-                                       const LevelOfDetail level_of_detail,
-                                       const Channel       channel) {
+requestdata PostStackHandle::get_slice(
+    const Axis          axis,
+    const int           line_number,
+    const LevelOfDetail level_of_detail,
+    const Channel       channel
+) {
     const AxisDescriptor axis_desc = this->get_axis(axis);
     SliceRequestValidator().validate(axis_desc);
 
     const SubVolume subvolume = slice_as_subvolume( axis_desc, line_number );
-
     return get_subvolume(subvolume, level_of_detail, channel);
 }
 
-requestdata PostStackHandle::get_fence(
-    const CoordinateSystem    coordinate_system,
-    float const *             coordinates,
-    const size_t              npoints,
-    const InterpolationMethod interpolation_method,
-    const LevelOfDetail       level_of_detail,
-    const Channel             channel) {
+requestdata PostStackHandle::get_fence(const CoordinateSystem    coordinate_system,
+                                       float const *             coordinates,
+                                       const size_t              npoints,
+                                       const InterpolationMethod interpolation_method,
+                                       const LevelOfDetail       level_of_detail,
+                                       const Channel             channel) {
 
-    std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > point_list =
-        fence_as_point_list(
-            coordinate_system,
-            coordinates,
-            npoints,
-            interpolation_method);
+    auto point_list = fence_as_point_list(
+                        coordinate_system,
+                        coordinates,
+                        npoints,
+                        interpolation_method
+                    );
 
-    return get_volume_trace(
-               std::move(point_list),
-               npoints,
-               interpolation_method,
-               level_of_detail,
-               channel);
+    return  get_volume_trace(
+                std::move(point_list),
+                npoints,
+                interpolation_method,
+                level_of_detail,
+                channel
+            );
 }
 
 /*
@@ -188,7 +201,8 @@ SubVolume PostStackHandle::slice_as_subvolume(
     return subvolume;
 }
 
-std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > PostStackHandle::fence_as_point_list(
+std::unique_ptr<float[][OpenVDS::Dimensionality_Max]>
+PostStackHandle::fence_as_point_list(
     const CoordinateSystem    coordinate_system,
     float const *             coordinates,
     const std::size_t         npoints,
@@ -244,7 +258,7 @@ std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > PostStackHandle::fence_a
             if (interpolation_method == NEAREST) {
                 coordinate[axis_dir] = std::round(coordinate[axis_dir] + 1) - 1;
             }
-            coords[i][this->axis_map_->dimension_from(axis_dir)]= coordinate[axis_dir];
+            coords[i][this->axis_map_->dimension_from(axis_dir)] = coordinate[axis_dir];
         }
     }
     return coords;
@@ -253,36 +267,41 @@ std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > PostStackHandle::fence_a
 requestdata PostStackHandle::get_subvolume(
     const SubVolume subvolume,
     const LevelOfDetail level_of_detail,
-    const Channel channel ) {
-
-    const auto format = this->layout_->GetChannelFormat(static_cast<int>(channel));
+    const Channel channel
+) {
+    const auto format
+        = this->layout_->GetChannelFormat(static_cast<int>(channel));
     const auto size = this->access_manager_.GetVolumeSubsetBufferSize(
-        subvolume.bounds.lower,
-        subvolume.bounds.upper,
-        format,
-        static_cast<int>(level_of_detail),
-        static_cast<int>(channel) );
+                        subvolume.bounds.lower,
+                        subvolume.bounds.upper,
+                        format,
+                        static_cast<int>(level_of_detail),
+                        static_cast<int>(channel)
+                    );
 
     std::unique_ptr< char[] > data(new char[size]());
     auto request = this->access_manager_.RequestVolumeSubset(
-        data.get(),
-        size,
-        OpenVDS::Dimensions_012,
-        static_cast<int>(level_of_detail),
-        static_cast<int>(channel),
-        subvolume.bounds.lower,
-        subvolume.bounds.upper,
-        format );
+                        data.get(),
+                        size,
+                        OpenVDS::Dimensions_012,
+                        static_cast<int>(level_of_detail),
+                        static_cast<int>(channel),
+                        subvolume.bounds.lower,
+                        subvolume.bounds.upper,
+                        format
+                    );
 
-    return finalize_request( request, "Failed to fetch slice from VDS", data, size );
+    const std::string msg_on_failure = "Failed to fetch slice from VDS";
+    return finalize_request(request, msg_on_failure, data, size);
 }
 
 requestdata PostStackHandle::get_volume_trace(
-        const std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > points,
-        const std::size_t npoints,
-        const InterpolationMethod interpolation_method,
-        const LevelOfDetail level_of_detail,
-        const Channel channel ) {
+    const std::unique_ptr<float[][OpenVDS::Dimensionality_Max]> points,
+    const std::size_t                                           npoints,
+    const InterpolationMethod                                   interpolation_method,
+    const LevelOfDetail                                         level_of_detail,
+    const Channel                                               channel
+) {
 
     // TODO: Verify that trace dimension is always 0
     const auto size = this->access_manager_.GetVolumeTracesBufferSize(
@@ -295,16 +314,17 @@ requestdata PostStackHandle::get_volume_trace(
     std::unique_ptr< char[] > data(new char[size]());
 
     auto request = this->access_manager_.RequestVolumeTraces(
-            (float*)data.get(),
-            size,
-            OpenVDS::Dimensions_012,
-            static_cast<int>(level_of_detail),
-            static_cast<int>(channel),
-            points.get(),
-            npoints,
-            get_interpolation(interpolation_method),
-            0 // Replacement value
-    );
+                        (float*)data.get(),
+                        size,
+                        OpenVDS::Dimensions_012,
+                        static_cast<int>(level_of_detail),
+                        static_cast<int>(channel),
+                        points.get(),
+                        npoints,
+                        get_interpolation(interpolation_method),
+                        0 // Replacement value
+                    );
 
-    return finalize_request( request, "Failed to fetch fence from VDS", data, size );
+    const std::string msg_on_failure = "Failed to fetch fence from VDS";
+    return finalize_request( request, msg_on_failure, data, size );
 }

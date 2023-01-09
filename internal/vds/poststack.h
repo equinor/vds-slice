@@ -33,10 +33,10 @@ public:
     /// @param channel Channel for which data shall be extracted.
     /// @return Requested data and/or error code of request.
     requestdata get_slice(
-        const Axis axis,
+        const Axis          axis,
         const int           line_number,
         const LevelOfDetail level_of_detail = LevelOfDetail::Default,
-        const Channel       channel = Channel::Default
+        const Channel       channel         = Channel::Default
     );
     /// @brief Get fence data.
     /// @param coordinate_system Coordinate system the request is using to
@@ -53,8 +53,8 @@ public:
         float const *             coordinates,
         const size_t              npoints,
         const InterpolationMethod interpolation_method,
-        const LevelOfDetail       level_of_detail = LevelOfDetail::Default,
-        const Channel             channel = Channel::Default
+        const LevelOfDetail       level_of_detail       = LevelOfDetail::Default,
+        const Channel             channel               = Channel::Default
     );
 
 protected:
@@ -82,7 +82,8 @@ protected:
         const CoordinateSystem    coordinate_system,
         float const *             coordinates,
         const std::size_t         npoints,
-        const InterpolationMethod interpolation_method) const;
+        const InterpolationMethod interpolation_method
+    ) const;
     /// @brief Get data within the specified subvolume
     /// @param subvolume Subvolume with the bounds of the request in the voxel
     ///                  coordinate system.
@@ -90,9 +91,10 @@ protected:
     /// @param channel Channel for which data shall be extracted.
     /// @return Requested data and/or error code of request.
     requestdata get_subvolume(
-        const SubVolume subvolume,
+        const SubVolume     subvolume,
         const LevelOfDetail level_of_detail,
-        const Channel channel );
+        const Channel       channel
+    );
     /// @brief Get data at the specified points.
     /// @param points List of points in voxel coordinate system, for which data
     ///               shall be extracted. Each point is represented by a
@@ -102,10 +104,11 @@ protected:
     /// @return Requested data and/or error code of request.
     requestdata get_volume_trace(
         const std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > points,
-        const std::size_t npoints,
-        const InterpolationMethod interpolation_method,
-        const LevelOfDetail level_of_detail,
-        const Channel channel );
+        const std::size_t                                             npoints,
+        const InterpolationMethod                                     interpolation_method,
+        const LevelOfDetail                                           level_of_detail,
+        const Channel                                                 channel
+    );
     /// @brief Helper function to wait for a OpenVDS data request to finish and
     ///        to wrap the obtained data in a `requestdata` struct.
     /// @tparam REQUEST_TYPE Parametrization of the OpenVDS request type which
@@ -122,7 +125,8 @@ protected:
         const std::shared_ptr<REQUEST_TYPE>& request,
         const std::string                    error_message,
         std::unique_ptr<char[]>&             data,
-        const std::size_t                    size) const;
+        const std::size_t                    size
+    ) const;
     /// @brief Class that validates basic assumptions about post-stack data
     ///        stored in VDS format.
     ///
@@ -132,7 +136,8 @@ protected:
         /// @brief Map of the allowed combinations of names and units for the
         ///        third (time/depth/sample) axis. The axis names are keys of
         ///        map which refers to a list of valid unit names.
-        static const std::unordered_map<std::string, std::list<std::string>> valid_z_axis_combinations_;
+        static const std::unordered_map<std::string, std::list<std::string>>
+            valid_z_axis_combinations_;
         /// @brief Handle to open VDS dataset.
         const PostStackHandle& handle_;
         /// @brief Helper function to validate that the coordinate axes are in
@@ -179,7 +184,8 @@ requestdata PostStackHandle::finalize_request(
     const std::shared_ptr<REQUEST_TYPE>& request,
     const std::string                    error_message,
     std::unique_ptr<char[]>&             data,
-    const std::size_t                    size) const {
+    const std::size_t                    size
+) const {
 
     const bool success = request.get()->WaitForCompletion();
     if (not success) {

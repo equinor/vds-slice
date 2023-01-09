@@ -126,10 +126,10 @@ public:
     /// @param axis_map Axis map that knows in what order the inline, crossline
     ///                 and sample direction are stored.
     SeismicHandle(
-        const std::string    url,
-        const std::string    connection,
-        const Channel        default_channel,
-        const LevelOfDetail  default_lod,
+        const std::string                     url,
+        const std::string                     connection,
+        const Channel                         default_channel,
+        const LevelOfDetail                   default_lod,
         const std::unique_ptr<SeismicAxisMap> axis_map
     );
 
