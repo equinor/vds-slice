@@ -235,20 +235,17 @@ std::unique_ptr< float[][OpenVDS::Dimensionality_Max] > PostStackHandle::fence_a
             }
         };
 
-        validate_boundary(0);
-        validate_boundary(1);
-
-        /* openvds uses rounding down for Nearest interpolation.
-         * As it is counterintuitive, we fix it by snapping to nearest index
-         * and rounding half-up.
-         */
-        if (interpolation_method == NEAREST) {
-            coordinate[0] = std::round(coordinate[0] + 1) - 1;
-            coordinate[1] = std::round(coordinate[1] + 1) - 1;
+        for (const AxisDirection axis_dir: {AxisDirection::X, AxisDirection::Y} ) {
+            validate_boundary(axis_dir);
+            /* openvds uses rounding down for Nearest interpolation.
+             * As it is counterintuitive, we fix it by snapping to nearest index
+             * and rounding half-up.
+             */
+            if (interpolation_method == NEAREST) {
+                coordinate[axis_dir] = std::round(coordinate[axis_dir] + 1) - 1;
+            }
+            coords[i][this->axis_map_->dimension_from(axis_dir)]= coordinate[axis_dir];
         }
-
-        coords[i][this->axis_map_->dimension_from(0)] = coordinate[0];
-        coords[i][this->axis_map_->dimension_from(1)] = coordinate[1];
     }
     return coords;
 }
