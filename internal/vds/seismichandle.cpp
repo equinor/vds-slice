@@ -8,28 +8,28 @@
 AxisMetadata::AxisMetadata(
     const OpenVDS::VolumeDataLayout* layout,
     const int voxel_dimension
-) noexcept
+) noexcept (true)
     : axis_descriptor_(layout->GetAxisDescriptor(voxel_dimension))
 {}
 
-int AxisMetadata::min() const {
+int AxisMetadata::min() const noexcept (true) {
     return this->axis_descriptor_.GetCoordinateMin();
 }
 
-int AxisMetadata::max() const {
+int AxisMetadata::max() const noexcept (true) {
     return this->axis_descriptor_.GetCoordinateMax();
 }
 
-int AxisMetadata::number_of_samples() const {
+int AxisMetadata::number_of_samples() const noexcept (true) {
     return this->axis_descriptor_.GetNumSamples();
 }
 
-std::string AxisMetadata::name() const {
+std::string AxisMetadata::name() const noexcept (true) {
     std::string name = this->axis_descriptor_.GetName();
     return name;
 }
 
-std::string AxisMetadata::unit() const {
+std::string AxisMetadata::unit() const noexcept (true) {
     std::string unit = this->axis_descriptor_.GetUnit();
     return unit;
 }
@@ -39,7 +39,7 @@ AxisDescriptor::AxisDescriptor(
     const Axis axis,
     const OpenVDS::VolumeDataLayout* layout,
     const int voxel_dimension
-) noexcept
+) noexcept (true)
     : AxisMetadata( layout, voxel_dimension ),
     axis_(axis),
     voxel_dimension_(voxel_dimension)
@@ -63,7 +63,7 @@ CoordinateSystem AxisDescriptor::system() const {
     }
 }
 
-Axis AxisDescriptor::value() const noexcept {
+Axis AxisDescriptor::value() const noexcept (true) {
     return this->axis_;
 }
 
@@ -86,7 +86,7 @@ int AxisDescriptor::space_dimension() const {
     }
 }
 
-int AxisDescriptor::voxel_dimension() const {
+int AxisDescriptor::voxel_dimension() const noexcept (true){
     return this->voxel_dimension_;
 }
 
@@ -166,7 +166,7 @@ AxisDescriptor SeismicHandle::get_axis(Axis axis) const {
     }
 }
 
-BoundingBox SeismicHandle::get_bounding_box() const {
+BoundingBox SeismicHandle::get_bounding_box() const noexcept (true) {
     return BoundingBox( this->layout_ );
 }
 

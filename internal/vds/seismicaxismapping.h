@@ -8,11 +8,11 @@ class SeismicAxisMap {
 
 public:
     /// @brief Dimension index of "Inline" axis in VDS coordinate system
-    virtual int iline()  const = 0;
+    virtual int iline()  const noexcept (true) = 0;
     /// @brief Dimension index of "Crossline" axis in VDS coordinate system
-    virtual int xline()  const = 0;
+    virtual int xline()  const noexcept (true) = 0;
     /// @brief Dimension index of "Sample" axis in VDS coordinate system
-    virtual int sample() const = 0;
+    virtual int sample() const noexcept (true) = 0;
     /// @brief Optional: Dimension index of "Offset" axis in VDS coordinate
     ///        system
     ///
@@ -38,9 +38,9 @@ public:
 
     PostStackAxisMap(int i, int x, int s);
 
-    int iline()  const override final;
-    int xline()  const override final;
-    int sample() const override final;
+    int iline()  const noexcept (true) override final;
+    int xline()  const noexcept (true) override final;
+    int sample() const noexcept (true) override final;
     int offset() const override final;
     int dimension_from( const int voxel ) const override final;
     int voxel_from( const int dimension ) const override final;

@@ -33,7 +33,7 @@ PostStackHandle::PostStackValidator::valid_z_axis_combinations_ = {
   }
 };
 
-PostStackHandle::PostStackValidator::PostStackValidator( const PostStackHandle& handle ) :
+PostStackHandle::PostStackValidator::PostStackValidator( const PostStackHandle& handle ) noexcept (true):
     handle_(handle) {
 }
 
@@ -69,7 +69,7 @@ void PostStackHandle::PostStackValidator::validate() {
 }
 
 
-PostStackHandle::SliceRequestValidator::SliceRequestValidator() {}
+PostStackHandle::SliceRequestValidator::SliceRequestValidator() noexcept (true) {}
 
 void PostStackHandle::SliceRequestValidator::validate(const AxisDescriptor& axis_desc) {
     switch (axis_desc.value()) {

@@ -142,7 +142,7 @@ protected:
     public:
         /// @brief Constructor
         /// @param handle Handle to open VDS.
-        PostStackValidator( const PostStackHandle& handle );
+        PostStackValidator( const PostStackHandle& handle ) noexcept (true);
         /// @brief Validates that the post-stack assumptions are valid for the
         ///        open VDS.
         void validate();
@@ -151,7 +151,7 @@ protected:
         /// @return A const reference to the map of valid names for the z-axis
         ///         and the corresponding valid units in that case.
         static const std::unordered_map<std::string, std::list<std::string>>&
-        get_valid_z_axis_combinations() {
+        get_valid_z_axis_combinations() noexcept (true) {
             return valid_z_axis_combinations_;
         }
     };
@@ -166,7 +166,7 @@ protected:
         public:
         /// @brief Constructor
         /// @param handle Handle to open VDS.
-        SliceRequestValidator();
+        SliceRequestValidator() noexcept (true) ;
         /// @brief Validate whether the slice request is valid for the specified
         ///        axis direction.
         /// @param axis Axis along which the slice is obtained.

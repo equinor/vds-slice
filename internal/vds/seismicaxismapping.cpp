@@ -5,15 +5,15 @@
 PostStackAxisMap::PostStackAxisMap(int i, int x, int s) :
     inline_axis_id_(i), crossline_axis_id_(x), sample_axis_id_(s) {}
 
-int PostStackAxisMap::iline()  const {
+int PostStackAxisMap::iline() const noexcept (true) {
     return this->inline_axis_id_;
 }
 
-int PostStackAxisMap::xline()  const {
+int PostStackAxisMap::xline() const noexcept (true) {
     return this->crossline_axis_id_;
 }
 
-int PostStackAxisMap::sample() const {
+int PostStackAxisMap::sample() const noexcept (true) {
     return this->sample_axis_id_;
 }
 

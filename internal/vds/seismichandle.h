@@ -41,22 +41,22 @@ public:
     AxisMetadata(
         const OpenVDS::VolumeDataLayout* layout,
         const int voxel_dimension
-    ) noexcept;
+    ) noexcept (true);
     /// @brief Gets the minimum value of current axis.
     /// @return Minimum value of current axis.
-    int min() const;
+    int min() const noexcept (true);
     /// @brief Gets the maximum value of current axis.
     /// @return Maximum value of current axis.
-    int max() const;
+    int max() const noexcept (true);
     /// @brief Gets the number of samples of current axis.
     /// @return Number of samples of current axis.
-    int number_of_samples() const;
+    int number_of_samples() const noexcept (true);
     /// @brief Get name of axis according to the VDS dataset.
     /// @return String containing the name of the axis.
-    std::string name() const;
+    std::string name() const noexcept (true);
     /// @brief Get unit of current axis.
     /// @return String containing the unit of the axis.
-    std::string unit() const;
+    std::string unit() const noexcept (true);
 };
 
 /// @brief Struct containing the upper and lower bounds in the voxel coordinate
@@ -94,7 +94,7 @@ public:
         const Axis axis,
         const OpenVDS::VolumeDataLayout* layout,
         const int voxel_dimension
-    ) noexcept;
+    ) noexcept (true);
 
     /// @brief Query which coordinate system this AxisDescriptor belongs to
     /// @return Enumeration CoordinateSystem specifying the coordinate system.
@@ -102,13 +102,13 @@ public:
     CoordinateSystem system() const;
     /// @brief Query which Axis type is underlying the current CoordinateAxis.
     /// @return Enumeration type specifying axis
-    Axis value() const noexcept;
+    Axis value() const noexcept (true);
     /// @brief Get numeric identifier of in spatial coordinate system.
     /// @return Numeric identifier of current axis. Can only by 0, 1 or 2.
     int space_dimension() const;
     /// @brief Get numeric identifier of in voxel coordinate system.
     /// @return Numeric identifier of current axis. Can only by 0, 1 or 2.
-    int voxel_dimension() const;
+    int voxel_dimension() const noexcept (true);
     /// @brief Get name of axis according to API. This may be different from
     ///        the name used in the VDS dataset.
     /// @return String containing the name of the axis in the API's notation.
@@ -139,7 +139,7 @@ public:
     AxisDescriptor get_axis(Axis axis) const;
     /// @brief Return bounding box of current data set in voxel coordinates.
     /// @return Returns bounding box element containing bounding box.
-    BoundingBox get_bounding_box() const;
+    BoundingBox get_bounding_box() const noexcept (true);
     /// @brief Get coordinate reference system string.
     /// @return Identifier stored in coordinate reference system field of VDS.
     std::string get_crs() const;
