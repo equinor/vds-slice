@@ -8,18 +8,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: ./tests/performance/Dockerfile
           tags: performance_tests:latest
           outputs: type=docker,dest=/tmp/performance_tests.tar
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: performance_tests
           path: /tmp/performance_tests.tar
@@ -82,9 +82,9 @@ jobs:
 
     steps:
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: performance_tests
           path: /tmp
@@ -93,7 +93,7 @@ jobs:
           docker load --input /tmp/performance_tests.tar
           docker image ls -a
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Run "${{ matrix.name }}" test
         env:

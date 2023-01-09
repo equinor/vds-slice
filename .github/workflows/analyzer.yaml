@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Run check
         run: |
           DOCKER_BUILDKIT=1 docker build -f Dockerfile --target static_analyzer .
