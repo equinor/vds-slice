@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pborman/getopt/v2"
@@ -14,18 +15,34 @@ import (
 	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/api"
 	"github.com/equinor/vds-slice/internal/vds"
+	"github.com/equinor/vds-slice/internal/cache"
 )
 
 type opts struct {
 	storageAccounts string
 	port            string
+	cacheSize       uint32
+}
+
+func parseCacheSize(cacheSize string) uint32 {
+	if len(cacheSize) == 0 {
+		return 0
+	}
+	out, err := strconv.ParseUint(cacheSize, 10, 32)
+	if err != nil {
+		panic(err)
+	}
+
+	return uint32(out)
 }
 
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
+	
 	opts := opts{
 		storageAccounts: os.Getenv("STORAGE_ACCOUNTS"),
 		port:            "8080",
+		cacheSize:       parseCacheSize(os.Getenv("VDSSLICE_CACHE_SIZE")),
 	}
 
 	getopt.FlagLong(
@@ -42,6 +59,16 @@ func parseopts() opts {
 		"port",
 		0,
 		"Port to start server on. Defaults to 8080",
+	)
+
+	getopt.FlagLong(
+		&opts.cacheSize,
+		"cache-size",
+		0,
+		"Max size of the response cache. In megabytes. A value of zero effectively\n" +
+		"disables caching. Defaults to the value of the environment variable\n" +
+		"VDSSLICE_CACHE_SIZE, or zero if the env var is not set.",
+		"string",
 	)
 
 	getopt.Parse()
@@ -63,10 +90,12 @@ func parseopts() opts {
 // @schemes      https
 func main() {
 	opts := parseopts()
-	
+
 	storageAccounts := strings.Split(opts.storageAccounts, ",")
+	
 	endpoint := api.Endpoint{
 		MakeVdsConnection: vds.MakeAzureConnection(storageAccounts),
+		Cache:             cache.NewCache(opts.cacheSize),
 	}
 
 	app := gin.Default()

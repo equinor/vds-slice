@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 
+	"github.com/equinor/vds-slice/internal/cache"
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
@@ -577,7 +578,10 @@ func MakeFileConnection() vds.ConnectionMaker {
 
 func setupTestServer(r *gin.Engine) {
 	r.Use(gin.Logger())
-	endpoint := Endpoint{ MakeVdsConnection: MakeFileConnection() }
+	endpoint := Endpoint{
+		MakeVdsConnection: MakeFileConnection(),
+		Cache: cache.NewNoCache(),
+	}
 
 	r.POST("/slice", ErrorHandler, endpoint.SlicePost)
 	r.GET("/slice", ErrorHandler, endpoint.SliceGet)

@@ -1,10 +1,22 @@
 package vds
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"net/url"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 )
+
+func equalsOneOf(parameter string, values []string) bool {
+	for _, value := range values {
+		if strings.EqualFold(parameter, value) {
+			return true
+		}
+	}
+	return false
+}
 
 func srtContainsObject(srt string) bool {
 	return strings.Contains(srt, "o");
@@ -51,6 +63,7 @@ func validateSasSrt(connection *AzureConnection) error {
 type Connection interface {
 	Url()              string
 	ConnectionString() string
+	IsAuthorizedToRead()    bool
 }
 
 type AzureConnection struct {
@@ -69,6 +82,49 @@ func (c *AzureConnection) ConnectionString() string {
 		c.host,
 		c.sas,
 	)
+}
+
+/** Verify that the connection has enough access to read a VDS from Blob Store
+ *
+ * This function does a HEAD request to the VolumeDataLayout in the VDS, in
+ * form of a 'get blob properties' request [1] in order to verify read access,
+ * and that the token is generally valid.
+ *
+ * The HEAD request itself is not sufficient if the SAS token happens to be a
+ * Service- or User Delegation SAS. In that case we also need to check if the
+ * Signed Resource ('sr') parameter contains either 'c' (container) or 'd'
+ * (directory). The presence of either 'c' or 'd' confirms that the SAS-token is
+ * valid not only for the VolumeDataLayout blob, but all blobs in the same and
+ * subsequent directories relative to the VolumeDataLayout blob.
+ *
+ * [1] https://learn.microsoft.com/en-us/rest/api/storageservices/get-blob-properties
+ */
+func (c *AzureConnection) IsAuthorizedToRead() bool {
+	query, err := url.ParseQuery(c.sas)
+	if err != nil {
+		return false
+	}
+
+	if query.Has("sr") && !equalsOneOf(query.Get("sr"), []string{"c", "d"}) {
+		return false
+	}
+
+	client, err := blob.NewClientWithNoCredential(
+		fmt.Sprintf("https://%s/%s/%s/VolumeDataLayout?%s",
+			c.host,
+			c.container,
+			c.blobPath,
+			c.sas,
+		),
+		nil,
+	)
+
+	if err != nil {
+		return false
+	}
+
+	_, err = client.GetProperties(context.Background(), nil);
+	return err == nil
 }
 
 func NewAzureConnection(
@@ -95,6 +151,10 @@ func (f *FileConnection) Url() string {
 
 func (f *FileConnection) ConnectionString() string {
 	return ""
+}
+
+func (c *FileConnection) IsAuthorizedToRead() bool {
+	return true
 }
 
 func NewFileConnection(path string) *FileConnection {

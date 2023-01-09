@@ -1,5 +1,9 @@
 package api
 
+import (
+	"github.com/equinor/vds-slice/internal/cache"
+)
+
 type RequestedResource struct {
 	// The blob url to a vds in form
 	// https://account.blob.core.windows.net/container/blob
@@ -39,6 +43,17 @@ type FenceRequest struct {
 	Interpolation string `json:"interpolation" example:"linear"`
 } //@name FenceRequest
 
+/** Compute a hash of the request that uniquely identifies the requested fence
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (f FenceRequest) Hash() (string, error) {
+	// Strip the sas token before computing hash
+	f.Sas = "";
+	return cache.Hash(f)
+}
+
 // Query for slice endpoints
 // @Description Query payload for slice endpoint /slice.
 type SliceRequest struct {
@@ -62,3 +77,14 @@ type SliceRequest struct {
 	// Line number of the slice
 	Lineno *int `json:"lineno" binding:"required" example:"10000"`
 } //@name SliceRequest
+
+/** Compute a hash of the request that uniquely identifies the requested slice
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (s SliceRequest) Hash() (string, error) {
+	// Strip the sas token before computing hash
+	s.Sas = "";
+	return cache.Hash(s)
+}

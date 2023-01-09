@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 
@@ -9,10 +10,12 @@ import (
 	"github.com/gin-gonic/gin/binding"
 
 	"github.com/equinor/vds-slice/internal/vds"
+	"github.com/equinor/vds-slice/internal/cache"
 )
 
 type Endpoint struct {
 	MakeVdsConnection vds.ConnectionMaker
+	Cache             cache.Cache
 }
 
 func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
@@ -38,6 +41,19 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		return
 	}
 
+	cacheKey, err := request.Hash()
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	cacheEntry, hit := e.Cache.Get(cacheKey)
+	if hit && conn.IsAuthorizedToRead() {
+		log.Printf("Cache hit: %s", cacheKey)
+		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
+		return
+	}
+
 	axis, err := vds.GetAxis(strings.ToLower(request.Direction))
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
@@ -55,6 +71,9 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
+
 	writeResponse(ctx, metadata, data)
 }
 
@@ -62,6 +81,19 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	cacheKey, err := request.Hash()
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	cacheEntry, hit := e.Cache.Get(cacheKey)
+	if hit && conn.IsAuthorizedToRead() {
+		log.Printf("Cache hit: %s", cacheKey)
+		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
 		return
 	}
 
@@ -96,6 +128,8 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
 
 	writeResponse(ctx, metadata, data)
 }
