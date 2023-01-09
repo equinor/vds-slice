@@ -1,0 +1,42 @@
+name: Load openvds image
+description: Assures openvds docker image is loaded under OPENVDS_IMAGE_TAG environment variable. Image is either built anew or loaded from cache.
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set parameters
+      shell: bash
+      id: parameters-setter
+      run: |
+        dockerfile_sha=$(sha1sum Dockerfile| head -c 40)
+        echo "DOCKERFILE_SHA=$dockerfile_sha" >> $GITHUB_ENV
+        echo "OPENVDS_CACHE_DIR=~/openvds_image" >> $GITHUB_ENV
+        echo "OPENVDS_CACHE_FILE=openvds.tar" >> $GITHUB_ENV
+        echo "OPENVDS_IMAGE_TAG=openvds:$dockerfile_sha" >> $GITHUB_ENV
+
+    - name: Make openvds directory
+      shell: bash
+      run: mkdir -p ${{ env.OPENVDS_CACHE_DIR }}
+
+    - name: Check for openvds cache
+      uses: actions/cache@v3
+      id: openvds-cache
+      with:
+        path: ${{ env.OPENVDS_CACHE_DIR }}
+        key: openvds-cache-${{ env.DOCKERFILE_SHA }}
+
+    - if: steps.openvds-cache.outputs.cache-hit != 'true'
+      name: Build openvds image
+      shell: bash
+      run: |
+        echo "openvds image from dockerfile with sha ${{ env.DOCKERFILE_SHA }} not found in cache"
+        echo "making openvds image with tag: ${{ env.OPENVDS_IMAGE_TAG }}"
+
+        docker build -f Dockerfile --target openvds -t ${{ env.OPENVDS_IMAGE_TAG }} .
+        docker save -o ${{ env.OPENVDS_CACHE_DIR }}/${{ env.OPENVDS_CACHE_FILE }} ${{ env.OPENVDS_IMAGE_TAG }}
+
+    - if: steps.openvds-cache.outputs.cache-hit == 'true'
+      name: Load openvds image
+      shell: bash
+      run: |
+        docker load -i ${{ env.OPENVDS_CACHE_DIR }}/${{ env.OPENVDS_CACHE_FILE }}
