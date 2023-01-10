@@ -12,7 +12,6 @@ jobs:
     # STORAGE_ACCOUNT_KEY : key used to access storage
     name: E2E tests with cloud
     runs-on: ubuntu-latest
-    environment: Test
     steps:
       - uses: actions/checkout@v3
 

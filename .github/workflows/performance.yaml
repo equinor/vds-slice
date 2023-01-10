@@ -33,7 +33,6 @@ jobs:
     name: Pattern
     runs-on: ubuntu-latest
     if: always()
-    environment: Test
     needs: prepare_env
 
     strategy:
