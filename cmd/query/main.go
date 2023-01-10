@@ -16,6 +16,7 @@ import (
 	"github.com/equinor/vds-slice/api"
 	"github.com/equinor/vds-slice/internal/vds"
 	"github.com/equinor/vds-slice/internal/cache"
+	"github.com/equinor/vds-slice/internal/logging"
 )
 
 type opts struct {
@@ -98,7 +99,9 @@ func main() {
 		Cache:             cache.NewCache(opts.cacheSize),
 	}
 
-	app := gin.Default()
+	app := gin.New()
+	app.Use(logging.FormattedLogger())
+	app.Use(gin.Recovery())
 	app.Use(gzip.Gzip(gzip.BestSpeed))
 
 	app.GET("/", endpoint.Health)
