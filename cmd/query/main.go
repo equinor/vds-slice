@@ -57,8 +57,9 @@ func parseopts() opts {
 		&opts.storageAccounts,
 		"storage-accounts",
 		0,
-		"Comma-separated list of storage accounts that should be accepted by the API. " +
-		"E.g. https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net",
+		"Comma-separated list of storage accounts that should be accepted by the API.\n" +
+		"Example: 'https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net'\n" +
+		"Can also be set by environment variable 'VDSSLICE_STORAGE_ACCOUNTS'",
 		"string",
 	)
 
