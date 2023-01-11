@@ -14,6 +14,8 @@ const (
 	ms = 0.001
 	s  = 1
 	m  = 60 * s
+	kb = 1024
+	mb = 1024*kb
 )
 
 type metrics struct {
@@ -21,6 +23,7 @@ type metrics struct {
 
 	// Custom metics
 	requestDurations *prometheus.HistogramVec
+	responseSizes    *prometheus.HistogramVec
 }
 
 /** Create a new metric instance
@@ -37,9 +40,16 @@ func NewMetrics() *metrics {
 			Help:    "VDSslice latency distributions.",
 			Buckets: []float64{100*ms, 500*ms, 1*s, 2*s, 5*s, 20*s, 1*m, 2*m},
 		}, []string{"path", "status"}),
+
+		responseSizes: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    "vdsslice_response_sizes_histogram_bytes",
+			Help:    "VDSslice response size distributions.",
+			Buckets: []float64{100*kb, 1*mb, 5*mb, 10*mb, 20*mb, 50*mb, 100*mb, 200*mb},
+		}, []string{"path", "status"}),
 	}
 
 	registry.MustRegister(metrics.requestDurations)
+	registry.MustRegister(metrics.responseSizes)
 
 	return metrics;
 }
@@ -53,12 +63,15 @@ func NewGinMiddleware(metrics *metrics) gin.HandlerFunc {
 		go func() {
 			path   := ctx.Request.URL.Path
 			status := strconv.Itoa(ctx.Writer.Status())
+			size   := float64(ctx.Writer.Size())
 
 			duration := time.Since(start).Seconds()
 			metrics.requestDurations.WithLabelValues(
 				path,
 				status,
 			).Observe(duration)
+
+			metrics.responseSizes.WithLabelValues(path, status).Observe(size)
 		}()
 	}
 }
