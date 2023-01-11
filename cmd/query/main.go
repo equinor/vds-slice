@@ -42,7 +42,7 @@ func parseopts() opts {
 	
 	opts := opts{
 		storageAccounts: os.Getenv("STORAGE_ACCOUNTS"),
-		port:            parseAsUint32(8080, ""),
+		port:            parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
 		cacheSize:       parseAsUint32(0,    os.Getenv("VDSSLICE_CACHE_SIZE")),
 	}
 
@@ -59,7 +59,8 @@ func parseopts() opts {
 		&opts.port,
 		"port",
 		0,
-		"Port to start server on. Defaults to 8080",
+		"Port to start server on. Defaults to 8080.\n" +
+		"Can also be set by environment variable 'VDSSLICE_PORT'",
 	)
 
 	getopt.FlagLong(
