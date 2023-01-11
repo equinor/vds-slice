@@ -30,7 +30,7 @@ jobs:
             --tag $tag \
             .
           docker run \
-            -e STORAGE_ACCOUNTS \
+            -e VDSSLICE_STORAGE_ACCOUNTS \
             -d \
             -p 8080:8080 \
             $tag
