@@ -76,8 +76,8 @@ func parseopts() opts {
 		"cache-size",
 		0,
 		"Max size of the response cache. In megabytes. A value of zero effectively\n" +
-		"disables caching. Defaults to the value of the environment variable\n" +
-		"VDSSLICE_CACHE_SIZE, or zero if the env var is not set.",
+		"disables caching. Defaults to 0.\n" +
+		"Can also be set by environment variable 'VDSSLICE_CACHE_SIZE'",
 		"string",
 	)
 
