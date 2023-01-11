@@ -37,11 +37,18 @@ func parseAsUint32(fallback uint32, value string) uint32 {
 	return uint32(out)
 }
 
+func parseAsString(fallback string, value string) string {
+	if len(value) == 0 {
+		return fallback
+	}
+	return value
+}
+
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 	
 	opts := opts{
-		storageAccounts: os.Getenv("STORAGE_ACCOUNTS"),
+		storageAccounts: parseAsString("",   os.Getenv("STORAGE_ACCOUNTS")),
 		port:            parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
 		cacheSize:       parseAsUint32(0,    os.Getenv("VDSSLICE_CACHE_SIZE")),
 	}
