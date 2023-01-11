@@ -25,11 +25,11 @@ type opts struct {
 	cacheSize       uint32
 }
 
-func parseCacheSize(cacheSize string) uint32 {
-	if len(cacheSize) == 0 {
+func parseAsUint32(value string) uint32 {
+	if len(value) == 0 {
 		return 0
 	}
-	out, err := strconv.ParseUint(cacheSize, 10, 32)
+	out, err := strconv.ParseUint(value, 10, 32)
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +43,7 @@ func parseopts() opts {
 	opts := opts{
 		storageAccounts: os.Getenv("STORAGE_ACCOUNTS"),
 		port:            "8080",
-		cacheSize:       parseCacheSize(os.Getenv("VDSSLICE_CACHE_SIZE")),
+		cacheSize:       parseAsUint32(os.Getenv("VDSSLICE_CACHE_SIZE")),
 	}
 
 	getopt.FlagLong(
