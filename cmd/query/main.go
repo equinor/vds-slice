@@ -69,6 +69,7 @@ func parseopts() opts {
 		0,
 		"Port to start server on. Defaults to 8080.\n" +
 		"Can also be set by environment variable 'VDSSLICE_PORT'",
+		"int",
 	)
 
 	getopt.FlagLong(
