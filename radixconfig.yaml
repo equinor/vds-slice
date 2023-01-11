@@ -14,7 +14,7 @@ spec:
     - name: server
       dockerfileName: Dockerfile
       secrets:
-        - STORAGE_ACCOUNTS
+        - VDSSLICE_STORAGE_ACCOUNTS
       ports:
         - name: http
           port: 8080
