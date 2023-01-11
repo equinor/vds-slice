@@ -21,7 +21,7 @@ import (
 
 type opts struct {
 	storageAccounts string
-	port            string
+	port            uint32
 	cacheSize       uint32
 }
 
@@ -42,8 +42,8 @@ func parseopts() opts {
 	
 	opts := opts{
 		storageAccounts: os.Getenv("STORAGE_ACCOUNTS"),
-		port:            "8080",
-		cacheSize:       parseAsUint32(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
+		port:            parseAsUint32(8080, ""),
+		cacheSize:       parseAsUint32(0,    os.Getenv("VDSSLICE_CACHE_SIZE")),
 	}
 
 	getopt.FlagLong(
@@ -116,5 +116,5 @@ func main() {
 	app.POST("fence", api.ErrorHandler, endpoint.FencePost)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	app.Run(fmt.Sprintf(":%s", opts.port))
+	app.Run(fmt.Sprintf(":%d", opts.port))
 }
