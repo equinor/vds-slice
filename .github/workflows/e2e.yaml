@@ -20,7 +20,7 @@ jobs:
 
       - name: Build and Run server
         env:
-          STORAGE_ACCOUNTS: https://${{ secrets.STORAGE_ACCOUNT_NAME }}.blob.core.windows.net
+          VDSSLICE_STORAGE_ACCOUNTS: https://${{ secrets.STORAGE_ACCOUNT_NAME }}.blob.core.windows.net
         run: |
           tag=server
           DOCKER_BUILDKIT=1 docker build \
