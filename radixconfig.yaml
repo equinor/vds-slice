@@ -21,6 +21,8 @@ spec:
       publicPort: http
       environmentConfig:
         - environment: dev
+          variables:
+            VDSSLICE_CACHE_SIZE: 512 # MB
           monitoring: false
           resources:
             requests:
@@ -30,6 +32,8 @@ spec:
             minReplicas: 1
             maxReplicas: 3
         - environment: test
+          variables:
+            VDSSLICE_CACHE_SIZE: 256 # MB
           monitoring: false
           resources:
             requests:
