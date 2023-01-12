@@ -56,8 +56,8 @@ def test_slice(method):
 
     expected_meta = json.loads("""
     {
-        "x": {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
-        "y": {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"},
+        "x": {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"},
+        "y": {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
         "format": "<f4"
     }
     """)
@@ -147,7 +147,7 @@ def test_assure_only_allowed_storage_accounts(path, payload):
                        params={"query": json.dumps(payload)})
     assert res.status_code == http.HTTPStatus.BAD_REQUEST
     body = json.loads(res.content)
-    assert "Unsupported storage account" in body['error']
+    assert "unsupported storage account" in body['error']
 
 
 @pytest.mark.parametrize("path, payload, error_code, error", [
@@ -222,8 +222,8 @@ def request_slice(method, lineno, direction):
     data = multipart_data.parts[1].content
 
     shape = (
-        metadata['x']['samples'],
-        metadata['y']['samples']
+        metadata['y']['samples'],
+        metadata['x']['samples']
     )
 
     data = np.ndarray(shape, metadata['format'], data)

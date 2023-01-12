@@ -1,24 +1,43 @@
-name: E2E
+name: E2E tests
 
 on:
+  push:
+    branches: [master, e2e_tests]
   workflow_dispatch:
 
 jobs:
+  # The following secrets are required:
+  # STORAGE_ACCOUNT_NAME : name of the storage account with uploaded testdata (without blob.core.windows.net)
+  # STORAGE_ACCOUNT_KEY : key used to access storage
   e2e_tests:
-    # Required secrets:
-    #
-    # ENDPOINT : URL where server is running
-    # STORAGE_ACCOUNT_NAME : name of the storage where server is assigned to (without blob.core.windows.net)
-    # STORAGE_ACCOUNT_KEY : key used to access storage
-    name: E2E tests with cloud
+    name: Run e2e tests
     runs-on: ubuntu-latest
-    environment: Test
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+
+      - name: Load openvds image
+        uses: "./.github/actions/load_openvds_image"
+
+      - name: Build and Run server
+        env:
+          STORAGE_ACCOUNTS: https://${{ secrets.STORAGE_ACCOUNT_NAME }}.blob.core.windows.net
+        run: |
+          tag=server
+          DOCKER_BUILDKIT=1 docker build \
+            -f Dockerfile \
+            --build-arg OPENVDS_IMAGE=${{ env.OPENVDS_IMAGE_TAG }} \
+            --target runner \
+            --tag $tag \
+            .
+          docker run \
+            -e STORAGE_ACCOUNTS \
+            -d \
+            -p 8080:8080 \
+            $tag
 
       - name: Run E2E tests
         env:
-          ENDPOINT: ${{ secrets.ENDPOINT }}
+          ENDPOINT: http://localhost:8080
           STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
           STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
         run: |
@@ -28,4 +47,5 @@ jobs:
             -e ENDPOINT \
             -e STORAGE_ACCOUNT_NAME \
             -e STORAGE_ACCOUNT_KEY \
+            --network="host" \
             $tag
