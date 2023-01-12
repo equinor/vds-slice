@@ -39,7 +39,7 @@ func NewMetrics() *metrics {
 			Name:    "vdsslice_durations_histogram_seconds",
 			Help:    "VDSslice latency distributions.",
 			Buckets: []float64{100*ms, 500*ms, 1*s, 2*s, 5*s, 20*s, 1*m, 2*m},
-		}, []string{"path", "status"}),
+		}, []string{"path", "status", "cachehit"}),
 
 		responseSizes: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "vdsslice_response_sizes_histogram_bytes",
@@ -61,14 +61,16 @@ func NewGinMiddleware(metrics *metrics) gin.HandlerFunc {
 		ctx.Next()
 
 		go func() {
-			path   := ctx.Request.URL.Path
-			status := strconv.Itoa(ctx.Writer.Status())
-			size   := float64(ctx.Writer.Size())
-
+			path     := ctx.Request.URL.Path
+			status   := strconv.Itoa(ctx.Writer.Status())
+			size     := float64(ctx.Writer.Size())
+			cachehit := strconv.FormatBool(ctx.GetBool("cache-hit"))
 			duration := time.Since(start).Seconds()
+
 			metrics.requestDurations.WithLabelValues(
 				path,
 				status,
+				cachehit,
 			).Observe(duration)
 
 			metrics.responseSizes.WithLabelValues(path, status).Observe(size)
