@@ -79,7 +79,7 @@ func parseopts() opts {
 		"Max size of the response cache. In megabytes. A value of zero effectively\n" +
 		"disables caching. Defaults to 0.\n" +
 		"Can also be set by environment variable 'VDSSLICE_CACHE_SIZE'",
-		"string",
+		"int",
 	)
 
 	getopt.Parse()
