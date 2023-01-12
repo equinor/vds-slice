@@ -21,15 +21,15 @@ import (
 
 type opts struct {
 	storageAccounts string
-	port            string
+	port            uint32
 	cacheSize       uint32
 }
 
-func parseCacheSize(cacheSize string) uint32 {
-	if len(cacheSize) == 0 {
-		return 0
+func parseAsUint32(fallback uint32, value string) uint32 {
+	if len(value) == 0 {
+		return fallback
 	}
-	out, err := strconv.ParseUint(cacheSize, 10, 32)
+	out, err := strconv.ParseUint(value, 10, 32)
 	if err != nil {
 		panic(err)
 	}
@@ -37,21 +37,29 @@ func parseCacheSize(cacheSize string) uint32 {
 	return uint32(out)
 }
 
+func parseAsString(fallback string, value string) string {
+	if len(value) == 0 {
+		return fallback
+	}
+	return value
+}
+
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 	
 	opts := opts{
-		storageAccounts: os.Getenv("STORAGE_ACCOUNTS"),
-		port:            "8080",
-		cacheSize:       parseCacheSize(os.Getenv("VDSSLICE_CACHE_SIZE")),
+		storageAccounts: parseAsString("",   os.Getenv("VDSSLICE_STORAGE_ACCOUNTS")),
+		port:            parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
+		cacheSize:       parseAsUint32(0,    os.Getenv("VDSSLICE_CACHE_SIZE")),
 	}
 
 	getopt.FlagLong(
 		&opts.storageAccounts,
 		"storage-accounts",
 		0,
-		"Comma-separated list of storage accounts that should be accepted by the API. " +
-		"E.g. https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net",
+		"Comma-separated list of storage accounts that should be accepted by the API.\n" +
+		"Example: 'https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net'\n" +
+		"Can also be set by environment variable 'VDSSLICE_STORAGE_ACCOUNTS'",
 		"string",
 	)
 
@@ -59,7 +67,9 @@ func parseopts() opts {
 		&opts.port,
 		"port",
 		0,
-		"Port to start server on. Defaults to 8080",
+		"Port to start server on. Defaults to 8080.\n" +
+		"Can also be set by environment variable 'VDSSLICE_PORT'",
+		"int",
 	)
 
 	getopt.FlagLong(
@@ -67,9 +77,9 @@ func parseopts() opts {
 		"cache-size",
 		0,
 		"Max size of the response cache. In megabytes. A value of zero effectively\n" +
-		"disables caching. Defaults to the value of the environment variable\n" +
-		"VDSSLICE_CACHE_SIZE, or zero if the env var is not set.",
-		"string",
+		"disables caching. Defaults to 0.\n" +
+		"Can also be set by environment variable 'VDSSLICE_CACHE_SIZE'",
+		"int",
 	)
 
 	getopt.Parse()
@@ -116,5 +126,5 @@ func main() {
 	app.POST("fence", api.ErrorHandler, endpoint.FencePost)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	app.Run(fmt.Sprintf(":%s", opts.port))
+	app.Run(fmt.Sprintf(":%d", opts.port))
 }
