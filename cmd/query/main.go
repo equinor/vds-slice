@@ -17,12 +17,14 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 	"github.com/equinor/vds-slice/internal/cache"
 	"github.com/equinor/vds-slice/internal/logging"
+	"github.com/equinor/vds-slice/internal/metrics"
 )
 
 type opts struct {
 	storageAccounts string
 	port            uint32
 	cacheSize       uint32
+	metrics         bool
 }
 
 func parseAsUint32(fallback uint32, value string) uint32 {
@@ -44,6 +46,15 @@ func parseAsString(fallback string, value string) string {
 	return value
 }
 
+func parseAsBool(fallback bool, value string) bool {
+	v, err := strconv.ParseBool(value)
+	if err != nil {
+		return fallback
+	}
+
+	return v
+}
+
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 	
@@ -51,6 +62,7 @@ func parseopts() opts {
 		storageAccounts: parseAsString("",   os.Getenv("VDSSLICE_STORAGE_ACCOUNTS")),
 		port:            parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
 		cacheSize:       parseAsUint32(0,    os.Getenv("VDSSLICE_CACHE_SIZE")),
+		metrics:         parseAsBool(false,  os.Getenv("VDSSLICE_METRICS")),
 	}
 
 	getopt.FlagLong(
@@ -80,6 +92,15 @@ func parseopts() opts {
 		"disables caching. Defaults to 0.\n" +
 		"Can also be set by environment variable 'VDSSLICE_CACHE_SIZE'",
 		"int",
+	)
+
+	getopt.FlagLong(
+		&opts.metrics,
+		"metrics",
+		0,
+		"Turn on server metrics. Metrics are posted to /metrics using the\n" +
+		"prometheus data model. Off by default.\n" +
+		"Can also be set by environment variable 'VDSSLICE_METRICS'",
 	)
 
 	getopt.Parse()
@@ -116,6 +137,12 @@ func main() {
 
 	seismic := app.Group("/")
 	seismic.Use(api.ErrorHandler)
+
+	if opts.metrics {
+		metric := metrics.NewMetrics()
+		seismic.Use(metrics.NewGinMiddleware(metric))
+		app.GET("metrics", metrics.NewGinHandler(metric))
+	}
 
 	app.GET("/", endpoint.Health)
 
