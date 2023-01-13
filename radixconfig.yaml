@@ -26,8 +26,10 @@ spec:
       environmentConfig:
         - environment: dev
           variables:
+            VDSSLICE_PORT: 8080
             VDSSLICE_CACHE_SIZE: 512 # MB
             VDSSLICE_METRICS: true
+            VDSSLICE_METRICS_PORT: 8081
           monitoring: true
           resources:
             requests:
@@ -38,8 +40,10 @@ spec:
             maxReplicas: 3
         - environment: test
           variables:
+            VDSSLICE_PORT: 8080
             VDSSLICE_CACHE_SIZE: 256 # MB
             VDSSLICE_METRICS: true
+            VDSSLICE_METRICS_PORT: 8081
           monitoring: true
           resources:
             requests:
