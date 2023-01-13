@@ -18,12 +18,17 @@ spec:
       ports:
         - name: http
           port: 8080
+        - name: metrics
+          port: 8081
       publicPort: http
+      monitoringConfig:
+        portName: metrics
       environmentConfig:
         - environment: dev
           variables:
             VDSSLICE_CACHE_SIZE: 512 # MB
-          monitoring: false
+            VDSSLICE_METRICS: true
+          monitoring: true
           resources:
             requests:
               memory: "4096Mi"
@@ -34,7 +39,8 @@ spec:
         - environment: test
           variables:
             VDSSLICE_CACHE_SIZE: 256 # MB
-          monitoring: false
+            VDSSLICE_METRICS: true
+          monitoring: true
           resources:
             requests:
               memory: "2048Mi"
