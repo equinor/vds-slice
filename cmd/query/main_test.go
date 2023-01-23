@@ -578,20 +578,12 @@ func MakeFileConnection() vds.ConnectionMaker {
 }
 
 func setupTestServer(r *gin.Engine) {
-	r.Use(gin.Logger())
 	endpoint := api.Endpoint{
 		MakeVdsConnection: MakeFileConnection(),
-		Cache: cache.NewNoCache(),
+		Cache:             cache.NewNoCache(),
 	}
 
-	r.POST("/slice", api.ErrorHandler, endpoint.SlicePost)
-	r.GET("/slice", api.ErrorHandler, endpoint.SliceGet)
-
-	r.POST("/fence", api.ErrorHandler, endpoint.FencePost)
-	r.GET("/fence", api.ErrorHandler, endpoint.FenceGet)
-
-	r.POST("/metadata", api.ErrorHandler, endpoint.MetadataPost)
-	r.GET("/metadata", api.ErrorHandler, endpoint.MetadataGet)
+	setupApp(r, &endpoint, nil)
 }
 
 func assertError(w *httptest.ResponseRecorder, t *testing.T, test_name string,

@@ -126,6 +126,32 @@ func parseopts() opts {
 	return opts
 }
 
+func setupApp(app *gin.Engine, endpoint *api.Endpoint, metric * metrics.Metrics) {
+	app.Use(logging.FormattedLogger())
+	app.Use(gin.Recovery())
+	app.Use(gzip.Gzip(gzip.BestSpeed))
+
+	seismic := app.Group("/")
+	seismic.Use(api.ErrorHandler)
+
+	if metric != nil {
+		seismic.Use(metrics.NewGinMiddleware(metric))
+	}
+
+	app.GET("/", endpoint.Health)
+
+	seismic.GET("metadata", endpoint.MetadataGet)
+	seismic.POST("metadata", endpoint.MetadataPost)
+
+	seismic.GET("slice", endpoint.SliceGet)
+	seismic.POST("slice", endpoint.SlicePost)
+
+	seismic.GET("fence", endpoint.FenceGet)
+	seismic.POST("fence", endpoint.FencePost)
+
+	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+}
+
 // @title        VDS-slice API
 // @version      0.0
 // @description  Serves seismic slices and fences from VDS files.
@@ -138,24 +164,17 @@ func main() {
 	opts := parseopts()
 
 	storageAccounts := strings.Split(opts.storageAccounts, ",")
-	
+
 	endpoint := api.Endpoint{
 		MakeVdsConnection: vds.MakeAzureConnection(storageAccounts),
 		Cache:             cache.NewCache(opts.cacheSize),
 	}
 
 	app := gin.New()
-	app.Use(logging.FormattedLogger())
-	app.Use(gin.Recovery())
-	app.Use(gzip.Gzip(gzip.BestSpeed))
 
-	seismic := app.Group("/")
-	seismic.Use(api.ErrorHandler)
-
+	var metric *metrics.Metrics
 	if opts.metrics {
-		metric := metrics.NewMetrics()
-		seismic.Use(metrics.NewGinMiddleware(metric))
-
+		metric = metrics.NewMetrics()
 		/*
 		 * Host the /metrics endpoint on a different app instance. This is needed
 		 * in order to serve it on a different port, while also giving some benefits
@@ -171,17 +190,6 @@ func main() {
 		}()
 	}
 
-	app.GET("/", endpoint.Health)
-
-	seismic.GET("metadata", endpoint.MetadataGet)
-	seismic.POST("metadata", endpoint.MetadataPost)
-
-	seismic.GET("slice", endpoint.SliceGet)
-	seismic.POST("slice", endpoint.SlicePost)
-
-	seismic.GET("fence", endpoint.FenceGet)
-	seismic.POST("fence", endpoint.FencePost)
-
-	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	setupApp(app, &endpoint, metric)
 	app.Run(fmt.Sprintf(":%d", opts.port))
 }
