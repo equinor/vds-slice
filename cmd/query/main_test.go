@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"bytes"
@@ -17,11 +17,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 
+	"github.com/equinor/vds-slice/api"
 	"github.com/equinor/vds-slice/internal/cache"
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
-const well_known = "../testdata/well_known/well_known_default.vds"
+const well_known = "../../testdata/well_known/well_known_default.vds"
 
 type sliceTest struct {
 	name           string
@@ -578,19 +579,19 @@ func MakeFileConnection() vds.ConnectionMaker {
 
 func setupTestServer(r *gin.Engine) {
 	r.Use(gin.Logger())
-	endpoint := Endpoint{
+	endpoint := api.Endpoint{
 		MakeVdsConnection: MakeFileConnection(),
 		Cache: cache.NewNoCache(),
 	}
 
-	r.POST("/slice", ErrorHandler, endpoint.SlicePost)
-	r.GET("/slice", ErrorHandler, endpoint.SliceGet)
+	r.POST("/slice", api.ErrorHandler, endpoint.SlicePost)
+	r.GET("/slice", api.ErrorHandler, endpoint.SliceGet)
 
-	r.POST("/fence", ErrorHandler, endpoint.FencePost)
-	r.GET("/fence", ErrorHandler, endpoint.FenceGet)
+	r.POST("/fence", api.ErrorHandler, endpoint.FencePost)
+	r.GET("/fence", api.ErrorHandler, endpoint.FenceGet)
 
-	r.POST("/metadata", ErrorHandler, endpoint.MetadataPost)
-	r.GET("/metadata", ErrorHandler, endpoint.MetadataGet)
+	r.POST("/metadata", api.ErrorHandler, endpoint.MetadataPost)
+	r.GET("/metadata", api.ErrorHandler, endpoint.MetadataGet)
 }
 
 func assertError(w *httptest.ResponseRecorder, t *testing.T, test_name string,
