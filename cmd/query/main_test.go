@@ -133,21 +133,21 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 		{
 			name:           "Invalid json GET request",
 			method:         http.MethodGet,
-			sliceRequest:   "help I am a duck",
+			jsonRequest:    "help I am a duck",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "invalid character",
 		},
 		{
 			name:           "Invalid json POST request",
 			method:         http.MethodPost,
-			sliceRequest:   "help I am a duck",
+			jsonRequest:    "help I am a duck",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "invalid character",
 		},
 		{
 			name:   "Missing parameters GET request",
 			method: http.MethodGet,
-			sliceRequest: "{\"vds\":\"" + well_known +
+			jsonRequest: "{\"vds\":\"" + well_known +
 				"\", \"direction\":\"i\", \"sas\": \"n/a\"}",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Error:Field validation for 'Lineno'",
@@ -155,7 +155,7 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 		{
 			name:   "Missing parameters POST Request",
 			method: http.MethodPost,
-			sliceRequest: "{\"vds\":\"" + well_known +
+			jsonRequest: "{\"vds\":\"" + well_known +
 				"\", \"lineno\":1, \"sas\": \"n/a\"}",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Error:Field validation for 'Direction'",
@@ -213,7 +213,7 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 		{
 			name:   "Valid GET Request",
 			method: http.MethodGet,
-			fence:  testFenceRequest{
+			fence: testFenceRequest{
 				Vds:              well_known,
 				CoordinateSystem: "ilxl",
 				Coordinates:      [][]float32{{3, 11}, {2, 10}},
@@ -224,7 +224,7 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 		{
 			name:   "Valid json POST Request",
 			method: http.MethodPost,
-			fence:  testFenceRequest{
+			fence: testFenceRequest{
 				Vds:              well_known,
 				CoordinateSystem: "ij",
 				Coordinates:      [][]float32{{0, 1}, {1, 1}, {1, 0}},
@@ -291,21 +291,21 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 		{
 			name:           "Invalid json GET request",
 			method:         http.MethodGet,
-			fenceRequest:   "help I am a duck",
+			jsonRequest:    "help I am a duck",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "invalid character",
 		},
 		{
 			name:           "Invalid json POST request",
 			method:         http.MethodPost,
-			fenceRequest:   "help I am a duck",
+			jsonRequest:    "help I am a duck",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "invalid character",
 		},
 		{
 			name:   "Missing parameters GET request",
 			method: http.MethodGet,
-			fenceRequest: "{\"vds\":\"" + well_known +
+			jsonRequest: "{\"vds\":\"" + well_known +
 				"\", \"coordinateSystem\":\"ilxl\", \"coordinates\":[[0, 0]]}",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Error:Field validation for 'Sas'",
@@ -313,7 +313,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 		{
 			name:   "Missing parameters POST Request",
 			method: http.MethodPost,
-			fenceRequest: "{\"vds\":\"" + well_known +
+			jsonRequest: "{\"vds\":\"" + well_known +
 				"\", \"coordinateSystem\":\"ilxl\", \"sas\": \"n/a\"}",
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Error:Field validation for 'Coordinates'",
@@ -321,7 +321,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 		{
 			name:   "Request with unknown coordinate system",
 			method: http.MethodPost,
-			fence:  testFenceRequest{
+			fence: testFenceRequest{
 				Vds:              well_known,
 				CoordinateSystem: "unknown",
 				Coordinates:      [][]float32{{3, 12}, {2, 10}},
@@ -333,7 +333,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 		{
 			name:   "Request which passed all input checks but still should fail",
 			method: http.MethodPost,
-			fence:  testFenceRequest{
+			fence: testFenceRequest{
 				Vds:              "unknown",
 				CoordinateSystem: "ilxl",
 				Coordinates:      [][]float32{{3, 12}, {2, 10}},
@@ -432,36 +432,36 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 func TestMetadataErrorHTTPResponse(t *testing.T) {
 	testcases := []metadataTest{
 		{
-			name:            "Invalid json GET request",
-			method:          http.MethodGet,
-			metadataRequest: "help I am a duck",
-			expectedStatus:  http.StatusBadRequest,
-			expectedError:   "invalid character",
+			name:           "Invalid json GET request",
+			method:         http.MethodGet,
+			jsonRequest:    "help I am a duck",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid character",
 		},
 		{
-			name:            "Invalid json POST request",
-			method:          http.MethodPost,
-			metadataRequest: "help I am a duck",
-			expectedStatus:  http.StatusBadRequest,
-			expectedError:   "invalid character",
+			name:           "Invalid json POST request",
+			method:         http.MethodPost,
+			jsonRequest:    "help I am a duck",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid character",
 		},
 		{
-			name:            "Missing parameters GET request",
-			method:          http.MethodGet,
-			metadataRequest: "{\"vds\":\"" + well_known + "\"}",
-			expectedStatus:  http.StatusBadRequest,
-			expectedError:   "Error:Field validation for 'Sas'",
+			name:           "Missing parameters GET request",
+			method:         http.MethodGet,
+			jsonRequest:    "{\"vds\":\"" + well_known + "\"}",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Error:Field validation for 'Sas'",
 		},
 		{
-			name:            "Missing parameters POST Request",
-			method:          http.MethodPost,
-			metadataRequest: "{\"sas\":\"somevalidsas\"}",
-			expectedStatus:  http.StatusBadRequest,
-			expectedError:   "Error:Field validation for 'Vds'",
+			name:           "Missing parameters POST Request",
+			method:         http.MethodPost,
+			jsonRequest:    "{\"sas\":\"somevalidsas\"}",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Error:Field validation for 'Vds'",
 		},
 		{
-			name:     "Request which passed all input checks but still should fail",
-			method:   http.MethodPost,
+			name:   "Request which passed all input checks but still should fail",
+			method: http.MethodPost,
 			metadata: testMetadataRequest{
 				Vds: "unknown",
 				Sas: "n/a",

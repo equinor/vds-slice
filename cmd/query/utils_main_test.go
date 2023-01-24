@@ -26,7 +26,7 @@ type sliceTest struct {
 	name           string
 	method         string
 	slice          testSliceRequest
-	sliceRequest   string
+	jsonRequest    string
 	expectedStatus int
 	expectedError  string
 }
@@ -35,18 +35,18 @@ type fenceTest struct {
 	name           string
 	method         string
 	fence          testFenceRequest
-	fenceRequest   string
+	jsonRequest    string
 	expectedStatus int
 	expectedError  string
 }
 
 type metadataTest struct {
-	name            string
-	method          string
-	metadata        testMetadataRequest
-	metadataRequest string
-	expectedStatus  int
-	expectedError   string
+	name           string
+	method         string
+	metadata       testMetadataRequest
+	jsonRequest    string
+	expectedStatus int
+	expectedError  string
 }
 
 // define own help types to assure separation between production and test code
@@ -189,7 +189,7 @@ func prepareSliceRequest(ctx *gin.Context, t *testing.T, testcase sliceTest) {
 		"/slice",
 		testcase.method,
 		testcase.slice,
-		testcase.sliceRequest,
+		testcase.jsonRequest,
 	)
 }
 
@@ -200,7 +200,7 @@ func prepareFenceRequest(ctx *gin.Context, t *testing.T, testcase fenceTest) {
 		"/fence",
 		testcase.method,
 		testcase.fence,
-		testcase.fenceRequest,
+		testcase.jsonRequest,
 	)
 }
 
@@ -211,6 +211,6 @@ func prepareMetadataRequest(ctx *gin.Context, t *testing.T, testcase metadataTes
 		"/metadata",
 		testcase.method,
 		testcase.metadata,
-		testcase.metadataRequest,
+		testcase.jsonRequest,
 	)
 }
