@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -463,6 +464,71 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 		},
 	}
 	testErrorHTTPResponse(t, testcases)
+}
+
+func TestLogHasNoSas(t *testing.T) {
+	var testcases []endpointTest
+	addTests := func(method string) {
+		// white box testing. we know all endpoints are handled the same
+		okTest := sliceTest{
+			baseTest{
+				name:           fmt.Sprintf("%v OK Request", method),
+				method:         method,
+				expectedStatus: http.StatusOK,
+			},
+			testSliceRequest{
+				Vds:       well_known,
+				Direction: "crossline",
+				Lineno:    10,
+				Sas:       "SPARTA...T14:43:29Z%26se=2023",
+			},
+		}
+
+		errorTest := metadataTest{
+			baseTest{
+				name:           fmt.Sprintf("%v Error Request", method),
+				method:         method,
+				expectedStatus: http.StatusInternalServerError,
+			},
+			testMetadataRequest{
+				Vds: "unknown",
+				Sas: "SPARTA...T14:43:29Z%26se=2023...",
+			},
+		}
+
+		testcases = append(testcases, okTest)
+		testcases = append(testcases, errorTest)
+	}
+
+	addTests(http.MethodGet)
+	addTests(http.MethodPost)
+
+	d := gin.DefaultWriter
+	defer func() {
+		gin.DefaultWriter = d
+	}()
+
+	for _, testcase := range testcases {
+		buffer := new(bytes.Buffer)
+		gin.DefaultWriter = buffer
+
+		w := httptest.NewRecorder()
+		ctx, r := gin.CreateTestContext(w)
+		setupTestServer(r)
+
+		prepareRequest(ctx, t, testcase)
+		r.ServeHTTP(w, ctx.Request)
+
+		requireStatus(t, testcase, w)
+
+		assert.NotContainsf(t, buffer.String(), "sas",
+			"Test '%v'. Log should not contain SAS (sas)", testcase.base().name)
+		// just in case also check for presence of parts of the token
+		assert.NotContainsf(t, buffer.String(), "se=",
+			"Test '%v'. Log should not contain SAS (se=)", testcase.base().name)
+		assert.NotContainsf(t, buffer.String(), "se%3D",
+			"Test '%v'. Log should not contain SAS (encoded se=)", testcase.base().name)
+	}
 }
 
 func testErrorHTTPResponse(t *testing.T, testcases []endpointTest) {
