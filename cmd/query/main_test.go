@@ -51,16 +51,7 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
-		if w.Result().StatusCode != testcase.expectedStatus {
-			msg := "Got status %v; want %d %s in case '%s'"
-			t.Errorf(
-				msg,
-				w.Result().Status,
-				testcase.expectedStatus,
-				http.StatusText(testcase.expectedStatus),
-				testcase.name,
-			)
-		}
+		requireStatus(t, testcase, w)
 		parts := readMultipartData(t, w)
 		if len(parts) != 2 {
 			msg := "Got %d parts in reply; want it to always contain 2 in case '%s'"
@@ -249,16 +240,7 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
-		if w.Result().StatusCode != testcase.expectedStatus {
-			msg := "Got status %v; want %d %s in case '%s'"
-			t.Errorf(
-				msg,
-				w.Result().Status,
-				testcase.expectedStatus,
-				http.StatusText(testcase.expectedStatus),
-				testcase.name,
-			)
-		}
+		requireStatus(t, testcase, w)
 		parts := readMultipartData(t, w)
 		if len(parts) != 2 {
 			msg := "Got %d parts in reply; want it to always contain 3 in case '%s'"
@@ -404,16 +386,7 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
-		if w.Result().StatusCode != testcase.expectedStatus {
-			msg := "Got status %v; want %d %s in case '%s'"
-			t.Errorf(
-				msg,
-				w.Result().Status,
-				testcase.expectedStatus,
-				http.StatusText(testcase.expectedStatus),
-				testcase.name,
-			)
-		}
+		requireStatus(t, testcase, w)
 		metadata := w.Body.String()
 		expectedMetadata := `{
 			"axis": [
@@ -501,8 +474,7 @@ func testErrorHTTPResponse(t *testing.T, testcases []endpointTest) {
 		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
-		assert.Equalf(t, testcase.base().expectedStatus, w.Result().StatusCode,
-			"Test %v. Wrong response status.", testcase.base().name)
+		requireStatus(t, testcase, w)
 
 		testErrorInfo := &testErrorResponse{}
 		err := json.Unmarshal(w.Body.Bytes(), testErrorInfo)

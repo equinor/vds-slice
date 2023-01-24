@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/require"
 
 	"github.com/equinor/vds-slice/api"
 	"github.com/equinor/vds-slice/internal/cache"
@@ -208,4 +209,9 @@ func prepareRequest(ctx *gin.Context, t *testing.T, testcase endpointTest) {
 	default:
 		t.Fatalf("Unknown method")
 	}
+}
+
+func requireStatus(t *testing.T, testcase endpointTest, w *httptest.ResponseRecorder) {
+	require.Equalf(t, testcase.base().expectedStatus, w.Result().StatusCode,
+		"Test '%v'. Wrong response status. Body: %v", testcase.base().name, w.Body.String())
 }
