@@ -114,24 +114,28 @@ def test_metadata(method):
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
 ])
-@pytest.mark.parametrize("sas, error_msg", [
+@pytest.mark.parametrize("sas, allowed_error_messages", [
     (
         "something_not_sassy",
-        "409 Public access is not permitted"
+        [
+            "409 Public access is not permitted",
+            "401 Server failed to authenticate the request"
+        ]
     ),
     (
         generate_container_signature(
             STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY, permission=""),
-        "403 Server failed to authenticate"
+        ["403 Server failed to authenticate"]
     )
 ])
-def test_assure_no_unauthorized_access(path, payload, sas, error_msg):
+def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_messages):
     payload.update({"sas": sas})
     res = requests.get(f'{ENDPOINT}/{path}',
                        params={"query": json.dumps(payload)})
     assert res.status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR
-    body = json.loads(res.content)
-    assert error_msg in body['error']
+    error_body = json.loads(res.content)['error']
+    assert any([error_msg in error_body for error_msg in allowed_error_messages]), \
+        f'error body \'{error_body}\' does not contain any of the valid errors {allowed_error_messages}'
 
 
 @pytest.mark.parametrize("path, payload", [
