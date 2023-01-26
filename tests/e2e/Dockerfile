@@ -8,4 +8,4 @@ COPY ./tests/utils /tests/utils
 COPY ./tests/e2e /tests/e2e
 
 WORKDIR /tests
-ENTRYPOINT ["python","-m", "pytest", "-s", "e2e"]
+ENTRYPOINT ["python","-m", "pytest", "-s", "-rsx", "e2e"]
