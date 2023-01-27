@@ -2,7 +2,7 @@ package vds
 
 /*
 #cgo LDFLAGS: -lopenvds
-#cgo CXXFLAGS: -std=c++17
+#cgo CXXFLAGS: -std=c++11
 #include <vds.h>
 #include <stdlib.h>
 */
@@ -165,7 +165,7 @@ func GetMetadata(conn Connection) ([]byte, error) {
 
 	result := C.metadata(curl, ccred)
 
-	defer C.requestdata_delete(&result)
+	defer C.response_delete(&result)
 
 	if result.err != nil {
 		err := C.GoString(result.err)
@@ -187,10 +187,10 @@ func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
 		curl,
 		ccred,
 		C.int(lineno),
-		C.enum_Axis(direction),
+		C.enum_ApiAxisName(direction),
 	)
 
-	defer C.requestdata_delete(&result)
+	defer C.response_delete(&result)
 
 	if result.err != nil {
 		err := C.GoString(result.err)
@@ -211,10 +211,10 @@ func GetSliceMetadata(conn Connection, direction int) ([]byte, error) {
 	result := C.slice_metadata(
 		curl,
 		ccred,
-		C.enum_Axis(direction),
+		C.enum_ApiAxisName(direction),
 	)
 
-	defer C.requestdata_delete(&result)
+	defer C.response_delete(&result)
 
 	if result.err != nil {
 		err := C.GoString(result.err)
@@ -264,7 +264,7 @@ func GetFence(
 		C.enum_InterpolationMethod(interpolation),
 	)
 
-	defer C.requestdata_delete(&result)
+	defer C.response_delete(&result)
 
 	if result.err != nil {
 		err := C.GoString(result.err)
@@ -288,7 +288,7 @@ func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) 
 		C.size_t(len(coordinates)),
 	)
 
-	defer C.requestdata_delete(&result)
+	defer C.response_delete(&result)
 
 	if result.err != nil {
 		err := C.GoString(result.err)

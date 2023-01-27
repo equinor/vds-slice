@@ -6,13 +6,13 @@
 extern "C" {
 #endif
 
-struct requestdata {
+struct response {
     char*         data;
     char*         err;
     unsigned long size;
 };
 
-enum Axis {
+enum ApiAxisName {
     I         = 0,
     J         = 1,
     K         = 2,
@@ -37,25 +37,25 @@ enum InterpolationMethod {
     TRIANGULAR
 };
 
-struct requestdata metadata(
+struct response metadata(
     char const * const vds,
     char const * const credentials
 );
 
-struct requestdata slice(
-    char const * const vds,
-    char const * const credentials,
-    const int          lineno,
-    const enum Axis    direction
+struct response slice(
+    char const * const     vds,
+    char const * const     credentials,
+    const int              lineno,
+    const enum ApiAxisName axisName
 );
 
-struct requestdata slice_metadata(
-    char const * const vds,
-    char const * const credentials,
-    const enum Axis    direction
+struct response slice_metadata(
+    char const * const     vds,
+    char const * const     credentials,
+    const enum ApiAxisName axisName
 );
 
-struct requestdata fence(
+struct response fence(
     char const * const             vds,
     char const * const             credentials,
     const enum CoordinateSystem    coordinate_system,
@@ -64,13 +64,13 @@ struct requestdata fence(
     const enum InterpolationMethod interpolation_method
 );
 
-struct requestdata fence_metadata(
+struct response fence_metadata(
     char const * const vds,
     char const * const credentials,
     const size_t       npoints
 );
 
-void requestdata_delete(struct requestdata*);
+void response_delete(struct response*);
 
 
 #ifdef __cplusplus
