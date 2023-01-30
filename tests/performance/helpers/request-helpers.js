@@ -1,9 +1,6 @@
 import http from "k6/http";
 import { check, fail, sleep } from "k6";
-import { Trend } from "k6/metrics";
-
-const responseLengthTrend = new Trend("response_length");
-const requestTimeTrend = new Trend("request_time", true);
+import * as metrics from "./metrics-helper.js";
 
 export function getRandomInt(max) {
   return Math.floor(Math.random() * max);
@@ -62,8 +59,9 @@ export function sendRequest(path, payload) {
   if (!queryResStatusCheck) {
     fail(`Wrong 'query' response status: ${res.status}`);
   }
-  responseLengthTrend.add(res.body.byteLength);
-  requestTimeTrend.add(res.timings.duration);
+  metrics.responseLengthTrend.add(res.body.byteLength);
+  metrics.requestTimeTrend.add(res.timings.duration);
+
   // artificially wait after each request to create a sense of processing-delay
   sleep(0.1);
 }
