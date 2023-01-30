@@ -6,10 +6,11 @@
 
 #include "nlohmann/json.hpp"
 
-#include "boundingbox.h"
 #include "axis.h"
+#include "boundingbox.h"
+#include "vdsfencerequest.h"
 #include "vdsmetadatahandler.h"
-#include "vdsdatahandler.h"
+#include "vdsslicerequest.h"
 
 using namespace std;
 
@@ -90,8 +91,13 @@ struct response slice(
     const ApiAxisName  axisName
 ) {
     try {
-        VDSDataHandler vdsData(vds, credentials);
-        return vdsData.getSlice(axisName, lineno);
+        VDSSliceRequest sliceRequest(vds, credentials);
+        sliceRequest.validateAxis(axisName);
+        const SliceRequestParameters requestParameters{axisName, lineno};
+        const SubVolume sliceAsSubvolume = sliceRequest.requestAsSubvolume(
+                                               requestParameters
+                                           );
+        return sliceRequest.getData(sliceAsSubvolume);
     } catch (const std::exception& e) {
         return handle_error(e);
     }
@@ -143,13 +149,15 @@ struct response fence(
     const enum InterpolationMethod interpolation_method
 ) {
     try {
-        VDSDataHandler vdsData(vds, credentials);
-        return vdsData.getFence(
+        VDSFenceRequest fenceRequest(vds, credentials);
+        const FenceRequestParameters requestParameters{
             coordinate_system,
             coordinates,
             npoints,
             interpolation_method
-        );
+        };
+        auto pointList = fenceRequest.requestAsPointList(requestParameters);
+        return fenceRequest.getData(pointList, requestParameters);
     } catch (const std::exception& e) {
         return handle_error(e);
     }
