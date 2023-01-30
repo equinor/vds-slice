@@ -8,9 +8,9 @@
 
 #include "axis.h"
 #include "boundingbox.h"
-#include "vdsfencerequest.h"
-#include "vdsmetadatahandler.h"
-#include "vdsslicerequest.h"
+#include "fencerequest.h"
+#include "metadatahandler.h"
+#include "slicerequest.h"
 
 using namespace std;
 
@@ -30,7 +30,7 @@ static response wrap_as_response( const nlohmann::json::string_t& dump ) {
 }
 
 nlohmann::json convert_axis_to_json(
-    const Axis& axis
+    const vds::Axis& axis
 ) {
     nlohmann::json doc;
     doc = {
@@ -57,7 +57,7 @@ struct response metadata(
     char const * const credentials
 ) {
     try {
-        VDSMetadataHandler vdsMetadata( vds, credentials );
+        vds::MetadataHandler vdsMetadata( vds, credentials );
 
         nlohmann::json meta;
         meta["format"] = vdsMetadata.getFormat();
@@ -69,13 +69,13 @@ struct response metadata(
         meta["boundingBox"]["cdp"]  = bbox.world();
         meta["boundingBox"]["ilxl"] = bbox.annotation();
 
-        const Axis inlineAxis = vdsMetadata.getInline();
+        const vds::Axis inlineAxis = vdsMetadata.getInline();
         meta["axis"].push_back(convert_axis_to_json(inlineAxis));
 
-        const Axis crosslineAxis = vdsMetadata.getCrossline();
+        const vds::Axis crosslineAxis = vdsMetadata.getCrossline();
         meta["axis"].push_back(convert_axis_to_json(crosslineAxis));
 
-        const Axis sampleAxis = vdsMetadata.getSample();
+        const vds::Axis sampleAxis = vdsMetadata.getSample();
         meta["axis"].push_back(convert_axis_to_json(sampleAxis));
 
         return wrap_as_response(meta.dump());
@@ -91,10 +91,10 @@ struct response slice(
     const ApiAxisName  axisName
 ) {
     try {
-        VDSSliceRequest sliceRequest(vds, credentials);
+        vds::SliceRequest sliceRequest(vds, credentials);
         sliceRequest.validateAxis(axisName);
         const SliceRequestParameters requestParameters{axisName, lineno};
-        const SubVolume sliceAsSubvolume = sliceRequest.requestAsSubvolume(
+        const vds::SubVolume sliceAsSubvolume = sliceRequest.requestAsSubvolume(
                                                requestParameters
                                            );
         return sliceRequest.getData(sliceAsSubvolume);
@@ -109,7 +109,7 @@ struct response slice_metadata(
     const ApiAxisName  axisName
 ) {
     try {
-        VDSMetadataHandler vdsMetadata(vds, credentials);
+        vds::MetadataHandler vdsMetadata(vds, credentials);
 
         nlohmann::json meta;
         meta["format"] = vdsMetadata.getFormat();
@@ -149,7 +149,7 @@ struct response fence(
     const enum InterpolationMethod interpolation_method
 ) {
     try {
-        VDSFenceRequest fenceRequest(vds, credentials);
+        vds::FenceRequest fenceRequest(vds, credentials);
         const FenceRequestParameters requestParameters{
             coordinate_system,
             coordinates,
@@ -169,10 +169,10 @@ struct response fence_metadata(
     const size_t       npoints
 ) {
     try {
-        VDSMetadataHandler vdsMetadata(vds, credentials);
+        vds::MetadataHandler vdsMetadata(vds, credentials);
 
         nlohmann::json meta;
-        const Axis sampleAxis = vdsMetadata.getSample();
+        const vds::Axis sampleAxis = vdsMetadata.getSample();
         meta["shape"] = nlohmann::json::array(
                             {npoints, sampleAxis.getNumberOfPoints() }
                         );

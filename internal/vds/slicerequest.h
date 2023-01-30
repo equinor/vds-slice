@@ -1,11 +1,18 @@
-#ifndef VDSSLICEREQUEST_H
-#define VDSSLICEREQUEST_H
+#ifndef SLICEREQUEST_H
+#define SLICEREQUEST_H
 
 #include <string>
 
-#include "vdsmetadatahandler.h"
-#include "vdsrequestbuffer.h"
+#include "metadatahandler.h"
+#include "requestbuffer.h"
 #include "vds.h"
+
+struct SliceRequestParameters {
+    const ApiAxisName apiAxisName;
+    const int         lineNumber;
+};
+
+namespace vds {
 
 struct SubVolume {
     struct {
@@ -14,17 +21,12 @@ struct SubVolume {
     } bounds;
 };
 
-struct SliceRequestParameters {
-    const ApiAxisName apiAxisName;
-    const int         lineNumber;
-};
-
-class VDSSliceRequest {
+class SliceRequest {
     private:
-        VDSMetadataHandler metadata;
+        MetadataHandler metadata;
 
     public:
-    VDSSliceRequest(const std::string url, const std::string credentials) :
+    SliceRequest(const std::string url, const std::string credentials) :
         metadata(url, credentials) {}
 
     void validateAxis(const ApiAxisName& apiAxisName);
@@ -36,4 +38,6 @@ class VDSSliceRequest {
     response getData(const SubVolume& subvolume);
 };
 
-#endif /* VDSSLICEREQUEST_H */
+ } /* namespace vds */
+
+#endif /* SLICEREQUEST_H */

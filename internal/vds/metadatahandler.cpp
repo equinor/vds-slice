@@ -1,11 +1,13 @@
-#include "vdsmetadatahandler.h"
+#include "metadatahandler.h"
 
 #include <list>
 #include <utility>
 
 #include <OpenVDS/KnownMetadata.h>
 
-VDSMetadataHandler::VDSMetadataHandler(
+namespace vds {
+
+MetadataHandler::MetadataHandler(
     const std::string url,
     const std::string credentials
 )  {
@@ -58,21 +60,21 @@ VDSMetadataHandler::VDSMetadataHandler(
 
 // TODO: Could also have a member of Axis for inline direction and return copy
 //       or reference
-Axis VDSMetadataHandler::getInline() const {
+Axis MetadataHandler::getInline() const {
     return Axis(ApiAxisName::INLINE, this->vdsLayout);
 }
 // TODO: Could also have a member of Axis for crossline direction and return
 //       copy or reference
-Axis VDSMetadataHandler::getCrossline() const {
+Axis MetadataHandler::getCrossline() const {
     return Axis(ApiAxisName::CROSSLINE, this->vdsLayout);
 }
 // TODO: Could also have a member of Axis for sample direction and return copy
 //       or reference
-Axis VDSMetadataHandler::getSample() const {
+Axis MetadataHandler::getSample() const {
     return Axis(ApiAxisName::SAMPLE, this->vdsLayout);
 }
 
-Axis VDSMetadataHandler::getAxis(const ApiAxisName axisName) const {
+Axis MetadataHandler::getAxis(const ApiAxisName axisName) const {
     // TODO: Do we want this check here? Could be beneficial if this object
     //       holds axes for inline, crossline and sample axis.
     //switch(an) {
@@ -90,31 +92,31 @@ Axis VDSMetadataHandler::getAxis(const ApiAxisName axisName) const {
     return Axis(axisName, this->vdsLayout);
 }
 
-BoundingBox VDSMetadataHandler::getBoundingBox() const {
+BoundingBox MetadataHandler::getBoundingBox() const {
     return BoundingBox(this->vdsLayout);
 }
 
-std::string VDSMetadataHandler::getFormat() const {
+std::string MetadataHandler::getFormat() const {
     return "<f4";
 }
 
-std::string VDSMetadataHandler::getCRS() const {
+std::string MetadataHandler::getCRS() const {
     const auto crs = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
     return this->vdsLayout->GetMetadataString(crs.GetCategory(), crs.GetName());
 }
 
-OpenVDS::VolumeDataFormat VDSMetadataHandler::getChannelFormat(
+OpenVDS::VolumeDataFormat MetadataHandler::getChannelFormat(
     const int channelIndex
 ){
     return this->vdsLayout->GetChannelFormat(channelIndex);
 }
 
 
-std::shared_ptr<OpenVDS::ScopedVDSHandle> VDSMetadataHandler::getVDSHandle() {
+std::shared_ptr<OpenVDS::ScopedVDSHandle> MetadataHandler::getVDSHandle() {
     return this->vdsHandle;
 }
 
-OpenVDS::InterpolationMethod VDSMetadataHandler::getInterpolation(
+OpenVDS::InterpolationMethod MetadataHandler::getInterpolation(
     InterpolationMethod interpolation
 ) {
     switch (interpolation)
@@ -129,3 +131,5 @@ OpenVDS::InterpolationMethod VDSMetadataHandler::getInterpolation(
         }
     }
 }
+
+} /* namespace vds */

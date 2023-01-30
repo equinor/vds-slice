@@ -1,5 +1,5 @@
-#ifndef VDSMETADATAHANDLER_H
-#define VDSMETADATAHANDLER_H
+#ifndef METADATAHANDLER_H
+#define METADATAHANDLER_H
 
 #include <memory>
 #include <string>
@@ -9,13 +9,15 @@
 #include "axis.h"
 #include "boundingbox.h"
 
-class VDSMetadataHandler {
+namespace vds {
+
+class MetadataHandler {
     private:
     std::shared_ptr<OpenVDS::ScopedVDSHandle> vdsHandle;
     OpenVDS::VolumeDataLayout const * vdsLayout;
 
     public:
-    VDSMetadataHandler(const std::string url, const std::string credentials);
+    MetadataHandler(const std::string url, const std::string credentials);
 
     Axis getInline()    const;
     Axis getCrossline() const;
@@ -37,5 +39,6 @@ class VDSMetadataHandler {
         InterpolationMethod interpolation);
 };
 
+} /* namespace vds */
 
-#endif /* VDSMETADATAHANDLER_H */
+#endif /* METADATAHANDLER_H */

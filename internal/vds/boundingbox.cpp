@@ -1,5 +1,7 @@
 #include "boundingbox.h"
 
+namespace vds {
+
 std::vector< std::pair<int, int> > BoundingBox::index() noexcept (true) {
     auto ils = layout->GetDimensionNumSamples(2) - 1;
     auto xls = layout->GetDimensionNumSamples(1) - 1;
@@ -38,3 +40,5 @@ std::vector< std::pair<int, int> > BoundingBox::annotation() noexcept (true) {
 
     return points;
 };
+
+} /* namespace vds */

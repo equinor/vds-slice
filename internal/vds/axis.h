@@ -9,6 +9,8 @@
 #include "boundingbox.h"
 #include "vds.h"
 
+namespace vds {
+
 // TODO: We could try to derive Axis from OpenVDS::VolumeDataAxisDescriptor, to
 //       avoid pure wrapping, but then we are bound to naming of OpenVDS.
 class Axis {
@@ -36,5 +38,7 @@ class Axis {
 
     CoordinateSystem getCoordinateSystem() const;
 };
+
+} /* namespace vds */
 
 #endif /* AXIS_H */

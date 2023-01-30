@@ -7,6 +7,8 @@
 #include <OpenVDS/OpenVDS.h>
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
+namespace vds {
+
 /// @brief Class that describes the 2D (horizontal) bounding box in
 ///        different coordinate systems.
 ///
@@ -41,5 +43,7 @@ private:
     /// @brief Pointer to VolumeDataLayout of open VDS.
     const OpenVDS::VolumeDataLayout*  layout;
 };
+
+} /* namespace vds */
 
 #endif /* BOUNDINGBOX_H */

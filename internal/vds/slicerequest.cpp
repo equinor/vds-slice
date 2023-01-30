@@ -1,11 +1,13 @@
-#include "vdsslicerequest.h"
+#include "slicerequest.h"
 
 #include <list>
 #include <unordered_map>
 
 #include <OpenVDS/KnownMetadata.h>
 
-void VDSSliceRequest::validateAxis(const ApiAxisName& apiAxisName) {
+namespace vds {
+
+void SliceRequest::validateAxis(const ApiAxisName& apiAxisName) {
     const Axis axis = this->metadata.getAxis(apiAxisName);
     // Validate request axis name and unit name
     if (   apiAxisName == ApiAxisName::DEPTH
@@ -63,7 +65,7 @@ void VDSSliceRequest::validateAxis(const ApiAxisName& apiAxisName) {
     }
 }
 
-SubVolume VDSSliceRequest::requestAsSubvolume(
+SubVolume SliceRequest::requestAsSubvolume(
     const SliceRequestParameters& parameters
 ) {
     const Axis axis = this->metadata.getAxis(parameters.apiAxisName);
@@ -112,7 +114,7 @@ SubVolume VDSSliceRequest::requestAsSubvolume(
     return subvolume;
 }
 
-response VDSSliceRequest::getData(const SubVolume& subvolume) {
+response SliceRequest::getData(const SubVolume& subvolume) {
     const int channelIndex = 0;
     const int levelOfDetailLevel = 0;
     const auto channelFormat = metadata.getChannelFormat(channelIndex);
@@ -126,7 +128,7 @@ response VDSSliceRequest::getData(const SubVolume& subvolume) {
                                 channelIndex
                             );
 
-    VDSRequestBuffer requestedData(requestSize);
+    RequestBuffer requestedData(requestSize);
     auto request = vdsAccessManager.RequestVolumeSubset(
                     requestedData.getPointer(),
                     requestedData.getSizeInBytes(),
@@ -144,3 +146,5 @@ response VDSSliceRequest::getData(const SubVolume& subvolume) {
     }
     return requestedData.getAsResponse();
 }
+
+} /* namespace vds */

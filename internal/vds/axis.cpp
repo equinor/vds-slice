@@ -4,6 +4,8 @@
 
 #include <OpenVDS/KnownMetadata.h>
 
+namespace vds {
+
 Axis::Axis(
             const ApiAxisName apiAxisName,
             OpenVDS::VolumeDataLayout const * vdsLayout
@@ -115,3 +117,5 @@ CoordinateSystem Axis::getCoordinateSystem() const {
         }
     }
 }
+
+} /* namespace vds */

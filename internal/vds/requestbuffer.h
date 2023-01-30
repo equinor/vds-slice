@@ -1,16 +1,18 @@
-#ifndef VDSREQUESTBUFFER_H
-#define VDSREQUESTBUFFER_H
+#ifndef REQUESTBUFFER_H
+#define REQUESTBUFFER_H
 
 #include <memory>
 
 #include "vds.h"
 
-class VDSRequestBuffer {
+namespace vds {
+
+class RequestBuffer {
     private:
         const int requestSizeInBytes;
         std::unique_ptr<char> pointer;
     public:
-        VDSRequestBuffer(const int requestSizeInBytes)
+        RequestBuffer(const int requestSizeInBytes)
         : requestSizeInBytes(requestSizeInBytes),
             pointer(new char[requestSizeInBytes])
         {}
@@ -29,7 +31,9 @@ class VDSRequestBuffer {
 
         int getSizeInBytes() const {return this->requestSizeInBytes;}
 
-        ~VDSRequestBuffer() {}
+        ~RequestBuffer() {}
 };
 
-#endif /* VDSREQUESTBUFFER_H */
+} /* namespace vds */
+
+#endif /* REQUESTBUFFER_H */

@@ -5,8 +5,8 @@
 
 #include <OpenVDS/OpenVDS.h>
 
-#include "vdsmetadatahandler.h"
-#include "vdsrequestbuffer.h"
+#include "metadatahandler.h"
+#include "requestbuffer.h"
 #include "vds.h"
 
 struct FenceRequestParameters {
@@ -16,19 +16,23 @@ struct FenceRequestParameters {
     const InterpolationMethod interpolationMethod;
 };
 
-using VDSFencePointList = float[][OpenVDS::Dimensionality_Max];
-class VDSFenceRequest {
+namespace vds {
+
+using FencePointList = float[][OpenVDS::Dimensionality_Max];
+class FenceRequest {
     private:
-        VDSMetadataHandler metadata;
+        MetadataHandler metadata;
     public:
-    VDSFenceRequest(const std::string url, const std::string credentials) :
+    FenceRequest(const std::string url, const std::string credentials) :
         metadata(url, credentials) {}
 
-    std::unique_ptr<VDSFencePointList>
+    std::unique_ptr<FencePointList>
     requestAsPointList(const FenceRequestParameters& parameters);
 
-    response getData(std::unique_ptr<VDSFencePointList>& points,
+    response getData(std::unique_ptr<FencePointList>& points,
                      const FenceRequestParameters& parameters);
 };
+
+} /* namespace vds */
 
 #endif /* FENCEREQUEST_H */
