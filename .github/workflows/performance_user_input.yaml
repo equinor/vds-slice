@@ -32,12 +32,12 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run performance tests
         env:
-          VDS: ${{ github.event.inputs.vds }}
-          SAS: ${{ github.event.inputs.sas }}
-          ENDPOINT: ${{ github.event.inputs.endpoint }}
+          VDS: ${{ inputs.vds }}
+          SAS: ${{ inputs.sas }}
+          ENDPOINT: ${{ inputs.endpoint }}
           LOGPATH: "/out"
-          MEDTIME: ${{ github.event.inputs.medtime }}
-          MAXTIME: ${{ github.event.inputs.maxtime }}
+          MEDTIME: ${{ inputs.medtime }}
+          MAXTIME: ${{ inputs.maxtime }}
         run: |
           tag=performance
           docker build -f tests/performance/Dockerfile -t $tag .
@@ -50,7 +50,7 @@ jobs:
             -e LOGPATH \
             -v $(pwd)/out:/out \
             $tag \
-            /bin/sh -c 'python /tests/performance/performance.py ${{ github.event.inputs.filepath }}'
+            /bin/sh -c 'python /tests/performance/performance.py ${{ inputs.filepath }}'
 
       - name: Print stderr
         if: always()
