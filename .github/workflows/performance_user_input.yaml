@@ -29,12 +29,25 @@ jobs:
     name: Run performance check for a chosen file
     runs-on: ubuntu-latest
     steps:
+      - name: Hide sensitive data
+        run: |
+          secret_sas=$(jq -r '.inputs.sas' $GITHUB_EVENT_PATH)
+          echo "::add-mask::$secret_sas"
+          echo SAS="$secret_sas" >> $GITHUB_ENV
+
+          secret_endpoint=$(jq -r '.inputs.endpoint' $GITHUB_EVENT_PATH)
+          echo "::add-mask::$secret_endpoint"
+          echo ENDPOINT="$secret_endpoint" >> $GITHUB_ENV
+
+          vds=$(jq -r '.inputs.vds' $GITHUB_EVENT_PATH)
+          # not foolproof, but good enough
+          secret_storage_account=$(echo $vds | awk -F[/:] '{print $4}')
+          echo "::add-mask::$secret_storage_account"
+          echo VDS="$vds" >> $GITHUB_ENV
+
       - uses: actions/checkout@v3
-      - name: Run performance tests
+      - name: Run "${{ inputs.filepath }}" performance tests for "${{ env.VDS }}"
         env:
-          VDS: ${{ inputs.vds }}
-          SAS: ${{ inputs.sas }}
-          ENDPOINT: ${{ inputs.endpoint }}
           LOGPATH: "/out"
           MEDTIME: ${{ inputs.medtime }}
           MAXTIME: ${{ inputs.maxtime }}
