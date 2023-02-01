@@ -1,6 +1,9 @@
 package api
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/equinor/vds-slice/internal/cache"
 )
 
@@ -9,12 +12,26 @@ type RequestedResource struct {
 	// https://account.blob.core.windows.net/container/blob
 	Vds string `json:"vds" binding:"required" example:"https://account.blob.core.windows.net/container/blob"`
 	// A valid sas-token with read access to the container specified in Vds
-	Sas string `json:"sas" binding:"required" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
+	Sas string `json:"sas,omitempty" binding:"required" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
+}
+
+type Request interface {
+	toString() (string, error)
 }
 
 type MetadataRequest struct {
 	RequestedResource
 } //@name MetadataRequest
+
+func (m MetadataRequest) toString() (string, error) {
+	m.Sas = ""
+	out, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	str := string(out)
+	return str, nil
+}
 
 type FenceRequest struct {
 	RequestedResource
@@ -43,6 +60,29 @@ type FenceRequest struct {
 	Interpolation string `json:"interpolation" example:"linear"`
 } //@name FenceRequest
 
+func (f FenceRequest) toString() (string, error) {
+	coordinates := func() string {
+		var length = len(f.Coordinates)
+		const halfPrintLength = 5
+		const printLength = halfPrintLength * 2
+		if length > printLength {
+			return fmt.Sprintf("%v, ...[%d element(s) skipped]..., %v",
+				f.Coordinates[0:halfPrintLength],
+				length-printLength,
+				f.Coordinates[length-halfPrintLength:length])
+		} else {
+			return fmt.Sprintf("%v", f.Coordinates)
+		}
+	}()
+
+	return fmt.Sprintf("{vds: %s, coordinate system: %s, coordinates: %s, interpolation (optional): %s}",
+		f.Vds,
+		f.CoordinateSystem,
+		coordinates,
+		f.Interpolation,
+	), nil
+}
+
 /** Compute a hash of the request that uniquely identifies the requested fence
  *
  * The hash is computed based on all fields that contribute toward a unique response.
@@ -50,7 +90,7 @@ type FenceRequest struct {
  */
 func (f FenceRequest) Hash() (string, error) {
 	// Strip the sas token before computing hash
-	f.Sas = "";
+	f.Sas = ""
 	return cache.Hash(f)
 }
 
@@ -85,6 +125,16 @@ type SliceRequest struct {
  */
 func (s SliceRequest) Hash() (string, error) {
 	// Strip the sas token before computing hash
-	s.Sas = "";
+	s.Sas = ""
 	return cache.Hash(s)
+}
+
+func (s SliceRequest) toString() (string, error) {
+	s.Sas = ""
+	out, err := json.Marshal(s)
+	if err != nil {
+		return "", err
+	}
+	str := string(out)
+	return str, nil
 }

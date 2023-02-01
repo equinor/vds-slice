@@ -27,13 +27,21 @@ func FormattedLogger() gin.HandlerFunc {
 		 */
 		path := strings.Split(param.Path, "?")[0]
 
-		return fmt.Sprintf("[GIN] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s",
+		request := param.Keys["request"]
+		if request == nil {
+			request = ""
+		} else {
+			request = fmt.Sprintf("%s\n", request)
+		}
+
+		return fmt.Sprintf("[GIN] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s%s",
 			param.TimeStamp.Format(time.RFC1123),
 			statusColor, param.StatusCode, resetColor,
 			param.Latency,
 			param.ClientIP,
 			methodColor, param.Method, resetColor,
 			path,
+			request,
 			param.ErrorMessage,
 		)
 	})
