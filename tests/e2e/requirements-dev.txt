@@ -3,3 +3,4 @@ requests
 requests_toolbelt
 numpy
 azure-storage-blob
+azure-storage-file-datalake
