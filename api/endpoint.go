@@ -18,7 +18,14 @@ type Endpoint struct {
 	Cache             cache.Cache
 }
 
+func prepareRequestLogging(ctx *gin.Context, request Request) {
+	// ignore possible errors as they should not change outcome for the user
+	requestString, _ := request.toString()
+	ctx.Set("request", requestString)
+}
+
 func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
+	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
@@ -35,6 +42,7 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 }
 
 func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
+	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
@@ -78,6 +86,7 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 }
 
 func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
+	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
