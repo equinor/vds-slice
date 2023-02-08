@@ -7,11 +7,16 @@
 #include <OpenVDS/OpenVDS.h>
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
+#include "axis.h"
+
 class BoundingBox {
 public:
     explicit BoundingBox(
-        const OpenVDS::VolumeDataLayout *layout
-    ) : layout(layout)
+        OpenVDS::VolumeDataLayout const * const layout,
+        Axis const& inline_axis,
+        Axis const& crossline_axis
+    ) : ils(inline_axis.get_number_of_points()-1),
+        xls(crossline_axis.get_number_of_points()-1)
     {
         transformer = OpenVDS::IJKCoordinateTransformer(layout);
     }
@@ -21,7 +26,11 @@ public:
     std::vector< std::pair<double, double> > world()      noexcept (true);
 private:
     OpenVDS::IJKCoordinateTransformer transformer;
-    const OpenVDS::VolumeDataLayout*  layout;
+
+    // Maximum index of inline axis
+    int const ils;
+    // Maximum index of crossline axis
+    int const xls;
 };
 
 #endif /* BOUNDINGBOX_H */
