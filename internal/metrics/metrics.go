@@ -24,6 +24,7 @@ type metrics struct {
 	// Custom metics
 	requestDurations *prometheus.HistogramVec
 	responseSizes    *prometheus.HistogramVec
+	requestCount     *prometheus.CounterVec
 }
 
 /** Create a new metric instance
@@ -46,10 +47,16 @@ func NewMetrics() *metrics {
 			Help:    "VDSslice response size distributions.",
 			Buckets: []float64{100*kb, 1*mb, 5*mb, 10*mb, 20*mb, 50*mb, 100*mb, 200*mb},
 		}, []string{"path", "status"}),
+
+		requestCount: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "vdsslice_number_of_requests",
+			Help: "VDSslice number of requests.",
+		}, []string{"method", "path"}),
 	}
 
 	registry.MustRegister(metrics.requestDurations)
 	registry.MustRegister(metrics.responseSizes)
+	registry.MustRegister(metrics.requestCount)
 
 	return metrics;
 }
@@ -62,6 +69,7 @@ func NewGinMiddleware(metrics *metrics) gin.HandlerFunc {
 
 		go func() {
 			path     := ctx.Request.URL.Path
+			method   := ctx.Request.Method
 			status   := strconv.Itoa(ctx.Writer.Status())
 			size     := float64(ctx.Writer.Size())
 			cachehit := strconv.FormatBool(ctx.GetBool("cache-hit"))
@@ -74,6 +82,7 @@ func NewGinMiddleware(metrics *metrics) gin.HandlerFunc {
 			).Observe(duration)
 
 			metrics.responseSizes.WithLabelValues(path, status).Observe(size)
+			metrics.requestCount.WithLabelValues(method, path).Inc()
 		}()
 	}
 }
