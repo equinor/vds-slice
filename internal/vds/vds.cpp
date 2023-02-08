@@ -29,7 +29,7 @@ void vdsbuffer_delete(struct vdsbuffer* buf) {
     *buf = vdsbuffer {};
 }
 
-int axis_todim(axis ax) {
+int axis_todim(api_axis_name ax) {
     switch (ax) {
         case I:
         case INLINE:
@@ -48,7 +48,7 @@ int axis_todim(axis ax) {
     }
 }
 
-coordinate_system axis_tosystem(axis ax) {
+coordinate_system axis_tosystem(api_axis_name ax) {
     switch (ax) {
         case I:
         case J:
@@ -66,7 +66,7 @@ coordinate_system axis_tosystem(axis ax) {
     }
 }
 
-const std::string axis_tostring(axis ax) {
+const std::string axis_tostring(api_axis_name ax) {
     switch (ax) {
         case I:         return std::string( OpenVDS::KnownAxisNames::I()         );
         case J:         return std::string( OpenVDS::KnownAxisNames::J()         );
@@ -114,7 +114,7 @@ std::string vdsformat_tostring(OpenVDS::VolumeDataFormat format) {
  * E.g. a Time slice is only valid if the units of the Z-axis in the VDS is
  * "Seconds" or "Milliseconds"
  */
-bool unit_validation(axis ax, const char* zunit) {
+bool unit_validation(api_axis_name ax, const char* zunit) {
     /* Define some convenient lookup tables for units */
     static const std::array< const char*, 3 > depthunits = {
         OpenVDS::KnownUnitNames::Meter(),
@@ -164,7 +164,7 @@ bool unit_validation(axis ax, const char* zunit) {
  *
  * This function will return 0 if that's not the case
  */
-bool axis_order_validation(axis ax, const OpenVDS::VolumeDataLayout *layout) {
+bool axis_order_validation(api_axis_name ax, const OpenVDS::VolumeDataLayout *layout) {
     if (std::strcmp(layout->GetDimensionName(2), OpenVDS::KnownAxisNames::Inline())) {
         return false;
     }
@@ -190,7 +190,7 @@ bool axis_order_validation(axis ax, const OpenVDS::VolumeDataLayout *layout) {
 }
 
 
-void axis_validation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
+void axis_validation(api_axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
     if (not axis_order_validation(ax, layout)) {
         std::string msg = "Unsupported axis ordering in VDS, expected ";
         msg += "Depth/Time/Sample, Crossline, Inline";
@@ -295,7 +295,7 @@ int lineno_index_to_voxel(
  * Convert target dimension/axis + lineno to VDS voxel coordinates.
  */
 void set_voxels(
-    axis ax,
+    api_axis_name ax,
     int dimension,
     int lineno,
     const OpenVDS::VolumeDataLayout *layout,
@@ -432,7 +432,7 @@ OpenVDS::ScopedVDSHandle open_vds(
 struct vdsbuffer fetch_slice(
     std::string url,
     std::string credentials,
-    axis ax,
+    api_axis_name ax,
     int lineno
 ) {
     auto handle = open_vds(url, credentials);
@@ -477,7 +477,7 @@ struct vdsbuffer fetch_slice(
 struct vdsbuffer fetch_slice_metadata(
     std::string url,
     std::string credentials,
-    axis ax,
+    api_axis_name ax,
     int lineno
 ) {
     auto handle = open_vds(url, credentials);
@@ -705,7 +705,7 @@ struct vdsbuffer slice(
     const char* vds,
     const char* credentials,
     int lineno,
-    axis ax
+    api_axis_name ax
 ) {
     std::string cube(vds);
     std::string cred(credentials);
@@ -721,7 +721,7 @@ struct vdsbuffer slice_metadata(
     const char* vds,
     const char* credentials,
     int lineno,
-    axis ax
+    api_axis_name ax
 ) {
     std::string cube(vds);
     std::string cred(credentials);

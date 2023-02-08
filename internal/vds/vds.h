@@ -12,7 +12,7 @@ struct vdsbuffer {
     unsigned long size;
 };
 
-enum axis {
+enum api_axis_name {
     I         = 0,
     J         = 1,
     K         = 2,
@@ -46,14 +46,14 @@ struct vdsbuffer slice(
     const char* vds,
     const char* credentials,
     int lineno,
-    enum axis direction
+    enum api_axis_name direction
 );
 
 struct vdsbuffer slice_metadata(
     const char* vds,
     const char* credentials,
     int lineno,
-    enum axis direction
+    enum api_axis_name direction
 );
 
 struct vdsbuffer fence(

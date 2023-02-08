@@ -164,7 +164,7 @@ func GetMetadata(conn Connection) ([]byte, error) {
 	defer C.free(unsafe.Pointer(ccred))
 
 	result := C.metadata(curl, ccred)
-	
+
 	defer C.vdsbuffer_delete(&result)
 
 	if result.err != nil {
@@ -187,7 +187,7 @@ func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
 		curl,
 		ccred,
 		C.int(lineno),
-		C.enum_axis(direction),
+		C.enum_api_axis_name(direction),
 	)
 
 	defer C.vdsbuffer_delete(&result)
@@ -212,7 +212,7 @@ func GetSliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
 		curl,
 		ccred,
 		C.int(lineno),
-		C.enum_axis(direction),
+		C.enum_api_axis_name(direction),
 	)
 
 	defer C.vdsbuffer_delete(&result)
