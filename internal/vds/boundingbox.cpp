@@ -1,10 +1,7 @@
 #include "boundingbox.h"
 
 std::vector< std::pair<int, int> > BoundingBox::index() noexcept (true) {
-    auto ils = layout->GetDimensionNumSamples(2) - 1;
-    auto xls = layout->GetDimensionNumSamples(1) - 1;
-
-    return { {0, 0}, {ils, 0}, {ils, xls}, {0, xls} };
+    return { {0, 0}, {this->ils, 0}, {this->ils, this->xls}, {0, this->xls} };
 }
 
 std::vector< std::pair<double, double> > BoundingBox::world() noexcept (true) {

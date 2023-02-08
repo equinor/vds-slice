@@ -20,6 +20,7 @@
 
 #include "axis.h"
 #include "boundingbox.h"
+#include "metadatahandle.h"
 
 using namespace std;
 
@@ -42,17 +43,6 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
         case TRIANGULAR: return OpenVDS::InterpolationMethod::Triangular;
         default: {
             throw std::runtime_error("Unhandled interpolation method");
-        }
-    }
-}
-
-std::string vdsformat_tostring(OpenVDS::VolumeDataFormat format) {
-    switch (format) {
-        case OpenVDS::VolumeDataFormat::Format_U8:  return "<u1";
-        case OpenVDS::VolumeDataFormat::Format_U16: return "<u2";
-        case OpenVDS::VolumeDataFormat::Format_R32: return "<f4";
-        default: {
-            throw std::runtime_error("unsupported VDS format type");
         }
     }
 }
@@ -147,7 +137,6 @@ void axis_validation(api_axis_name ax, const OpenVDS::VolumeDataLayout* layout) 
         throw std::runtime_error(msg);
     }
 
-    //auto zaxis = layout->GetAxisDescriptor(0);
     const Axis zaxis(ax, layout);
     std::string zunit = zaxis.get_unit();
     if (not unit_validation(ax, zunit.c_str())) {
@@ -345,13 +334,10 @@ struct response fetch_slice_metadata(
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
 
-    dimension_validation(layout);
-
-    const Axis axis(ax, layout);
-    axis_validation(ax, layout);
+    const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+    meta["format"] = metadata.get_format();
 
     /*
      * SEGYImport always writes annotation 'Sample' for axis K. We, on the
@@ -366,21 +352,17 @@ struct response fetch_slice_metadata(
      * would be quite suprising for people that use this API in conjunction
      * with the OpenVDS library.
      */
-    const Axis inline_axis(api_axis_name::INLINE, layout);
-    const Axis crossline_axis(api_axis_name::CROSSLINE, layout);
-    const Axis sample_axis(api_axis_name::SAMPLE, layout);
-
     if (ax == api_axis_name::I or ax == api_axis_name::INLINE) {
-        meta["x"] = json_axis(sample_axis);
-        meta["y"] = json_axis(crossline_axis);
+        meta["x"] = json_axis(metadata.get_sample());
+        meta["y"] = json_axis(metadata.get_crossline());
     }
     else if (ax == api_axis_name::J or ax == api_axis_name::CROSSLINE) {
-        meta["x"] = json_axis(sample_axis);
-        meta["y"] = json_axis(inline_axis);
+        meta["x"] = json_axis(metadata.get_sample());
+        meta["y"] = json_axis(metadata.get_inline());
     }
     else {
-        meta["x"] = json_axis(crossline_axis);
-        meta["y"] = json_axis(inline_axis);
+        meta["x"] = json_axis(metadata.get_crossline());
+        meta["y"] = json_axis(metadata.get_inline());
     }
 
     auto str = meta.dump();
@@ -506,12 +488,12 @@ struct response fetch_fence_metadata(
 
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
+    const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
-    meta["shape"] = nlohmann::json::array({npoints, layout->GetDimensionNumSamples(0)});
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+    const Axis sample_axis = metadata.get_sample();
+    meta["shape"] = nlohmann::json::array({npoints, sample_axis.get_number_of_points() });
+    meta["format"] = metadata.get_format();
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
@@ -532,28 +514,26 @@ struct response metadata(
 
     auto access = OpenVDS::GetAccessManager(handle);
     const auto *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
+    const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+    meta["format"] = metadata.get_format();
 
-    auto crs = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
-    meta["crs"] = layout->GetMetadataString(crs.GetCategory(), crs.GetName());
+    meta["crs"] = metadata.get_crs();
 
-    auto bbox = BoundingBox(layout);
+    auto bbox = metadata.get_bounding_box();
     meta["boundingBox"]["ij"]   = bbox.index();
     meta["boundingBox"]["cdp"]  = bbox.world();
     meta["boundingBox"]["ilxl"] = bbox.annotation();
 
 
-    const Axis inline_axis(api_axis_name::INLINE, layout);
+    const Axis& inline_axis = metadata.get_inline();
     meta["axis"].push_back(json_axis(inline_axis));
 
-    const Axis crossline_axis(api_axis_name::CROSSLINE, layout);
+    const Axis& crossline_axis = metadata.get_crossline();
     meta["axis"].push_back(json_axis(crossline_axis));
 
-    const Axis sample_axis(api_axis_name::SAMPLE, layout);
+    const Axis& sample_axis = metadata.get_sample();
     meta["axis"].push_back(json_axis(sample_axis));
 
     auto str = meta.dump();
