@@ -22,13 +22,13 @@
 
 using namespace std;
 
-void vdsbuffer_delete(struct vdsbuffer* buf) {
+void response_delete(struct response* buf) {
     if (!buf)
         return;
 
     delete[] buf->data;
     delete[] buf->err;
-    *buf = vdsbuffer {};
+    *buf = response {};
 }
 
 int axis_todim(api_axis_name ax) {
@@ -373,7 +373,7 @@ OpenVDS::ScopedVDSHandle open_vds(
     return handle;
 }
 
-struct vdsbuffer fetch_slice(
+struct response fetch_slice(
     std::string url,
     std::string credentials,
     api_axis_name ax,
@@ -409,7 +409,7 @@ struct vdsbuffer fetch_slice(
 
     request.get()->WaitForCompletion();
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = size;
     buffer.data = data.get();
 
@@ -418,7 +418,7 @@ struct vdsbuffer fetch_slice(
     return buffer;
 }
 
-struct vdsbuffer fetch_slice_metadata(
+struct response fetch_slice_metadata(
     std::string url,
     std::string credentials,
     api_axis_name ax
@@ -462,14 +462,14 @@ struct vdsbuffer fetch_slice_metadata(
     auto *data = new char[str.size()];
     std::copy(str.begin(), str.end(), data);
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = str.size();
     buffer.data = data;
 
     return buffer;
 }
 
-struct vdsbuffer fetch_fence(
+struct response fetch_fence(
     const std::string& url,
     const std::string& credentials,
     enum coordinate_system coordinate_system,
@@ -563,7 +563,7 @@ struct vdsbuffer fetch_fence(
         throw std::runtime_error(msg);
     }
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = size;
     buffer.data = data.get();
 
@@ -572,7 +572,7 @@ struct vdsbuffer fetch_fence(
     return buffer;
 }
 
-struct vdsbuffer fetch_fence_metadata(
+struct response fetch_fence_metadata(
     std::string url,
     std::string credentials,
     size_t npoints
@@ -592,14 +592,14 @@ struct vdsbuffer fetch_fence_metadata(
     auto *data = new char[str.size()];
     std::copy(str.begin(), str.end(), data);
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = str.size();
     buffer.data = data;
 
     return buffer;
 }
 
-struct vdsbuffer metadata(
+struct response metadata(
     const std::string& url,
     const std::string& credentials
 ) {
@@ -628,23 +628,23 @@ struct vdsbuffer metadata(
     auto *data = new char[str.size()];
     std::copy(str.begin(), str.end(), data);
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = str.size();
     buffer.data = data;
 
     return buffer;
 }
 
-struct vdsbuffer handle_error(
+struct response handle_error(
     const std::exception& e
 ) {
-    vdsbuffer buf {};
+    response buf {};
     buf.err = new char[std::strlen(e.what()) + 1];
     std::strcpy(buf.err, e.what());
     return buf;
 }
 
-struct vdsbuffer slice(
+struct response slice(
     const char* vds,
     const char* credentials,
     int lineno,
@@ -660,7 +660,7 @@ struct vdsbuffer slice(
     }
 }
 
-struct vdsbuffer slice_metadata(
+struct response slice_metadata(
     const char* vds,
     const char* credentials,
     api_axis_name ax
@@ -675,7 +675,7 @@ struct vdsbuffer slice_metadata(
     }
 }
 
-struct vdsbuffer fence(
+struct response fence(
     const char* vds,
     const char* credentials,
     enum coordinate_system coordinate_system,
@@ -695,7 +695,7 @@ struct vdsbuffer fence(
     }
 }
 
-struct vdsbuffer fence_metadata(
+struct response fence_metadata(
     const char* vds,
     const char* credentials,
     size_t npoints
@@ -710,7 +710,7 @@ struct vdsbuffer fence_metadata(
     }
 }
 
-struct vdsbuffer metadata(
+struct response metadata(
     const char* vds,
     const char* credentials
 ) {
