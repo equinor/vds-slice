@@ -49,6 +49,23 @@ void MetadataHandle::validate_axes_order() const {
     }
 }
 
+Axis MetadataHandle::get_axis(const api_axis_name name) const {
+    switch(name) {
+        case api_axis_name::INLINE:
+            return this->get_inline();
+        case api_axis_name::CROSSLINE:
+            return this->get_crossline();
+        case api_axis_name::SAMPLE:
+            return this->get_sample();
+        default:
+            // Case that we map a API axis name that is neither INLINE,
+            // CROSSLINE nor SAMPLE to one of the available three axes in the
+            // VDS.
+            // We could remove this if we would remove the use of getApiName in slicerequest
+              return Axis(name, this->layout);
+    }
+}
+
 const Axis& MetadataHandle::get_inline() const noexcept (true) {
     return this->inline_axis;
 }

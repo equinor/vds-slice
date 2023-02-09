@@ -24,6 +24,7 @@ public:
     const Axis& get_inline()    const noexcept (true);
     const Axis& get_crossline() const noexcept (true);
     const Axis& get_sample()    const noexcept (true);
+    Axis get_axis(const api_axis_name name) const;
 
     const BoundingBox& get_bounding_box() const noexcept (true);
     std::string        get_format()       const noexcept (true);
