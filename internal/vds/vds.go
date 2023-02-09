@@ -201,7 +201,7 @@ func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
 	return buf, nil
 }
 
-func GetSliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
+func GetSliceMetadata(conn Connection, direction int) ([]byte, error) {
 	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
@@ -211,7 +211,6 @@ func GetSliceMetadata(conn Connection, lineno, direction int) ([]byte, error) {
 	result := C.slice_metadata(
 		curl,
 		ccred,
-		C.int(lineno),
 		C.enum_api_axis_name(direction),
 	)
 

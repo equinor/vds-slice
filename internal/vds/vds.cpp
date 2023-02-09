@@ -421,8 +421,7 @@ struct vdsbuffer fetch_slice(
 struct vdsbuffer fetch_slice_metadata(
     std::string url,
     std::string credentials,
-    api_axis_name ax,
-    int lineno
+    api_axis_name ax
 ) {
     auto handle = open_vds(url, credentials);
 
@@ -664,14 +663,13 @@ struct vdsbuffer slice(
 struct vdsbuffer slice_metadata(
     const char* vds,
     const char* credentials,
-    int lineno,
     api_axis_name ax
 ) {
     std::string cube(vds);
     std::string cred(credentials);
 
     try {
-        return fetch_slice_metadata(cube, cred, ax, lineno);
+        return fetch_slice_metadata(cube, cred, ax);
     } catch (const std::exception& e) {
         return handle_error(e);
     }

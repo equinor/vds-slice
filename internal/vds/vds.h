@@ -52,7 +52,6 @@ struct vdsbuffer slice(
 struct vdsbuffer slice_metadata(
     const char* vds,
     const char* credentials,
-    int lineno,
     enum api_axis_name direction
 );
 
