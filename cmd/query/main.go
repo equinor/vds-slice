@@ -114,16 +114,19 @@ func main() {
 	app.Use(gin.Recovery())
 	app.Use(gzip.Gzip(gzip.BestSpeed))
 
+	seismic := app.Group("/")
+	seismic.Use(api.ErrorHandler)
+
 	app.GET("/", endpoint.Health)
 
-	app.GET("metadata", api.ErrorHandler, endpoint.MetadataGet)
-	app.POST("metadata", api.ErrorHandler, endpoint.MetadataPost)
+	seismic.GET("metadata", endpoint.MetadataGet)
+	seismic.POST("metadata", endpoint.MetadataPost)
 
-	app.GET("slice", api.ErrorHandler, endpoint.SliceGet)
-	app.POST("slice", api.ErrorHandler, endpoint.SlicePost)
+	seismic.GET("slice", endpoint.SliceGet)
+	seismic.POST("slice", endpoint.SlicePost)
 
-	app.GET("fence", api.ErrorHandler, endpoint.FenceGet)
-	app.POST("fence", api.ErrorHandler, endpoint.FencePost)
+	seismic.GET("fence", endpoint.FenceGet)
+	seismic.POST("fence", endpoint.FencePost)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	app.Run(fmt.Sprintf(":%d", opts.port))
