@@ -25,6 +25,7 @@ type opts struct {
 	port            uint32
 	cacheSize       uint32
 	metrics         bool
+	metricsPort     uint32
 }
 
 func parseAsUint32(fallback uint32, value string) uint32 {
@@ -63,6 +64,7 @@ func parseopts() opts {
 		port:            parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
 		cacheSize:       parseAsUint32(0,    os.Getenv("VDSSLICE_CACHE_SIZE")),
 		metrics:         parseAsBool(false,  os.Getenv("VDSSLICE_METRICS")),
+		metricsPort:     parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
 	}
 
 	getopt.FlagLong(
@@ -103,6 +105,18 @@ func parseopts() opts {
 		"Can also be set by environment variable 'VDSSLICE_METRICS'",
 	)
 
+	getopt.FlagLong(
+		&opts.metricsPort,
+		"metrics-port",
+		0,
+		"Port to host the /metrics endpoint on. Metrics are always hosted on a\n" +
+		"different port than the server itself. This allows for them to be kept\n" +
+		"private, if desirable. Defaults to 8081.\n" +
+		"Ignored if metrics are not turned on. (see --metrics)\n" +
+		"Can also be set by enviroment variable 'VDSSLICE_METRICS_PORT'",
+		"int",
+	)
+
 	getopt.Parse()
 	if *help {
 		getopt.Usage()
@@ -141,7 +155,20 @@ func main() {
 	if opts.metrics {
 		metric := metrics.NewMetrics()
 		seismic.Use(metrics.NewGinMiddleware(metric))
-		app.GET("metrics", metrics.NewGinHandler(metric))
+
+		/*
+		 * Host the /metrics endpoint on a different app instance. This is needed
+		 * in order to serve it on a different port, while also giving some benefits
+		 * such that our main app server's logs doesn't get polluted by tools that
+		 * are continually scarping the /metrics endpoint. I.e. graphana.
+		 */
+		metricsApp := gin.New()
+		metricsApp.Use(gin.Recovery())
+		metricsApp.GET("metrics", metrics.NewGinHandler(metric))
+
+		go func() {
+			metricsApp.Run(fmt.Sprintf(":%d", opts.metricsPort))
+		}()
 	}
 
 	app.GET("/", endpoint.Health)
