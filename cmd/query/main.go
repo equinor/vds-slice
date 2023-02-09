@@ -17,12 +17,15 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 	"github.com/equinor/vds-slice/internal/cache"
 	"github.com/equinor/vds-slice/internal/logging"
+	"github.com/equinor/vds-slice/internal/metrics"
 )
 
 type opts struct {
 	storageAccounts string
 	port            uint32
 	cacheSize       uint32
+	metrics         bool
+	metricsPort     uint32
 }
 
 func parseAsUint32(fallback uint32, value string) uint32 {
@@ -44,6 +47,15 @@ func parseAsString(fallback string, value string) string {
 	return value
 }
 
+func parseAsBool(fallback bool, value string) bool {
+	v, err := strconv.ParseBool(value)
+	if err != nil {
+		return fallback
+	}
+
+	return v
+}
+
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 	
@@ -51,6 +63,8 @@ func parseopts() opts {
 		storageAccounts: parseAsString("",   os.Getenv("VDSSLICE_STORAGE_ACCOUNTS")),
 		port:            parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
 		cacheSize:       parseAsUint32(0,    os.Getenv("VDSSLICE_CACHE_SIZE")),
+		metrics:         parseAsBool(false,  os.Getenv("VDSSLICE_METRICS")),
+		metricsPort:     parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
 	}
 
 	getopt.FlagLong(
@@ -79,6 +93,27 @@ func parseopts() opts {
 		"Max size of the response cache. In megabytes. A value of zero effectively\n" +
 		"disables caching. Defaults to 0.\n" +
 		"Can also be set by environment variable 'VDSSLICE_CACHE_SIZE'",
+		"int",
+	)
+
+	getopt.FlagLong(
+		&opts.metrics,
+		"metrics",
+		0,
+		"Turn on server metrics. Metrics are posted to /metrics using the\n" +
+		"prometheus data model. Off by default.\n" +
+		"Can also be set by environment variable 'VDSSLICE_METRICS'",
+	)
+
+	getopt.FlagLong(
+		&opts.metricsPort,
+		"metrics-port",
+		0,
+		"Port to host the /metrics endpoint on. Metrics are always hosted on a\n" +
+		"different port than the server itself. This allows for them to be kept\n" +
+		"private, if desirable. Defaults to 8081.\n" +
+		"Ignored if metrics are not turned on. (see --metrics)\n" +
+		"Can also be set by enviroment variable 'VDSSLICE_METRICS_PORT'",
 		"int",
 	)
 
@@ -114,16 +149,38 @@ func main() {
 	app.Use(gin.Recovery())
 	app.Use(gzip.Gzip(gzip.BestSpeed))
 
+	seismic := app.Group("/")
+	seismic.Use(api.ErrorHandler)
+
+	if opts.metrics {
+		metric := metrics.NewMetrics()
+		seismic.Use(metrics.NewGinMiddleware(metric))
+
+		/*
+		 * Host the /metrics endpoint on a different app instance. This is needed
+		 * in order to serve it on a different port, while also giving some benefits
+		 * such that our main app server's logs doesn't get polluted by tools that
+		 * are continually scarping the /metrics endpoint. I.e. graphana.
+		 */
+		metricsApp := gin.New()
+		metricsApp.Use(gin.Recovery())
+		metricsApp.GET("metrics", metrics.NewGinHandler(metric))
+
+		go func() {
+			metricsApp.Run(fmt.Sprintf(":%d", opts.metricsPort))
+		}()
+	}
+
 	app.GET("/", endpoint.Health)
 
-	app.GET("metadata", api.ErrorHandler, endpoint.MetadataGet)
-	app.POST("metadata", api.ErrorHandler, endpoint.MetadataPost)
+	seismic.GET("metadata", endpoint.MetadataGet)
+	seismic.POST("metadata", endpoint.MetadataPost)
 
-	app.GET("slice", api.ErrorHandler, endpoint.SliceGet)
-	app.POST("slice", api.ErrorHandler, endpoint.SlicePost)
+	seismic.GET("slice", endpoint.SliceGet)
+	seismic.POST("slice", endpoint.SlicePost)
 
-	app.GET("fence", api.ErrorHandler, endpoint.FenceGet)
-	app.POST("fence", api.ErrorHandler, endpoint.FencePost)
+	seismic.GET("fence", endpoint.FenceGet)
+	seismic.POST("fence", endpoint.FencePost)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	app.Run(fmt.Sprintf(":%d", opts.port))

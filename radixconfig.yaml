@@ -18,12 +18,19 @@ spec:
       ports:
         - name: http
           port: 8080
+        - name: metrics
+          port: 8081
       publicPort: http
+      monitoringConfig:
+        portName: metrics
       environmentConfig:
         - environment: dev
           variables:
+            VDSSLICE_PORT: 8080
             VDSSLICE_CACHE_SIZE: 512 # MB
-          monitoring: false
+            VDSSLICE_METRICS: true
+            VDSSLICE_METRICS_PORT: 8081
+          monitoring: true
           resources:
             requests:
               memory: "4096Mi"
@@ -33,13 +40,15 @@ spec:
             maxReplicas: 3
         - environment: test
           variables:
+            VDSSLICE_PORT: 8080
             VDSSLICE_CACHE_SIZE: 256 # MB
-          monitoring: false
+            VDSSLICE_METRICS: true
+            VDSSLICE_METRICS_PORT: 8081
+          monitoring: true
           resources:
             requests:
               memory: "2048Mi"
               cpu: "500m"
           horizontalScaling:
-            # Radix doesn't scale to 0, so this is just desired intention
-            minReplicas: 0
+            minReplicas: 1
             maxReplicas: 3

@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 
@@ -57,7 +56,7 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
-		log.Printf("Cache hit: %s", cacheKey)
+		ctx.Set("cache-hit", true)
 		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
 		return
 	}
@@ -101,7 +100,7 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
-		log.Printf("Cache hit: %s", cacheKey)
+		ctx.Set("cache-hit", true)
 		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
 		return
 	}
