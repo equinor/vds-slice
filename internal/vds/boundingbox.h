@@ -9,6 +9,8 @@
 
 #include "axis.h"
 
+namespace openvds_adapter {
+
 class BoundingBox {
 public:
     explicit BoundingBox(
@@ -32,5 +34,7 @@ private:
     // Maximum index of crossline axis
     const int xls;
 };
+
+} /* namespace openvds_adapter */
 
 #endif /* BOUNDINGBOX_H */

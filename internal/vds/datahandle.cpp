@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+namespace openvds_adapter {
+
 DataHandle::DataHandle(const std::string url, const std::string credentials)
 {
     OpenVDS::Error error;
@@ -26,3 +28,5 @@ response DataHandle::slice(const SliceRequestParameters& parameters) {
     SliceRequest slice_request(*(this->metadata), this->access_manager);
     return slice_request.get_data(parameters);
 }
+
+} /* namespace openvds_adapter */

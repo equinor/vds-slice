@@ -8,6 +8,8 @@
 
 #include "vds.h"
 
+namespace openvds_adapter {
+
 class Axis {
 public:
     Axis(
@@ -35,5 +37,7 @@ private:
     int api_index;
     OpenVDS::VolumeDataAxisDescriptor vds_axis_descriptor;
 };
+
+} /* namespace openvds_adapter */
 
 #endif /* AXIS_H */

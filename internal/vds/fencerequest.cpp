@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+namespace openvds_adapter {
+
 std::unique_ptr<FencePointList>
 FenceRequest::get_vds_point_list(const FenceRequestParameters& parameters) {
     auto const* layout = this->access_manager.GetVolumeDataLayout();
@@ -120,3 +122,5 @@ response FenceRequest::get_data(const FenceRequestParameters& parameters) {
         static_cast<unsigned long>(request_size)
     };
 }
+
+} /* namespace openvds_adapter */

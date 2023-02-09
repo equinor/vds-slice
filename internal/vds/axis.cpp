@@ -5,6 +5,8 @@
 #include <OpenVDS/IJKCoordinateTransformer.h>
 #include <OpenVDS/KnownMetadata.h>
 
+namespace openvds_adapter {
+
 Axis::Axis(
     const enum api_axis_name api_name,
     OpenVDS::VolumeDataLayout const * layout
@@ -104,3 +106,5 @@ coordinate_system Axis::get_coordinate_system() const {
         }
     }
 }
+
+} /* namespace openvds_adapter */

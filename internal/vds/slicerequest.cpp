@@ -7,6 +7,8 @@
 
 #include <OpenVDS/KnownMetadata.h>
 
+namespace openvds_adapter {
+
 void SliceRequest::validate_request_axis(
     const api_axis_name& name
 ) const {
@@ -139,3 +141,5 @@ response SliceRequest::get_data(const SliceRequestParameters& parameters) {
         static_cast<unsigned long>(request_size)
     };
 }
+
+} /* namespace openvds_adapter */

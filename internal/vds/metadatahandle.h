@@ -8,6 +8,8 @@
 #include "axis.h"
 #include "boundingbox.h"
 
+namespace openvds_adapter {
+
 class MetadataHandle {
 public:
     MetadataHandle(OpenVDS::VolumeDataLayout const * const layout) :
@@ -41,5 +43,7 @@ private:
     void validate_dimensionality() const;
     void validate_axes_order() const;
 };
+
+} /* namespace openvds_adapter */
 
 #endif /* METADATAHANDLE_H */

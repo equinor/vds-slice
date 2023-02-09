@@ -1,5 +1,7 @@
 #include "boundingbox.h"
 
+namespace openvds_adapter {
+
 std::vector< std::pair<int, int> > BoundingBox::index() noexcept (true) {
     return { {0, 0}, {this->ils, 0}, {this->ils, this->xls}, {0, this->xls} };
 }
@@ -35,3 +37,5 @@ std::vector< std::pair<int, int> > BoundingBox::annotation() noexcept (true) {
 
     return points;
 };
+
+} /* namespace openvds_adapter */

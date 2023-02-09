@@ -31,7 +31,7 @@ void response_delete(struct response* buf) {
 }
 
 nlohmann::json json_axis(
-    const Axis& axis
+    const openvds_adapter::Axis& axis
 ) {
     nlohmann::json doc;
     doc = {
@@ -50,7 +50,7 @@ struct response fetch_slice(
     api_axis_name ax,
     int lineno
 ) {
-    DataHandle handle(url, credentials);
+    openvds_adapter::DataHandle handle(url, credentials);
     const SliceRequestParameters request_parameters{ax, lineno};
     return handle.slice(request_parameters);
 }
@@ -60,8 +60,8 @@ struct response fetch_slice_metadata(
     std::string credentials,
     api_axis_name ax
 ) {
-    const DataHandle handle(url, credentials);
-    const MetadataHandle& metadata = handle.get_metadata();
+    const openvds_adapter::DataHandle handle(url, credentials);
+    const openvds_adapter::MetadataHandle& metadata = handle.get_metadata();
 
     nlohmann::json meta;
     meta["format"] = metadata.get_format();
@@ -117,7 +117,7 @@ struct response fetch_fence(
         npoints,
         interpolation_method
     };
-    DataHandle handle(url, credentials);
+    openvds_adapter::DataHandle handle(url, credentials);
     return handle.fence(requestParameters);
 }
 
@@ -126,11 +126,11 @@ struct response fetch_fence_metadata(
     std::string credentials,
     size_t npoints
 ) {
-    const DataHandle handle(url, credentials);
-    const MetadataHandle& metadata = handle.get_metadata();
+    const openvds_adapter::DataHandle handle(url, credentials);
+    const openvds_adapter::MetadataHandle& metadata = handle.get_metadata();
 
     nlohmann::json meta;
-    const Axis sample_axis = metadata.get_sample();
+    const openvds_adapter::Axis sample_axis = metadata.get_sample();
     meta["shape"] = nlohmann::json::array({npoints, sample_axis.get_number_of_points() });
     meta["format"] = metadata.get_format();
 
@@ -149,8 +149,8 @@ struct response metadata(
     const std::string& url,
     const std::string& credentials
 ) {
-    const DataHandle handle(url, credentials);
-    const MetadataHandle& metadata = handle.get_metadata();
+    const openvds_adapter::DataHandle handle(url, credentials);
+    const openvds_adapter::MetadataHandle& metadata = handle.get_metadata();
 
     nlohmann::json meta;
     meta["format"] = metadata.get_format();
@@ -163,13 +163,13 @@ struct response metadata(
     meta["boundingBox"]["ilxl"] = bbox.annotation();
 
 
-    const Axis& inline_axis = metadata.get_inline();
+    const openvds_adapter::Axis& inline_axis = metadata.get_inline();
     meta["axis"].push_back(json_axis(inline_axis));
 
-    const Axis& crossline_axis = metadata.get_crossline();
+    const openvds_adapter::Axis& crossline_axis = metadata.get_crossline();
     meta["axis"].push_back(json_axis(crossline_axis));
 
-    const Axis& sample_axis = metadata.get_sample();
+    const openvds_adapter::Axis& sample_axis = metadata.get_sample();
     meta["axis"].push_back(json_axis(sample_axis));
 
     auto str = meta.dump();

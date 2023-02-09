@@ -16,6 +16,8 @@ struct FenceRequestParameters {
     const enum interpolation_method interpolation_method;
 };
 
+namespace openvds_adapter {
+
 using FencePointList = float[][OpenVDS::Dimensionality_Max];
 
 class FenceRequest {
@@ -50,5 +52,7 @@ private:
         const interpolation_method interpolation
     );
 };
+
+} /* namespace openvds_adapter */
 
 #endif /* FENCEREQUEST_H */

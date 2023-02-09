@@ -11,6 +11,8 @@
 #include "slicerequest.h"
 #include "vds.h"
 
+namespace openvds_adapter {
+
 class DataHandle {
 public:
     DataHandle(const std::string url, const std::string credentials);
@@ -28,5 +30,7 @@ private:
     // Must be pointer due to delayed initialization.
     std::unique_ptr<MetadataHandle> metadata;
 };
+
+} /* namespace openvds_adapter */
 
 #endif /* DATAHANDLE_h */

@@ -13,6 +13,8 @@ struct SliceRequestParameters {
     const int           line_number;
 };
 
+namespace openvds_adapter {
+
 struct SubVolume {
     struct {
         int lower[OpenVDS::VolumeDataLayout::Dimensionality_Max]{0, 0, 0, 0, 0, 0};
@@ -68,5 +70,7 @@ private:
         const SliceRequestParameters& parameters
     ) const;
 };
+
+} /* namespace openvds_adapter */
 
 #endif /* SLICEREQUEST_H */

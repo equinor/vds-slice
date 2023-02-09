@@ -6,6 +6,8 @@
 
 #include <OpenVDS/KnownMetadata.h>
 
+namespace openvds_adapter {
+
 void MetadataHandle::validate_dimensionality() const {
     constexpr int expected_dimensionality = 3;
     if (this->layout->GetDimensionality() != expected_dimensionality) {
@@ -90,3 +92,5 @@ std::string MetadataHandle::get_crs() const noexcept (true) {
     const auto crs = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
     return this->layout->GetMetadataString(crs.GetCategory(), crs.GetName());
 }
+
+} /* namespace openvds_adapter */
