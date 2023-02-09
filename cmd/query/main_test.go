@@ -15,26 +15,30 @@ import (
 func TestSliceHappyHTTPResponse(t *testing.T) {
 	testcases := []sliceTest{
 		{
-			name:   "Valid GET Request",
-			method: http.MethodGet,
-			slice: testSliceRequest{
+			baseTest{
+				name:           "Valid GET Request",
+				method:         http.MethodGet,
+				expectedStatus: http.StatusOK,
+			},
+			testSliceRequest{
 				Vds:       well_known,
 				Direction: "i",
 				Lineno:    0, //side-effect assurance that 0 is accepted
 				Sas:       "n/a",
 			},
-			expectedStatus: http.StatusOK,
 		},
 		{
-			name:   "Valid json POST Request",
-			method: http.MethodPost,
-			slice: testSliceRequest{
+			baseTest{
+				name:           "Valid json POST Request",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusOK,
+			},
+			testSliceRequest{
 				Vds:       well_known,
 				Direction: "crossline",
 				Lineno:    10,
 				Sas:       "n/a",
 			},
-			expectedStatus: http.StatusOK,
 		},
 	}
 
@@ -43,7 +47,7 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 		ctx, r := gin.CreateTestContext(w)
 		setupTestServer(r)
 
-		prepareSliceRequest(ctx, t, testcase)
+		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
 		if w.Result().StatusCode != testcase.expectedStatus {
@@ -131,58 +135,74 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 func TestSliceErrorHTTPResponse(t *testing.T) {
 	testcases := []sliceTest{
 		{
-			name:           "Invalid json GET request",
-			method:         http.MethodGet,
-			jsonRequest:    "help I am a duck",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid character",
+			baseTest{
+				name:           "Invalid json GET request",
+				method:         http.MethodGet,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			},
+			testSliceRequest{},
 		},
 		{
-			name:           "Invalid json POST request",
-			method:         http.MethodPost,
-			jsonRequest:    "help I am a duck",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid character",
+			baseTest{
+				name:           "Invalid json POST request",
+				method:         http.MethodPost,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			},
+			testSliceRequest{},
 		},
 		{
-			name:   "Missing parameters GET request",
-			method: http.MethodGet,
-			jsonRequest: "{\"vds\":\"" + well_known +
-				"\", \"direction\":\"i\", \"sas\": \"n/a\"}",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Lineno'",
+			baseTest{
+				name:   "Missing parameters GET request",
+				method: http.MethodGet,
+				jsonRequest: "{\"vds\":\"" + well_known +
+					"\", \"direction\":\"i\", \"sas\": \"n/a\"}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for 'Lineno'",
+			},
+			testSliceRequest{},
 		},
 		{
-			name:   "Missing parameters POST Request",
-			method: http.MethodPost,
-			jsonRequest: "{\"vds\":\"" + well_known +
-				"\", \"lineno\":1, \"sas\": \"n/a\"}",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Direction'",
+			baseTest{
+				name:   "Missing parameters POST Request",
+				method: http.MethodPost,
+				jsonRequest: "{\"vds\":\"" + well_known +
+					"\", \"lineno\":1, \"sas\": \"n/a\"}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for 'Direction'",
+			},
+			testSliceRequest{},
 		},
 		{
-			name:   "Request with unknown axis",
-			method: http.MethodPost,
-			slice: testSliceRequest{
+			baseTest{
+				name:           "Request with unknown axis",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid direction 'unknown', valid options are",
+			},
+			testSliceRequest{
 				Vds:       well_known,
 				Direction: "unknown",
 				Lineno:    1,
 				Sas:       "n/a",
 			},
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid direction 'unknown', valid options are",
 		},
 		{
-			name:   "Request which passed all input checks but still should fail",
-			method: http.MethodPost,
-			slice: testSliceRequest{
+			baseTest{
+				name:           "Request which passed all input checks but still should fail",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusInternalServerError,
+				expectedError:  "Invalid lineno: 10, valid range: [0:2:1]",
+			},
+			testSliceRequest{
 				Vds:       well_known,
 				Direction: "i",
 				Lineno:    10,
 				Sas:       "n/a",
 			},
-			expectedStatus: http.StatusInternalServerError,
-			expectedError:  "Invalid lineno: 10, valid range: [0:2:1]",
 		},
 	}
 
@@ -191,7 +211,7 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 		ctx, r := gin.CreateTestContext(w)
 		setupTestServer(r)
 
-		prepareSliceRequest(ctx, t, testcase)
+		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
 		if w.Result().StatusCode != testcase.expectedStatus {
@@ -211,26 +231,32 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 func TestFenceHappyHTTPResponse(t *testing.T) {
 	testcases := []fenceTest{
 		{
-			name:   "Valid GET Request",
-			method: http.MethodGet,
-			fence: testFenceRequest{
+			baseTest{
+				name:           "Valid GET Request",
+				method:         http.MethodGet,
+				expectedStatus: http.StatusOK,
+			},
+
+			testFenceRequest{
 				Vds:              well_known,
 				CoordinateSystem: "ilxl",
 				Coordinates:      [][]float32{{3, 11}, {2, 10}},
 				Sas:              "n/a",
 			},
-			expectedStatus: http.StatusOK,
 		},
 		{
-			name:   "Valid json POST Request",
-			method: http.MethodPost,
-			fence: testFenceRequest{
+			baseTest{
+				name:           "Valid json POST Request",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusOK,
+			},
+
+			testFenceRequest{
 				Vds:              well_known,
 				CoordinateSystem: "ij",
 				Coordinates:      [][]float32{{0, 1}, {1, 1}, {1, 0}},
 				Sas:              "n/a",
 			},
-			expectedStatus: http.StatusOK,
 		},
 	}
 
@@ -239,7 +265,7 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 		ctx, r := gin.CreateTestContext(w)
 		setupTestServer(r)
 
-		prepareFenceRequest(ctx, t, testcase)
+		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
 		if w.Result().StatusCode != testcase.expectedStatus {
@@ -289,58 +315,74 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 func TestFenceErrorHTTPResponse(t *testing.T) {
 	testcases := []fenceTest{
 		{
-			name:           "Invalid json GET request",
-			method:         http.MethodGet,
-			jsonRequest:    "help I am a duck",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid character",
+			baseTest{
+				name:           "Invalid json GET request",
+				method:         http.MethodGet,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			},
+			testFenceRequest{},
 		},
 		{
-			name:           "Invalid json POST request",
-			method:         http.MethodPost,
-			jsonRequest:    "help I am a duck",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid character",
+			baseTest{
+				name:           "Invalid json POST request",
+				method:         http.MethodPost,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			},
+			testFenceRequest{},
 		},
 		{
-			name:   "Missing parameters GET request",
-			method: http.MethodGet,
-			jsonRequest: "{\"vds\":\"" + well_known +
-				"\", \"coordinateSystem\":\"ilxl\", \"coordinates\":[[0, 0]]}",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Sas'",
+			baseTest{
+				name:   "Missing parameters GET request",
+				method: http.MethodGet,
+				jsonRequest: "{\"vds\":\"" + well_known +
+					"\", \"coordinateSystem\":\"ilxl\", \"coordinates\":[[0, 0]]}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for 'Sas'",
+			},
+			testFenceRequest{},
 		},
 		{
-			name:   "Missing parameters POST Request",
-			method: http.MethodPost,
-			jsonRequest: "{\"vds\":\"" + well_known +
-				"\", \"coordinateSystem\":\"ilxl\", \"sas\": \"n/a\"}",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Coordinates'",
+			baseTest{
+				name:   "Missing parameters POST Request",
+				method: http.MethodPost,
+				jsonRequest: "{\"vds\":\"" + well_known +
+					"\", \"coordinateSystem\":\"ilxl\", \"sas\": \"n/a\"}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for 'Coordinates'",
+			},
+			testFenceRequest{},
 		},
 		{
-			name:   "Request with unknown coordinate system",
-			method: http.MethodPost,
-			fence: testFenceRequest{
+			baseTest{
+				name:           "Request with unknown coordinate system",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "coordinate system not recognized: 'unknown', valid options are",
+			},
+			testFenceRequest{
 				Vds:              well_known,
 				CoordinateSystem: "unknown",
 				Coordinates:      [][]float32{{3, 12}, {2, 10}},
 				Sas:              "n/a",
 			},
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "coordinate system not recognized: 'unknown', valid options are",
 		},
 		{
-			name:   "Request which passed all input checks but still should fail",
-			method: http.MethodPost,
-			fence: testFenceRequest{
+			baseTest{
+				name:           "Request which passed all input checks but still should fail",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusInternalServerError,
+				expectedError:  "Could not open VDS",
+			},
+			testFenceRequest{
 				Vds:              "unknown",
 				CoordinateSystem: "ilxl",
 				Coordinates:      [][]float32{{3, 12}, {2, 10}},
 				Sas:              "n/a",
 			},
-			expectedStatus: http.StatusInternalServerError,
-			expectedError:  "Could not open VDS",
 		},
 	}
 
@@ -349,7 +391,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 		ctx, r := gin.CreateTestContext(w)
 		setupTestServer(r)
 
-		prepareFenceRequest(ctx, t, testcase)
+		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
 		if w.Result().StatusCode != testcase.expectedStatus {
@@ -369,22 +411,27 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 func TestMetadataHappyHTTPResponse(t *testing.T) {
 	testcases := []metadataTest{
 		{
-			name:   "Valid GET Request",
-			method: http.MethodGet,
-			metadata: testMetadataRequest{
+			baseTest{
+
+				name:           "Valid GET Request",
+				method:         http.MethodGet,
+				expectedStatus: http.StatusOK,
+			},
+			testMetadataRequest{
 				Vds: well_known,
 				Sas: "n/a",
 			},
-			expectedStatus: http.StatusOK,
 		},
 		{
-			name:   "Valid json POST Request",
-			method: http.MethodPost,
-			metadata: testMetadataRequest{
+			baseTest{
+				name:           "Valid json POST Request",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusOK,
+			},
+			testMetadataRequest{
 				Vds: well_known,
 				Sas: "n/a",
 			},
-			expectedStatus: http.StatusOK,
 		},
 	}
 
@@ -393,7 +440,7 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 		ctx, r := gin.CreateTestContext(w)
 		setupTestServer(r)
 
-		prepareMetadataRequest(ctx, t, testcase)
+		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
 		if w.Result().StatusCode != testcase.expectedStatus {
@@ -432,42 +479,53 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 func TestMetadataErrorHTTPResponse(t *testing.T) {
 	testcases := []metadataTest{
 		{
-			name:           "Invalid json GET request",
-			method:         http.MethodGet,
-			jsonRequest:    "help I am a duck",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid character",
+			baseTest{
+				name:           "Invalid json GET request",
+				method:         http.MethodGet,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			}, testMetadataRequest{},
 		},
 		{
-			name:           "Invalid json POST request",
-			method:         http.MethodPost,
-			jsonRequest:    "help I am a duck",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid character",
+			baseTest{
+				name:           "Invalid json POST request",
+				method:         http.MethodPost,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			}, testMetadataRequest{},
 		},
 		{
-			name:           "Missing parameters GET request",
-			method:         http.MethodGet,
-			jsonRequest:    "{\"vds\":\"" + well_known + "\"}",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Sas'",
+			baseTest{
+				name:           "Missing parameters GET request",
+				method:         http.MethodGet,
+				jsonRequest:    "{\"vds\":\"" + well_known + "\"}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for 'Sas'",
+			}, testMetadataRequest{},
 		},
 		{
-			name:           "Missing parameters POST Request",
-			method:         http.MethodPost,
-			jsonRequest:    "{\"sas\":\"somevalidsas\"}",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Error:Field validation for 'Vds'",
+			baseTest{
+				name:           "Missing parameters POST Request",
+				method:         http.MethodPost,
+				jsonRequest:    "{\"sas\":\"somevalidsas\"}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for 'Vds'",
+			}, testMetadataRequest{},
 		},
 		{
-			name:   "Request which passed all input checks but still should fail",
-			method: http.MethodPost,
-			metadata: testMetadataRequest{
+			baseTest{
+				name:           "Request which passed all input checks but still should fail",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusInternalServerError,
+				expectedError:  "Could not open VDS",
+			},
+
+			testMetadataRequest{
 				Vds: "unknown",
 				Sas: "n/a",
 			},
-			expectedStatus: http.StatusInternalServerError,
-			expectedError:  "Could not open VDS",
 		},
 	}
 
@@ -476,7 +534,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 		ctx, r := gin.CreateTestContext(w)
 		setupTestServer(r)
 
-		prepareMetadataRequest(ctx, t, testcase)
+		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
 		if w.Result().StatusCode != testcase.expectedStatus {

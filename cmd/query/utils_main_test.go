@@ -22,31 +22,81 @@ import (
 
 const well_known = "../../testdata/well_known/well_known_default.vds"
 
-type sliceTest struct {
+type baseTest struct {
 	name           string
 	method         string
-	slice          testSliceRequest
 	jsonRequest    string
 	expectedStatus int
 	expectedError  string
+}
+
+type endpointTest interface {
+	base() baseTest
+	endpoint() string
+	requestAsJSON() (string, error)
+}
+
+type sliceTest struct {
+	baseTest
+	slice testSliceRequest
+}
+
+func (s sliceTest) endpoint() string {
+	return "/slice"
+}
+
+func (s sliceTest) base() baseTest {
+	return s.baseTest
+}
+
+func (s sliceTest) requestAsJSON() (string, error) {
+	req, err := json.Marshal(s.slice)
+	if err != nil {
+		return "", fmt.Errorf("cannot marshal slice request %v", s.slice)
+	}
+	return string(req), nil
 }
 
 type fenceTest struct {
-	name           string
-	method         string
-	fence          testFenceRequest
-	jsonRequest    string
-	expectedStatus int
-	expectedError  string
+	baseTest
+	fence testFenceRequest
+}
+
+func (f fenceTest) endpoint() string {
+	return "/fence"
+}
+
+func (f fenceTest) base() baseTest {
+	return f.baseTest
+}
+
+func (f fenceTest) requestAsJSON() (string, error) {
+	req, err := json.Marshal(f.fence)
+	if err != nil {
+		return "", fmt.Errorf("cannot marshal fence request %v", f.fence)
+	}
+	return string(req), nil
 }
 
 type metadataTest struct {
-	name           string
-	method         string
-	metadata       testMetadataRequest
-	jsonRequest    string
-	expectedStatus int
-	expectedError  string
+	baseTest
+	metadata testMetadataRequest
+}
+
+func (m metadataTest) endpoint() string {
+	return "/metadata"
+}
+
+func (m metadataTest) base() baseTest {
+	return m.baseTest
+}
+
+func (m metadataTest) requestAsJSON() (string, error) {
+	req, err := json.Marshal(m.metadata)
+	if err != nil {
+		return "", fmt.Errorf("cannot marshal metadata request %v", m.metadata)
+	}
+	return string(req), nil
 }
 
 // define own help types to assure separation between production and test code
@@ -147,22 +197,21 @@ func readMultipartData(t *testing.T, w *httptest.ResponseRecorder) [][]byte {
 	}
 }
 
-func prepareRequest(ctx *gin.Context, t *testing.T, endpoint string,
-	method string, request interface{}, jsonReq string) {
-	jsonRequest := jsonReq
+func prepareRequest(ctx *gin.Context, t *testing.T, testcase endpointTest) {
+	jsonRequest := testcase.base().jsonRequest
 	if jsonRequest == "" {
-		req, err := json.Marshal(request)
+		var err error
+		jsonRequest, err = testcase.requestAsJSON()
 		if err != nil {
-			t.Fatalf("Cannot marshal request")
+			t.Fatal(err)
 		}
-		jsonRequest = string(req)
 	}
 
-	switch method := method; method {
+	switch method := testcase.base().method; method {
 	case http.MethodGet:
 		ctx.Request, _ = http.NewRequest(
 			http.MethodGet,
-			endpoint,
+			testcase.endpoint(),
 			nil,
 		)
 
@@ -173,44 +222,11 @@ func prepareRequest(ctx *gin.Context, t *testing.T, endpoint string,
 	case http.MethodPost:
 		ctx.Request, _ = http.NewRequest(
 			http.MethodPost,
-			endpoint,
+			testcase.endpoint(),
 			bytes.NewBuffer([]byte(jsonRequest)),
 		)
 		ctx.Request.Header.Set("Content-Type", "application/json")
 	default:
 		t.Fatalf("Unknown method")
 	}
-}
-
-func prepareSliceRequest(ctx *gin.Context, t *testing.T, testcase sliceTest) {
-	prepareRequest(
-		ctx,
-		t,
-		"/slice",
-		testcase.method,
-		testcase.slice,
-		testcase.jsonRequest,
-	)
-}
-
-func prepareFenceRequest(ctx *gin.Context, t *testing.T, testcase fenceTest) {
-	prepareRequest(
-		ctx,
-		t,
-		"/fence",
-		testcase.method,
-		testcase.fence,
-		testcase.jsonRequest,
-	)
-}
-
-func prepareMetadataRequest(ctx *gin.Context, t *testing.T, testcase metadataTest) {
-	prepareRequest(
-		ctx,
-		t,
-		"/metadata",
-		testcase.method,
-		testcase.metadata,
-		testcase.jsonRequest,
-	)
 }
