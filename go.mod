@@ -3,11 +3,13 @@ module github.com/equinor/vds-slice
 go 1.17
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.6.1
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.1
 	github.com/google/uuid v1.1.1
 	github.com/pborman/getopt/v2 v2.1.0
+	github.com/prometheus/client_golang v1.14.0
 	github.com/stretchr/testify v1.8.0
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe
 	github.com/swaggo/gin-swagger v1.5.2
@@ -17,7 +19,6 @@ require (
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.1.4 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.1 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.6.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
@@ -47,7 +48,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
