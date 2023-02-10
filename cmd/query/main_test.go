@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -133,8 +134,8 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 }
 
 func TestSliceErrorHTTPResponse(t *testing.T) {
-	testcases := []sliceTest{
-		{
+	testcases := []endpointTest{
+		sliceTest{
 			baseTest{
 				name:           "Invalid json GET request",
 				method:         http.MethodGet,
@@ -144,7 +145,7 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 			},
 			testSliceRequest{},
 		},
-		{
+		sliceTest{
 			baseTest{
 				name:           "Invalid json POST request",
 				method:         http.MethodPost,
@@ -154,7 +155,7 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 			},
 			testSliceRequest{},
 		},
-		{
+		sliceTest{
 			baseTest{
 				name:   "Missing parameters GET request",
 				method: http.MethodGet,
@@ -165,7 +166,7 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 			},
 			testSliceRequest{},
 		},
-		{
+		sliceTest{
 			baseTest{
 				name:   "Missing parameters POST Request",
 				method: http.MethodPost,
@@ -176,7 +177,7 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 			},
 			testSliceRequest{},
 		},
-		{
+		sliceTest{
 			baseTest{
 				name:           "Request with unknown axis",
 				method:         http.MethodPost,
@@ -190,7 +191,7 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				Sas:       "n/a",
 			},
 		},
-		{
+		sliceTest{
 			baseTest{
 				name:           "Request which passed all input checks but still should fail",
 				method:         http.MethodPost,
@@ -205,27 +206,7 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 			},
 		},
 	}
-
-	for _, testcase := range testcases {
-		w := httptest.NewRecorder()
-		ctx, r := gin.CreateTestContext(w)
-		setupTestServer(r)
-
-		prepareRequest(ctx, t, testcase)
-		r.ServeHTTP(w, ctx.Request)
-
-		if w.Result().StatusCode != testcase.expectedStatus {
-			msg := "Got status %v; want %d %s in case '%s'"
-			t.Errorf(
-				msg,
-				w.Result().Status,
-				testcase.expectedStatus,
-				http.StatusText(testcase.expectedStatus),
-				testcase.name,
-			)
-		}
-		assertError(w, t, testcase.name, testcase.expectedError)
-	}
+	testErrorHTTPResponse(t, testcases)
 }
 
 func TestFenceHappyHTTPResponse(t *testing.T) {
@@ -313,8 +294,8 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 }
 
 func TestFenceErrorHTTPResponse(t *testing.T) {
-	testcases := []fenceTest{
-		{
+	testcases := []endpointTest{
+		fenceTest{
 			baseTest{
 				name:           "Invalid json GET request",
 				method:         http.MethodGet,
@@ -324,7 +305,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			},
 			testFenceRequest{},
 		},
-		{
+		fenceTest{
 			baseTest{
 				name:           "Invalid json POST request",
 				method:         http.MethodPost,
@@ -334,7 +315,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			},
 			testFenceRequest{},
 		},
-		{
+		fenceTest{
 			baseTest{
 				name:   "Missing parameters GET request",
 				method: http.MethodGet,
@@ -345,7 +326,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			},
 			testFenceRequest{},
 		},
-		{
+		fenceTest{
 			baseTest{
 				name:   "Missing parameters POST Request",
 				method: http.MethodPost,
@@ -356,7 +337,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			},
 			testFenceRequest{},
 		},
-		{
+		fenceTest{
 			baseTest{
 				name:           "Request with unknown coordinate system",
 				method:         http.MethodPost,
@@ -370,7 +351,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 				Sas:              "n/a",
 			},
 		},
-		{
+		fenceTest{
 			baseTest{
 				name:           "Request which passed all input checks but still should fail",
 				method:         http.MethodPost,
@@ -385,27 +366,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			},
 		},
 	}
-
-	for _, testcase := range testcases {
-		w := httptest.NewRecorder()
-		ctx, r := gin.CreateTestContext(w)
-		setupTestServer(r)
-
-		prepareRequest(ctx, t, testcase)
-		r.ServeHTTP(w, ctx.Request)
-
-		if w.Result().StatusCode != testcase.expectedStatus {
-			msg := "Got status %v; want %d %s in case '%s'"
-			t.Errorf(
-				msg,
-				w.Result().Status,
-				testcase.expectedStatus,
-				http.StatusText(testcase.expectedStatus),
-				testcase.name,
-			)
-		}
-		assertError(w, t, testcase.name, testcase.expectedError)
-	}
+	testErrorHTTPResponse(t, testcases)
 }
 
 func TestMetadataHappyHTTPResponse(t *testing.T) {
@@ -477,8 +438,8 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 }
 
 func TestMetadataErrorHTTPResponse(t *testing.T) {
-	testcases := []metadataTest{
-		{
+	testcases := []endpointTest{
+		metadataTest{
 			baseTest{
 				name:           "Invalid json GET request",
 				method:         http.MethodGet,
@@ -487,7 +448,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 				expectedError:  "invalid character",
 			}, testMetadataRequest{},
 		},
-		{
+		metadataTest{
 			baseTest{
 				name:           "Invalid json POST request",
 				method:         http.MethodPost,
@@ -496,7 +457,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 				expectedError:  "invalid character",
 			}, testMetadataRequest{},
 		},
-		{
+		metadataTest{
 			baseTest{
 				name:           "Missing parameters GET request",
 				method:         http.MethodGet,
@@ -505,7 +466,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 				expectedError:  "Error:Field validation for 'Sas'",
 			}, testMetadataRequest{},
 		},
-		{
+		metadataTest{
 			baseTest{
 				name:           "Missing parameters POST Request",
 				method:         http.MethodPost,
@@ -514,7 +475,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 				expectedError:  "Error:Field validation for 'Vds'",
 			}, testMetadataRequest{},
 		},
-		{
+		metadataTest{
 			baseTest{
 				name:           "Request which passed all input checks but still should fail",
 				method:         http.MethodPost,
@@ -528,7 +489,10 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 			},
 		},
 	}
+	testErrorHTTPResponse(t, testcases)
+}
 
+func testErrorHTTPResponse(t *testing.T, testcases []endpointTest) {
 	for _, testcase := range testcases {
 		w := httptest.NewRecorder()
 		ctx, r := gin.CreateTestContext(w)
@@ -537,16 +501,14 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 		prepareRequest(ctx, t, testcase)
 		r.ServeHTTP(w, ctx.Request)
 
-		if w.Result().StatusCode != testcase.expectedStatus {
-			msg := "Got status %v; want %d %s in case '%s'"
-			t.Errorf(
-				msg,
-				w.Result().Status,
-				testcase.expectedStatus,
-				http.StatusText(testcase.expectedStatus),
-				testcase.name,
-			)
-		}
-		assertError(w, t, testcase.name, testcase.expectedError)
+		assert.Equalf(t, testcase.base().expectedStatus, w.Result().StatusCode,
+			"Test %v. Wrong response status.", testcase.base().name)
+
+		testErrorInfo := &testErrorResponse{}
+		err := json.Unmarshal(w.Body.Bytes(), testErrorInfo)
+		require.NoError(t, err, "Test '%v'. Couldn't unmarshal data.", testcase.base().name)
+
+		assert.Containsf(t, testErrorInfo.Error, testcase.base().expectedError,
+			"Test '%v'. Error string does not contain expected message.", testcase.base().name)
 	}
 }

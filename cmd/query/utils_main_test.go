@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -151,26 +150,6 @@ func setupTestServer(r *gin.Engine) {
 	}
 
 	setupApp(r, &endpoint, nil)
-}
-
-func assertError(w *httptest.ResponseRecorder, t *testing.T, test_name string,
-	expected_error string) {
-
-	testErrorInfo := &testErrorResponse{}
-	err := json.Unmarshal(w.Body.Bytes(), testErrorInfo)
-	if err != nil {
-		t.Fatalf("Couldn't unmarshal data")
-	}
-
-	if !strings.Contains(testErrorInfo.Error, expected_error) {
-		msg := "Got error string %s; want it to contain '%s' in case '%s'"
-		t.Errorf(
-			msg,
-			testErrorInfo.Error,
-			expected_error,
-			test_name,
-		)
-	}
 }
 
 func readMultipartData(t *testing.T, w *httptest.ResponseRecorder) [][]byte {
