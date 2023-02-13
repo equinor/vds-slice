@@ -18,18 +18,20 @@
 #include <OpenVDS/KnownMetadata.h>
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
+#include "boundingbox.h"
+
 using namespace std;
 
-void vdsbuffer_delete(struct vdsbuffer* buf) {
+void response_delete(struct response* buf) {
     if (!buf)
         return;
 
     delete[] buf->data;
     delete[] buf->err;
-    *buf = vdsbuffer {};
+    *buf = response {};
 }
 
-int axis_todim(axis ax) {
+int axis_todim(axis_name ax) {
     switch (ax) {
         case I:
         case INLINE:
@@ -48,7 +50,7 @@ int axis_todim(axis ax) {
     }
 }
 
-coordinate_system axis_tosystem(axis ax) {
+coordinate_system axis_tosystem(axis_name ax) {
     switch (ax) {
         case I:
         case J:
@@ -66,7 +68,7 @@ coordinate_system axis_tosystem(axis ax) {
     }
 }
 
-const std::string axis_tostring(axis ax) {
+const std::string axis_tostring(axis_name ax) {
     switch (ax) {
         case I:         return std::string( OpenVDS::KnownAxisNames::I()         );
         case J:         return std::string( OpenVDS::KnownAxisNames::J()         );
@@ -114,7 +116,7 @@ std::string vdsformat_tostring(OpenVDS::VolumeDataFormat format) {
  * E.g. a Time slice is only valid if the units of the Z-axis in the VDS is
  * "Seconds" or "Milliseconds"
  */
-bool unit_validation(axis ax, const char* zunit) {
+bool unit_validation(axis_name ax, const char* zunit) {
     /* Define some convenient lookup tables for units */
     static const std::array< const char*, 3 > depthunits = {
         OpenVDS::KnownUnitNames::Meter(),
@@ -164,7 +166,7 @@ bool unit_validation(axis ax, const char* zunit) {
  *
  * This function will return 0 if that's not the case
  */
-bool axis_order_validation(axis ax, const OpenVDS::VolumeDataLayout *layout) {
+bool axis_order_validation(axis_name ax, const OpenVDS::VolumeDataLayout *layout) {
     if (std::strcmp(layout->GetDimensionName(2), OpenVDS::KnownAxisNames::Inline())) {
         return false;
     }
@@ -190,7 +192,7 @@ bool axis_order_validation(axis ax, const OpenVDS::VolumeDataLayout *layout) {
 }
 
 
-void axis_validation(axis ax, const OpenVDS::VolumeDataLayout* layout) {
+void axis_validation(axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
     if (not axis_order_validation(ax, layout)) {
         std::string msg = "Unsupported axis ordering in VDS, expected ";
         msg += "Depth/Time/Sample, Crossline, Inline";
@@ -295,7 +297,7 @@ int lineno_index_to_voxel(
  * Convert target dimension/axis + lineno to VDS voxel coordinates.
  */
 void set_voxels(
-    axis ax,
+    axis_name ax,
     int dimension,
     int lineno,
     const OpenVDS::VolumeDataLayout *layout,
@@ -343,64 +345,6 @@ void set_voxels(
     }
 }
 
-
-class BoundingBox {
-public:
-    explicit BoundingBox(
-        const OpenVDS::VolumeDataLayout *layout
-    ) : layout(layout)
-    {
-        transformer = OpenVDS::IJKCoordinateTransformer(layout);
-    }
-
-    std::vector< std::pair<int, int> >       index()      noexcept (true);
-    std::vector< std::pair<int, int> >       annotation() noexcept (true);
-    std::vector< std::pair<double, double> > world()      noexcept (true);
-private:
-    OpenVDS::IJKCoordinateTransformer transformer;
-    const OpenVDS::VolumeDataLayout*  layout;
-};
-
-
-std::vector< std::pair<int, int> > BoundingBox::index() noexcept (true) {
-    auto ils = layout->GetDimensionNumSamples(2) - 1;
-    auto xls = layout->GetDimensionNumSamples(1) - 1;
-
-    return { {0, 0}, {ils, 0}, {ils, xls}, {0, xls} };
-}
-
-std::vector< std::pair<double, double> > BoundingBox::world() noexcept (true) {
-    std::vector< std::pair<double, double> > world_points;
-
-    auto points = this->index();
-    std::for_each(points.begin(), points.end(),
-        [&](const std::pair<int, int>& point) {
-            auto p = this->transformer.IJKIndexToWorld(
-                { point.first, point.second, 0 }
-            );
-            world_points.emplace_back(p[0], p[1]);
-        }
-    );
-
-    return world_points;
-};
-
-std::vector< std::pair<int, int> > BoundingBox::annotation() noexcept (true) {
-    auto points = this->index();
-    std::transform(points.begin(), points.end(), points.begin(),
-        [this](std::pair<int, int>& point) {
-            auto anno = this->transformer.IJKIndexToAnnotation({
-                point.first,
-                point.second,
-                0
-            });
-            return std::pair<int, int>{anno[0], anno[1]};
-        }
-    );
-
-    return points;
-};
-
 nlohmann::json json_axis(
     int voxel_dim,
     const OpenVDS::VolumeDataLayout *layout
@@ -429,10 +373,10 @@ OpenVDS::ScopedVDSHandle open_vds(
     return handle;
 }
 
-struct vdsbuffer fetch_slice(
+struct response fetch_slice(
     std::string url,
     std::string credentials,
-    axis ax,
+    axis_name ax,
     int lineno
 ) {
     auto handle = open_vds(url, credentials);
@@ -465,7 +409,7 @@ struct vdsbuffer fetch_slice(
 
     request.get()->WaitForCompletion();
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = size;
     buffer.data = data.get();
 
@@ -474,11 +418,10 @@ struct vdsbuffer fetch_slice(
     return buffer;
 }
 
-struct vdsbuffer fetch_slice_metadata(
+struct response fetch_slice_metadata(
     std::string url,
     std::string credentials,
-    axis ax,
-    int lineno
+    axis_name ax
 ) {
     auto handle = open_vds(url, credentials);
 
@@ -519,14 +462,14 @@ struct vdsbuffer fetch_slice_metadata(
     auto *data = new char[str.size()];
     std::copy(str.begin(), str.end(), data);
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = str.size();
     buffer.data = data;
 
     return buffer;
 }
 
-struct vdsbuffer fetch_fence(
+struct response fetch_fence(
     const std::string& url,
     const std::string& credentials,
     enum coordinate_system coordinate_system,
@@ -620,7 +563,7 @@ struct vdsbuffer fetch_fence(
         throw std::runtime_error(msg);
     }
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = size;
     buffer.data = data.get();
 
@@ -629,7 +572,7 @@ struct vdsbuffer fetch_fence(
     return buffer;
 }
 
-struct vdsbuffer fetch_fence_metadata(
+struct response fetch_fence_metadata(
     std::string url,
     std::string credentials,
     size_t npoints
@@ -649,14 +592,14 @@ struct vdsbuffer fetch_fence_metadata(
     auto *data = new char[str.size()];
     std::copy(str.begin(), str.end(), data);
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = str.size();
     buffer.data = data;
 
     return buffer;
 }
 
-struct vdsbuffer metadata(
+struct response metadata(
     const std::string& url,
     const std::string& credentials
 ) {
@@ -685,27 +628,27 @@ struct vdsbuffer metadata(
     auto *data = new char[str.size()];
     std::copy(str.begin(), str.end(), data);
 
-    vdsbuffer buffer{};
+    response buffer{};
     buffer.size = str.size();
     buffer.data = data;
 
     return buffer;
 }
 
-struct vdsbuffer handle_error(
+struct response handle_error(
     const std::exception& e
 ) {
-    vdsbuffer buf {};
+    response buf {};
     buf.err = new char[std::strlen(e.what()) + 1];
     std::strcpy(buf.err, e.what());
     return buf;
 }
 
-struct vdsbuffer slice(
+struct response slice(
     const char* vds,
     const char* credentials,
     int lineno,
-    axis ax
+    axis_name ax
 ) {
     std::string cube(vds);
     std::string cred(credentials);
@@ -717,23 +660,22 @@ struct vdsbuffer slice(
     }
 }
 
-struct vdsbuffer slice_metadata(
+struct response slice_metadata(
     const char* vds,
     const char* credentials,
-    int lineno,
-    axis ax
+    axis_name ax
 ) {
     std::string cube(vds);
     std::string cred(credentials);
 
     try {
-        return fetch_slice_metadata(cube, cred, ax, lineno);
+        return fetch_slice_metadata(cube, cred, ax);
     } catch (const std::exception& e) {
         return handle_error(e);
     }
 }
 
-struct vdsbuffer fence(
+struct response fence(
     const char* vds,
     const char* credentials,
     enum coordinate_system coordinate_system,
@@ -753,7 +695,7 @@ struct vdsbuffer fence(
     }
 }
 
-struct vdsbuffer fence_metadata(
+struct response fence_metadata(
     const char* vds,
     const char* credentials,
     size_t npoints
@@ -768,7 +710,7 @@ struct vdsbuffer fence_metadata(
     }
 }
 
-struct vdsbuffer metadata(
+struct response metadata(
     const char* vds,
     const char* credentials
 ) {

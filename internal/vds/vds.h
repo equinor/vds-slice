@@ -6,13 +6,13 @@
 extern "C" {
 #endif
 
-struct vdsbuffer {
+struct response {
     char*         data;
     char*         err;
     unsigned long size;
 };
 
-enum axis {
+enum axis_name {
     I         = 0,
     J         = 1,
     K         = 2,
@@ -37,26 +37,25 @@ enum interpolation_method {
     TRIANGULAR
 };
 
-struct vdsbuffer metadata(
+struct response metadata(
     const char* vds,
     const char* credentials
 );
 
-struct vdsbuffer slice(
+struct response slice(
     const char* vds,
     const char* credentials,
     int lineno,
-    enum axis direction
+    enum axis_name direction
 );
 
-struct vdsbuffer slice_metadata(
+struct response slice_metadata(
     const char* vds,
     const char* credentials,
-    int lineno,
-    enum axis direction
+    enum axis_name direction
 );
 
-struct vdsbuffer fence(
+struct response fence(
     const char* vds,
     const char* credentials,
     enum coordinate_system coordinate_system,
@@ -65,13 +64,13 @@ struct vdsbuffer fence(
     enum interpolation_method interpolation_method
 );
 
-struct vdsbuffer fence_metadata(
+struct response fence_metadata(
     const char* vds,
     const char* credentials,
     size_t npoints
 );
 
-void vdsbuffer_delete(struct vdsbuffer*);
+void response_delete(struct response*);
 
 
 #ifdef __cplusplus
