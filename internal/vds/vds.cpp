@@ -170,7 +170,7 @@ bool unit_validation(axis_name ax, const char* zunit) {
  *
  * This function will return 0 if that's not the case
  */
-bool axis_order_validation(axis_name ax, const OpenVDS::VolumeDataLayout *layout) {
+bool axis_order_validation(const OpenVDS::VolumeDataLayout *layout) {
     if (std::strcmp(layout->GetDimensionName(2), OpenVDS::KnownAxisNames::Inline())) {
         return false;
     }
@@ -197,7 +197,7 @@ bool axis_order_validation(axis_name ax, const OpenVDS::VolumeDataLayout *layout
 
 
 void axis_validation(axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
-    if (not axis_order_validation(ax, layout)) {
+    if (not axis_order_validation(layout)) {
         std::string msg = "Unsupported axis ordering in VDS, expected ";
         msg += "Depth/Time/Sample, Crossline, Inline";
         throw std::runtime_error(msg);
