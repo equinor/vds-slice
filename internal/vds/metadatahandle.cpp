@@ -86,3 +86,22 @@ std::string MetadataHandle::format() const noexcept (false) {
         }
     }
 }
+
+Axis const& MetadataHandle::get_axis(enum axis_name const name) const noexcept (false) {
+    switch (name) {
+        case I:
+        case INLINE:
+            return this->m_iline;
+        case J:
+        case CROSSLINE:
+            return this->m_xline;
+        case K:
+        case DEPTH:
+        case TIME:
+        case SAMPLE:
+            return this->m_sample;
+        default: {
+            throw std::runtime_error("Unhandled axis");
+        }
+    }
+}
