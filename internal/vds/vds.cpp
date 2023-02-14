@@ -103,17 +103,6 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
     }
 }
 
-std::string vdsformat_tostring(OpenVDS::VolumeDataFormat format) {
-    switch (format) {
-        case OpenVDS::VolumeDataFormat::Format_U8:  return "<u1";
-        case OpenVDS::VolumeDataFormat::Format_U16: return "<u2";
-        case OpenVDS::VolumeDataFormat::Format_R32: return "<f4";
-        default: {
-            throw std::runtime_error("unsupported VDS format type");
-        }
-    }
-}
-
 /*
  * Unit validation of Z-slices
  *
@@ -358,6 +347,7 @@ struct response fetch_slice(
 
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
+    MetadataHandle metadata(layout);
 
     dimension_validation(layout);
     const Axis axis = make_axis(layout, ax);
@@ -409,7 +399,7 @@ struct response fetch_slice_metadata(
     const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+    meta["format"] = metadata.format();
 
     /*
      * SEGYImport always writes annotation 'Sample' for axis K. We, on the
@@ -570,7 +560,7 @@ struct response fetch_fence_metadata(
     nlohmann::json meta;
     const Axis sample_axis = metadata.sample();
     meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+    meta["format"] = metadata.format();
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
@@ -596,7 +586,7 @@ struct response metadata(
     const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+    meta["format"] = metadata.format();
 
     meta["crs"] = metadata.crs();
 
