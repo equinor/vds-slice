@@ -414,9 +414,9 @@ struct response fetch_slice_metadata(
      * would be quite suprising for people that use this API in conjunction
      * with the OpenVDS library.
      */
-    const Axis inline_axis = make_axis(layout, axis_name::INLINE);
-    const Axis crossline_axis = make_axis(layout, axis_name::CROSSLINE);
-    const Axis sample_axis = make_axis(layout, axis_name::SAMPLE);
+    Axis const& inline_axis = metadata.iline();
+    Axis const& crossline_axis = metadata.xline();
+    Axis const& sample_axis = metadata.sample();
 
     if (ax == axis_name::I or ax == axis_name::INLINE) {
         meta["x"] = json_axis(sample_axis);
@@ -454,7 +454,7 @@ struct response fetch_fence(
 
     auto accessManager = OpenVDS::GetAccessManager(handle);
     auto const *layout = accessManager.GetVolumeDataLayout();
-
+    MetadataHandle const metadata(layout);
     dimension_validation(layout);
 
     unique_ptr< float[][OpenVDS::Dimensionality_Max] > coords(
@@ -476,8 +476,8 @@ struct response fetch_fence(
         }
     };
 
-    const Axis inline_axis = make_axis(layout, axis_name::INLINE);
-    const Axis crossline_axis = make_axis(layout, axis_name::CROSSLINE);
+    Axis const& inline_axis = metadata.iline();
+    Axis const& crossline_axis = metadata.xline();
 
     for (size_t i = 0; i < npoints; i++) {
         const float x = *(coordinates++);
@@ -596,13 +596,13 @@ struct response metadata(
     meta["boundingBox"]["ilxl"] = bbox.annotation();
 
 
-    const Axis inline_axis = make_axis(layout, axis_name::INLINE);
+    Axis const& inline_axis = metadata.iline();
     meta["axis"].push_back(json_axis(inline_axis));
 
-    const Axis crossline_axis = make_axis(layout, axis_name::CROSSLINE);
+    Axis const& crossline_axis = metadata.xline();
     meta["axis"].push_back(json_axis(crossline_axis));
 
-    const Axis sample_axis = make_axis(layout, axis_name::SAMPLE);
+    Axis const& sample_axis = metadata.sample();
     meta["axis"].push_back(json_axis(sample_axis));
 
     auto str = meta.dump();
