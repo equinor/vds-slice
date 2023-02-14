@@ -59,13 +59,13 @@ coordinate_system axis_tosystem(axis_name ax) {
         case I:
         case J:
         case K:
-            return INDEX;
+            return coordinate_system::INDEX;
         case INLINE:
         case CROSSLINE:
         case DEPTH:
         case TIME:
         case SAMPLE:
-            return ANNOTATION;
+            return coordinate_system::ANNOTATION;
         default: {
             throw std::runtime_error("Unhandled axis");
         }
