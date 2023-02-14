@@ -59,13 +59,13 @@ coordinate_system axis_tosystem(axis_name ax) {
         case I:
         case J:
         case K:
-            return INDEX;
+            return coordinate_system::INDEX;
         case INLINE:
         case CROSSLINE:
         case DEPTH:
         case TIME:
         case SAMPLE:
-            return ANNOTATION;
+            return coordinate_system::ANNOTATION;
         default: {
             throw std::runtime_error("Unhandled axis");
         }
@@ -290,7 +290,7 @@ void set_voxels(
     auto vdim   = axis.dimension();
     auto system = axis_tosystem(ax);
     switch (system) {
-        case ANNOTATION: {
+        case coordinate_system::ANNOTATION: {
             auto transformer = OpenVDS::IJKCoordinateTransformer(layout);
             if (not transformer.AnnotationsDefined()) {
                 throw std::runtime_error("VDS doesn't define annotations");
@@ -298,11 +298,11 @@ void set_voxels(
             voxelline = lineno_annotation_to_voxel(lineno, vdim, layout);
             break;
         }
-        case INDEX: {
+        case coordinate_system::INDEX: {
             voxelline = lineno_index_to_voxel(lineno, vdim, layout);
             break;
         }
-        case CDP: {
+        case coordinate_system::CDP: {
             break;
         }
         default: {
@@ -472,11 +472,11 @@ struct response fetch_fence(
     auto coordinate_transformer = OpenVDS::IJKCoordinateTransformer(layout);
     auto transform_coordinate = [&] (const float x, const float y) {
         switch (coordinate_system) {
-            case INDEX:
+            case coordinate_system::INDEX:
                 return OpenVDS::Vector<double, 3> {x, y, 0};
-            case ANNOTATION:
+            case coordinate_system::ANNOTATION:
                 return coordinate_transformer.AnnotationToIJKPosition({x, y, 0});
-            case CDP:
+            case coordinate_system::CDP:
                 return coordinate_transformer.WorldToIJKPosition({x, y, 0});
             default: {
                 throw std::runtime_error("Unhandled coordinate system");
