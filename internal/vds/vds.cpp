@@ -110,7 +110,7 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
  * E.g. a Time slice is only valid if the units of the Z-axis in the VDS is
  * "Seconds" or "Milliseconds"
  */
-bool unit_validation(axis_name ax, const char* zunit) {
+bool unit_validation(axis_name ax, std::string const& zunit) {
     /* Define some convenient lookup tables for units */
     static const std::array< const char*, 3 > depthunits = {
         OpenVDS::KnownUnitNames::Meter(),
@@ -128,7 +128,7 @@ bool unit_validation(axis_name ax, const char* zunit) {
     };
 
     auto isoneof = [zunit](const char* x) {
-        return !std::strcmp(x, zunit);
+        return !std::strcmp(x, zunit.c_str());
     };
 
     switch (ax) {
@@ -153,7 +153,7 @@ bool unit_validation(axis_name ax, const char* zunit) {
 void axis_validation(axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
     const Axis zaxis = make_axis(layout, ax);
     std::string zunit = zaxis.unit();
-    if (not unit_validation(ax, zunit.c_str())) {
+    if (not unit_validation(ax, zunit)) {
         std::string msg = "Unable to use " + axis_tostring(ax);
         msg += " on cube with depth units: " + zunit;
         throw std::runtime_error(msg);
