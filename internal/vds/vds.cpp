@@ -150,16 +150,6 @@ bool unit_validation(axis_name ax, std::string const& zunit) {
     }
 };
 
-void axis_validation(axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
-    const Axis zaxis = make_axis(layout, ax);
-    std::string zunit = zaxis.unit();
-    if (not unit_validation(ax, zunit)) {
-        std::string msg = "Unable to use " + axis_tostring(ax);
-        msg += " on cube with depth units: " + zunit;
-        throw std::runtime_error(msg);
-    }
-}
-
 int lineno_annotation_to_voxel(
     int lineno,
     int vdim,
@@ -299,7 +289,12 @@ struct response fetch_slice(
     MetadataHandle metadata(layout);
 
     const Axis axis = make_axis(layout, ax);
-    axis_validation(ax, layout);
+    std::string zunit = metadata.sample().unit();
+    if (not unit_validation(ax, zunit)) {
+        std::string msg = "Unable to use " + axis_tostring(ax);
+        msg += " on cube with depth units: " + zunit;
+        throw std::runtime_error(msg);
+    }
 
     int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
     int vmax[OpenVDS::Dimensionality_Max] = { 1, 1, 1, 1, 1, 1};
