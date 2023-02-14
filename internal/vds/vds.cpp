@@ -18,6 +18,7 @@
 #include <OpenVDS/KnownMetadata.h>
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
+#include "axis.h"
 #include "boundingbox.h"
 
 using namespace std;
@@ -31,19 +32,22 @@ void response_delete(struct response* buf) {
     *buf = response {};
 }
 
-int axis_todim(axis_name ax) {
-    switch (ax) {
+Axis make_axis(
+    OpenVDS::VolumeDataLayout const * const layout,
+    axis_name name
+) {
+    switch (name) {
         case I:
         case INLINE:
-            return 0;
+            return Axis(layout, 2);
         case J:
         case CROSSLINE:
-            return 1;
+            return Axis(layout, 1);
         case K:
         case DEPTH:
         case TIME:
         case SAMPLE:
-            return 2;
+            return Axis(layout, 0);
         default: {
             throw std::runtime_error("Unhandled axis");
         }
@@ -199,11 +203,11 @@ void axis_validation(axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
         throw std::runtime_error(msg);
     }
 
-    auto zaxis = layout->GetAxisDescriptor(0);
-    const char* zunit = zaxis.GetUnit();
-    if (not unit_validation(ax, zunit)) {
+    const Axis zaxis = make_axis(layout, ax);
+    std::string zunit = zaxis.unit();
+    if (not unit_validation(ax, zunit.c_str())) {
         std::string msg = "Unable to use " + axis_tostring(ax);
-        msg += " on cube with depth units: " + std::string(zunit);
+        msg += " on cube with depth units: " + zunit;
         throw std::runtime_error(msg);
     }
 }
@@ -214,36 +218,6 @@ void dimension_validation(const OpenVDS::VolumeDataLayout* layout) {
             "Unsupported VDS, expected 3 dimensions, got " +
             std::to_string(layout->GetDimensionality())
         );
-    }
-}
-
-int dim_tovoxel(int dimension) {
-    /*
-     * For now assume that the axis order is always depth/time/sample,
-     * crossline, inline. This should be checked elsewhere.
-     */
-    switch (dimension) {
-        case 0: return 2;
-        case 1: return 1;
-        case 2: return 0;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-int voxel_todim(int voxel) {
-    /*
-     * For now assume that the axis order is always depth/time/sample,
-     * crossline, inline. This should be checked elsewhere.
-     */
-    switch (voxel) {
-        case 0: return 2;
-        case 1: return 1;
-        case 2: return 0;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
     }
 }
 
@@ -298,7 +272,7 @@ int lineno_index_to_voxel(
  */
 void set_voxels(
     axis_name ax,
-    int dimension,
+    Axis const& axis,
     int lineno,
     const OpenVDS::VolumeDataLayout *layout,
     int (&voxelmin)[OpenVDS::VolumeDataLayout::Dimensionality_Max],
@@ -312,7 +286,8 @@ void set_voxels(
     };
 
     int voxelline;
-    auto vdim   = dim_tovoxel(dimension);
+
+    auto vdim   = axis.dimension();
     auto system = axis_tosystem(ax);
     switch (system) {
         case ANNOTATION: {
@@ -346,16 +321,15 @@ void set_voxels(
 }
 
 nlohmann::json json_axis(
-    int voxel_dim,
-    const OpenVDS::VolumeDataLayout *layout
+    const Axis& axis
 ) {
     nlohmann::json doc;
     doc = {
-        { "annotation", layout->GetDimensionName(voxel_dim)       },
-        { "min",        layout->GetDimensionMin(voxel_dim)        },
-        { "max",        layout->GetDimensionMax(voxel_dim)        },
-        { "samples",    layout->GetDimensionNumSamples(voxel_dim) },
-        { "unit",       layout->GetDimensionUnit(voxel_dim)       },
+        { "annotation", axis.name()     },
+        { "min",        axis.min()      },
+        { "max",        axis.max()      },
+        { "samples",    axis.nsamples() },
+        { "unit",       axis.unit()     },
     };
     return doc;
 }
@@ -385,12 +359,13 @@ struct response fetch_slice(
     auto const *layout = access.GetVolumeDataLayout();
 
     dimension_validation(layout);
+    const Axis axis = make_axis(layout, ax);
     axis_validation(ax, layout);
 
     int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
     int vmax[OpenVDS::Dimensionality_Max] = { 1, 1, 1, 1, 1, 1};
-    auto dimension = axis_todim(ax);
-    set_voxels(ax, dimension, lineno, layout, vmin, vmax);
+
+    set_voxels(ax, axis, lineno, layout, vmin, vmax);
 
     auto format = layout->GetChannelFormat(0);
     auto size = access.GetVolumeSubsetBufferSize(vmin, vmax, format, 0, 0);
@@ -431,9 +406,6 @@ struct response fetch_slice_metadata(
     dimension_validation(layout);
     axis_validation(ax, layout);
 
-    auto dimension = axis_todim(ax);
-    auto vdim = dim_tovoxel(dimension);
-
     nlohmann::json meta;
     meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
 
@@ -450,13 +422,22 @@ struct response fetch_slice_metadata(
      * would be quite suprising for people that use this API in conjunction
      * with the OpenVDS library.
      */
-    std::vector< int > dims;
-    for (int i = 0; i < 3; ++i) {
-        if (i == vdim) continue;
-        dims.push_back(i);
+    const Axis inline_axis = make_axis(layout, axis_name::INLINE);
+    const Axis crossline_axis = make_axis(layout, axis_name::CROSSLINE);
+    const Axis sample_axis = make_axis(layout, axis_name::SAMPLE);
+
+    if (ax == axis_name::I or ax == axis_name::INLINE) {
+        meta["x"] = json_axis(sample_axis);
+        meta["y"] = json_axis(crossline_axis);
     }
-    meta["x"] = json_axis(dims[0], layout);
-    meta["y"] = json_axis(dims[1], layout);
+    else if (ax == axis_name::J or ax == axis_name::CROSSLINE) {
+        meta["x"] = json_axis(sample_axis);
+        meta["y"] = json_axis(inline_axis);
+    }
+    else {
+        meta["x"] = json_axis(crossline_axis);
+        meta["y"] = json_axis(inline_axis);
+    }
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
@@ -484,9 +465,6 @@ struct response fetch_fence(
 
     dimension_validation(layout);
 
-    const auto dimension_map =
-            layout->GetVDSIJKGridDefinitionFromMetadata().dimensionMap;
-
     unique_ptr< float[][OpenVDS::Dimensionality_Max] > coords(
         new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
     );
@@ -506,16 +484,18 @@ struct response fetch_fence(
         }
     };
 
+    const Axis inline_axis = make_axis(layout, axis_name::INLINE);
+    const Axis crossline_axis = make_axis(layout, axis_name::CROSSLINE);
+
     for (size_t i = 0; i < npoints; i++) {
         const float x = *(coordinates++);
         const float y = *(coordinates++);
 
         auto coordinate = transform_coordinate(x, y);
 
-        auto validate_boundary = [&] (const int voxel) {
+        auto validate_boundary = [&] (const int voxel, const Axis& axis) {
             const auto min = -0.5;
-            const auto max = layout->GetDimensionNumSamples(voxel_todim(voxel))
-                            - 0.5;
+            const auto max = axis.nsamples() - 0.5;
             if(coordinate[voxel] < min || coordinate[voxel] >= max) {
                 const std::string coordinate_str =
                     "(" +std::to_string(x) + "," + std::to_string(y) + ")";
@@ -526,8 +506,8 @@ struct response fetch_fence(
             }
         };
 
-        validate_boundary(0);
-        validate_boundary(1);
+        validate_boundary(0, inline_axis);
+        validate_boundary(1, crossline_axis);
 
         /* openvds uses rounding down for Nearest interpolation.
          * As it is counterintuitive, we fix it by snapping to nearest index
@@ -538,8 +518,8 @@ struct response fetch_fence(
             coordinate[1] = std::round(coordinate[1] + 1) - 1;
         }
 
-        coords[i][dimension_map[0]] = coordinate[0];
-        coords[i][dimension_map[1]] = coordinate[1];
+        coords[i][   inline_axis.dimension()] = coordinate[0];
+        coords[i][crossline_axis.dimension()] = coordinate[1];
     }
 
     // TODO: Verify that trace dimension is always 0
@@ -621,9 +601,16 @@ struct response metadata(
     meta["boundingBox"]["cdp"]  = bbox.world();
     meta["boundingBox"]["ilxl"] = bbox.annotation();
 
-    for (int i = 2; i >= 0 ; i--) {
-        meta["axis"].push_back(json_axis(i, layout));
-    }
+
+    const Axis inline_axis = make_axis(layout, axis_name::INLINE);
+    meta["axis"].push_back(json_axis(inline_axis));
+
+    const Axis crossline_axis = make_axis(layout, axis_name::CROSSLINE);
+    meta["axis"].push_back(json_axis(crossline_axis));
+
+    const Axis sample_axis = make_axis(layout, axis_name::SAMPLE);
+    meta["axis"].push_back(json_axis(sample_axis));
+
     auto str = meta.dump();
     auto *data = new char[str.size()];
     std::copy(str.begin(), str.end(), data);
