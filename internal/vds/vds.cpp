@@ -20,6 +20,7 @@
 
 #include "axis.hpp"
 #include "boundingbox.h"
+#include "metadatahandle.hpp"
 
 using namespace std;
 
@@ -405,6 +406,7 @@ struct response fetch_slice_metadata(
 
     dimension_validation(layout);
     axis_validation(ax, layout);
+    const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
     meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
@@ -563,9 +565,11 @@ struct response fetch_fence_metadata(
     auto const *layout = access.GetVolumeDataLayout();
 
     dimension_validation(layout);
+    const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
-    meta["shape"] = nlohmann::json::array({npoints, layout->GetDimensionNumSamples(0)});
+    const Axis sample_axis = metadata.sample();
+    meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
     meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
 
     auto str = meta.dump();
@@ -589,14 +593,14 @@ struct response metadata(
     const auto *layout = access.GetVolumeDataLayout();
 
     dimension_validation(layout);
+    const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
     meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
 
-    auto crs = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
-    meta["crs"] = layout->GetMetadataString(crs.GetCategory(), crs.GetName());
+    meta["crs"] = metadata.crs();
 
-    auto bbox = BoundingBox(layout);
+    auto bbox = metadata.bounding_box();
     meta["boundingBox"]["ij"]   = bbox.index();
     meta["boundingBox"]["cdp"]  = bbox.world();
     meta["boundingBox"]["ilxl"] = bbox.annotation();
