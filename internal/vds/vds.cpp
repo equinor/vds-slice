@@ -33,28 +33,6 @@ void response_delete(struct response* buf) {
     *buf = response {};
 }
 
-Axis make_axis(
-    OpenVDS::VolumeDataLayout const * const layout,
-    axis_name name
-) {
-    switch (name) {
-        case I:
-        case INLINE:
-            return Axis(layout, 2);
-        case J:
-        case CROSSLINE:
-            return Axis(layout, 1);
-        case K:
-        case DEPTH:
-        case TIME:
-        case SAMPLE:
-            return Axis(layout, 0);
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
 coordinate_system axis_tosystem(axis_name ax) {
     switch (ax) {
         case I:
@@ -288,7 +266,7 @@ struct response fetch_slice(
     auto const *layout = access.GetVolumeDataLayout();
     MetadataHandle metadata(layout);
 
-    const Axis axis = make_axis(layout, ax);
+    const Axis axis = metadata.get_axis(ax);
     std::string zunit = metadata.sample().unit();
     if (not unit_validation(ax, zunit)) {
         std::string msg = "Unable to use " + axis_tostring(ax);
