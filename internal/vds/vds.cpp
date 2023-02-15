@@ -121,12 +121,11 @@ int lineno_annotation_to_voxel(
 
 int lineno_index_to_voxel(
     int lineno,
-    int vdim,
-    const OpenVDS::VolumeDataLayout *layout
+    Axis const& axis
 ) {
     /* Line-numbers in IJK match Voxel - do bound checking and return*/
     int min = 0;
-    int max = layout->GetDimensionNumSamples(vdim) - 1;
+    int max = axis.nsamples() - 1;
 
     if (lineno < min || lineno > max) {
         throw std::runtime_error(
@@ -168,7 +167,7 @@ void set_voxels(
             break;
         }
         case INDEX: {
-            voxelline = lineno_index_to_voxel(lineno, vdim, layout);
+            voxelline = lineno_index_to_voxel(lineno, axis);
             break;
         }
         case CDP: {
