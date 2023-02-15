@@ -144,13 +144,13 @@ int lineno_index_to_voxel(
  * Convert target dimension/axis + lineno to VDS voxel coordinates.
  */
 void set_voxels(
-    Direction const direction,
+    enum coordinate_system const coordinate_system,
     Axis const& axis,
     int lineno,
     SubVolume& subvolume
 ) {
     int voxelline;
-    switch (direction.coordinate_system()) {
+    switch (coordinate_system) {
         case ANNOTATION: {
             voxelline = lineno_annotation_to_voxel(lineno, axis);
             break;
@@ -216,7 +216,7 @@ struct response fetch_slice(
     }
 
     SubVolume subvolume(metadata);
-    set_voxels(direction, axis, lineno, subvolume);
+    set_voxels(direction.coordinate_system(), axis, lineno, subvolume);
 
     auto format = layout->GetChannelFormat(0);
     auto size = access.GetVolumeSubsetBufferSize(
