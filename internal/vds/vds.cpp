@@ -165,10 +165,6 @@ void set_voxels(
     auto system = direction.coordinate_system();
     switch (system) {
         case ANNOTATION: {
-            auto transformer = OpenVDS::IJKCoordinateTransformer(layout);
-            if (not transformer.AnnotationsDefined()) {
-                throw std::runtime_error("VDS doesn't define annotations");
-            }
             voxelline = lineno_annotation_to_voxel(lineno, vdim, layout);
             break;
         }
