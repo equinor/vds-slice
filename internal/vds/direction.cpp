@@ -43,3 +43,35 @@ std::string Direction::to_string() const noexcept(false) {
 enum axis_name Direction::name() const noexcept(true) {
     return this->m_axis_name;
 }
+
+bool Direction::is_iline() const noexcept (true) {
+    switch (this->name()) {
+        case I: // fallthrough
+        case INLINE:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool Direction::is_xline() const noexcept (true) {
+    switch (this->name()) {
+        case J: // fallthrough
+        case CROSSLINE:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool Direction::is_sample() const noexcept (true) {
+    switch (this->name()) {
+        case K:     // fallthrough
+        case DEPTH: // fallthrough
+        case TIME:  // fallthrough
+        case SAMPLE:
+            return true;
+        default:
+            return false;
+    }
+}
