@@ -97,13 +97,12 @@ bool unit_validation(axis_name ax, std::string const& zunit) {
 
 int lineno_annotation_to_voxel(
     int lineno,
-    int vdim,
-    const OpenVDS::VolumeDataLayout *layout
+    Axis const& axis
 ) {
     /* Assume that annotation coordinates are integers */
-    int min      = layout->GetDimensionMin(vdim);
-    int max      = layout->GetDimensionMax(vdim);
-    int nsamples = layout->GetDimensionNumSamples(vdim);
+    int min      = axis.min();
+    int max      = axis.max();
+    int nsamples = axis.nsamples();
 
     auto stride = (max - min) / (nsamples - 1);
 
@@ -165,7 +164,7 @@ void set_voxels(
     auto system = direction.coordinate_system();
     switch (system) {
         case ANNOTATION: {
-            voxelline = lineno_annotation_to_voxel(lineno, vdim, layout);
+            voxelline = lineno_annotation_to_voxel(lineno, axis);
             break;
         }
         case INDEX: {
