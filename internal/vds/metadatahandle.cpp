@@ -8,6 +8,7 @@
 
 #include "axis.hpp"
 #include "boundingbox.h"
+#include "direction.hpp"
 
 MetadataHandle::MetadataHandle(OpenVDS::VolumeDataLayout const * const layout)
     : m_layout(layout),
@@ -87,21 +88,12 @@ std::string MetadataHandle::format() const noexcept (false) {
     }
 }
 
-Axis const& MetadataHandle::get_axis(enum axis_name const name) const noexcept (false) {
-    switch (name) {
-        case I:
-        case INLINE:
-            return this->m_iline;
-        case J:
-        case CROSSLINE:
-            return this->m_xline;
-        case K:
-        case DEPTH:
-        case TIME:
-        case SAMPLE:
-            return this->m_sample;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
+Axis const& MetadataHandle::get_axis(
+    Direction const direction
+) const noexcept (false) {
+    if      (direction.is_iline())  return this->iline();
+    else if (direction.is_xline())  return this->xline();
+    else if (direction.is_sample()) return this->sample();
+
+    throw std::runtime_error("Unhandled axis");
 }

@@ -7,6 +7,7 @@
 
 #include "axis.hpp"
 #include "boundingbox.h"
+#include "direction.hpp"
 
 class MetadataHandle {
 public:
@@ -20,7 +21,7 @@ public:
     std::string crs()          const noexcept (true);
     std::string format()       const noexcept (false);
 
-    Axis const& get_axis(enum axis_name const name) const noexcept (false);
+    Axis const& get_axis(Direction const direction) const noexcept (false);
 private:
     OpenVDS::VolumeDataLayout const * const m_layout;
 

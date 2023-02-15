@@ -233,7 +233,7 @@ struct response fetch_slice(
     auto const *layout = access.GetVolumeDataLayout();
     MetadataHandle metadata(layout);
 
-    const Axis axis = metadata.get_axis(direction.name());
+    const Axis axis = metadata.get_axis(direction);
     std::string zunit = metadata.sample().unit();
     if (not unit_validation(direction.name(), zunit)) {
         std::string msg = "Unable to use " + direction.to_string();
@@ -304,18 +304,17 @@ struct response fetch_slice_metadata(
     Axis const& crossline_axis = metadata.xline();
     Axis const& sample_axis = metadata.sample();
 
-    axis_name const name = direction.name();
-    if (name == axis_name::I or name == axis_name::INLINE) {
+    if (direction.is_iline()) {
         meta["x"] = json_axis(sample_axis);
         meta["y"] = json_axis(crossline_axis);
-    }
-    else if (name == axis_name::J or name == axis_name::CROSSLINE) {
+    } else if (direction.is_xline()) {
         meta["x"] = json_axis(sample_axis);
         meta["y"] = json_axis(inline_axis);
-    }
-    else {
+    } else if (direction.is_sample()) {
         meta["x"] = json_axis(crossline_axis);
         meta["y"] = json_axis(inline_axis);
+    } else {
+        throw std::runtime_error("Unhandled direction");
     }
 
     auto str = meta.dump();
