@@ -3,7 +3,9 @@
 
 #include <OpenVDS/OpenVDS.h>
 
+#include "axis.hpp"
 #include "metadatahandle.hpp"
+#include "vds.h"
 
 struct SubVolume {
     struct {
@@ -11,15 +13,13 @@ struct SubVolume {
         int upper[OpenVDS::VolumeDataLayout::Dimensionality_Max]{1, 1, 1, 1, 1, 1};
     } bounds;
 
-    SubVolume(MetadataHandle const& metadata) {
-        auto const& iline  = metadata.iline();
-        auto const& xline  = metadata.xline();
-        auto const& sample = metadata.sample();
+    SubVolume(MetadataHandle const& metadata);
 
-        this->bounds.upper[iline.dimension() ] = iline.nsamples();
-        this->bounds.upper[xline.dimension() ] = xline.nsamples();
-        this->bounds.upper[sample.dimension()] = sample.nsamples();
-    }
+    void set_slice(
+        Axis const&                  axis,
+        int const                    lineno,
+        enum coordinate_system const coordinate_system
+    );
 };
 
 #endif /* VDS_SLICE_SUBVOLUME_HPP */
