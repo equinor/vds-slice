@@ -1,4 +1,4 @@
-#include "boundingbox.h"
+#include "boundingbox.hpp"
 
 std::vector< std::pair<int, int> > BoundingBox::index() noexcept (true) {
     int const ils = this->m_nilines - 1;

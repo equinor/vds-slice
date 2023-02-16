@@ -19,7 +19,7 @@
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
 #include "axis.hpp"
-#include "boundingbox.h"
+#include "boundingbox.hpp"
 #include "datahandle.hpp"
 #include "direction.hpp"
 #include "metadatahandle.hpp"

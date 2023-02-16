@@ -7,7 +7,7 @@
 #include <OpenVDS/KnownMetadata.h>
 
 #include "axis.hpp"
-#include "boundingbox.h"
+#include "boundingbox.hpp"
 #include "direction.hpp"
 
 MetadataHandle::MetadataHandle(OpenVDS::VolumeDataLayout const * const layout)

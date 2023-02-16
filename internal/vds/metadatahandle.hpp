@@ -6,7 +6,7 @@
 #include <OpenVDS/OpenVDS.h>
 
 #include "axis.hpp"
-#include "boundingbox.h"
+#include "boundingbox.hpp"
 #include "direction.hpp"
 
 class MetadataHandle {

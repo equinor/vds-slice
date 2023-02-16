@@ -1,5 +1,5 @@
-#ifndef BOUNDINGBOX_H
-#define BOUNDINGBOX_H
+#ifndef VDS_SLICE_BOUNDINGBOX_HPP
+#define VDS_SLICE_BOUNDINGBOX_HPP
 
 #include <utility>
 #include <vector>
@@ -25,4 +25,4 @@ private:
     OpenVDS::IJKCoordinateTransformer m_transformer;
 };
 
-#endif /* BOUNDINGBOX_H */
+#endif /* VDS_SLICE_BOUNDINGBOX_HPP */
