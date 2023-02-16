@@ -202,15 +202,6 @@ void axis_validation(axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
     }
 }
 
-void dimension_validation(const OpenVDS::VolumeDataLayout* layout) {
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
-}
-
 int lineno_annotation_to_voxel(
     int lineno,
     int vdim,
@@ -349,7 +340,6 @@ struct response fetch_slice(
     auto const *layout = access.GetVolumeDataLayout();
     MetadataHandle metadata(layout);
 
-    dimension_validation(layout);
     const Axis axis = make_axis(layout, ax);
     axis_validation(ax, layout);
 
@@ -394,9 +384,8 @@ struct response fetch_slice_metadata(
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
 
-    dimension_validation(layout);
-    axis_validation(ax, layout);
     const MetadataHandle metadata(layout);
+    axis_validation(ax, layout);
 
     nlohmann::json meta;
     meta["format"] = metadata.format();
@@ -455,7 +444,6 @@ struct response fetch_fence(
     auto accessManager = OpenVDS::GetAccessManager(handle);
     auto const *layout = accessManager.GetVolumeDataLayout();
     MetadataHandle const metadata(layout);
-    dimension_validation(layout);
 
     unique_ptr< float[][OpenVDS::Dimensionality_Max] > coords(
         new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
@@ -553,8 +541,6 @@ struct response fetch_fence_metadata(
 
     auto access = OpenVDS::GetAccessManager(handle);
     auto const *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
     const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
@@ -581,8 +567,6 @@ struct response metadata(
 
     auto access = OpenVDS::GetAccessManager(handle);
     const auto *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
     const MetadataHandle metadata(layout);
 
     nlohmann::json meta;
