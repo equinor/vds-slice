@@ -20,6 +20,7 @@
 
 #include "axis.hpp"
 #include "boundingbox.h"
+#include "datahandle.hpp"
 #include "direction.hpp"
 #include "metadatahandle.hpp"
 #include "subvolume.hpp"
@@ -129,11 +130,8 @@ struct response fetch_slice(
     Direction const direction,
     int lineno
 ) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    auto const *layout = access.GetVolumeDataLayout();
-    MetadataHandle metadata(layout);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
     const Axis axis = metadata.get_axis(direction);
     std::string zunit = metadata.sample().unit();
@@ -143,31 +141,13 @@ struct response fetch_slice(
         throw std::runtime_error(msg);
     }
 
-    SubVolume subvolume(metadata);
-    subvolume.set_slice(axis, lineno, direction.coordinate_system());
+    SubVolume bounds(metadata);
+    bounds.set_slice(axis, lineno, direction.coordinate_system());
 
-    auto format = layout->GetChannelFormat(0);
-    auto size = access.GetVolumeSubsetBufferSize(
-        subvolume.bounds.lower,
-        subvolume.bounds.upper,
-        format,
-        0,
-        0
-    );
+    std::int64_t const size = handle.subvolume_buffer_size(bounds);
 
     std::unique_ptr< char[] > data(new char[size]());
-    auto request = access.RequestVolumeSubset(
-        data.get(),
-        size,
-        OpenVDS::Dimensions_012,
-        0,
-        0,
-        subvolume.bounds.lower,
-        subvolume.bounds.upper,
-        format
-    );
-
-    request.get()->WaitForCompletion();
+    handle.read_subvolume(data.get(), size, bounds);
 
     response buffer{};
     buffer.size = size;
