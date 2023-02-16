@@ -232,7 +232,7 @@ struct response fetch_fence(
         new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
     );
 
-    auto coordinate_transformer = OpenVDS::IJKCoordinateTransformer(layout);
+    auto coordinate_transformer = metadata.coordinate_transformer();
     auto transform_coordinate = [&] (const float x, const float y) {
         switch (coordinate_system) {
             case INDEX:
