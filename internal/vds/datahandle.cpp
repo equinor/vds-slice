@@ -82,8 +82,8 @@ void DataHandle::read_subvolume(
 }
 
 std::int64_t DataHandle::traces_buffer_size(std::size_t const ntraces) noexcept (false) {
-    // TODO: Verify that trace dimension is always 0
-    return this->m_access_manager.GetVolumeTracesBufferSize(ntraces, 0);
+    int const dimension = this->get_metadata().sample().dimension();
+    return this->m_access_manager.GetVolumeTracesBufferSize(ntraces, dimension);
 }
 
 void DataHandle::read_traces(
@@ -93,6 +93,8 @@ void DataHandle::read_traces(
     std::size_t const               ntraces,
     enum interpolation_method const interpolation_method
 ) noexcept (false) {
+    int const dimension = this->get_metadata().sample().dimension();
+
     auto request = this->m_access_manager.RequestVolumeTraces(
         (float*)buffer,
         size,
@@ -100,7 +102,7 @@ void DataHandle::read_traces(
         coordinates,
         ntraces,
         ::to_interpolation(interpolation_method),
-        0
+        dimension
     );
     bool const success = request.get()->WaitForCompletion();
 
