@@ -22,6 +22,7 @@
 #include "boundingbox.h"
 #include "direction.hpp"
 #include "metadatahandle.hpp"
+#include "subvolume.hpp"
 
 using namespace std;
 
@@ -146,22 +147,10 @@ void set_voxels(
     Direction const direction,
     Axis const& axis,
     int lineno,
-    const OpenVDS::VolumeDataLayout *layout,
-    int (&voxelmin)[OpenVDS::VolumeDataLayout::Dimensionality_Max],
-    int (&voxelmax)[OpenVDS::VolumeDataLayout::Dimensionality_Max]
+    SubVolume& subvolume
 ) {
-    auto vmin = OpenVDS::IntVector3 { 0, 0, 0 };
-    auto vmax = OpenVDS::IntVector3 {
-        layout->GetDimensionNumSamples(0),
-        layout->GetDimensionNumSamples(1),
-        layout->GetDimensionNumSamples(2)
-    };
-
     int voxelline;
-
-    auto vdim   = axis.dimension();
-    auto system = direction.coordinate_system();
-    switch (system) {
+    switch (direction.coordinate_system()) {
         case ANNOTATION: {
             voxelline = lineno_annotation_to_voxel(lineno, axis);
             break;
@@ -175,14 +164,8 @@ void set_voxels(
         }
     }
 
-    vmin[vdim] = voxelline;
-    vmax[vdim] = voxelline + 1;
-
-    /* Commit */
-    for (int i = 0; i < 3; i++) {
-        voxelmin[i] = vmin[i];
-        voxelmax[i] = vmax[i];
-    }
+    subvolume.bounds.lower[axis.dimension()] = voxelline;
+    subvolume.bounds.upper[axis.dimension()] = voxelline + 1;
 }
 
 nlohmann::json json_axis(
@@ -232,13 +215,17 @@ struct response fetch_slice(
         throw std::runtime_error(msg);
     }
 
-    int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
-    int vmax[OpenVDS::Dimensionality_Max] = { 1, 1, 1, 1, 1, 1};
-
-    set_voxels(direction, axis, lineno, layout, vmin, vmax);
+    SubVolume subvolume(metadata);
+    set_voxels(direction, axis, lineno, subvolume);
 
     auto format = layout->GetChannelFormat(0);
-    auto size = access.GetVolumeSubsetBufferSize(vmin, vmax, format, 0, 0);
+    auto size = access.GetVolumeSubsetBufferSize(
+        subvolume.bounds.lower,
+        subvolume.bounds.upper,
+        format,
+        0,
+        0
+    );
 
     std::unique_ptr< char[] > data(new char[size]());
     auto request = access.RequestVolumeSubset(
@@ -247,8 +234,8 @@ struct response fetch_slice(
         OpenVDS::Dimensions_012,
         0,
         0,
-        vmin,
-        vmax,
+        subvolume.bounds.lower,
+        subvolume.bounds.upper,
         format
     );
 
