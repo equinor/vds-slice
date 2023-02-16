@@ -111,8 +111,7 @@ void DataHandle::read_traces(
     );
     bool const success = request.get()->WaitForCompletion();
 
-    if(!success) {
-        const auto msg = "Failed to fetch fence from VDS";
-        throw std::runtime_error(msg);
+    if (!success) {
+        throw std::runtime_error("Failed to read from VDS.");
     }
 }
