@@ -97,19 +97,6 @@ nlohmann::json json_axis(
     return doc;
 }
 
-OpenVDS::ScopedVDSHandle open_vds(
-    std::string url,
-    std::string credentials
-){
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
-
-    if(error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
-    return handle;
-}
-
 struct response fetch_slice(
     std::string url,
     std::string credentials,
@@ -149,12 +136,8 @@ struct response fetch_slice_metadata(
     std::string credentials,
     Direction const direction
 ) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    auto const *layout = access.GetVolumeDataLayout();
-
-    const MetadataHandle metadata(layout);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
     meta["format"] = metadata.format();
@@ -294,11 +277,8 @@ struct response fetch_fence_metadata(
     std::string credentials,
     size_t npoints
 ) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    auto const *layout = access.GetVolumeDataLayout();
-    const MetadataHandle metadata(layout);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
     const Axis sample_axis = metadata.sample();
@@ -320,11 +300,8 @@ struct response metadata(
     const std::string& url,
     const std::string& credentials
 ) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    const auto *layout = access.GetVolumeDataLayout();
-    const MetadataHandle metadata(layout);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
     meta["format"] = metadata.format();
