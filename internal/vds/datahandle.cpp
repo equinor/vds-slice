@@ -53,8 +53,8 @@ std::int64_t DataHandle::subvolume_buffer_size(
         subvolume.bounds.lower,
         subvolume.bounds.upper,
         format,
-        0,
-        0
+        DataHandle::lod_level,
+        DataHandle::channel
     );
 
     return size;
@@ -71,8 +71,8 @@ void DataHandle::read_subvolume(
         buffer,
         size,
         OpenVDS::Dimensions_012,
-        0,
-        0,
+        DataHandle::lod_level,
+        DataHandle::channel,
         subvolume.bounds.lower,
         subvolume.bounds.upper,
         format
@@ -98,7 +98,9 @@ void DataHandle::read_traces(
     auto request = this->m_access_manager.RequestVolumeTraces(
         (float*)buffer,
         size,
-        OpenVDS::Dimensions_012, 0, 0,
+        OpenVDS::Dimensions_012,
+        DataHandle::lod_level,
+        DataHandle::channel,
         coordinates,
         ntraces,
         ::to_interpolation(interpolation_method),
