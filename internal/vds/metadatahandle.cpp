@@ -6,6 +6,9 @@
 
 #include <OpenVDS/KnownMetadata.h>
 
+#include "axis.hpp"
+#include "boundingbox.h"
+
 Axis const& MetadataHandle::iline() const noexcept (true) {
     return this->m_iline;
 }
