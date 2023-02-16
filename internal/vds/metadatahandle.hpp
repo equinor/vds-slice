@@ -10,12 +10,7 @@
 
 class MetadataHandle {
 public:
-    MetadataHandle(OpenVDS::VolumeDataLayout const * const layout)
-        : m_layout(layout),
-          m_iline( Axis(layout, 2)),
-          m_xline( Axis(layout, 1)),
-          m_sample(Axis(layout, 0))
-    {}
+    MetadataHandle(OpenVDS::VolumeDataLayout const * const layout);
 
     Axis const& iline()  const noexcept (true);
     Axis const& xline()  const noexcept (true);
@@ -30,6 +25,8 @@ private:
     Axis const m_iline;
     Axis const m_xline;
     Axis const m_sample;
+
+    void dimension_validation() const;
 };
 
 #endif /* VDS_SLICE_METADATAHANDLE_HPP */

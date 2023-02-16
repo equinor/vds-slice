@@ -9,6 +9,24 @@
 #include "axis.hpp"
 #include "boundingbox.h"
 
+MetadataHandle::MetadataHandle(OpenVDS::VolumeDataLayout const * const layout)
+    : m_layout(layout),
+      m_iline( Axis(layout, 2)),
+      m_xline( Axis(layout, 1)),
+      m_sample(Axis(layout, 0))
+{
+    this->dimension_validation();
+}
+
+void MetadataHandle::dimension_validation() const {
+    if (this->m_layout->GetDimensionality() != 3) {
+        throw std::runtime_error(
+            "Unsupported VDS, expected 3 dimensions, got " +
+            std::to_string(this->m_layout->GetDimensionality())
+        );
+    }
+}
+
 Axis const& MetadataHandle::iline() const noexcept (true) {
     return this->m_iline;
 }
