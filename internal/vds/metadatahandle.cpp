@@ -68,7 +68,11 @@ Axis const& MetadataHandle::sample() const noexcept (true) {
 }
 
 BoundingBox MetadataHandle::bounding_box() const noexcept (true) {
-    return BoundingBox(this->m_layout);
+    return BoundingBox(
+        this->iline().nsamples(),
+        this->xline().nsamples(),
+        this->coordinate_transformer()
+    );
 }
 
 std::string MetadataHandle::crs() const noexcept (true) {
