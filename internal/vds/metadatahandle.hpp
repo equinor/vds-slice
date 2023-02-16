@@ -22,6 +22,8 @@ public:
     std::string format()       const noexcept (false);
 
     Axis const& get_axis(Direction const direction) const noexcept (false);
+
+    OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept (true);
 private:
     OpenVDS::VolumeDataLayout const * const m_layout;
 

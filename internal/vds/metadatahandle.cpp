@@ -97,3 +97,9 @@ Axis const& MetadataHandle::get_axis(
 
     throw std::runtime_error("Unhandled axis");
 }
+
+OpenVDS::IJKCoordinateTransformer MetadataHandle::coordinate_transformer()
+    const noexcept (true)
+{
+    return OpenVDS::IJKCoordinateTransformer(this->m_layout);
+}
