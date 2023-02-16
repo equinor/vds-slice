@@ -2,10 +2,29 @@
 
 #include <stdexcept>
 
+#include <OpenVDS/KnownMetadata.h>
 #include <OpenVDS/OpenVDS.h>
 
 #include "metadatahandle.hpp"
 #include "subvolume.hpp"
+
+namespace {
+
+OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation) {
+    switch (interpolation)
+    {
+        case NEAREST: return OpenVDS::InterpolationMethod::Nearest;
+        case LINEAR: return OpenVDS::InterpolationMethod::Linear;
+        case CUBIC: return OpenVDS::InterpolationMethod::Cubic;
+        case ANGULAR: return OpenVDS::InterpolationMethod::Angular;
+        case TRIANGULAR: return OpenVDS::InterpolationMethod::Triangular;
+        default: {
+            throw std::runtime_error("Unhandled interpolation method");
+        }
+    }
+}
+
+} /* namespace */
 
 DataHandle::DataHandle(std::string const url, std::string const credentials) {
     OpenVDS::Error error;
@@ -61,4 +80,33 @@ void DataHandle::read_subvolume(
     );
 
     request.get()->WaitForCompletion();
+}
+
+std::int64_t DataHandle::traces_buffer_size(std::size_t const ntraces) noexcept (false) {
+    // TODO: Verify that trace dimension is always 0
+    return this->m_access_manager.GetVolumeTracesBufferSize(ntraces, 0);
+}
+
+void DataHandle::read_traces(
+    void * const                    buffer,
+    std::int64_t const              size,
+    traces const                    coordinates,
+    std::size_t const               ntraces,
+    enum interpolation_method const interpolation_method
+) noexcept (false) {
+    auto request = this->m_access_manager.RequestVolumeTraces(
+        (float*)buffer,
+        size,
+        OpenVDS::Dimensions_012, 0, 0,
+        coordinates,
+        ntraces,
+        ::to_interpolation(interpolation_method),
+        0
+    );
+    bool const success = request.get()->WaitForCompletion();
+
+    if(!success) {
+        const auto msg = "Failed to fetch fence from VDS";
+        throw std::runtime_error(msg);
+    }
 }

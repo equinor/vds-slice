@@ -36,20 +36,6 @@ void response_delete(struct response* buf) {
     *buf = response {};
 }
 
-OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation) {
-    switch (interpolation)
-    {
-        case NEAREST: return OpenVDS::InterpolationMethod::Nearest;
-        case LINEAR: return OpenVDS::InterpolationMethod::Linear;
-        case CUBIC: return OpenVDS::InterpolationMethod::Cubic;
-        case ANGULAR: return OpenVDS::InterpolationMethod::Angular;
-        case TRIANGULAR: return OpenVDS::InterpolationMethod::Triangular;
-        default: {
-            throw std::runtime_error("Unhandled interpolation method");
-        }
-    }
-}
-
 /*
  * Unit validation of Z-slices
  *
@@ -222,13 +208,10 @@ struct response fetch_fence(
     size_t npoints,
     enum interpolation_method interpolation_method
 ) {
-    auto handle = open_vds(url, credentials);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
-    auto accessManager = OpenVDS::GetAccessManager(handle);
-    auto const *layout = accessManager.GetVolumeDataLayout();
-    MetadataHandle const metadata(layout);
-
-    unique_ptr< float[][OpenVDS::Dimensionality_Max] > coords(
+    unique_ptr< traces > coords(
         new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
     );
 
@@ -285,26 +268,17 @@ struct response fetch_fence(
         coords[i][crossline_axis.dimension()] = coordinate[1];
     }
 
-    // TODO: Verify that trace dimension is always 0
-    auto size = accessManager.GetVolumeTracesBufferSize(npoints, 0);
+    std::int64_t const size = handle.traces_buffer_size(npoints);
 
     std::unique_ptr< char[] > data(new char[size]());
 
-    auto request = accessManager.RequestVolumeTraces(
-            (float*)data.get(),
-            size,
-            OpenVDS::Dimensions_012, 0, 0,
-            coords.get(),
-            npoints,
-            to_interpolation(interpolation_method),
-            0
+    handle.read_traces(
+        data.get(),
+        size,
+        coords.get(),
+        npoints,
+        interpolation_method
     );
-    bool success = request.get()->WaitForCompletion();
-
-    if(!success) {
-        const auto msg = "Failed to fetch fence from VDS";
-        throw std::runtime_error(msg);
-    }
 
     response buffer{};
     buffer.size = size;

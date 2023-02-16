@@ -9,6 +9,8 @@
 #include "metadatahandle.hpp"
 #include "subvolume.hpp"
 
+using traces = float[][OpenVDS::Dimensionality_Max];
+
 class DataHandle {
 public:
     DataHandle(std::string const url, std::string const credentials);
@@ -21,6 +23,16 @@ public:
         void * const buffer,
         std::int64_t size,
         SubVolume const& subvolume
+    ) noexcept (false);
+
+    std::int64_t traces_buffer_size(std::size_t const ntraces) noexcept (false);
+
+    void read_traces(
+        void * const                    buffer,
+        std::int64_t const              size,
+        traces const                    coordinates,
+        std::size_t const               ntraces,
+        enum interpolation_method const interpolation_method
     ) noexcept (false);
 
 private:
