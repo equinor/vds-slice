@@ -78,8 +78,11 @@ void DataHandle::read_subvolume(
         subvolume.bounds.upper,
         format
     );
+    bool const success = request.get()->WaitForCompletion();
 
-    request.get()->WaitForCompletion();
+    if (!success) {
+        throw std::runtime_error("Failed to read from VDS.");
+    }
 }
 
 std::int64_t DataHandle::traces_buffer_size(std::size_t const ntraces) noexcept (false) {
