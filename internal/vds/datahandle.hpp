@@ -40,6 +40,9 @@ private:
     OpenVDS::VolumeDataAccessManager m_access_manager;
     // Must be pointer due to delayed initialization.
     std::unique_ptr<MetadataHandle> m_metadata;
+
+    static int constexpr lod_level = 0;
+    static int constexpr channel = 0;
 };
 
 #endif /* VDS_SLICE_DATAHANDLE_HPP */
