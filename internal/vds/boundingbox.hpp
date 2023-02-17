@@ -1,5 +1,5 @@
-#ifndef BOUNDINGBOX_H
-#define BOUNDINGBOX_H
+#ifndef VDS_SLICE_BOUNDINGBOX_HPP
+#define VDS_SLICE_BOUNDINGBOX_HPP
 
 #include <utility>
 #include <vector>
@@ -10,18 +10,19 @@
 class BoundingBox {
 public:
     explicit BoundingBox(
-        const OpenVDS::VolumeDataLayout *layout
-    ) : layout(layout)
-    {
-        transformer = OpenVDS::IJKCoordinateTransformer(layout);
-    }
+        int const nilines,
+        int const nxlines,
+        OpenVDS::IJKCoordinateTransformer transformer
+    ) : m_nilines(nilines), m_nxlines(nxlines), m_transformer(transformer)
+    {}
 
     std::vector< std::pair<int, int> >       index()      noexcept (true);
     std::vector< std::pair<int, int> >       annotation() noexcept (true);
     std::vector< std::pair<double, double> > world()      noexcept (true);
 private:
-    OpenVDS::IJKCoordinateTransformer transformer;
-    const OpenVDS::VolumeDataLayout*  layout;
+    int const m_nilines;
+    int const m_nxlines;
+    OpenVDS::IJKCoordinateTransformer m_transformer;
 };
 
-#endif /* BOUNDINGBOX_H */
+#endif /* VDS_SLICE_BOUNDINGBOX_HPP */

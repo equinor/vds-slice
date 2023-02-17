@@ -18,7 +18,12 @@
 #include <OpenVDS/KnownMetadata.h>
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
-#include "boundingbox.h"
+#include "axis.hpp"
+#include "boundingbox.hpp"
+#include "datahandle.hpp"
+#include "direction.hpp"
+#include "metadatahandle.hpp"
+#include "subvolume.hpp"
 
 using namespace std;
 
@@ -31,84 +36,6 @@ void response_delete(struct response* buf) {
     *buf = response {};
 }
 
-int axis_todim(axis_name ax) {
-    switch (ax) {
-        case I:
-        case INLINE:
-            return 0;
-        case J:
-        case CROSSLINE:
-            return 1;
-        case K:
-        case DEPTH:
-        case TIME:
-        case SAMPLE:
-            return 2;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-coordinate_system axis_tosystem(axis_name ax) {
-    switch (ax) {
-        case I:
-        case J:
-        case K:
-            return INDEX;
-        case INLINE:
-        case CROSSLINE:
-        case DEPTH:
-        case TIME:
-        case SAMPLE:
-            return ANNOTATION;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-const std::string axis_tostring(axis_name ax) {
-    switch (ax) {
-        case I:         return std::string( OpenVDS::KnownAxisNames::I()         );
-        case J:         return std::string( OpenVDS::KnownAxisNames::J()         );
-        case K:         return std::string( OpenVDS::KnownAxisNames::K()         );
-        case INLINE:    return std::string( OpenVDS::KnownAxisNames::Inline()    );
-        case CROSSLINE: return std::string( OpenVDS::KnownAxisNames::Crossline() );
-        case DEPTH:     return std::string( OpenVDS::KnownAxisNames::Depth()     );
-        case TIME:      return std::string( OpenVDS::KnownAxisNames::Time()      );
-        case SAMPLE:    return std::string( OpenVDS::KnownAxisNames::Sample()    );
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation) {
-    switch (interpolation)
-    {
-        case NEAREST: return OpenVDS::InterpolationMethod::Nearest;
-        case LINEAR: return OpenVDS::InterpolationMethod::Linear;
-        case CUBIC: return OpenVDS::InterpolationMethod::Cubic;
-        case ANGULAR: return OpenVDS::InterpolationMethod::Angular;
-        case TRIANGULAR: return OpenVDS::InterpolationMethod::Triangular;
-        default: {
-            throw std::runtime_error("Unhandled interpolation method");
-        }
-    }
-}
-
-std::string vdsformat_tostring(OpenVDS::VolumeDataFormat format) {
-    switch (format) {
-        case OpenVDS::VolumeDataFormat::Format_U8:  return "<u1";
-        case OpenVDS::VolumeDataFormat::Format_U16: return "<u2";
-        case OpenVDS::VolumeDataFormat::Format_R32: return "<f4";
-        default: {
-            throw std::runtime_error("unsupported VDS format type");
-        }
-    }
-}
-
 /*
  * Unit validation of Z-slices
  *
@@ -116,7 +43,7 @@ std::string vdsformat_tostring(OpenVDS::VolumeDataFormat format) {
  * E.g. a Time slice is only valid if the units of the Z-axis in the VDS is
  * "Seconds" or "Milliseconds"
  */
-bool unit_validation(axis_name ax, const char* zunit) {
+bool unit_validation(axis_name ax, std::string const& zunit) {
     /* Define some convenient lookup tables for units */
     static const std::array< const char*, 3 > depthunits = {
         OpenVDS::KnownUnitNames::Meter(),
@@ -134,7 +61,7 @@ bool unit_validation(axis_name ax, const char* zunit) {
     };
 
     auto isoneof = [zunit](const char* x) {
-        return !std::strcmp(x, zunit);
+        return !std::strcmp(x, zunit.c_str());
     };
 
     switch (ax) {
@@ -156,258 +83,44 @@ bool unit_validation(axis_name ax, const char* zunit) {
     }
 };
 
-/*
- * Until we know more about how VDS' are constructed w.r.t. to axis ordering
- * we're gonna assume that all VDS' are ordered like so:
- *
- *     voxel[0] -> depth/time/sample
- *     voxel[1] -> crossline
- *     voxel[2] -> inline
- *
- * This function will return 0 if that's not the case
- */
-bool axis_order_validation(axis_name ax, const OpenVDS::VolumeDataLayout *layout) {
-    if (std::strcmp(layout->GetDimensionName(2), OpenVDS::KnownAxisNames::Inline())) {
-        return false;
-    }
-
-    if (std::strcmp(layout->GetDimensionName(1), OpenVDS::KnownAxisNames::Crossline())) {
-        return false;
-    }
-
-    auto z = layout->GetDimensionName(0);
-
-    /* Define some convenient lookup tables for units */
-    static const std::array< const char*, 3 > depth = {
-        OpenVDS::KnownAxisNames::Depth(),
-        OpenVDS::KnownAxisNames::Time(),
-        OpenVDS::KnownAxisNames::Sample()
-    };
-
-    auto isoneof = [z](const char* x) {
-        return !std::strcmp(x, z);
-    };
-
-    return std::any_of(depth.begin(), depth.end(), isoneof);
-}
-
-
-void axis_validation(axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
-    if (not axis_order_validation(ax, layout)) {
-        std::string msg = "Unsupported axis ordering in VDS, expected ";
-        msg += "Depth/Time/Sample, Crossline, Inline";
-        throw std::runtime_error(msg);
-    }
-
-    auto zaxis = layout->GetAxisDescriptor(0);
-    const char* zunit = zaxis.GetUnit();
-    if (not unit_validation(ax, zunit)) {
-        std::string msg = "Unable to use " + axis_tostring(ax);
-        msg += " on cube with depth units: " + std::string(zunit);
-        throw std::runtime_error(msg);
-    }
-}
-
-void dimension_validation(const OpenVDS::VolumeDataLayout* layout) {
-    if (layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(layout->GetDimensionality())
-        );
-    }
-}
-
-int dim_tovoxel(int dimension) {
-    /*
-     * For now assume that the axis order is always depth/time/sample,
-     * crossline, inline. This should be checked elsewhere.
-     */
-    switch (dimension) {
-        case 0: return 2;
-        case 1: return 1;
-        case 2: return 0;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-int voxel_todim(int voxel) {
-    /*
-     * For now assume that the axis order is always depth/time/sample,
-     * crossline, inline. This should be checked elsewhere.
-     */
-    switch (voxel) {
-        case 0: return 2;
-        case 1: return 1;
-        case 2: return 0;
-        default: {
-            throw std::runtime_error("Unhandled axis");
-        }
-    }
-}
-
-int lineno_annotation_to_voxel(
-    int lineno,
-    int vdim,
-    const OpenVDS::VolumeDataLayout *layout
-) {
-    /* Assume that annotation coordinates are integers */
-    int min      = layout->GetDimensionMin(vdim);
-    int max      = layout->GetDimensionMax(vdim);
-    int nsamples = layout->GetDimensionNumSamples(vdim);
-
-    auto stride = (max - min) / (nsamples - 1);
-
-    if (lineno < min || lineno > max || (lineno - min) % stride) {
-        throw std::runtime_error(
-            "Invalid lineno: " + std::to_string(lineno) +
-            ", valid range: [" + std::to_string(min) +
-            ":" + std::to_string(max) +
-            ":" + std::to_string(stride) + "]"
-        );
-    }
-
-    int voxelline = (lineno - min) / stride;
-    return voxelline;
-}
-
-int lineno_index_to_voxel(
-    int lineno,
-    int vdim,
-    const OpenVDS::VolumeDataLayout *layout
-) {
-    /* Line-numbers in IJK match Voxel - do bound checking and return*/
-    int min = 0;
-    int max = layout->GetDimensionNumSamples(vdim) - 1;
-
-    if (lineno < min || lineno > max) {
-        throw std::runtime_error(
-            "Invalid lineno: " + std::to_string(lineno) +
-            ", valid range: [" + std::to_string(min) +
-            ":" + std::to_string(max) +
-            ":1]"
-        );
-    }
-
-    return lineno;
-}
-
-/*
- * Convert target dimension/axis + lineno to VDS voxel coordinates.
- */
-void set_voxels(
-    axis_name ax,
-    int dimension,
-    int lineno,
-    const OpenVDS::VolumeDataLayout *layout,
-    int (&voxelmin)[OpenVDS::VolumeDataLayout::Dimensionality_Max],
-    int (&voxelmax)[OpenVDS::VolumeDataLayout::Dimensionality_Max]
-) {
-    auto vmin = OpenVDS::IntVector3 { 0, 0, 0 };
-    auto vmax = OpenVDS::IntVector3 {
-        layout->GetDimensionNumSamples(0),
-        layout->GetDimensionNumSamples(1),
-        layout->GetDimensionNumSamples(2)
-    };
-
-    int voxelline;
-    auto vdim   = dim_tovoxel(dimension);
-    auto system = axis_tosystem(ax);
-    switch (system) {
-        case ANNOTATION: {
-            auto transformer = OpenVDS::IJKCoordinateTransformer(layout);
-            if (not transformer.AnnotationsDefined()) {
-                throw std::runtime_error("VDS doesn't define annotations");
-            }
-            voxelline = lineno_annotation_to_voxel(lineno, vdim, layout);
-            break;
-        }
-        case INDEX: {
-            voxelline = lineno_index_to_voxel(lineno, vdim, layout);
-            break;
-        }
-        case CDP: {
-            break;
-        }
-        default: {
-            throw std::runtime_error("Unhandled coordinate system");
-        }
-    }
-
-    vmin[vdim] = voxelline;
-    vmax[vdim] = voxelline + 1;
-
-    /* Commit */
-    for (int i = 0; i < 3; i++) {
-        voxelmin[i] = vmin[i];
-        voxelmax[i] = vmax[i];
-    }
-}
-
 nlohmann::json json_axis(
-    int voxel_dim,
-    const OpenVDS::VolumeDataLayout *layout
+    const Axis& axis
 ) {
     nlohmann::json doc;
     doc = {
-        { "annotation", layout->GetDimensionName(voxel_dim)       },
-        { "min",        layout->GetDimensionMin(voxel_dim)        },
-        { "max",        layout->GetDimensionMax(voxel_dim)        },
-        { "samples",    layout->GetDimensionNumSamples(voxel_dim) },
-        { "unit",       layout->GetDimensionUnit(voxel_dim)       },
+        { "annotation", axis.name()     },
+        { "min",        axis.min()      },
+        { "max",        axis.max()      },
+        { "samples",    axis.nsamples() },
+        { "unit",       axis.unit()     },
     };
     return doc;
-}
-
-OpenVDS::ScopedVDSHandle open_vds(
-    std::string url,
-    std::string credentials
-){
-    OpenVDS::Error error;
-    OpenVDS::ScopedVDSHandle handle = OpenVDS::Open(url, credentials, error);
-
-    if(error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
-    return handle;
 }
 
 struct response fetch_slice(
     std::string url,
     std::string credentials,
-    axis_name ax,
+    Direction const direction,
     int lineno
 ) {
-    auto handle = open_vds(url, credentials);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
-    auto access = OpenVDS::GetAccessManager(handle);
-    auto const *layout = access.GetVolumeDataLayout();
+    const Axis axis = metadata.get_axis(direction);
+    std::string zunit = metadata.sample().unit();
+    if (not unit_validation(direction.name(), zunit)) {
+        std::string msg = "Unable to use " + direction.to_string();
+        msg += " on cube with depth units: " + zunit;
+        throw std::runtime_error(msg);
+    }
 
-    dimension_validation(layout);
-    axis_validation(ax, layout);
+    SubVolume bounds(metadata);
+    bounds.set_slice(axis, lineno, direction.coordinate_system());
 
-    int vmin[OpenVDS::Dimensionality_Max] = { 0, 0, 0, 0, 0, 0};
-    int vmax[OpenVDS::Dimensionality_Max] = { 1, 1, 1, 1, 1, 1};
-    auto dimension = axis_todim(ax);
-    set_voxels(ax, dimension, lineno, layout, vmin, vmax);
-
-    auto format = layout->GetChannelFormat(0);
-    auto size = access.GetVolumeSubsetBufferSize(vmin, vmax, format, 0, 0);
+    std::int64_t const size = handle.subvolume_buffer_size(bounds);
 
     std::unique_ptr< char[] > data(new char[size]());
-    auto request = access.RequestVolumeSubset(
-        data.get(),
-        size,
-        OpenVDS::Dimensions_012,
-        0,
-        0,
-        vmin,
-        vmax,
-        format
-    );
-
-    request.get()->WaitForCompletion();
+    handle.read_subvolume(data.get(), size, bounds);
 
     response buffer{};
     buffer.size = size;
@@ -421,21 +134,13 @@ struct response fetch_slice(
 struct response fetch_slice_metadata(
     std::string url,
     std::string credentials,
-    axis_name ax
+    Direction const direction
 ) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    auto const *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
-    axis_validation(ax, layout);
-
-    auto dimension = axis_todim(ax);
-    auto vdim = dim_tovoxel(dimension);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+    meta["format"] = metadata.format();
 
     /*
      * SEGYImport always writes annotation 'Sample' for axis K. We, on the
@@ -450,13 +155,22 @@ struct response fetch_slice_metadata(
      * would be quite suprising for people that use this API in conjunction
      * with the OpenVDS library.
      */
-    std::vector< int > dims;
-    for (int i = 0; i < 3; ++i) {
-        if (i == vdim) continue;
-        dims.push_back(i);
+    Axis const& inline_axis = metadata.iline();
+    Axis const& crossline_axis = metadata.xline();
+    Axis const& sample_axis = metadata.sample();
+
+    if (direction.is_iline()) {
+        meta["x"] = json_axis(sample_axis);
+        meta["y"] = json_axis(crossline_axis);
+    } else if (direction.is_xline()) {
+        meta["x"] = json_axis(sample_axis);
+        meta["y"] = json_axis(inline_axis);
+    } else if (direction.is_sample()) {
+        meta["x"] = json_axis(crossline_axis);
+        meta["y"] = json_axis(inline_axis);
+    } else {
+        throw std::runtime_error("Unhandled direction");
     }
-    meta["x"] = json_axis(dims[0], layout);
-    meta["y"] = json_axis(dims[1], layout);
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
@@ -477,21 +191,14 @@ struct response fetch_fence(
     size_t npoints,
     enum interpolation_method interpolation_method
 ) {
-    auto handle = open_vds(url, credentials);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
-    auto accessManager = OpenVDS::GetAccessManager(handle);
-    auto const *layout = accessManager.GetVolumeDataLayout();
-
-    dimension_validation(layout);
-
-    const auto dimension_map =
-            layout->GetVDSIJKGridDefinitionFromMetadata().dimensionMap;
-
-    unique_ptr< float[][OpenVDS::Dimensionality_Max] > coords(
+    unique_ptr< traces > coords(
         new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
     );
 
-    auto coordinate_transformer = OpenVDS::IJKCoordinateTransformer(layout);
+    auto coordinate_transformer = metadata.coordinate_transformer();
     auto transform_coordinate = [&] (const float x, const float y) {
         switch (coordinate_system) {
             case INDEX:
@@ -506,16 +213,18 @@ struct response fetch_fence(
         }
     };
 
+    Axis const& inline_axis = metadata.iline();
+    Axis const& crossline_axis = metadata.xline();
+
     for (size_t i = 0; i < npoints; i++) {
         const float x = *(coordinates++);
         const float y = *(coordinates++);
 
         auto coordinate = transform_coordinate(x, y);
 
-        auto validate_boundary = [&] (const int voxel) {
+        auto validate_boundary = [&] (const int voxel, const Axis& axis) {
             const auto min = -0.5;
-            const auto max = layout->GetDimensionNumSamples(voxel_todim(voxel))
-                            - 0.5;
+            const auto max = axis.nsamples() - 0.5;
             if(coordinate[voxel] < min || coordinate[voxel] >= max) {
                 const std::string coordinate_str =
                     "(" +std::to_string(x) + "," + std::to_string(y) + ")";
@@ -526,8 +235,8 @@ struct response fetch_fence(
             }
         };
 
-        validate_boundary(0);
-        validate_boundary(1);
+        validate_boundary(0, inline_axis);
+        validate_boundary(1, crossline_axis);
 
         /* openvds uses rounding down for Nearest interpolation.
          * As it is counterintuitive, we fix it by snapping to nearest index
@@ -538,30 +247,21 @@ struct response fetch_fence(
             coordinate[1] = std::round(coordinate[1] + 1) - 1;
         }
 
-        coords[i][dimension_map[0]] = coordinate[0];
-        coords[i][dimension_map[1]] = coordinate[1];
+        coords[i][   inline_axis.dimension()] = coordinate[0];
+        coords[i][crossline_axis.dimension()] = coordinate[1];
     }
 
-    // TODO: Verify that trace dimension is always 0
-    auto size = accessManager.GetVolumeTracesBufferSize(npoints, 0);
+    std::int64_t const size = handle.traces_buffer_size(npoints);
 
     std::unique_ptr< char[] > data(new char[size]());
 
-    auto request = accessManager.RequestVolumeTraces(
-            (float*)data.get(),
-            size,
-            OpenVDS::Dimensions_012, 0, 0,
-            coords.get(),
-            npoints,
-            to_interpolation(interpolation_method),
-            0
+    handle.read_traces(
+        data.get(),
+        size,
+        coords.get(),
+        npoints,
+        interpolation_method
     );
-    bool success = request.get()->WaitForCompletion();
-
-    if(!success) {
-        const auto msg = "Failed to fetch fence from VDS";
-        throw std::runtime_error(msg);
-    }
 
     response buffer{};
     buffer.size = size;
@@ -577,16 +277,13 @@ struct response fetch_fence_metadata(
     std::string credentials,
     size_t npoints
 ) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    auto const *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
-    meta["shape"] = nlohmann::json::array({npoints, layout->GetDimensionNumSamples(0)});
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+    const Axis sample_axis = metadata.sample();
+    meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
+    meta["format"] = metadata.format();
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
@@ -603,27 +300,29 @@ struct response metadata(
     const std::string& url,
     const std::string& credentials
 ) {
-    auto handle = open_vds(url, credentials);
-
-    auto access = OpenVDS::GetAccessManager(handle);
-    const auto *layout = access.GetVolumeDataLayout();
-
-    dimension_validation(layout);
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
-    meta["format"] = vdsformat_tostring(layout->GetChannelFormat(0));
+    meta["format"] = metadata.format();
 
-    auto crs = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
-    meta["crs"] = layout->GetMetadataString(crs.GetCategory(), crs.GetName());
+    meta["crs"] = metadata.crs();
 
-    auto bbox = BoundingBox(layout);
+    auto bbox = metadata.bounding_box();
     meta["boundingBox"]["ij"]   = bbox.index();
     meta["boundingBox"]["cdp"]  = bbox.world();
     meta["boundingBox"]["ilxl"] = bbox.annotation();
 
-    for (int i = 2; i >= 0 ; i--) {
-        meta["axis"].push_back(json_axis(i, layout));
-    }
+
+    Axis const& inline_axis = metadata.iline();
+    meta["axis"].push_back(json_axis(inline_axis));
+
+    Axis const& crossline_axis = metadata.xline();
+    meta["axis"].push_back(json_axis(crossline_axis));
+
+    Axis const& sample_axis = metadata.sample();
+    meta["axis"].push_back(json_axis(sample_axis));
+
     auto str = meta.dump();
     auto *data = new char[str.size()];
     std::copy(str.begin(), str.end(), data);
@@ -652,9 +351,10 @@ struct response slice(
 ) {
     std::string cube(vds);
     std::string cred(credentials);
+    Direction const direction(ax);
 
     try {
-        return fetch_slice(cube, cred, ax, lineno);
+        return fetch_slice(cube, cred, direction, lineno);
     } catch (const std::exception& e) {
         return handle_error(e);
     }
@@ -667,9 +367,10 @@ struct response slice_metadata(
 ) {
     std::string cube(vds);
     std::string cred(credentials);
+    Direction const direction(ax);
 
     try {
-        return fetch_slice_metadata(cube, cred, ax);
+        return fetch_slice_metadata(cube, cred, direction);
     } catch (const std::exception& e) {
         return handle_error(e);
     }
