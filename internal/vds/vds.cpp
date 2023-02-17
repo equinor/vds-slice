@@ -154,7 +154,7 @@ bool unit_validation(axis_name ax, const char* zunit) {
  * Until we know more about how VDS' are constructed w.r.t. to axis ordering
  * we're gonna assume that all VDS' are ordered like so:
  *
- *     voxel[0] -> depth/time/sample
+ *     voxel[0] -> sample
  *     voxel[1] -> crossline
  *     voxel[2] -> inline
  *
@@ -169,27 +169,18 @@ bool axis_order_validation(const OpenVDS::VolumeDataLayout *layout) {
         return false;
     }
 
-    auto z = layout->GetDimensionName(0);
+    if (std::strcmp(layout->GetDimensionName(0), OpenVDS::KnownAxisNames::Sample())) {
+        return false;
+    }
 
-    /* Define some convenient lookup tables for units */
-    static const std::array< const char*, 3 > depth = {
-        OpenVDS::KnownAxisNames::Depth(),
-        OpenVDS::KnownAxisNames::Time(),
-        OpenVDS::KnownAxisNames::Sample()
-    };
-
-    auto isoneof = [z](const char* x) {
-        return !std::strcmp(x, z);
-    };
-
-    return std::any_of(depth.begin(), depth.end(), isoneof);
+    return true;
 }
 
 
 void axis_validation(axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
     if (not axis_order_validation(layout)) {
         std::string msg = "Unsupported axis ordering in VDS, expected ";
-        msg += "Depth/Time/Sample, Crossline, Inline";
+        msg += "Sample, Crossline, Inline";
         throw std::runtime_error(msg);
     }
 
