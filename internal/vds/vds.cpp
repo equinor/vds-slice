@@ -150,40 +150,7 @@ bool unit_validation(axis_name ax, const char* zunit) {
     }
 };
 
-/*
- * Until we know more about how VDS' are constructed w.r.t. to axis ordering
- * we're gonna assume that all VDS' are ordered like so:
- *
- *     voxel[0] -> sample
- *     voxel[1] -> crossline
- *     voxel[2] -> inline
- *
- * This function will return 0 if that's not the case
- */
-bool axis_order_validation(const OpenVDS::VolumeDataLayout *layout) {
-    if (std::strcmp(layout->GetDimensionName(2), OpenVDS::KnownAxisNames::Inline())) {
-        return false;
-    }
-
-    if (std::strcmp(layout->GetDimensionName(1), OpenVDS::KnownAxisNames::Crossline())) {
-        return false;
-    }
-
-    if (std::strcmp(layout->GetDimensionName(0), OpenVDS::KnownAxisNames::Sample())) {
-        return false;
-    }
-
-    return true;
-}
-
-
 void axis_validation(axis_name ax, const OpenVDS::VolumeDataLayout* layout) {
-    if (not axis_order_validation(layout)) {
-        std::string msg = "Unsupported axis ordering in VDS, expected ";
-        msg += "Sample, Crossline, Inline";
-        throw std::runtime_error(msg);
-    }
-
     const Axis zaxis = make_axis(layout, axis_name::SAMPLE);
     std::string zunit = zaxis.unit();
     if (not unit_validation(ax, zunit.c_str())) {
@@ -376,7 +343,6 @@ struct response fetch_slice_metadata(
     auto const *layout = access.GetVolumeDataLayout();
 
     const MetadataHandle metadata(layout);
-    axis_validation(ax, layout);
 
     nlohmann::json meta;
     meta["format"] = metadata.format();

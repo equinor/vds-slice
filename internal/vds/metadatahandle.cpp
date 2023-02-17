@@ -16,6 +16,7 @@ MetadataHandle::MetadataHandle(OpenVDS::VolumeDataLayout const * const layout)
       m_sample(Axis(layout, 0))
 {
     this->dimension_validation();
+    this->axis_order_validation();
 }
 
 void MetadataHandle::dimension_validation() const {
@@ -24,6 +25,32 @@ void MetadataHandle::dimension_validation() const {
             "Unsupported VDS, expected 3 dimensions, got " +
             std::to_string(this->m_layout->GetDimensionality())
         );
+    }
+}
+
+/*
+ * We're checking our axis order requirement.
+ *
+ *     voxel[0] -> sample
+ *     voxel[1] -> crossline
+ *     voxel[2] -> inline
+ */
+void MetadataHandle::axis_order_validation() const {
+    std::string const msg = "Unsupported axis ordering in VDS, expected "
+        "Sample, Crossline, Inline";
+
+    using Names = OpenVDS::KnownAxisNames;
+
+    if (this->sample().name() != std::string(Names::Sample())) {
+        throw std::runtime_error(msg);
+    }
+
+    if (this->xline().name() != std::string(Names::Crossline())) {
+        throw std::runtime_error(msg);
+    }
+
+    if (this->iline().name() != std::string(Names::Inline())) {
+        throw std::runtime_error(msg);
     }
 }
 
