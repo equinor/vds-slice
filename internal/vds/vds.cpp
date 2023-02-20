@@ -54,6 +54,13 @@ std::string fmtstr(OpenVDS::VolumeDataFormat format) {
     }
 }
 
+struct response to_response(nlohmann::json const& metadata) {
+    auto const dump = metadata.dump();
+    std::unique_ptr< char[] > tmp(new char[dump.size()]);
+    std::copy(dump.begin(), dump.end(), tmp.get());
+    return response{tmp.release(), nullptr, dump.size()};
+}
+
 struct response to_response(std::unique_ptr< char[] > data, std::int64_t const size) {
     /* The data should *not* be free'd on success, as it's returned to CGO */
     return response{data.release(), nullptr, static_cast<unsigned long>(size)};
@@ -189,15 +196,7 @@ struct response fetch_slice_metadata(
         throw std::runtime_error("Unhandled direction");
     }
 
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    response buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
+    return to_response(meta);
 }
 
 struct response fetch_fence(
@@ -294,15 +293,7 @@ struct response fetch_fence_metadata(
     meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
     meta["format"] = fmtstr(DataHandle::format());
 
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    response buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
+    return to_response(meta);
 }
 
 struct response metadata(
@@ -331,15 +322,7 @@ struct response metadata(
     Axis const& sample_axis = metadata.sample();
     meta["axis"].push_back(json_axis(sample_axis));
 
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    response buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
+    return to_response(meta);
 }
 
 struct response handle_error(
