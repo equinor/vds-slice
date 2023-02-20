@@ -212,9 +212,7 @@ struct response fetch_fence(
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
-    unique_ptr< traces > coords(
-        new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
-    );
+    unique_ptr< trace[] > coords(new trace[npoints]{{0}});
 
     auto coordinate_transformer = metadata.coordinate_transformer();
     auto transform_coordinate = [&] (const float x, const float y) {
