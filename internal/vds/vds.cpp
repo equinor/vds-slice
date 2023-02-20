@@ -102,7 +102,7 @@ static response to_response(nlohmann::json const& metadata) {
 }
 
 nlohmann::json json_axis(
-    const Axis& axis
+    Axis const& axis
 ) {
     nlohmann::json doc;
     doc = {
@@ -124,7 +124,7 @@ struct response fetch_slice(
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
-    const Axis axis = metadata.get_axis(direction);
+    Axis const& axis = metadata.get_axis(direction);
     std::string zunit = metadata.sample().unit();
     if (not unit_validation(direction.name(), zunit)) {
         std::string msg = "Unable to use " + direction.to_string();
@@ -225,7 +225,7 @@ struct response fetch_fence(
 
         auto coordinate = transform_coordinate(x, y);
 
-        auto validate_boundary = [&] (const int voxel, const Axis& axis) {
+        auto validate_boundary = [&] (const int voxel, Axis const& axis) {
             const auto min = -0.5;
             const auto max = axis.nsamples() - 0.5;
             if(coordinate[voxel] < min || coordinate[voxel] >= max) {
@@ -279,7 +279,7 @@ struct response fetch_fence_metadata(
     MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
-    const Axis sample_axis = metadata.sample();
+    Axis const& sample_axis = metadata.sample();
     meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
     meta["format"] = fmtstr(DataHandle::format());
 
