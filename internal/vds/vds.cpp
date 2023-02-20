@@ -315,9 +315,7 @@ struct response metadata(
     return to_response(meta);
 }
 
-struct response handle_error(
-    const std::exception& e
-) {
+struct response to_response(std::exception const& e) {
     std::size_t size = std::char_traits<char>::length(e.what()) + 1;
 
     std::unique_ptr<char[]> msg(new char[size]);
@@ -338,7 +336,7 @@ struct response slice(
     try {
         return fetch_slice(cube, cred, direction, lineno);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -354,7 +352,7 @@ struct response slice_metadata(
     try {
         return fetch_slice_metadata(cube, cred, direction);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -374,7 +372,7 @@ struct response fence(
             cube, cred, coordinate_system, coordinates, npoints,
             interpolation_method);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -389,7 +387,7 @@ struct response fence_metadata(
     try {
         return fetch_fence_metadata(cube, cred, npoints);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -402,6 +400,6 @@ struct response metadata(
         std::string cred(credentials);
         return metadata(cube, cred);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
