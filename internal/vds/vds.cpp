@@ -147,7 +147,7 @@ struct response fetch_slice(
 
     std::int64_t const size = handle.subvolume_buffer_size(bounds);
 
-    std::unique_ptr< char[] > data(new char[size]());
+    std::unique_ptr< char[] > data(new char[size]);
     handle.read_subvolume(data.get(), size, bounds);
 
     return to_response(std::move(data), size);
@@ -265,7 +265,7 @@ struct response fetch_fence(
 
     std::int64_t const size = handle.traces_buffer_size(npoints);
 
-    std::unique_ptr< char[] > data(new char[size]());
+    std::unique_ptr< char[] > data(new char[size]);
 
     handle.read_traces(
         data.get(),
