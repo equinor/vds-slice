@@ -25,8 +25,6 @@
 #include "metadatahandle.hpp"
 #include "subvolume.hpp"
 
-using namespace std;
-
 void response_delete(struct response* buf) {
     if (!buf)
         return;
@@ -210,7 +208,7 @@ struct response fetch_fence(
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
-    unique_ptr< trace[] > coords(new trace[npoints]{{0}});
+    std::unique_ptr< trace[] > coords(new trace[npoints]{{0}});
 
     auto coordinate_transformer = metadata.coordinate_transformer();
     auto transform_coordinate = [&] (const float x, const float y) {
