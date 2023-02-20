@@ -326,10 +326,11 @@ struct response metadata(
 struct response handle_error(
     const std::exception& e
 ) {
-    response buf {};
-    buf.err = new char[std::strlen(e.what()) + 1];
-    std::strcpy(buf.err, e.what());
-    return buf;
+    std::size_t size = std::char_traits<char>::length(e.what()) + 1;
+
+    std::unique_ptr<char[]> msg(new char[size]);
+    std::copy(e.what(), e.what() + size, msg.get());
+    return response{nullptr, msg.release(), 0};
 }
 
 struct response slice(
