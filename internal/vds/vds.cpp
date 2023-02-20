@@ -54,6 +54,11 @@ std::string fmtstr(OpenVDS::VolumeDataFormat format) {
     }
 }
 
+struct response to_response(std::unique_ptr< char[] > data, std::int64_t const size) {
+    /* The data should *not* be free'd on success, as it's returned to CGO */
+    return response{data.release(), nullptr, static_cast<unsigned long>(size)};
+}
+
 /*
  * Unit validation of Z-slices
  *
@@ -140,13 +145,7 @@ struct response fetch_slice(
     std::unique_ptr< char[] > data(new char[size]());
     handle.read_subvolume(data.get(), size, bounds);
 
-    response buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    /* The buffer should *not* be free'd on success, as it's returned to CGO */
-    data.release();
-    return buffer;
+    return to_response(std::move(data), size);
 }
 
 struct response fetch_slice_metadata(
@@ -279,13 +278,7 @@ struct response fetch_fence(
         interpolation_method
     );
 
-    response buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    data.release();
-
-    return buffer;
+    return to_response(std::move(data), size);
 }
 
 struct response fetch_fence_metadata(
