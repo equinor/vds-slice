@@ -101,6 +101,13 @@ bool unit_validation(axis_name ax, std::string const& zunit) {
     }
 };
 
+static response to_response(nlohmann::json const& metadata) {
+    auto const dump = metadata.dump();
+    std::unique_ptr< char[] > tmp(new char[dump.size()]);
+    std::copy(dump.begin(), dump.end(), tmp.get());
+    return response{tmp.release(), nullptr, dump.size()};
+}
+
 nlohmann::json json_axis(
     const Axis& axis
 ) {
@@ -185,15 +192,7 @@ struct response fetch_slice_metadata(
         throw std::runtime_error("Unhandled direction");
     }
 
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    response buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
+    return to_response(meta);
 }
 
 struct response fetch_fence(
@@ -291,15 +290,7 @@ struct response fetch_fence_metadata(
     meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
     meta["format"] = fmtstr(DataHandle::format());
 
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    response buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
+    return to_response(meta);
 }
 
 struct response metadata(
@@ -328,15 +319,7 @@ struct response metadata(
     Axis const& sample_axis = metadata.sample();
     meta["axis"].push_back(json_axis(sample_axis));
 
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    response buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
+    return to_response(meta);
 }
 
 struct response handle_error(
