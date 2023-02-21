@@ -144,13 +144,21 @@ func MakeFileConnection() vds.ConnectionMaker {
 	}
 }
 
-func setupTestServer(r *gin.Engine) {
+func setupTest(t *testing.T, testcase endpointTest) *httptest.ResponseRecorder {
+	w := httptest.NewRecorder()
+	ctx, r := gin.CreateTestContext(w)
+
 	endpoint := api.Endpoint{
 		MakeVdsConnection: MakeFileConnection(),
 		Cache:             cache.NewNoCache(),
 	}
 
 	setupApp(r, &endpoint, nil)
+
+	prepareRequest(ctx, t, testcase)
+	r.ServeHTTP(w, ctx.Request)
+
+	return w
 }
 
 func readMultipartData(t *testing.T, w *httptest.ResponseRecorder) [][]byte {

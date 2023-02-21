@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"testing"
 
@@ -45,12 +44,7 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		w := httptest.NewRecorder()
-		ctx, r := gin.CreateTestContext(w)
-		setupTestServer(r)
-
-		prepareRequest(ctx, t, testcase)
-		r.ServeHTTP(w, ctx.Request)
+		w := setupTest(t, testcase)
 
 		requireStatus(t, testcase, w)
 		parts := readMultipartData(t, w)
@@ -234,12 +228,7 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		w := httptest.NewRecorder()
-		ctx, r := gin.CreateTestContext(w)
-		setupTestServer(r)
-
-		prepareRequest(ctx, t, testcase)
-		r.ServeHTTP(w, ctx.Request)
+		w := setupTest(t, testcase)
 
 		requireStatus(t, testcase, w)
 		parts := readMultipartData(t, w)
@@ -380,12 +369,7 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		w := httptest.NewRecorder()
-		ctx, r := gin.CreateTestContext(w)
-		setupTestServer(r)
-
-		prepareRequest(ctx, t, testcase)
-		r.ServeHTTP(w, ctx.Request)
+		w := setupTest(t, testcase)
 
 		requireStatus(t, testcase, w)
 		metadata := w.Body.String()
@@ -512,12 +496,7 @@ func TestLogHasNoSas(t *testing.T) {
 		buffer := new(bytes.Buffer)
 		gin.DefaultWriter = buffer
 
-		w := httptest.NewRecorder()
-		ctx, r := gin.CreateTestContext(w)
-		setupTestServer(r)
-
-		prepareRequest(ctx, t, testcase)
-		r.ServeHTTP(w, ctx.Request)
+		w := setupTest(t, testcase)
 
 		requireStatus(t, testcase, w)
 
@@ -533,12 +512,7 @@ func TestLogHasNoSas(t *testing.T) {
 
 func testErrorHTTPResponse(t *testing.T, testcases []endpointTest) {
 	for _, testcase := range testcases {
-		w := httptest.NewRecorder()
-		ctx, r := gin.CreateTestContext(w)
-		setupTestServer(r)
-
-		prepareRequest(ctx, t, testcase)
-		r.ServeHTTP(w, ctx.Request)
+		w := setupTest(t, testcase)
 
 		requireStatus(t, testcase, w)
 
