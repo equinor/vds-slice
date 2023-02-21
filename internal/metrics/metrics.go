@@ -18,7 +18,7 @@ const (
 	mb = 1024*kb
 )
 
-type metrics struct {
+type Metrics struct {
 	registry *prometheus.Registry
 
 	// Custom metics
@@ -31,9 +31,9 @@ type metrics struct {
  *
  * The metrics are applied to a new non-global prometheus registry
  */
-func NewMetrics() *metrics {
+func NewMetrics() *Metrics {
 	registry := prometheus.NewRegistry()
-	metrics := &metrics{
+	metrics := &Metrics{
 		registry: registry,
 
 		requestDurations: prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -62,7 +62,7 @@ func NewMetrics() *metrics {
 }
 
 /** New gin middleware for writing prometheus metrics */
-func NewGinMiddleware(metrics *metrics) gin.HandlerFunc {
+func NewGinMiddleware(metrics *Metrics) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		start := time.Now()
 		ctx.Next()
@@ -92,7 +92,7 @@ func NewGinMiddleware(metrics *metrics) gin.HandlerFunc {
  * A tiny helper that sets up a handle for promethus and wraps it in
  * a gin handler function such that it can be applied to a gin app.
  */
-func NewGinHandler(metrics *metrics) gin.HandlerFunc {
+func NewGinHandler(metrics *Metrics) gin.HandlerFunc {
 	return gin.WrapH(
 		promhttp.HandlerFor(
 			metrics.registry,
