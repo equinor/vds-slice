@@ -7,6 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
+/** Makes sure that our cache is not growing indefinitely.
+ *
+ *  There was a bug with us running out of memory which went unnoticed before.
+ *  Test mostly tests ristretto functionality, so it can be nuked if it ever
+ *  creates trouble.
+ */
 func TestRistrettoCacheMaxSize(t *testing.T) {
 	/** CacheEntry with a memory footprint of exactly 1 KB
 	 *
