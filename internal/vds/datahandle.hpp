@@ -17,6 +17,8 @@ public:
 
     MetadataHandle const& get_metadata() const noexcept (true);
 
+    static OpenVDS::VolumeDataFormat format() noexcept (true);
+
     std::int64_t subvolume_buffer_size(SubVolume const& subvolume) noexcept (false);
 
     void read_subvolume(

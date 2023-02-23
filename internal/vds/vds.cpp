@@ -158,7 +158,7 @@ struct response fetch_slice_metadata(
     MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
-    meta["format"] = fmtstr(OpenVDS::VolumeDataFormat::Format_R32);
+    meta["format"] = fmtstr(DataHandle::format());
 
     /*
      * SEGYImport always writes annotation 'Sample' for axis K. We, on the
@@ -301,7 +301,7 @@ struct response fetch_fence_metadata(
     nlohmann::json meta;
     const Axis sample_axis = metadata.sample();
     meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
-    meta["format"] = fmtstr(OpenVDS::VolumeDataFormat::Format_R32);
+    meta["format"] = fmtstr(DataHandle::format());
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
