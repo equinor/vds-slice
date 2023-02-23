@@ -64,7 +64,8 @@ type BoundingBox struct {
 // @Description Slice metadata
 type SliceMetadata struct {
 	// Data format is represented by a numpy-style formatcodes. E.g. f4 is 4
-	// byte float, u1 is 1 byte unsinged int and u2 is 2 byte usigned int
+	// byte float, u1 is 1 byte unsinged int and u2 is 2 byte usigned int.
+	// Currently format is always 4-byte floats, little endian (<f4).
 	Format string `json:"format" example:"<f4"`
 
 	// X-axis information

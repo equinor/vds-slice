@@ -47,13 +47,10 @@ MetadataHandle const& DataHandle::get_metadata() const noexcept (true) {
 std::int64_t DataHandle::subvolume_buffer_size(
     SubVolume const& subvolume
 ) noexcept (false) {
-    auto const * layout = this->m_access_manager.GetVolumeDataLayout();
-    auto format = layout->GetChannelFormat(0);
-
     std::int64_t size = this->m_access_manager.GetVolumeSubsetBufferSize(
         subvolume.bounds.lower,
         subvolume.bounds.upper,
-        format,
+        OpenVDS::VolumeDataFormat::Format_R32,
         DataHandle::lod_level,
         DataHandle::channel
     );
@@ -66,8 +63,6 @@ void DataHandle::read_subvolume(
     std::int64_t size,
     SubVolume const& subvolume
 ) noexcept (false) {
-    auto const * layout = this->m_access_manager.GetVolumeDataLayout();
-    auto format = layout->GetChannelFormat(0);
     auto request = this->m_access_manager.RequestVolumeSubset(
         buffer,
         size,
@@ -76,7 +71,7 @@ void DataHandle::read_subvolume(
         DataHandle::channel,
         subvolume.bounds.lower,
         subvolume.bounds.upper,
-        format
+        OpenVDS::VolumeDataFormat::Format_R32
     );
     bool const success = request.get()->WaitForCompletion();
 
