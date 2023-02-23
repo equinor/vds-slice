@@ -50,7 +50,6 @@ func TestMetadata(t *testing.T) {
 			Ilxl: [][]float64{ {1, 10}, {5, 10}, {5, 11}, {1, 11}},
 			Ij:   [][]float64{ {0, 0}, {2, 0}, {2, 1}, {0, 1}},
 		},
-		Format: "<f4",
 		Crs: "utmXX",
 	}
 

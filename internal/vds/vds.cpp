@@ -304,7 +304,6 @@ struct response metadata(
     MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
-    meta["format"] = metadata.format();
 
     meta["crs"] = metadata.crs();
 
