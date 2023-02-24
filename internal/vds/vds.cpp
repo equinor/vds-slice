@@ -1,15 +1,10 @@
 #include "vds.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <array>
 #include <algorithm>
 #include <string>
 #include <stdexcept>
-#include <iostream>
 #include <memory>
-#include <utility>
 #include <cmath>
 
 #include "nlohmann/json.hpp"
