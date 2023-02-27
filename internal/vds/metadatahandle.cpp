@@ -80,25 +80,6 @@ std::string MetadataHandle::crs() const noexcept (true) {
     return this->m_layout->GetMetadataString(crs.GetCategory(), crs.GetName());
 }
 
-std::string MetadataHandle::format() const noexcept (false) {
-    /*
-     * We always request data in OpenVDS::VolumeDataFormat::Format_R32 format
-     * as this seems to be intended way when working with openvds [1].
-     * Thus users will always get data returned as f4.
-     *
-     * We also assume that server code is run on a little-endian machine.
-     *
-     * [1] https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds/-/issues/156#note_165511
-     */
-    auto format = OpenVDS::VolumeDataFormat::Format_R32;
-    switch (format) {
-        case OpenVDS::VolumeDataFormat::Format_R32: return "<f4";
-        default: {
-            throw std::runtime_error("unsupported VDS format type");
-        }
-    }
-}
-
 Axis const& MetadataHandle::get_axis(
     Direction const direction
 ) const noexcept (false) {

@@ -36,6 +36,24 @@ void response_delete(struct response* buf) {
     *buf = response {};
 }
 
+std::string fmtstr(OpenVDS::VolumeDataFormat format) {
+    /*
+     * We always request data in OpenVDS::VolumeDataFormat::Format_R32 format
+     * as this seems to be intended way when working with openvds [1].
+     * Thus users will always get data returned as f4.
+     *
+     * We also assume that server code is run on a little-endian machine.
+     *
+     * [1] https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds/-/issues/156#note_165511
+     */
+    switch (format) {
+        case OpenVDS::VolumeDataFormat::Format_R32: return "<f4";
+        default: {
+            throw std::runtime_error("unsupported VDS format type");
+        }
+    }
+}
+
 /*
  * Unit validation of Z-slices
  *
@@ -140,7 +158,7 @@ struct response fetch_slice_metadata(
     MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
-    meta["format"] = metadata.format();
+    meta["format"] = fmtstr(OpenVDS::VolumeDataFormat::Format_R32);
 
     /*
      * SEGYImport always writes annotation 'Sample' for axis K. We, on the
@@ -283,7 +301,7 @@ struct response fetch_fence_metadata(
     nlohmann::json meta;
     const Axis sample_axis = metadata.sample();
     meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
-    meta["format"] = metadata.format();
+    meta["format"] = fmtstr(OpenVDS::VolumeDataFormat::Format_R32);
 
     auto str = meta.dump();
     auto *data = new char[str.size()];
