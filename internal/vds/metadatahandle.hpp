@@ -19,7 +19,6 @@ public:
 
     BoundingBox bounding_box() const noexcept (true);
     std::string crs()          const noexcept (true);
-    std::string format()       const noexcept (false);
 
     Axis const& get_axis(Direction const direction) const noexcept (false);
 

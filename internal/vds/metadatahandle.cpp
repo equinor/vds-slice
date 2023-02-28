@@ -80,18 +80,6 @@ std::string MetadataHandle::crs() const noexcept (true) {
     return this->m_layout->GetMetadataString(crs.GetCategory(), crs.GetName());
 }
 
-std::string MetadataHandle::format() const noexcept (false) {
-    auto format = this->m_layout->GetChannelFormat(0);
-    switch (format) {
-        case OpenVDS::VolumeDataFormat::Format_U8:  return "<u1";
-        case OpenVDS::VolumeDataFormat::Format_U16: return "<u2";
-        case OpenVDS::VolumeDataFormat::Format_R32: return "<f4";
-        default: {
-            throw std::runtime_error("unsupported VDS format type");
-        }
-    }
-}
-
 Axis const& MetadataHandle::get_axis(
     Direction const direction
 ) const noexcept (false) {

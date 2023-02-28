@@ -384,8 +384,7 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 				"ilxl": [[1, 10], [5, 10], [5, 11], [1, 11]],
 				"ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
 			},
-			"crs": "utmXX",
-			"format": "<f4"
+			"crs": "utmXX"
 		}`
 
 		if metadata != expectedMetadata {

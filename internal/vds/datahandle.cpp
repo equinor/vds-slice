@@ -44,16 +44,23 @@ MetadataHandle const& DataHandle::get_metadata() const noexcept (true) {
     return *(this->m_metadata);
 }
 
+OpenVDS::VolumeDataFormat DataHandle::format() noexcept (true) {
+    /*
+     * We always want to request data in
+     * OpenVDS::VolumeDataFormat::Format_R32 format for slice.
+     * For fence documentation says: "The traces are always in 32-bit floating
+     * point format."
+     */
+    return OpenVDS::VolumeDataFormat::Format_R32;
+}
+
 std::int64_t DataHandle::subvolume_buffer_size(
     SubVolume const& subvolume
 ) noexcept (false) {
-    auto const * layout = this->m_access_manager.GetVolumeDataLayout();
-    auto format = layout->GetChannelFormat(0);
-
     std::int64_t size = this->m_access_manager.GetVolumeSubsetBufferSize(
         subvolume.bounds.lower,
         subvolume.bounds.upper,
-        format,
+        DataHandle::format(),
         DataHandle::lod_level,
         DataHandle::channel
     );
@@ -66,8 +73,6 @@ void DataHandle::read_subvolume(
     std::int64_t size,
     SubVolume const& subvolume
 ) noexcept (false) {
-    auto const * layout = this->m_access_manager.GetVolumeDataLayout();
-    auto format = layout->GetChannelFormat(0);
     auto request = this->m_access_manager.RequestVolumeSubset(
         buffer,
         size,
@@ -76,7 +81,7 @@ void DataHandle::read_subvolume(
         DataHandle::channel,
         subvolume.bounds.lower,
         subvolume.bounds.upper,
-        format
+        DataHandle::format()
     );
     bool const success = request.get()->WaitForCompletion();
 
