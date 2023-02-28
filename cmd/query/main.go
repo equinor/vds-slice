@@ -171,6 +171,7 @@ func main() {
 	}
 
 	app := gin.New()
+	app.SetTrustedProxies(nil)
 
 	var metric *metrics.Metrics
 	if opts.metrics {
@@ -182,6 +183,8 @@ func main() {
 		 * are continually scarping the /metrics endpoint. I.e. graphana.
 		 */
 		metricsApp := gin.New()
+		metricsApp.SetTrustedProxies(nil)
+
 		metricsApp.Use(gin.Recovery())
 		metricsApp.GET("metrics", metrics.NewGinHandler(metric))
 
