@@ -46,7 +46,7 @@ func TestMetadata(t *testing.T) {
 			{ Annotation: "Sample",    Min: 4,  Max: 16, Samples: 4, Unit: "ms"       },
 		},
 		BoundingBox: BoundingBox{
-			Cdp:  [][]float64{ {5, 0}, {9, 8}, {4, 11}, {0, 3} },
+			Cdp:  [][]float64{ {2, 0}, {14, 8}, {12, 11}, {0, 3} },
 			Ilxl: [][]float64{ {1, 10}, {5, 10}, {5, 11}, {1, 11}},
 			Ij:   [][]float64{ {0, 0}, {2, 0}, {2, 1}, {0, 1}},
 		},
@@ -374,7 +374,7 @@ func TestFence(t *testing.T) {
 		{
 			coordinate_system: CoordinateSystemCdp,
 			coordinates:
-				[][]float32{{7, 4}, {2, 7}, {5, 0}, {7, 4}, {9, 8}},
+				[][]float32{{8, 4}, {6, 7}, {2, 0}, {8, 4}, {14, 8}},
 		},
 	}
 
@@ -535,12 +535,12 @@ func TestFenceNearestInterpolationSnap(t *testing.T) {
 		},
 		{
 			coordinate_system: CoordinateSystemCdp,
-			coordinates:       [][]float32{{8, 5}},
+			coordinates:       [][]float32{{10, 5}},
 			expected:          []float32{108, 109, 110, 111},
 		},
 		{
 			coordinate_system: CoordinateSystemCdp,
-			coordinates:       [][]float32{{5.5, 7.5}},
+			coordinates:       [][]float32{{10, 7.5}},
 			expected:          []float32{120, 121, 122, 123},
 		},
 	}
