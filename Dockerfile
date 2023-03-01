@@ -1,5 +1,5 @@
 ARG OPENVDS_IMAGE=openvds
-FROM golang:1.18-alpine3.16 as openvds
+FROM golang:1.20-alpine3.16 as openvds
 RUN apk --no-cache add \
     curl \
     git \
