@@ -54,6 +54,12 @@ static response to_response(nlohmann::json const& metadata) {
     return response{tmp.release(), nullptr, dump.size()};
 }
 
+
+struct response to_response(std::unique_ptr< char[] > data, std::int64_t const size) {
+    /* The data should *not* be free'd on success, as it's returned to CGO */
+    return response{data.release(), nullptr, static_cast<unsigned long>(size)};
+}
+
 /*
  * Unit validation of Z-slices
  *
@@ -140,8 +146,7 @@ struct response fetch_slice(
     std::unique_ptr< char[] > data(new char[size]);
     handle.read_subvolume(data.get(), size, bounds);
 
-    /* The data should *not* be free'd on success, as it's returned to CGO */
-    return response{data.release(), nullptr, static_cast<unsigned long>(size)};
+    return to_response(std::move(data), size);
 }
 
 struct response fetch_slice_metadata(
@@ -266,8 +271,7 @@ struct response fetch_fence(
         interpolation_method
     );
 
-    /* The data should *not* be free'd on success, as it's returned to CGO */
-    return response{data.release(), nullptr, static_cast<unsigned long>(size)};
+    return to_response(std::move(data), size);
 }
 
 struct response fetch_fence_metadata(
