@@ -54,7 +54,6 @@ static response to_response(nlohmann::json const& metadata) {
     return response{tmp.release(), nullptr, dump.size()};
 }
 
-
 struct response to_response(std::unique_ptr< char[] > data, std::int64_t const size) {
     /* The data should *not* be free'd on success, as it's returned to CGO */
     return response{data.release(), nullptr, static_cast<unsigned long>(size)};
