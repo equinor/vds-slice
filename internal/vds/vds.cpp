@@ -60,6 +60,14 @@ struct response to_response(std::unique_ptr< char[] > data, std::int64_t const s
     return response{data.release(), nullptr, static_cast<unsigned long>(size)};
 }
 
+struct response to_response(std::exception const& e) {
+    std::size_t size = std::char_traits<char>::length(e.what()) + 1;
+
+    std::unique_ptr<char[]> msg(new char[size]);
+    std::copy(e.what(), e.what() + size, msg.get());
+    return response{nullptr, msg.release(), 0};
+}
+
 /*
  * Unit validation of Z-slices
  *
@@ -317,14 +325,6 @@ struct response metadata(
     meta["axis"].push_back(json_axis(sample_axis));
 
     return to_response(meta);
-}
-
-struct response to_response(std::exception const& e) {
-    std::size_t size = std::char_traits<char>::length(e.what()) + 1;
-
-    std::unique_ptr<char[]> msg(new char[size]);
-    std::copy(e.what(), e.what() + size, msg.get());
-    return response{nullptr, msg.release(), 0};
 }
 
 struct response slice(
