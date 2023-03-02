@@ -47,6 +47,13 @@ std::string fmtstr(OpenVDS::VolumeDataFormat format) {
     }
 }
 
+static response to_response(nlohmann::json const& metadata) {
+    auto const dump = metadata.dump();
+    std::unique_ptr< char[] > tmp(new char[dump.size()]);
+    std::copy(dump.begin(), dump.end(), tmp.get());
+    return response{tmp.release(), nullptr, dump.size()};
+}
+
 /*
  * Unit validation of Z-slices
  *
@@ -93,13 +100,6 @@ bool unit_validation(axis_name ax, std::string const& zunit) {
         }
     }
 };
-
-static response to_response(nlohmann::json const& metadata) {
-    auto const dump = metadata.dump();
-    std::unique_ptr< char[] > tmp(new char[dump.size()]);
-    std::copy(dump.begin(), dump.end(), tmp.get());
-    return response{tmp.release(), nullptr, dump.size()};
-}
 
 nlohmann::json json_axis(
     Axis const& axis
