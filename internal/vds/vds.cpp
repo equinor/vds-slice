@@ -1,15 +1,10 @@
 #include "vds.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <array>
 #include <algorithm>
 #include <string>
 #include <stdexcept>
-#include <iostream>
 #include <memory>
-#include <utility>
 #include <cmath>
 
 #include "nlohmann/json.hpp"
@@ -24,8 +19,6 @@
 #include "direction.hpp"
 #include "metadatahandle.hpp"
 #include "subvolume.hpp"
-
-using namespace std;
 
 void response_delete(struct response* buf) {
     if (!buf)
@@ -52,6 +45,26 @@ std::string fmtstr(OpenVDS::VolumeDataFormat format) {
             throw std::runtime_error("unsupported VDS format type");
         }
     }
+}
+
+struct response to_response(nlohmann::json const& metadata) {
+    auto const dump = metadata.dump();
+    std::unique_ptr< char[] > tmp(new char[dump.size()]);
+    std::copy(dump.begin(), dump.end(), tmp.get());
+    return response{tmp.release(), nullptr, dump.size()};
+}
+
+struct response to_response(std::unique_ptr< char[] > data, std::int64_t const size) {
+    /* The data should *not* be free'd on success, as it's returned to CGO */
+    return response{data.release(), nullptr, static_cast<unsigned long>(size)};
+}
+
+struct response to_response(std::exception const& e) {
+    std::size_t size = std::char_traits<char>::length(e.what()) + 1;
+
+    std::unique_ptr<char[]> msg(new char[size]);
+    std::copy(e.what(), e.what() + size, msg.get());
+    return response{nullptr, msg.release(), 0};
 }
 
 /*
@@ -102,7 +115,7 @@ bool unit_validation(axis_name ax, std::string const& zunit) {
 };
 
 nlohmann::json json_axis(
-    const Axis& axis
+    Axis const& axis
 ) {
     nlohmann::json doc;
     doc = {
@@ -124,7 +137,7 @@ struct response fetch_slice(
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
-    const Axis axis = metadata.get_axis(direction);
+    Axis const& axis = metadata.get_axis(direction);
     std::string zunit = metadata.sample().unit();
     if (not unit_validation(direction.name(), zunit)) {
         std::string msg = "Unable to use " + direction.to_string();
@@ -137,16 +150,10 @@ struct response fetch_slice(
 
     std::int64_t const size = handle.subvolume_buffer_size(bounds);
 
-    std::unique_ptr< char[] > data(new char[size]());
+    std::unique_ptr< char[] > data(new char[size]);
     handle.read_subvolume(data.get(), size, bounds);
 
-    response buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    /* The buffer should *not* be free'd on success, as it's returned to CGO */
-    data.release();
-    return buffer;
+    return to_response(std::move(data), size);
 }
 
 struct response fetch_slice_metadata(
@@ -190,15 +197,7 @@ struct response fetch_slice_metadata(
         throw std::runtime_error("Unhandled direction");
     }
 
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    response buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
+    return to_response(meta);
 }
 
 struct response fetch_fence(
@@ -212,9 +211,7 @@ struct response fetch_fence(
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
-    unique_ptr< traces > coords(
-        new float[npoints][OpenVDS::Dimensionality_Max]{{0}}
-    );
+    std::unique_ptr< trace[] > coords(new trace[npoints]{{0}});
 
     auto coordinate_transformer = metadata.coordinate_transformer();
     auto transform_coordinate = [&] (const float x, const float y) {
@@ -240,7 +237,7 @@ struct response fetch_fence(
 
         auto coordinate = transform_coordinate(x, y);
 
-        auto validate_boundary = [&] (const int voxel, const Axis& axis) {
+        auto validate_boundary = [&] (const int voxel, Axis const& axis) {
             const auto min = -0.5;
             const auto max = axis.nsamples() - 0.5;
             if(coordinate[voxel] < min || coordinate[voxel] >= max) {
@@ -271,7 +268,7 @@ struct response fetch_fence(
 
     std::int64_t const size = handle.traces_buffer_size(npoints);
 
-    std::unique_ptr< char[] > data(new char[size]());
+    std::unique_ptr< char[] > data(new char[size]);
 
     handle.read_traces(
         data.get(),
@@ -281,13 +278,7 @@ struct response fetch_fence(
         interpolation_method
     );
 
-    response buffer{};
-    buffer.size = size;
-    buffer.data = data.get();
-
-    data.release();
-
-    return buffer;
+    return to_response(std::move(data), size);
 }
 
 struct response fetch_fence_metadata(
@@ -299,19 +290,11 @@ struct response fetch_fence_metadata(
     MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
-    const Axis sample_axis = metadata.sample();
+    Axis const& sample_axis = metadata.sample();
     meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
     meta["format"] = fmtstr(DataHandle::format());
 
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    response buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
+    return to_response(meta);
 }
 
 struct response metadata(
@@ -340,24 +323,7 @@ struct response metadata(
     Axis const& sample_axis = metadata.sample();
     meta["axis"].push_back(json_axis(sample_axis));
 
-    auto str = meta.dump();
-    auto *data = new char[str.size()];
-    std::copy(str.begin(), str.end(), data);
-
-    response buffer{};
-    buffer.size = str.size();
-    buffer.data = data;
-
-    return buffer;
-}
-
-struct response handle_error(
-    const std::exception& e
-) {
-    response buf {};
-    buf.err = new char[std::strlen(e.what()) + 1];
-    std::strcpy(buf.err, e.what());
-    return buf;
+    return to_response(meta);
 }
 
 struct response slice(
@@ -373,7 +339,7 @@ struct response slice(
     try {
         return fetch_slice(cube, cred, direction, lineno);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -389,7 +355,7 @@ struct response slice_metadata(
     try {
         return fetch_slice_metadata(cube, cred, direction);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -409,7 +375,7 @@ struct response fence(
             cube, cred, coordinate_system, coordinates, npoints,
             interpolation_method);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -424,7 +390,7 @@ struct response fence_metadata(
     try {
         return fetch_fence_metadata(cube, cred, npoints);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -437,6 +403,6 @@ struct response metadata(
         std::string cred(credentials);
         return metadata(cube, cred);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
