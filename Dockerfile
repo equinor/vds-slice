@@ -57,11 +57,12 @@ RUN go test -race ./...
 FROM builder as static_analyzer
 ARG CGO_CPPFLAGS="-I/open-vds/Dist/OpenVDS/include"
 ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
+ARG STATICCHECK_VERSION="2023.1.2"
 ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
 RUN curl \
-    -L https://github.com/dominikh/go-tools/releases/download/v0.3.3/staticcheck_linux_amd64.tar.gz \
-    -o staticcheck-0.3.3.tar.gz
-RUN tar xf staticcheck-0.3.3.tar.gz
+    -L https://github.com/dominikh/go-tools/releases/download/${STATICCHECK_VERSION}/staticcheck_linux_amd64.tar.gz \
+    -o staticcheck-${STATICCHECK_VERSION}.tar.gz
+RUN ls && tar xf staticcheck-${STATICCHECK_VERSION}.tar.gz
 RUN ./staticcheck/staticcheck ./...
 
 
