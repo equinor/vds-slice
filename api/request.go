@@ -138,3 +138,70 @@ func (s SliceRequest) toString() (string, error) {
 	str := string(out)
 	return str, nil
 }
+
+// Query for Horizon endpoints
+// @Description Query payload for horizon endpoint /horizon.
+type HorizonRequest struct {
+	RequestedResource
+
+	// Horizon / height-map
+	Horizon [][]float32 `json:"horizon" binding:"required"`
+
+	// Rotation of the X-axis (East), counter-clockwise, in degrees
+	Rotation float32 `json:"rotation" binding:"required"`
+
+	// X-coordinate of the origin
+	Xori float32 `json:"xori" binding:"required"`
+
+	// Y-coordinate of the origin
+	Yori float32 `json:"yori" binding:"required"`
+
+	// X-increment - The physical distance between columns in horizon
+	Xinc float32 `json:"xinc" binding:"required"`
+
+	// Y-increment - The physical distance between rows in horizon
+	Yinc float32 `json:"yinc" binding:"required"`
+
+	// Any sample in the input horizon with value == fillValue will be ignored
+	// and the fillValue will be used in the amplitude map.
+	// I.e. for any [i, j] where horizon[i][j] == fillValue then
+	// output[i][j] == fillValue.
+	// Additionally, the fillValue is used for any point in the horizon that
+	// falls outside the bounds of the seismic volume.
+	FillValue float32 `json:"fillValue" binding:"required"`
+
+	// Interpolation method
+	// Supported options are: nearest, linear, cubic, angular and triangular.
+	// Defaults to nearest.
+	// This field is passed on to OpenVDS, which does the actual interpolation.
+	// Note: For nearest interpolation result will snap to the nearest point
+	// as per "half up" rounding. This is different from openvds logic.
+	Interpolation string `json:"interpolation" example:"linear"`
+} //@name HorizonRequest
+
+/** Compute a hash of the request that uniquely identifies the requested slice
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (h HorizonRequest) Hash() (string, error) {
+	// Strip the sas token before computing hash
+	h.Sas = ""
+	return cache.Hash(h)
+}
+
+func (h HorizonRequest) toString() (string, error) {
+	msg := "{vds: %s, Rotation: %.2f, Origin: [%.2f, %.2f], " +
+		"Increment: [%.2f, %.2f], FillValue: %.2f interpolation: %s}"
+	return fmt.Sprintf(
+		msg,
+		h.Vds,
+		h.Rotation,
+		h.Xori,
+		h.Yori,
+		h.Xinc,
+		h.Yinc,
+		h.FillValue,
+		h.Interpolation,
+	), nil
+}
