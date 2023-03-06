@@ -37,6 +37,17 @@ public:
         enum interpolation_method const interpolation_method
     ) noexcept (false);
 
+
+    std::int64_t samples_buffer_size(std::size_t const nsamples) noexcept (false);
+
+    void read_samples(
+        void * const                    buffer,
+        std::int64_t const              size,
+        voxel const*                    samples,
+        std::size_t const               nsamples,
+        enum interpolation_method const interpolation_method
+    ) noexcept (false);
+
 private:
     OpenVDS::ScopedVDSHandle m_file_handle;
     OpenVDS::VolumeDataAccessManager m_access_manager;
