@@ -356,3 +356,28 @@ func GetHorizon(
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
 }
+
+func GetHorizonMetadata(conn Connection, data [][]float32) ([]byte, error) {
+	curl := C.CString(conn.Url())
+	defer C.free(unsafe.Pointer(curl))
+
+	ccred := C.CString(conn.ConnectionString())
+	defer C.free(unsafe.Pointer(ccred))
+
+	result := C.horizon_metadata(
+		curl,
+		ccred,
+		C.size_t(len(data)),
+		C.size_t(len(data[0])),
+	)
+
+	defer C.response_delete(&result)
+
+	if result.err != nil {
+		err := C.GoString(result.err)
+		return nil, errors.New(err)
+	}
+
+	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
+	return buf, nil
+}

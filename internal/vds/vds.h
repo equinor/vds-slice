@@ -85,6 +85,13 @@ struct response horizon(
     enum interpolation_method interpolation_method
 );
 
+struct response horizon_metadata(
+    const char*  vdspath,
+    const char* credentials,
+    size_t nrows,
+    size_t ncols
+);
+
 void response_delete(struct response*);
 
 

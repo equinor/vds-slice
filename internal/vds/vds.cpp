@@ -450,6 +450,22 @@ struct response fetch_horizon(
     return to_response(std::move(buffer), size);
 }
 
+struct response fetch_horizon_metadata(
+    std::string const& url,
+    std::string const& credentials,
+    std::size_t nrows,
+    std::size_t ncols
+) {
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
+
+    nlohmann::json meta;
+    meta["shape"] = nlohmann::json::array({nrows, ncols});
+    meta["format"] = fmtstr(DataHandle::format());
+
+    return to_response(meta);
+}
+
 struct response handle_error(
     const std::exception& e
 ) {
@@ -563,6 +579,22 @@ struct response horizon(
         RegularSurface surface{data, nrows, ncols, affine};
 
         return fetch_horizon(cube, cred, surface, fillvalue, interpolation);
+    } catch (const std::exception& e) {
+        return handle_error(e);
+    }
+}
+
+struct response horizon_metadata(
+    const char*  vdspath,
+    const char* credentials,
+    size_t nrows,
+    size_t ncols
+) {
+    try {
+        std::string cube(vdspath);
+        std::string cred(credentials);
+
+        return fetch_horizon_metadata(cube, cred, nrows, ncols);
     } catch (const std::exception& e) {
         return handle_error(e);
     }

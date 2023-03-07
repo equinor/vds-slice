@@ -180,15 +180,20 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 		request.FillValue,
 		interpolation,
 	)
-
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, []byte{}));
+	metadata, err := vds.GetHorizonMetadata(conn, request.Horizon)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
 
-	writeResponse(ctx, []byte{}, data)
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
+
+	writeResponse(ctx, metadata, data)
 }
 
 func parseGetRequest(ctx *gin.Context, v interface{}) error {
