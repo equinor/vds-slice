@@ -211,7 +211,7 @@ struct response fetch_fence(
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
-    std::unique_ptr< trace[] > coords(new trace[npoints]{{0}});
+    std::unique_ptr< voxel[] > coords(new voxel[npoints]{{0}});
 
     auto coordinate_transformer = metadata.coordinate_transformer();
     auto transform_coordinate = [&] (const float x, const float y) {

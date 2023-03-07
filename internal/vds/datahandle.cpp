@@ -98,7 +98,7 @@ std::int64_t DataHandle::traces_buffer_size(std::size_t const ntraces) noexcept 
 void DataHandle::read_traces(
     void * const                    buffer,
     std::int64_t const              size,
-    trace const*                    coordinates,
+    voxel const*                    coordinates,
     std::size_t const               ntraces,
     enum interpolation_method const interpolation_method
 ) noexcept (false) {
