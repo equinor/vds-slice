@@ -331,6 +331,9 @@ func GetHorizon(
 		}
 	}
 
+	const above = 0
+	const below = 0
+
 	result := C.horizon(
 		curl,
 		ccred,
@@ -343,6 +346,8 @@ func GetHorizon(
 		C.float(increaseY),
 		C.float(rotation),
 		C.float(fillValue),
+		C.float(above),
+		C.float(below),
 		C.enum_interpolation_method(interpolation),
 	)
 

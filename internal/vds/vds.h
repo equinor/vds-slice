@@ -82,6 +82,8 @@ struct response horizon(
     float yinc,
     float rot,
     float fillvalue,
+    float above,
+    float below,
     enum interpolation_method interpolation_method
 );
 
