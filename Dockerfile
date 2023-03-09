@@ -1,5 +1,5 @@
 ARG OPENVDS_IMAGE=openvds
-FROM golang:1.18-alpine3.16 as openvds
+FROM golang:1.19.6-alpine3.16 as openvds
 RUN apk --no-cache add \
     curl \
     git \
@@ -72,7 +72,7 @@ ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
 RUN GOBIN=/server go install -a ./...
 
 
-FROM golang:1.18-alpine3.16 as runner
+FROM golang:1.19.6-alpine3.16 as runner
 RUN apk --no-cache add \
     g++ \
     gcc \
