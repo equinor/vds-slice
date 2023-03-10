@@ -205,3 +205,58 @@ func (h HorizonRequest) toString() (string, error) {
 		h.Interpolation,
 	), nil
 }
+
+// Query for Attribute endpoints
+// @Description Query payload for attribute endpoint.
+type AttributeRequest struct {
+	HorizonRequest
+
+	// Samples interval above the horizon to include in attribute calculation.
+	// This value should be given in the VDS's vertical domain. E.g. if the
+	// vertical domain is 'ms' then a value of 22 means to include samples up
+	// to 22 ms above the horizon definition. The value is rounded down to the
+	// nearest whole sample. I.e. if the cube is sampled at 4ms, the attribute
+	// calculation will include samples 4, 8, 12, 16 and 20ms above the
+	// horizon, while the sample at 24ms is excluded.
+	Above *float32 `json:"above" binding:"required"`
+
+	// Samples interval below the horizon to include in attribute calculation.
+	// Implements the same behaviour as 'above'.
+	Below *float32 `json:"below" binding:"required"`
+
+	// Requested attributes. Multiple attributes can be calculated by the same
+	// request. This is considerably faster than doing one request per
+	// attribute.
+	Attributes []string `json:"attributes" binding:"required"`
+} //@name AttributeRequest
+
+/** Compute a hash of the request that uniquely identifies the requested attributes
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (h AttributeRequest) Hash() (string, error) {
+	// Strip the sas token before computing hash
+	h.Sas = ""
+	return cache.Hash(h)
+}
+
+func (h AttributeRequest) toString() (string, error) {
+	msg := "{vds: %s, Rotation: %.2f, Origin: [%.2f, %.2f], " +
+		"Increment: [%.2f, %.2f], FillValue: %.2f interpolation: %s, " +
+		"Above: %f, Below: %f, Attributes: %v}"
+	return fmt.Sprintf(
+		msg,
+		h.Vds,
+		h.Rotation,
+		h.Xori,
+		h.Yori,
+		h.Xinc,
+		h.Yinc,
+		h.FillValue,
+		h.Interpolation,
+		*h.Above,
+		*h.Below,
+		h.Attributes,
+	), nil
+}

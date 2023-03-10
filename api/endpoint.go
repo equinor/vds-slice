@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -196,6 +197,86 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 	writeResponse(ctx, metadata, [][]byte{data})
 }
 
+func validateVerticalWindow(above float32, below float32,) error {
+	const lower = 0
+	const upper = 250
+
+	if lower <= above && above < upper { return nil }
+	if lower <= below && below < upper { return nil }
+	
+	return fmt.Errorf(
+		"'above'/'below' out of range! Must be within [%d, %d]",
+		lower,
+		upper,
+	)
+}
+
+func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
+	prepareRequestLogging(ctx, request)
+
+	if err := validateVerticalWindow(*request.Above, *request.Below); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	cacheKey, err := request.Hash()
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	cacheEntry, hit := e.Cache.Get(cacheKey)
+	if hit && conn.IsAuthorizedToRead() {
+		ctx.Set("cache-hit", true)
+		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
+		return
+	}
+
+	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	/* The metadata is identical to that of an horizon request (shape and
+	 * dataformat).
+	 */
+	metadata, err := vds.GetHorizonMetadata(conn, request.Horizon)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	data, err := vds.GetAttributes(
+		conn,
+		request.Horizon,
+		request.Xori,
+		request.Yori,
+		request.Xinc,
+		request.Yinc,
+		request.Rotation,
+		request.FillValue,
+		*request.Above,
+		*request.Below,
+		request.Attributes,
+		interpolation,
+	)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
+
+	writeResponse(ctx, metadata, data)
+}
+
 func parseGetRequest(ctx *gin.Context, v interface{}) error {
 	if err := json.Unmarshal([]byte(ctx.Query("query")), v); err != nil {
 		return err
@@ -341,4 +422,21 @@ func (e *Endpoint) HorizonPost(ctx *gin.Context) {
 		return
 	}
 	e.horizon(ctx, request)
+}
+
+// AttributesPost godoc
+// @Summary  Returns horizon attributes
+// @description.markdown attribute
+// @Tags     attribute
+// @Param    body  body  AttributeRequest  True  "Request Parameters"
+// @Accept   application/json
+// @Produce  multipart/mixed
+// @Router   /horizon/attributes  [post]
+func (e *Endpoint) AttributesPost(ctx *gin.Context) {
+	var request AttributeRequest
+	if err := ctx.ShouldBind(&request); err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	e.attributes(ctx, request)
 }
