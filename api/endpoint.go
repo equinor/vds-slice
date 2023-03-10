@@ -79,9 +79,9 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		return
 	}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
+	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
 
-	writeResponse(ctx, metadata, data)
+	writeResponse(ctx, metadata, [][]byte{data})
 }
 
 func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
@@ -137,9 +137,9 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 		return
 	}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
+	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
 
-	writeResponse(ctx, metadata, data)
+	writeResponse(ctx, metadata, [][]byte{data})
 }
 
 func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
@@ -191,9 +191,9 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 		return
 	}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
+	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
 
-	writeResponse(ctx, metadata, data)
+	writeResponse(ctx, metadata, [][]byte{data})
 }
 
 func parseGetRequest(ctx *gin.Context, v interface{}) error {
