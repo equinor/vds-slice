@@ -12,6 +12,8 @@ struct response {
     unsigned long size;
 };
 
+void response_delete(struct response*);
+
 enum axis_name {
     I         = 0,
     J         = 1,
@@ -110,9 +112,6 @@ struct response attribute(
     enum attribute* attributes,
     size_t nattributes
 );
-
-void response_delete(struct response*);
-
 
 #ifdef __cplusplus
 }
