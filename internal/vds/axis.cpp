@@ -13,11 +13,11 @@ Axis::Axis(
     m_axis_descriptor(layout->GetAxisDescriptor(dimension))
 {}
 
-int Axis::min() const noexcept(true) {
+float Axis::min() const noexcept(true) {
     return this->m_axis_descriptor.GetCoordinateMin();
 }
 
-int Axis::max() const noexcept(true) {
+float Axis::max() const noexcept(true) {
     return this->m_axis_descriptor.GetCoordinateMax();
 }
 
