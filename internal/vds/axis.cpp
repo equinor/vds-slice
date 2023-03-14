@@ -33,6 +33,10 @@ int Axis::dimension() const noexcept(true) {
     return this->m_dimension;
 }
 
+float Axis::stride() const noexcept (true) {
+    return (this->max() - this->min()) / (this->nsamples() - 1);
+}
+
 std::string Axis::name() const noexcept(true) {
     return this->m_axis_descriptor.GetName();
 }
