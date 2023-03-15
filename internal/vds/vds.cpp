@@ -18,6 +18,7 @@
 #include "datahandle.hpp"
 #include "direction.hpp"
 #include "metadatahandle.hpp"
+#include "regularsurface.hpp"
 #include "subvolume.hpp"
 
 void response_delete(struct response* buf) {
@@ -326,6 +327,138 @@ struct response metadata(
     return to_response(meta);
 }
 
+void write_fillvalue(
+    char * dst,
+    std::vector< std::size_t > const& novals,
+    float fillvalue
+) {
+    std::for_each(novals.begin(), novals.end(),
+        [dst, fillvalue](std::size_t i) {
+            std::memcpy(dst + (i * sizeof(float)), &fillvalue, sizeof(fillvalue));
+        }
+    );
+}
+
+struct response fetch_horizon(
+    std::string const&        url,
+    std::string const&        credentials,
+    RegularSurface            surface,
+    float                     fillvalue,
+    enum interpolation_method interpolation
+) {
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
+    auto transform = metadata.coordinate_transformer();
+
+    auto const& iline  = metadata.iline ();
+    auto const& xline  = metadata.xline();
+    auto const& sample = metadata.sample();
+
+    std::size_t const nsamples = surface.size();
+
+    std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
+
+    auto inrange = [](Axis const& axis, double const voxel) {
+        return (-0.5 <= voxel) and (voxel < axis.nsamples() - 0.5);
+    };
+
+    /** Missing input samples (marked by fillvalue) and out of bounds samples
+     *
+     * To not overcomplicate things for ourselfs (and the caller) we guarantee
+     * that the output amplitude map is exacty the same dimensions as the input
+     * height map (horizon). That gives us 2 cases to explicitly handle:
+     *
+     * 1) If a sample (region of samples) in the input horizon is marked as
+     * missing by the fillvalue then the fillvalue is used in that position in
+     * the output array too:
+     *
+     *      input[n][m] == fillvalue => output[n][m] == fillvalue
+     *
+     * 2) If a sample (or region of samples) in the input horizon is out of
+     * bounds in the horizontal plane, the output sample is populated by the
+     * fillvalue.
+     *
+     * openvds provides no options to handle these cases and to keep the output
+     * buffer aligned with the input we cannot drop samples that satisfy 1) or
+     * 2). Instead we let openvds read a dummy voxel  ({0, 0, 0, 0, 0, 0}) and
+     * keep track of the indices. After openvds is done we copy in the
+     * fillvalue.
+     *
+     * The overhead of this approach is that we overfetch (at most) one one
+     * chunk and we need an extra loop over output array.
+     */
+    std::vector< std::size_t > noval_indicies;
+
+    std::size_t i = 0;
+    for (int row = 0; row <= surface.nrows() - 1; row++) {
+        for (int col = 0; col <= surface.ncols() - 1; col++) {
+
+            float const depth = surface.sample(row, col);
+            if (depth == fillvalue) {
+                noval_indicies.push_back(i);
+                ++i;
+                continue;
+            }
+
+            auto k = transform.AnnotationToIJKPosition({0, 0, depth});
+            if (not inrange(sample, k[2])) {
+                throw std::runtime_error("Depth: " +
+                    std::to_string(depth) + " out of range [" +
+                    std::to_string(sample.min()) + ", " +
+                    std::to_string(sample.max()) + "]"
+                );
+            }
+
+            auto const cdp = surface.coordinate(row, col);
+            auto ij = transform.WorldToIJKPosition({cdp.x, cdp.y, 0});
+            if (not inrange(iline, ij[0]) or not inrange(xline, ij[1])) {
+                noval_indicies.push_back(i);
+                ++i;
+                continue;
+            }
+
+            /* openvds uses rounding down for Nearest interpolation.
+             * As it is counterintuitive, we fix it by snapping to nearest index
+             * and rounding half-up.
+             */
+            if (interpolation == NEAREST) {
+                ij[0] = std::round(ij[0] + 1) - 1;
+                ij[1] = std::round(ij[1] + 1) - 1;
+                 k[2] = std::round( k[2] + 1) - 1;
+            }
+
+            samples[i][  iline.dimension() ] = ij[0] + 0.5;
+            samples[i][  xline.dimension() ] = ij[1] + 0.5;
+            samples[i][ sample.dimension() ] =  k[2] + 0.5;
+            ++i;
+        }
+    }
+
+    auto const size = handle.samples_buffer_size(nsamples);
+
+    std::unique_ptr< char[] > buffer(new char[size]());
+    handle.read_samples(
+        buffer.get(),
+        size,
+        samples.get(),
+        nsamples,
+        interpolation
+    );
+
+    write_fillvalue(buffer.get(), noval_indicies, fillvalue);
+
+    return to_response(std::move(buffer), size);
+}
+
+struct response handle_error(
+    const std::exception& e
+) {
+    response buf {};
+    buf.err = new char[std::strlen(e.what()) + 1];
+    std::strcpy(buf.err, e.what());
+    return buf;
+}
+
 struct response slice(
     const char* vds,
     const char* credentials,
@@ -404,5 +537,33 @@ struct response metadata(
         return metadata(cube, cred);
     } catch (const std::exception& e) {
         return to_response(e);
+    }
+}
+
+struct response horizon(
+    const char*  vdspath,
+    const char* credentials,
+    const float* data,
+    size_t nrows,
+    size_t ncols,
+    float xori,
+    float yori,
+    float xinc,
+    float yinc,
+    float rot,
+    float fillvalue,
+    enum interpolation_method interpolation
+) {
+    try {
+        std::string cube(vdspath);
+        std::string cred(credentials);
+
+        auto affine = Transform::from_rotation(xori, yori, xinc, yinc, rot);
+
+        RegularSurface surface{data, nrows, ncols, affine};
+
+        return fetch_horizon(cube, cred, surface, fillvalue, interpolation);
+    } catch (const std::exception& e) {
+        return handle_error(e);
     }
 }

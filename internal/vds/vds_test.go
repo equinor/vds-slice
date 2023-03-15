@@ -20,6 +20,27 @@ func make_connection(name string) Connection {
 var well_known = make_connection("well_known")
 var prestack = make_connection("prestack")
 
+type gridDefinition struct {
+	xori     float32
+	yori     float32
+	xinc     float32
+	yinc     float32
+	rotation float32
+}
+
+/* The grid definition for the well_known vds test file
+ *
+ * When constructing horizons for testing it's useful to reuse the same grid
+ * definition in the horizon as in the vds itself.
+ */
+var well_known_grid gridDefinition = gridDefinition{
+	xori:     float32(2.0),
+	yori:     float32(0.0),
+	xinc:     float32(7.2111),
+	yinc:     float32(3.6056),
+	rotation: float32(33.69),
+}
+
 func toFloat32(buf []byte) (*[]float32, error) {
 	fsize := 4 // sizeof(float32)
 	if len(buf) % fsize != 0 {
@@ -724,6 +745,279 @@ func TestOnly3DSupported(t *testing.T) {
 				testcase.name,
 				err,
 			)
+		}
+	}
+}
+
+func TestHorizon(t *testing.T) {
+	fillValue := float32(-999.25)
+	
+	expected := []float32{
+		100, fillValue, 108, 114, 117, 123,
+	}
+	
+	horizon := [][]float32{
+		{ 4, fillValue },
+		{ 4, 12        },
+		{ 8, 16        },
+	}
+
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	buf, err := GetHorizon(
+		well_known,
+		horizon,
+		well_known_grid.xori,
+		well_known_grid.yori,
+		well_known_grid.xinc,
+		well_known_grid.yinc,
+		well_known_grid.rotation,
+		fillValue,
+		interpolationMethod,
+	)
+	if err != nil {
+		t.Errorf("Failed to fetch horizon, err: %v", err)
+	}
+
+	result, err := toFloat32(buf)
+	if err != nil {
+		t.Errorf("Err: %v", err)
+	}
+
+	if len(*result) != len(expected) {
+		msg := "Expected horizon of len: %v, got: %v"
+		t.Errorf(
+			msg,
+			len(expected),
+			len(*result),
+		)
+	}
+
+	for i, x := range *result {
+		if x == expected[i] {
+			continue
+		}
+
+		msg := "Expected %v in pos %v, got: %v"
+		t.Errorf(msg, expected[i], i, x)
+	}
+}
+
+
+func TestHorizonVerticalBounds(t *testing.T) {
+	testcases := []struct {
+		name    string
+		horizon [][]float32
+		inbounds bool
+	}{
+		{
+			name: "First depth recording",
+			horizon: [][]float32{{ 4.00 }},
+			inbounds: true,
+		},
+		{
+			name: "Half stride above first recording",
+			horizon: [][]float32{{ 2.00 }},
+			inbounds: true,
+		},
+		{
+			name: "More than a half stride above first recording",
+			horizon: [][]float32{{ 1.99 }},
+			inbounds: false,
+		},
+		{
+			name: "Last depth recording",
+			horizon: [][]float32{{ 16.00 }},
+			inbounds: true,
+		},
+		{
+			name: "Half stride below last recording",
+			horizon: [][]float32{{ 17.99 }},
+			inbounds: true,
+		},
+		{
+			name: "More than a half stride below last recording",
+			horizon: [][]float32{{ 18.00 }},
+			inbounds: false,
+		},
+		{
+			name: "Fillvalue should not be bounds checked",
+			horizon: [][]float32{{ -999.25 }},
+			inbounds: true,
+		},
+	}
+
+	fillValue  := float32(-999.25)
+
+	for _, testcase := range testcases {
+		interpolationMethod, _ := GetInterpolationMethod("nearest")
+		_, boundsErr := GetHorizon(
+			well_known,
+			testcase.horizon,
+			well_known_grid.xori,
+			well_known_grid.yori,
+			well_known_grid.xinc,
+			well_known_grid.yinc,
+			well_known_grid.rotation,
+			fillValue,
+			interpolationMethod,
+		)
+
+		if boundsErr != nil && testcase.inbounds {
+			t.Errorf(
+				"[%s] Expected horizon value %f to be in bounds",
+				testcase.name,
+				testcase.horizon[0][0],
+			)
+		}
+	
+		if boundsErr == nil && !testcase.inbounds {
+			t.Errorf(
+				"[%s] Expected horizon value %f to throw out of bound",
+				testcase.name,
+				testcase.horizon[0][0],
+			)
+		}
+	}
+}
+
+/**
+ * The goal of this test is to test that the boundschecking in the horizontal
+ * plane is correct - i.e. that we correctly populate the output array with
+ * fillvalues. To acheive this we create horizons that are based on the VDS's
+ * bingrid and then translated them in the XY-domain (by moving around the
+ * origin of the horizon). 
+ *
+ * Anything up to half a voxel outside the VDS' range is allowed. More than
+ * half a voxel is considered out-of-bounds. In world coordinates, that
+ * corresponds to half a bingrid. E.g. in the figure below we move the origin
+ * (point 0) along the vector from 0 - 2. Moving 0 half the distance between 0
+ * and 2 corresponds to moving half a voxel, and in this case that will leave
+ * point 4 and 5 half a voxel out of bounds. This test does this exercise in
+ * all direction, testing around 0.5 offset.
+ *
+ *      ^   VDS bingrid          ^    Translated horizon
+ *      |                        |
+ *      |                     13 -           5
+ *      |                        |          / \
+ *   11 -         5              |         /   4
+ *      |        / \             |        /   /
+ *      |       /   4          9 -       3   /
+ *      |      /   /             |      / \ /
+ *    7 -     3   /              |     /   2
+ *      |    / \ /               |    /   /
+ *      |   /   2              5 -   1   /
+ *      |  /   /                 |    \ /
+ *    3 - 1   /                  |     0
+ *      |  \ /                   |
+ *      |   0                    |
+ *      +-|---------|--->        +-|---------|--->
+ *        0         14             0        14
+ *        
+ */
+func TestHorizonHorizontalBounds(t *testing.T) {
+	fill   := float32(-999.25)
+	xinc   := float64(well_known_grid.xinc)
+	yinc   := float64(well_known_grid.yinc)
+	rot    := float64(well_known_grid.rotation)
+	rotrad := rot * math.Pi / 180
+
+	horizon := [][]float32{ { 4, 4 }, { 4, 4 }, { 4, 4 } }
+
+	testcases := []struct {
+		name     string
+		xori     float64
+		yori     float64
+		expected []float32
+	}{
+		{
+			name: "X coordinate is almost half a bingrid too high",
+			xori: 2.0 + 0.49 * xinc * math.Cos(rotrad),
+			yori: 0.0 + 0.49 * xinc * math.Sin(rotrad),
+			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+		},
+		{
+			name: "X coordinate is more than half a bingrid too high",
+			xori: 2.0 + 0.51 * xinc * math.Cos(rotrad),
+			yori: 0.0 + 0.51 * xinc * math.Sin(rotrad),
+			expected: []float32{ 108, 112, 116, 120, fill, fill },
+		},
+		{
+			name: "X coordinate is almost half a bingrid too low",
+			xori: 2.0 - 0.49 * xinc * math.Cos(rotrad),
+			yori: 0.0 - 0.49 * xinc * math.Sin(rotrad),
+			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+		},
+		{
+			name: "X coordinate is more than half a bingrid too low",
+			xori: 2.0 - 0.51 * xinc * math.Cos(rotrad),
+			yori: 0.0 - 0.51 * xinc * math.Sin(rotrad),
+			expected: []float32{ fill, fill, 100, 104, 108, 112 },
+		},
+		{
+			name: "Y coordinate is almost half a bingrid too high",
+			xori: 2.0 + 0.49 * yinc * -math.Sin(rotrad),
+			yori: 0.0 + 0.49 * yinc *  math.Cos(rotrad),
+			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+		},
+		{
+			name: "Y coordinate is more than half a bingrid too high",
+			xori: 2.0 + 0.51 * yinc * -math.Sin(rotrad),
+			yori: 0.0 + 0.51 * yinc *  math.Cos(rotrad),
+			expected: []float32{ 104, fill, 112, fill, 120, fill},
+		},
+		{
+			name: "Y coordinate is almost half a bingrid too low",
+			xori: 2.0 - 0.49 * yinc * -math.Sin(rotrad),
+			yori: 0.0 - 0.49 * yinc *  math.Cos(rotrad),
+			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+		},
+		{
+			name: "Y coordinate is more than half a bingrid too low",
+			xori: 2.0 - 0.51 * yinc * -math.Sin(rotrad),
+			yori: 0.0 - 0.51 * yinc *  math.Cos(rotrad),
+			expected: []float32{ fill, 100, fill, 108, fill, 116 },
+		},
+	}
+
+	for _, testcase := range testcases {
+		interpolationMethod, _ := GetInterpolationMethod("nearest")
+		buf, err := GetHorizon(
+			well_known,
+			horizon,
+			float32(testcase.xori),
+			float32(testcase.yori),
+			float32(xinc),
+			float32(yinc),
+			float32(rot),
+			fill,
+			interpolationMethod,
+		)
+		if err != nil {
+			t.Errorf("[%s] Failed to fetch horizon, err: %v", testcase.name, err)
+		}
+
+		result, err := toFloat32(buf)
+		if err != nil {
+			t.Errorf("Err: %v", err)
+		}
+
+		if len(*result) != len(testcase.expected) {
+			msg := "[%s] Expected horizon of len: %v, got: %v"
+			t.Errorf(
+				msg,
+				testcase.name,
+				len(testcase.expected),
+				len(*result),
+			)
+		}
+
+		for i, x := range *result {
+			if x == testcase.expected[i] {
+				continue
+			}
+
+			msg := "[%s] Expected %v in pos %v, got: %v"
+			t.Errorf(msg, testcase.name, testcase.expected[i], i, x)
 		}
 	}
 }

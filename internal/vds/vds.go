@@ -294,3 +294,65 @@ func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
 }
+
+func GetHorizon(
+	conn          Connection,
+	data          [][]float32,
+	originX       float32,
+	originY       float32,
+	increaseX     float32,
+	increaseY     float32,
+	rotation      float32,
+	fillValue     float32,
+	interpolation int,
+) ([]byte, error) {
+	curl := C.CString(conn.Url())
+	defer C.free(unsafe.Pointer(curl))
+
+	ccred := C.CString(conn.ConnectionString())
+	defer C.free(unsafe.Pointer(ccred))
+
+	nrows := len(data)
+	ncols := len(data[0])
+
+	cdata := make([]C.float, nrows * ncols)
+	for i := range data {
+		if len(data[i]) != ncols  {
+			msg := fmt.Sprintf(
+				"Invalid coordinate %v at position %d, expected [x y] pair",
+				data[i],
+				i,
+			)
+			return nil, errors.New(msg)
+		}
+
+		for j := range data[i] {
+			cdata[i * ncols  + j] = C.float(data[i][j])
+		}
+	}
+
+	result := C.horizon(
+		curl,
+		ccred,
+		&cdata[0],
+		C.size_t(nrows),
+		C.size_t(ncols),
+		C.float(originX),
+		C.float(originY),
+		C.float(increaseX),
+		C.float(increaseY),
+		C.float(rotation),
+		C.float(fillValue),
+		C.enum_interpolation_method(interpolation),
+	)
+
+	defer C.response_delete(&result)
+
+	if result.err != nil {
+			err := C.GoString(result.err)
+			return nil, errors.New(err)
+	}
+
+	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
+	return buf, nil
+}
