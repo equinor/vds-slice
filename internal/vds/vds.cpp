@@ -13,6 +13,7 @@
 #include <OpenVDS/KnownMetadata.h>
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
+#include "attribute.hpp"
 #include "axis.hpp"
 #include "boundingbox.hpp"
 #include "datahandle.hpp"
@@ -482,6 +483,21 @@ struct response fetch_horizon(
     return to_response(std::move(buffer), size);
 }
 
+struct response calculate_attribute(
+    Horizon const& horizon,
+    enum attribute target
+) {
+    std::size_t size = horizon.mapsize();
+    std::unique_ptr< char[] > attr(new char[size]());
+
+    switch (target) {
+        default:
+            throw std::runtime_error("Attribute not implemented");
+    }
+
+    return to_response(std::move(attr), size);
+}
+
 struct response fetch_horizon_metadata(
     std::string const& url,
     std::string const& credentials,
@@ -639,5 +655,20 @@ struct response horizon_metadata(
         return fetch_horizon_metadata(cube, cred, nrows, ncols);
     } catch (const std::exception& e) {
         return handle_error(e);
+    }
+}
+
+struct response attribute(
+    const char* data,
+    size_t size,
+    size_t vertical_window,
+    float  fillvalue,
+    enum attribute attribute
+) {
+    try {
+        Horizon horizon((float*)data, size, vertical_window, fillvalue);
+        return calculate_attribute(horizon, attribute);
+    } catch (const std::exception& e) {
+        return to_response(e);
     }
 }
