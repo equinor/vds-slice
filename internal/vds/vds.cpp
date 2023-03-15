@@ -490,7 +490,9 @@ struct response calculate_attribute(
     std::size_t size = horizon.mapsize();
     std::unique_ptr< char[] > attr(new char[size]());
 
+    using namespace attributes;
     switch (target) {
+        case MIN: { min(horizon, attr.get(), size); break; }
         default:
             throw std::runtime_error("Attribute not implemented");
     }

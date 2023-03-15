@@ -32,3 +32,15 @@ void Horizon::calc_attribute(void* dst, std::size_t size, Func func) const {
         ++offset;
     });
 }
+
+namespace attributes {
+
+void min(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
+    auto minfunc = [](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
+        return *std::min_element(beg, end);
+    };
+
+    return horizon.calc_attribute(dst, size, minfunc);
+}
+
+} // namespace attributes

@@ -140,4 +140,12 @@ private:
     float        m_fillvalue;
 };
 
+namespace attributes {
+
+/* Attribute computations */
+
+void min(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
+
+} // namespace attributes
+
 #endif /* VDS_SLICE_ATTRIBUTE_HPP */
