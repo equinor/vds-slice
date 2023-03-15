@@ -9,7 +9,7 @@
 #include "metadatahandle.hpp"
 #include "subvolume.hpp"
 
-using trace = float[OpenVDS::Dimensionality_Max];
+using voxel = float[OpenVDS::Dimensionality_Max];
 
 class DataHandle {
 public:
@@ -32,8 +32,19 @@ public:
     void read_traces(
         void * const                    buffer,
         std::int64_t const              size,
-        trace const*                    coordinates,
+        voxel const*                    coordinates,
         std::size_t const               ntraces,
+        enum interpolation_method const interpolation_method
+    ) noexcept (false);
+
+
+    std::int64_t samples_buffer_size(std::size_t const nsamples) noexcept (false);
+
+    void read_samples(
+        void * const                    buffer,
+        std::int64_t const              size,
+        voxel const*                    samples,
+        std::size_t const               nsamples,
         enum interpolation_method const interpolation_method
     ) noexcept (false);
 

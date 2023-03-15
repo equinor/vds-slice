@@ -70,6 +70,28 @@ struct response fence_metadata(
     size_t npoints
 );
 
+struct response horizon(
+    const char* vds,
+    const char* credentials,
+    const float* data,
+    size_t nrows,
+    size_t ncols,
+    float xori,
+    float yori,
+    float xinc,
+    float yinc,
+    float rot,
+    float fillvalue,
+    enum interpolation_method interpolation_method
+);
+
+struct response horizon_metadata(
+    const char*  vdspath,
+    const char* credentials,
+    size_t nrows,
+    size_t ncols
+);
+
 void response_delete(struct response*);
 
 

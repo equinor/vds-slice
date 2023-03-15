@@ -98,7 +98,7 @@ std::int64_t DataHandle::traces_buffer_size(std::size_t const ntraces) noexcept 
 void DataHandle::read_traces(
     void * const                    buffer,
     std::int64_t const              size,
-    trace const*                    coordinates,
+    voxel const*                    coordinates,
     std::size_t const               ntraces,
     enum interpolation_method const interpolation_method
 ) noexcept (false) {
@@ -117,6 +117,39 @@ void DataHandle::read_traces(
     );
     bool const success = request.get()->WaitForCompletion();
 
+    if (!success) {
+        throw std::runtime_error("Failed to read from VDS.");
+    }
+}
+
+std::int64_t DataHandle::samples_buffer_size(
+    std::size_t const nsamples
+) noexcept (false) {
+    return this->m_access_manager.GetVolumeSamplesBufferSize(
+        nsamples,
+        DataHandle::channel
+    );
+}
+
+void DataHandle::read_samples(
+    void * const                    buffer,
+    std::int64_t const              size,
+    voxel const*                    samples,
+    std::size_t const               nsamples,
+    enum interpolation_method const interpolation_method
+) noexcept (false) {
+    auto request = this->m_access_manager.RequestVolumeSamples(
+        (float*)buffer,
+        size,
+        OpenVDS::Dimensions_012,
+        DataHandle::lod_level,
+        DataHandle::channel,
+        samples,
+        nsamples,
+        ::to_interpolation(interpolation_method)
+    );
+
+    bool const success = request.get()->WaitForCompletion();
     if (!success) {
         throw std::runtime_error("Failed to read from VDS.");
     }
