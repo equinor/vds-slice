@@ -51,4 +51,15 @@ void max(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
     return horizon.calc_attribute(dst, size, maxfunc);
 }
 
+void mean(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
+    std::size_t vsize = horizon.vsize();
+
+    auto meanfunc = [vsize](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
+        float sum = std::accumulate(beg, end, 0.0f);
+        return sum / vsize;
+    };
+
+    return horizon.calc_attribute(dst, size, meanfunc);
+}
+
 } // namespace attributes

@@ -154,11 +154,12 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 
 func GetAttributeType(attribute string) (int, error) {
 	switch strings.ToLower(attribute) {
-	case "min": return C.MIN, nil
-	case "max": return C.MAX, nil
+	case "min":  return C.MIN,  nil
+	case "max":  return C.MAX,  nil
+	case "mean": return C.MEAN, nil
 	case "": fallthrough
 	default:
-		options := "min, max"
+		options := "min, max, mean"
 		msg := "invalid attribute '%s', valid options are: %s"
 		return -1, fmt.Errorf(msg, attribute, options)
 	}

@@ -492,8 +492,9 @@ struct response calculate_attribute(
 
     using namespace attributes;
     switch (target) {
-        case MIN: { min(horizon, attr.get(), size); break; }
-        case MAX: { max(horizon, attr.get(), size); break; }
+        case MIN:  {  min(horizon, attr.get(), size); break; }
+        case MAX:  {  max(horizon, attr.get(), size); break; }
+        case MEAN: { mean(horizon, attr.get(), size); break; }
         default:
             throw std::runtime_error("Attribute not implemented");
     }
