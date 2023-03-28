@@ -43,4 +43,12 @@ void min(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
     return horizon.calc_attribute(dst, size, minfunc);
 }
 
+void max(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
+    auto maxfunc = [](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
+        return *std::max_element(beg, end);
+    };
+
+    return horizon.calc_attribute(dst, size, maxfunc);
+}
+
 } // namespace attributes
