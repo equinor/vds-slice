@@ -147,6 +147,7 @@ namespace attributes {
 void  min(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
 void  max(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
 void mean(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
+void  rms(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
 
 } // namespace attributes
 

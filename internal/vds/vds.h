@@ -40,7 +40,8 @@ enum interpolation_method {
 enum attribute {
     MIN,
     MAX,
-    MEAN
+    MEAN,
+    RMS
 };
 
 struct response metadata(
