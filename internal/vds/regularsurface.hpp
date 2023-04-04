@@ -29,6 +29,19 @@ struct Transform : private std::array< std::array< double, 3>, 2 > {
         float rot
     ) noexcept (true) {
         double rad = rot * (M_PI / 180);
+        /**
+         * Matrix is composed by applying affine transformations [1] in the
+         * following order:
+         * - scaling by xinc, yinc
+         * - counterclockwise rotation by angle rad around the center
+         * - translation by the offset (xori, yori)
+         *
+         * By scaling unit vectors, rotating coordinate system axes and moving
+         * coordinate system center to new position we transform index-based
+         * rows-and-columns cartesian coordinate system into CDP-surface one.
+         *
+         * [1] https://en.wikipedia.org/wiki/Affine_transformation
+        */
         return Transform(base_type({{
             xinc * std::cos(rad),  -yinc * std::sin(rad), xori,
             xinc * std::sin(rad),   yinc * std::cos(rad), yori
