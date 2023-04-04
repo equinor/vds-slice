@@ -173,12 +173,12 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 	data, err := vds.GetHorizon(
 		conn,
 		request.Horizon,
-		request.Xori,
-		request.Yori,
+		*request.Xori,
+		*request.Yori,
 		request.Xinc,
 		request.Yinc,
-		request.Rotation,
-		request.FillValue,
+		*request.Rotation,
+		*request.FillValue,
 		interpolation,
 	)
 	if err != nil {
@@ -256,12 +256,12 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	data, err := vds.GetAttributes(
 		conn,
 		request.Horizon,
-		request.Xori,
-		request.Yori,
+		*request.Xori,
+		*request.Yori,
 		request.Xinc,
 		request.Yinc,
-		request.Rotation,
-		request.FillValue,
+		*request.Rotation,
+		*request.FillValue,
 		*request.Above,
 		*request.Below,
 		request.Attributes,
