@@ -463,6 +463,115 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 	testErrorHTTPResponse(t, testcases)
 }
 
+func TestHorizonHappyHTTPResponse(t *testing.T) {
+	testcases := []horizonTest{
+		{
+			baseTest{
+				name:           "Valid json POST Request",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusOK,
+			},
+
+			testHorizonRequest{
+				Vds:     well_known,
+				Horizon: [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:     "n/a",
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		w := setupTest(t, testcase)
+
+		requireStatus(t, testcase, w)
+
+		parts := readMultipartData(t, w)
+		require.Equalf(t, 2, len(parts),
+			"Wrong number of multipart data parts in case '%s'", testcase.name)
+
+		metadata := string(parts[0])
+		xLength := len(testcase.horizon.Horizon)
+		yLength := len(testcase.horizon.Horizon[0])
+		expectedMetadata := `{
+			"shape": [` + fmt.Sprint(xLength) + `,` + fmt.Sprint(yLength) + `],
+			"format": "<f4"
+		}`
+		require.JSONEqf(t, expectedMetadata, metadata,
+			"Metadata not equal in case '%s'", testcase.name)
+
+		expectedDataLength := xLength * yLength * 4 //4 bytes each
+		require.Equalf(t, expectedDataLength, len(parts[1]),
+			"Wrong number of bytes in data reply in case '%s'", testcase.name)
+	}
+}
+
+func TestHorizonErrorHTTPResponse(t *testing.T) {
+	testcases := []endpointTest{
+		horizonTest{
+			baseTest{
+				name:           "Invalid json POST request",
+				method:         http.MethodPost,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			},
+			testHorizonRequest{},
+		},
+		horizonTest{
+			baseTest{
+				name:   "Missing parameters POST Request",
+				method: http.MethodPost,
+				jsonRequest: "{\"vds\":\"" + well_known +
+					"\", \"interpolation\":\"cubic\", \"sas\": \"n/a\"}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for",
+			},
+			testHorizonRequest{},
+		},
+		horizonTest{
+			baseTest{
+				name:   "Request with incorrect coordinates length",
+				method: http.MethodPost,
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Invalid coordinate [4 4 4] at position 1, expected [x y] pair",
+			},
+			testHorizonRequest{
+				Vds:     well_known,
+				Horizon: [][]float32{{4, 4}, {4, 4, 4}, {4, 4}},
+				Sas:     "n/a",
+			},
+		},
+		horizonTest{
+			baseTest{
+				name:           "Request with incorrect interpolation method",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid interpolation method",
+			},
+			testHorizonRequest{
+				Vds:           well_known,
+				Horizon:       [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:           "n/a",
+				Interpolation: "unsupported",
+			},
+		},
+		horizonTest{
+			baseTest{
+				name:           "Request which passed all input checks but still should fail",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusInternalServerError,
+				expectedError:  "Could not open VDS",
+			},
+			testHorizonRequest{
+				Vds:     "unknown",
+				Horizon: [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:     "n/a",
+			},
+		},
+	}
+	testErrorHTTPResponse(t, testcases)
+}
+
 func TestLogHasNoSas(t *testing.T) {
 	var testcases []endpointTest
 	addTests := func(method string) {
