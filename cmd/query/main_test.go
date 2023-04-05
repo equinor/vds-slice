@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -48,14 +47,9 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 
 		requireStatus(t, testcase, w)
 		parts := readMultipartData(t, w)
-		if len(parts) != 2 {
-			msg := "Got %d parts in reply; want it to always contain 2 in case '%s'"
-			t.Errorf(
-				msg,
-				len(parts),
-				testcase.name,
-			)
-		}
+
+		require.Equalf(t, 2, len(parts),
+			"Wrong number of multipart data parts in case '%s'", testcase.name)
 
 		inlineAxis := testSliceAxis{
 			Annotation: "Inline", Max: 5.0, Min: 1.0, Samples: 3, Unit: "unitless",
@@ -86,36 +80,14 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 
 		metadata := &testSliceMetadata{}
 		err := json.Unmarshal(parts[0], metadata)
-
-		if err != nil {
-			msg := "Failed json metadata extraction in case '%s'"
-			t.Fatalf(
-				msg,
-				testcase.name,
-			)
-		}
-
-		if !reflect.DeepEqual(metadata, expectedMetadata) {
-			msg := "Got %v as metadata; want it to be %v in case '%s'"
-			t.Fatalf(
-				msg,
-				metadata,
-				expectedMetadata,
-				testcase.name,
-			)
-		}
+		require.NoErrorf(t, err, "Failed json metadata extraction in case '%s'", testcase.name)
+		require.EqualValuesf(t, expectedMetadata, metadata,
+			"Metadata not equal in case '%s'", testcase.name)
 
 		expectedDataLength := expectedMetadata.X.Samples *
 			expectedMetadata.Y.Samples * 4 //4 bytes each
-		if len(parts[1]) != expectedDataLength {
-			msg := "Got %d bytes in data reply; want it to be %d in case '%s'"
-			t.Errorf(
-				msg,
-				len(parts[2]),
-				expectedDataLength,
-				testcase.name,
-			)
-		}
+		require.Equalf(t, expectedDataLength, len(parts[1]),
+			"Wrong number of bytes in data reply in case '%s'", testcase.name)
 	}
 }
 
@@ -232,36 +204,21 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 
 		requireStatus(t, testcase, w)
 		parts := readMultipartData(t, w)
-		if len(parts) != 2 {
-			msg := "Got %d parts in reply; want it to always contain 3 in case '%s'"
-			t.Errorf(
-				msg,
-				len(parts),
-				testcase.name,
-			)
-		}
+		require.Equalf(t, 2, len(parts),
+			"Wrong number of multipart data parts in case '%s'", testcase.name)
 
 		metadata := string(parts[0])
+		coordinatesLength := len(testcase.fence.Coordinates)
 		expectedMetadata := `{
-			"shape": [` + fmt.Sprint(len(testcase.fence.Coordinates)) + `, 4],
+			"shape": [` + fmt.Sprint(coordinatesLength) + `, 4],
 			"format": "<f4"
 		}`
+		require.JSONEqf(t, expectedMetadata, metadata,
+			"Metadata not equal in case '%s'", testcase.name)
 
-		if metadata != expectedMetadata {
-			msg := "Metadata not equal in case '%s'"
-			require.JSONEq(t, expectedMetadata, metadata, fmt.Sprintf(msg, testcase.name))
-		}
-
-		expectedDataLength := len(testcase.fence.Coordinates) * 4 * 4 //4 bytes, 4 samples per each requested
-		if len(parts[1]) != expectedDataLength {
-			msg := "Got %d bytes in data reply; want it to be %d in case '%s'"
-			t.Errorf(
-				msg,
-				len(parts[2]),
-				expectedDataLength,
-				testcase.name,
-			)
-		}
+		expectedDataLength := coordinatesLength * 4 * 4 //4 bytes, 4 samples per each requested
+		require.Equalf(t, expectedDataLength, len(parts[1]),
+			"Wrong number of bytes in data reply in case '%s'", testcase.name)
 	}
 }
 
@@ -401,10 +358,7 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 			"crs": "utmXX"
 		}`
 
-		if metadata != expectedMetadata {
-			msg := "Metadata not equal in case '%s'"
-			require.JSONEq(t, expectedMetadata, metadata, fmt.Sprintf(msg, testcase.name))
-		}
+		require.JSONEqf(t, expectedMetadata, metadata, "Metadata not equal in case '%s'", testcase.name)
 	}
 }
 
