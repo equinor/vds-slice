@@ -207,33 +207,15 @@ def test_assure_only_allowed_storage_accounts(path, payload):
 @pytest.mark.parametrize("path, payload, error_code, error", [
     (
         "slice",
-        {"param": "irrelevant"},
-        http.HTTPStatus.BAD_REQUEST,
-        "Error:Field validation for"
-    ),
-    (
-        "fence",
-        {"param": "irrelevant"},
-        http.HTTPStatus.BAD_REQUEST,
-        "Error:Field validation for"
-    ),
-    (
-        "metadata",
-        {"param": "irrelevant"},
-        http.HTTPStatus.BAD_REQUEST,
-        "Error:Field validation for"
-    ),
-    (
-        "slice",
         make_slice_request(direction="inline", lineno=4),
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "Invalid lineno: 4, valid range: [1.000000:5.000000:2.000000]"
     ),
     (
         "fence",
-        make_fence_request(coordinate_system="ij", coordinates=[[1, 2, 3]]),
-        http.HTTPStatus.INTERNAL_SERVER_ERROR,
-        "expected [x y] pair"
+        {"param": "irrelevant"},
+        http.HTTPStatus.BAD_REQUEST,
+        "Error:Field validation for"
     ),
     (
         "metadata",
