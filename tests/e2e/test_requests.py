@@ -21,6 +21,16 @@ STORAGE_ACCOUNT = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
 VDSURL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
 
 
+def horizon_surface():
+    return {
+        "xinc": 7.2111,
+        "yinc": 3.6056,
+        "xori": 2,
+        "yori": 0,
+        "rotation": 33.69,
+    }
+
+
 def make_slice_request(vds=VDSURL, direction="inline", lineno=3, sas="sas"):
     return {
         "vds": vds,
@@ -44,6 +54,18 @@ def make_metadata_request(vds=VDSURL, sas="sas"):
         "vds": vds,
         "sas": sas
     }
+
+
+def make_horizon_request(vds=VDSURL, surface=horizon_surface(), horizon=[[8]], sas="sas"):
+    request = {
+        "fillValue": -999.25,
+        "horizon": horizon,
+        "interpolation": "nearest",
+        "vds": vds,
+        "sas": sas
+    }
+    request.update(surface)
+    return request
 
 
 @pytest.mark.parametrize("method", [
@@ -111,10 +133,31 @@ def test_metadata(method):
     assert metadata == expected_metadata
 
 
+def test_horizon():
+    horizon = [
+        [8, 8],
+        [8, 8],
+        [8, 8]
+    ]
+    meta, data = request_horizon("post", horizon)
+
+    expected = np.array([[101, 105], [109, 113], [117, 121]])
+    assert np.array_equal(data, expected)
+
+    expected_meta = json.loads("""
+    {
+        "shape": [3, 2],
+        "format": "<f4"
+    }
+    """)
+    assert meta == expected_meta
+
+
 @pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
+    ("horizon", make_horizon_request()),
 ])
 @pytest.mark.parametrize("sas, allowed_error_messages", [
     (
@@ -141,7 +184,8 @@ def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_message
 
 @pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request(vds=VDSURL)),
-    ("fence", make_fence_request(vds=VDSURL))
+    ("fence", make_fence_request(vds=VDSURL)),
+    ("horizon", make_horizon_request(vds=VDSURL)),
 ])
 @pytest.mark.parametrize("token, status, error", [
     (generate_container_signature(
@@ -183,7 +227,7 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
     make_caching_call()
 
     payload.update({"sas": token})
-    res = send_request(path, "get", payload)
+    res = send_request(path, "post", payload)
     assert res.status_code == status
     if error:
         assert error in json.loads(res.content)['error']
@@ -193,12 +237,13 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
+    ("horizon", make_horizon_request()),
 ])
 def test_assure_only_allowed_storage_accounts(path, payload):
     payload.update({
         "vds": "https://dummy.blob.core.windows.net/container/blob",
     })
-    res = send_request(path, "get", payload)
+    res = send_request(path, "post", payload)
     assert res.status_code == http.HTTPStatus.BAD_REQUEST
     body = json.loads(res.content)
     assert "unsupported storage account" in body['error']
@@ -222,6 +267,12 @@ def test_assure_only_allowed_storage_accounts(path, payload):
         make_metadata_request(vds=f'{STORAGE_ACCOUNT}/{CONTAINER}/notfound'),
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "The specified blob does not exist"
+    ),
+    (
+        "horizon",
+        make_horizon_request(surface={}),
+        http.HTTPStatus.BAD_REQUEST,
+        "Error:Field validation for"
     ),
 ])
 def test_errors(path, payload, error_code, error):
@@ -295,3 +346,20 @@ def request_metadata(method):
     rdata.raise_for_status()
 
     return rdata.json()
+
+
+def request_horizon(method, horizon):
+    sas = generate_container_signature(
+        STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
+
+    payload = make_horizon_request(VDSURL, horizon_surface(), horizon, sas)
+    rdata = send_request("horizon", method, payload)
+    rdata.raise_for_status()
+
+    multipart_data = decoder.MultipartDecoder.from_response(rdata)
+    assert len(multipart_data.parts) == 2
+    metadata = json.loads(multipart_data.parts[0].content)
+    data = multipart_data.parts[1].content
+
+    data = np.ndarray(metadata['shape'], metadata['format'], data)
+    return metadata, data
