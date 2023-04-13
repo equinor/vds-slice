@@ -6,14 +6,27 @@ export function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
-/**
- * Return max (exclusive) dimension index aka number of samples
- */
-export function getMaxIndexInDimension(metadata, annotationDimension) {
+export function getAxisInDimension(metadata, annotationDimension) {
   const axis = metadata.axis.find((ax) => {
     return ax.annotation == annotationDimension;
   });
-  return axis.samples;
+  return axis;
+}
+
+/**
+ * Return number of samples in dimension
+ */
+export function getSampleSizeInDimension(metadata, annotationDimension) {
+  return getAxisInDimension(metadata, annotationDimension).samples;
+}
+
+/**
+ * Return max (inclusive) dimension index aka number of samples - 1.
+ * Function does not return maximum value of annotated dimension,
+ * only corresponding index dimension.
+ */
+export function getMaxIndexInDimension(metadata, annotationDimension) {
+  return getSampleSizeInDimension(metadata, annotationDimension) - 1;
 }
 
 export function getRandomIndexInDimension(metadata, annotationDimension) {
