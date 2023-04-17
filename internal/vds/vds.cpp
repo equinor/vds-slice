@@ -519,15 +519,6 @@ struct response fetch_horizon_metadata(
     return to_response(meta);
 }
 
-struct response handle_error(
-    const std::exception& e
-) {
-    response buf {};
-    buf.err = new char[std::strlen(e.what()) + 1];
-    std::strcpy(buf.err, e.what());
-    return buf;
-}
-
 struct response slice(
     const char* vds,
     const char* credentials,
@@ -643,7 +634,7 @@ struct response horizon(
             interpolation
         );
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -659,7 +650,7 @@ struct response horizon_metadata(
 
         return fetch_horizon_metadata(cube, cred, nrows, ncols);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
