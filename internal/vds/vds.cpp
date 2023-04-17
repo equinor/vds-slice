@@ -411,8 +411,8 @@ struct response fetch_horizon(
     std::vector< std::size_t > noval_indicies;
 
     std::size_t i = 0;
-    for (int row = 0; row <= surface.nrows() - 1; row++) {
-        for (int col = 0; col <= surface.ncols() - 1; col++) {
+    for (int row = 0; row < surface.nrows(); row++) {
+        for (int col = 0; col < surface.ncols(); col++) {
             float const depth = surface.sample(row, col);
             if (depth == fillvalue) {
                 noval_indicies.push_back(i);
