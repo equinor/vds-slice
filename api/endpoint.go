@@ -135,7 +135,13 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	)
 
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		var invalidArgument *vds.InvalidArgument
+		switch {
+		case errors.As(err, &invalidArgument):
+			ctx.AbortWithError(http.StatusBadRequest, invalidArgument)
+		default:
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
 		return
 	}
 
