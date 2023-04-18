@@ -484,10 +484,11 @@ func TestHorizonErrorHTTPResponse(t *testing.T) {
 		},
 		horizonTest{
 			baseTest{
-				name:   "Request with incorrect coordinates length",
-				method: http.MethodPost,
+				name:           "Request with incorrect row size",
+				method:         http.MethodPost,
 				expectedStatus: http.StatusBadRequest,
-				expectedError:  "Invalid coordinate [4 4 4] at position 1, expected [x y] pair",
+				expectedError: "Surface rows are not of the same length. " +
+					"Row 0 has 2 elements. Row 1 has 3 elements",
 			},
 			testHorizonRequest{
 				Vds:     well_known,
