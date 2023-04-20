@@ -14,9 +14,9 @@ int lineno_annotation_to_voxel(
 ) {
     float min    = axis.min();
     float max    = axis.max();
-    int nsamples = axis.nsamples();
-    auto stride  = (max - min) / (nsamples - 1);
-    float voxelline  = (lineno - min) / stride;
+    float stride = axis.stride();
+
+    float voxelline = (lineno - min) / stride;
 
     if (lineno < min || lineno > max || std::floor(voxelline) != voxelline) {
         throw std::runtime_error(
