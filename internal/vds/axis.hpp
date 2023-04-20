@@ -17,8 +17,10 @@ public:
 
     int nsamples() const noexcept(true);
 
-    int min() const noexcept(true);
-    int max() const noexcept(true);
+    float min() const noexcept(true);
+    float max() const noexcept(true);
+
+    float stride() const noexcept (true);
 
     std::string unit() const noexcept(true);
     int dimension() const noexcept(true);

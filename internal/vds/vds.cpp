@@ -13,6 +13,7 @@
 #include <OpenVDS/KnownMetadata.h>
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
+#include "attribute.hpp"
 #include "axis.hpp"
 #include "boundingbox.hpp"
 #include "datahandle.hpp"
@@ -254,14 +255,18 @@ struct response fetch_fence(
         validate_boundary(0, inline_axis);
         validate_boundary(1, crossline_axis);
 
-        /* openvds uses rounding down for Nearest interpolation.
-         * As it is counterintuitive, we fix it by snapping to nearest index
-         * and rounding half-up.
+        /* OpenVDS' transformers and OpenVDS data request functions have
+         * different definition of where a datapoint is. E.g. A transformer
+         * (To voxel or ijK) will return (0,0,0) for the first sample in
+         * the cube. The request functions on the other hand assumes the
+         * data is located in the center of a voxel. I.e. that the first
+         * sample is at (0.5, 0.5, 0.5). This is a *VERY* sharp edge in the
+         * OpenVDS API and borders on a bug. It means we cannot directly
+         * use the output from the transformers as input to the request
+         * functions.
          */
-        if (interpolation_method == NEAREST) {
-            coordinate[0] = std::round(coordinate[0] + 1) - 1;
-            coordinate[1] = std::round(coordinate[1] + 1) - 1;
-        }
+        coordinate[0] += 0.5;
+        coordinate[1] += 0.5;
 
         coords[i][   inline_axis.dimension()] = coordinate[0];
         coords[i][crossline_axis.dimension()] = coordinate[1];
@@ -327,16 +332,24 @@ struct response metadata(
     return to_response(meta);
 }
 
+/**
+ * For every index in 'novals', write n successive floats with value
+ * 'fillvalue' to dst. Where n is 'vertical_size'.
+ */
 void write_fillvalue(
     char * dst,
     std::vector< std::size_t > const& novals,
+    std::size_t vertical_size,
     float fillvalue
 ) {
-    std::for_each(novals.begin(), novals.end(),
-        [dst, fillvalue](std::size_t i) {
-            std::memcpy(dst + (i * sizeof(float)), &fillvalue, sizeof(fillvalue));
-        }
-    );
+    std::vector< float > fill(vertical_size, fillvalue);
+    std::for_each(novals.begin(), novals.end(), [&](std::size_t i) {
+        std::memcpy(
+            dst + i * sizeof(float),
+            fill.data(),
+            fill.size() * sizeof(float)
+        );
+    });
 }
 
 struct response fetch_horizon(
@@ -344,8 +357,13 @@ struct response fetch_horizon(
     std::string const&        credentials,
     RegularSurface            surface,
     float                     fillvalue,
+    float                     above,
+    float                     below,
     enum interpolation_method interpolation
 ) {
+    if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
+    if (below < 0) throw std::invalid_argument("'below' must be >= 0");
+
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
     auto transform = metadata.coordinate_transformer();
@@ -354,12 +372,15 @@ struct response fetch_horizon(
     auto const& xline  = metadata.xline();
     auto const& sample = metadata.sample();
 
-    std::size_t const nsamples = surface.size();
+    std::size_t samples_above = std::floor( above / sample.stride() );
+    std::size_t samples_below = std::floor( below / sample.stride() );
+    std::size_t verical_size = samples_above + samples_below + 1;
+    std::size_t const nsamples = surface.size() * verical_size;
 
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
     auto inrange = [](Axis const& axis, double const voxel) {
-        return (-0.5 <= voxel) and (voxel < axis.nsamples() - 0.5);
+        return (0 <= voxel) and (voxel < axis.nsamples());
     };
 
     /** Missing input samples (marked by fillvalue) and out of bounds samples
@@ -390,47 +411,59 @@ struct response fetch_horizon(
     std::vector< std::size_t > noval_indicies;
 
     std::size_t i = 0;
-    for (int row = 0; row <= surface.nrows() - 1; row++) {
-        for (int col = 0; col <= surface.ncols() - 1; col++) {
-
+    for (int row = 0; row < surface.nrows(); row++) {
+        for (int col = 0; col < surface.ncols(); col++) {
             float const depth = surface.sample(row, col);
             if (depth == fillvalue) {
                 noval_indicies.push_back(i);
-                ++i;
+                i += verical_size;
                 continue;
-            }
-
-            auto k = transform.AnnotationToIJKPosition({0, 0, depth});
-            if (not inrange(sample, k[2])) {
-                throw std::runtime_error("Depth: " +
-                    std::to_string(depth) + " out of range [" +
-                    std::to_string(sample.min()) + ", " +
-                    std::to_string(sample.max()) + "]"
-                );
             }
 
             auto const cdp = surface.coordinate(row, col);
+
             auto ij = transform.WorldToIJKPosition({cdp.x, cdp.y, 0});
+            auto k  = transform.AnnotationToIJKPosition({0, 0, depth});
+
+            /* OpenVDS' transformers and OpenVDS data request functions have
+             * different definition of where a datapoint is. E.g. A transformer
+             * (To voxel or ijK) will return (0,0,0) for the first sample in
+             * the cube. The request functions on the other hand assumes the
+             * data is located in the center of a voxel. I.e. that the first
+             * sample is at (0.5, 0.5, 0.5). This is a *VERY* sharp edge in the
+             * OpenVDS API and borders on a bug. It means we cannot directly
+             * use the output from the transformers as input to the request
+             * functions.
+             */
+            ij[0] += 0.5;
+            ij[1] += 0.5;
+             k[2] += 0.5;
+
             if (not inrange(iline, ij[0]) or not inrange(xline, ij[1])) {
                 noval_indicies.push_back(i);
-                ++i;
+                i += verical_size;
                 continue;
             }
 
-            /* openvds uses rounding down for Nearest interpolation.
-             * As it is counterintuitive, we fix it by snapping to nearest index
-             * and rounding half-up.
-             */
-            if (interpolation == NEAREST) {
-                ij[0] = std::round(ij[0] + 1) - 1;
-                ij[1] = std::round(ij[1] + 1) - 1;
-                 k[2] = std::round( k[2] + 1) - 1;
+            double top    = k[2] - samples_above;
+            double bottom = k[2] + samples_below;
+            if (not inrange(sample, top) or not inrange(sample, bottom)) {
+                throw std::runtime_error(
+                    "Vertical window is out of vertical bounds at"
+                    " row: " + std::to_string(row) +
+                    " col:" + std::to_string(col) +
+                    ". Request: [" + std::to_string(bottom) +
+                    ", " + std::to_string(top) +
+                    "]. Seismic bounds: [" + std::to_string(sample.min())
+                    + ", " +std::to_string(sample.max()) + "]"
+                );
             }
-
-            samples[i][  iline.dimension() ] = ij[0] + 0.5;
-            samples[i][  xline.dimension() ] = ij[1] + 0.5;
-            samples[i][ sample.dimension() ] =  k[2] + 0.5;
-            ++i;
+            for (double cur_depth = top; cur_depth <= bottom; cur_depth++) {
+                samples[i][  iline.dimension() ] = ij[0];
+                samples[i][  xline.dimension() ] = ij[1];
+                samples[i][ sample.dimension() ] = cur_depth;
+                ++i;
+            }
         }
     }
 
@@ -445,9 +478,29 @@ struct response fetch_horizon(
         interpolation
     );
 
-    write_fillvalue(buffer.get(), noval_indicies, fillvalue);
+    write_fillvalue(buffer.get(), noval_indicies, verical_size, fillvalue);
 
     return to_response(std::move(buffer), size);
+}
+
+struct response calculate_attribute(
+    Horizon const& horizon,
+    enum attribute target
+) {
+    std::size_t size = horizon.mapsize();
+    std::unique_ptr< char[] > attr(new char[size]());
+
+    using namespace attributes;
+    switch (target) {
+        case MIN:  {  min(horizon, attr.get(), size); break; }
+        case MAX:  {  max(horizon, attr.get(), size); break; }
+        case MEAN: { mean(horizon, attr.get(), size); break; }
+        case RMS:  {  rms(horizon, attr.get(), size); break; }
+        default:
+            throw std::runtime_error("Attribute not implemented");
+    }
+
+    return to_response(std::move(attr), size);
 }
 
 struct response fetch_horizon_metadata(
@@ -464,15 +517,6 @@ struct response fetch_horizon_metadata(
     meta["format"] = fmtstr(DataHandle::format());
 
     return to_response(meta);
-}
-
-struct response handle_error(
-    const std::exception& e
-) {
-    response buf {};
-    buf.err = new char[std::strlen(e.what()) + 1];
-    std::strcpy(buf.err, e.what());
-    return buf;
 }
 
 struct response slice(
@@ -568,6 +612,8 @@ struct response horizon(
     float yinc,
     float rot,
     float fillvalue,
+    float above,
+    float below,
     enum interpolation_method interpolation
 ) {
     try {
@@ -578,9 +624,17 @@ struct response horizon(
 
         RegularSurface surface{data, nrows, ncols, affine};
 
-        return fetch_horizon(cube, cred, surface, fillvalue, interpolation);
+        return fetch_horizon(
+            cube,
+            cred,
+            surface,
+            fillvalue,
+            above,
+            below,
+            interpolation
+        );
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
     }
 }
 
@@ -596,6 +650,21 @@ struct response horizon_metadata(
 
         return fetch_horizon_metadata(cube, cred, nrows, ncols);
     } catch (const std::exception& e) {
-        return handle_error(e);
+        return to_response(e);
+    }
+}
+
+struct response attribute(
+    const char* data,
+    size_t size,
+    size_t vertical_window,
+    float  fillvalue,
+    enum attribute attribute
+) {
+    try {
+        Horizon horizon((float*)data, size, vertical_window, fillvalue);
+        return calculate_attribute(horizon, attribute);
+    } catch (const std::exception& e) {
+        return to_response(e);
     }
 }

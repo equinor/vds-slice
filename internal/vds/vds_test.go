@@ -9,6 +9,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func make_connection(name string) Connection {
@@ -1018,6 +1021,121 @@ func TestHorizonHorizontalBounds(t *testing.T) {
 
 			msg := "[%s] Expected %v in pos %v, got: %v"
 			t.Errorf(msg, testcase.name, testcase.expected[i], i, x)
+		}
+	}
+}
+
+func TestAttribute(t *testing.T) {
+	fill := float32(-999.25)
+
+	targetAttributes := []string{ "min", "max", "mean", "rms"}
+	expected := [][]float32{
+		{ 100, 104, 108, 112, fill, 120, fill, fill }, // min
+		{ 102, 106, 110, 114, fill, 122, fill, fill }, // max
+		{ 101, 105, 109, 113, fill, 121, fill, fill }, // mean
+		{ 101.003300, 105.003174, 109.003058, 113.002949, fill, 121.002755, fill, fill }, // rms
+	}
+	
+	horizon := [][]float32{
+		{ 8,    8 },
+		{ 8,    8 },
+		{ fill, 8 },
+		{ 8,    8 }, // Out-of-bounds, should return fill
+	}
+
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	buf, err := GetAttributes(
+		well_known,
+		horizon,
+		well_known_grid.xori,
+		well_known_grid.yori,
+		well_known_grid.xinc,
+		well_known_grid.yinc,
+		well_known_grid.rotation,
+		fill,
+		4,
+		4,
+		targetAttributes,
+		interpolationMethod,
+	)
+	if err != nil {
+		t.Errorf("Failed to fetch horizon, err: %v", err)
+	}
+
+	if len(buf) != len(targetAttributes) {
+		t.Errorf("Incorrect number of attributes returned")
+	}
+
+	for i, attr := range buf {
+		result, err := toFloat32(attr)
+		require.NoError(t, err, "Couldn't convert to float32")
+
+		assert.Equalf(
+			t,
+			expected[i],
+			*result, "[%v] Expected %v, was %v",
+			targetAttributes[i],
+			expected[i],
+			result,
+		)
+	}
+}
+
+func TestAttributeVerticalBounds(t *testing.T) {
+	testCases := []struct{
+		name    string
+		horizon [][]float32
+		above   float32
+		below   float32
+	} {
+		{
+			name:    "Horizon target is more than half a sample above",
+			horizon: [][]float32{{ 1.99 }},
+			above:   0,
+			below:   0,
+		},
+		{
+			name:    "Horizon target is more than half a sample below",
+			horizon: [][]float32{{ 18.01 }},
+			above:   0,
+			below:   0,
+		},
+		{
+			name: "'Above' is more than half a sample above seismic",
+			horizon: [][]float32{{ 5.99 }},
+			above:   4,
+			below:   0,
+		},
+		{
+			name: "'below' is more than half a sample below seismic",
+			horizon: [][]float32{{ 14.01 }},
+			above:   0,
+			below:   4,
+		},
+	}
+
+	fill := float32(-999.25)
+	targetAttributes := []string{ "min" }
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	for _, testCase := range testCases {
+		_, err := GetAttributes(
+			well_known,
+			testCase.horizon,
+			well_known_grid.xori,
+			well_known_grid.yori,
+			well_known_grid.xinc,
+			well_known_grid.yinc,
+			well_known_grid.rotation,
+			fill,
+			testCase.above,
+			testCase.below,
+			targetAttributes,
+			interpolationMethod,
+		)
+		if err == nil {
+			t.Errorf("[%s] Expected out of range error", testCase.name)
 		}
 	}
 }

@@ -37,6 +37,13 @@ enum interpolation_method {
     TRIANGULAR
 };
 
+enum attribute {
+    MIN,
+    MAX,
+    MEAN,
+    RMS
+};
+
 struct response metadata(
     const char* vds,
     const char* credentials
@@ -82,6 +89,8 @@ struct response horizon(
     float yinc,
     float rot,
     float fillvalue,
+    float above,
+    float below,
     enum interpolation_method interpolation_method
 );
 
@@ -90,6 +99,14 @@ struct response horizon_metadata(
     const char* credentials,
     size_t nrows,
     size_t ncols
+);
+
+struct response attribute(
+    const char* data,
+    size_t size,
+    size_t vertical_window,
+    float  fillvalue,
+    enum attribute attribute
 );
 
 void response_delete(struct response*);

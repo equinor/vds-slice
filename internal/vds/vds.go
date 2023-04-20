@@ -152,6 +152,20 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 	}
 }
 
+func GetAttributeType(attribute string) (int, error) {
+	switch strings.ToLower(attribute) {
+	case "min":  return C.MIN,  nil
+	case "max":  return C.MAX,  nil
+	case "mean": return C.MEAN, nil
+	case "rms":  return C.RMS,  nil
+	case "": fallthrough
+	default:
+		options := "min, max, mean, rms"
+		msg := "invalid attribute '%s', valid options are: %s"
+		return -1, fmt.Errorf(msg, attribute, options)
+	}
+}
+
 func GetMetadata(conn Connection) ([]byte, error) {
 	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
@@ -295,7 +309,7 @@ func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) 
 	return buf, nil
 }
 
-func GetHorizon(
+func getHorizon(
 	conn          Connection,
 	data          [][]float32,
 	originX       float32,
@@ -304,8 +318,10 @@ func GetHorizon(
 	increaseY     float32,
 	rotation      float32,
 	fillValue     float32,
+	above         float32,
+	below         float32,
 	interpolation int,
-) ([]byte, error) {
+) (*C.struct_response, error) {
 	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
@@ -343,15 +359,52 @@ func GetHorizon(
 		C.float(increaseY),
 		C.float(rotation),
 		C.float(fillValue),
+		C.float(above),
+		C.float(below),
 		C.enum_interpolation_method(interpolation),
 	)
 
-	defer C.response_delete(&result)
-
 	if result.err != nil {
-			err := C.GoString(result.err)
-			return nil, errors.New(err)
+		err := C.GoString(result.err)
+		C.response_delete(&result)
+		return nil, errors.New(err)
 	}
+
+	return &result, nil
+}
+
+func GetHorizon(
+	conn          Connection,
+	data          [][]float32,
+	originX       float32,
+	originY       float32,
+	increaseX     float32,
+	increaseY     float32,
+	rotation      float32,
+	fillValue     float32,
+	interpolation int,
+) ([]byte, error) {
+	const above = 0
+	const below = 0
+
+	result, err := getHorizon(
+		conn,
+		data,
+		originX,
+		originY,
+		increaseX,
+		increaseY,
+		rotation,
+		fillValue,
+		above,
+		below,
+		interpolation,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer C.response_delete(result)
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
@@ -380,4 +433,70 @@ func GetHorizonMetadata(conn Connection, data [][]float32) ([]byte, error) {
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
+}
+
+func GetAttributes(
+	conn          Connection,
+	data          [][]float32,
+	originX       float32,
+	originY       float32,
+	increaseX     float32,
+	increaseY     float32,
+	rotation      float32,
+	fillValue     float32,
+	above         float32,
+	below         float32,
+	attributes    []string,
+	interpolation int,
+) ([][]byte, error) {
+	var targetAttributes []int
+	for _, attr := range attributes {
+		id, err := GetAttributeType(attr)
+		if err != nil {
+			return nil, err
+		}
+		targetAttributes = append(targetAttributes, id);
+	}
+
+	horizon, err := getHorizon(
+		conn,
+		data,
+		originX,
+		originY,
+		increaseX,
+		increaseY,
+		rotation,
+		fillValue,
+		above,
+		below,
+		interpolation,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer C.response_delete(horizon)
+
+	nrows := len(data)
+	ncols := len(data[0])
+
+	var out [][]byte
+	vertical_window := int(horizon.size) / (nrows * ncols * 4)
+	for _, attr := range targetAttributes {
+		buffer := C.attribute(
+			horizon.data,
+			C.size_t(nrows * ncols),
+			C.size_t(vertical_window),
+			C.float(fillValue),
+			C.enum_attribute(attr),
+		)
+		defer C.response_delete(&buffer)
+		
+		if buffer.err != nil {
+			err := C.GoString(buffer.err)
+			return nil, errors.New(err)
+		}
+		out = append(out, C.GoBytes(unsafe.Pointer(buffer.data), C.int(buffer.size)))
+	}
+
+	return out, nil
 }

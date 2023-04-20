@@ -23,7 +23,7 @@ func TestRistrettoCacheMaxSize(t *testing.T) {
 	 * 48                   + 512             + 464                 = 1024
 	 */
 	entry := NewCacheEntry(
-		make([]byte, 512),
+		make([][]byte, 512),
 		make([]byte, 464),
 	)
 

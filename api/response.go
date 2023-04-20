@@ -17,7 +17,7 @@ type ErrorResponse struct {
 	Error string `json:"error" example:"message"`
 } // @name ErrorResponse
 
-func writeResponse(ctx *gin.Context, metadata []byte, data []byte) {
+func writeResponse(ctx *gin.Context, metadata []byte, data [][]byte) {
 	response := &bytes.Buffer{}
 	writer := multipart.NewWriter(response)
 
@@ -26,11 +26,15 @@ func writeResponse(ctx *gin.Context, metadata []byte, data []byte) {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	err = writeData(ctx, writer, "application/octet-stream", data)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
+
+	for _, part := range data {
+		err = writeData(ctx, writer, "application/octet-stream", part)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
 	}
+
 	err = writer.Close()
 	if err != nil {
 		log.Println(err)
@@ -40,6 +44,7 @@ func writeResponse(ctx *gin.Context, metadata []byte, data []byte) {
 				"the system admin if the problem persists"))
 		return
 	}
+
 	ctx.Data(http.StatusOK, "multipart/mixed; boundary="+writer.Boundary(), response.Bytes())
 }
 

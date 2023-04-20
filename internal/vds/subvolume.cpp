@@ -12,14 +12,13 @@ int lineno_annotation_to_voxel(
     int lineno,
     Axis const& axis
 ) {
-    /* Assume that annotation coordinates are integers */
-    int min      = axis.min();
-    int max      = axis.max();
-    int nsamples = axis.nsamples();
+    float min    = axis.min();
+    float max    = axis.max();
+    float stride = axis.stride();
 
-    auto stride = (max - min) / (nsamples - 1);
+    float voxelline = (lineno - min) / stride;
 
-    if (lineno < min || lineno > max || (lineno - min) % stride) {
+    if (lineno < min || lineno > max || std::floor(voxelline) != voxelline) {
         throw std::runtime_error(
             "Invalid lineno: " + std::to_string(lineno) +
             ", valid range: [" + std::to_string(min) +
@@ -28,7 +27,6 @@ int lineno_annotation_to_voxel(
         );
     }
 
-    int voxelline = (lineno - min) / stride;
     return voxelline;
 }
 

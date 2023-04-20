@@ -11,11 +11,11 @@ import (
 )
 
 type CacheEntry struct {
-	data     []byte
+	data     [][]byte
 	metadata []byte
 }
 
-func (c *CacheEntry) Data() []byte {
+func (c *CacheEntry) Data() [][]byte {
 	return c.data
 }
 
@@ -27,7 +27,7 @@ func (c *CacheEntry) Size() int {
 	return len(c.data) + len(c.metadata) + int(unsafe.Sizeof(*c))
 }
 
-func NewCacheEntry(data, metadata []byte) CacheEntry {
+func NewCacheEntry(data [][]byte, metadata []byte) CacheEntry {
 	return CacheEntry{ data: data, metadata: metadata }
 }
 
