@@ -339,7 +339,7 @@ func getHorizon(
 				data[i],
 				i,
 			)
-			return nil, errors.New(msg)
+			return nil, NewInvalidArgument(msg)
 		}
 
 		for j := range data[i] {

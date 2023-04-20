@@ -3,14 +3,15 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 
-	"github.com/equinor/vds-slice/internal/vds"
 	"github.com/equinor/vds-slice/internal/cache"
+	"github.com/equinor/vds-slice/internal/vds"
 )
 
 type Endpoint struct {
@@ -182,7 +183,13 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 		interpolation,
 	)
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		var invalidArgument *vds.InvalidArgument
+		switch {
+		case errors.As(err, &invalidArgument):
+			ctx.AbortWithError(http.StatusBadRequest, invalidArgument)
+		default:
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
 		return
 	}
 
