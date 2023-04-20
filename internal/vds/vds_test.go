@@ -1081,3 +1081,61 @@ func TestAttribute(t *testing.T) {
 		)
 	}
 }
+
+func TestAttributeVerticalBounds(t *testing.T) {
+	testCases := []struct{
+		name    string
+		horizon [][]float32
+		above   float32
+		below   float32
+	} {
+		{
+			name:    "Horizon target is more than half a sample above",
+			horizon: [][]float32{{ 1.99 }},
+			above:   0,
+			below:   0,
+		},
+		{
+			name:    "Horizon target is more than half a sample below",
+			horizon: [][]float32{{ 18.01 }},
+			above:   0,
+			below:   0,
+		},
+		{
+			name: "'Above' is more than half a sample above seismic",
+			horizon: [][]float32{{ 5.99 }},
+			above:   4,
+			below:   0,
+		},
+		{
+			name: "'below' is more than half a sample below seismic",
+			horizon: [][]float32{{ 14.01 }},
+			above:   0,
+			below:   4,
+		},
+	}
+
+	fill := float32(-999.25)
+	targetAttributes := []string{ "min" }
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	for _, testCase := range testCases {
+		_, err := GetAttributes(
+			well_known,
+			testCase.horizon,
+			well_known_grid.xori,
+			well_known_grid.yori,
+			well_known_grid.xinc,
+			well_known_grid.yinc,
+			well_known_grid.rotation,
+			fill,
+			testCase.above,
+			testCase.below,
+			targetAttributes,
+			interpolationMethod,
+		)
+		if err == nil {
+			t.Errorf("[%s] Expected out of range error", testCase.name)
+		}
+	}
+}
