@@ -254,14 +254,18 @@ struct response fetch_fence(
         validate_boundary(0, inline_axis);
         validate_boundary(1, crossline_axis);
 
-        /* openvds uses rounding down for Nearest interpolation.
-         * As it is counterintuitive, we fix it by snapping to nearest index
-         * and rounding half-up.
+        /* OpenVDS' transformers and OpenVDS data request functions have
+         * different definition of where a datapoint is. E.g. A transformer
+         * (To voxel or ijK) will return (0,0,0) for the first sample in
+         * the cube. The request functions on the other hand assumes the
+         * data is located in the center of a voxel. I.e. that the first
+         * sample is at (0.5, 0.5, 0.5). This is a *VERY* sharp edge in the
+         * OpenVDS API and borders on a bug. It means we cannot directly
+         * use the output from the transformers as input to the request
+         * functions.
          */
-        if (interpolation_method == NEAREST) {
-            coordinate[0] = std::round(coordinate[0] + 1) - 1;
-            coordinate[1] = std::round(coordinate[1] + 1) - 1;
-        }
+        coordinate[0] += 0.5;
+        coordinate[1] += 0.5;
 
         coords[i][   inline_axis.dimension()] = coordinate[0];
         coords[i][crossline_axis.dimension()] = coordinate[1];
