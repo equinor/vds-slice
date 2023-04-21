@@ -3,14 +3,15 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 
-	"github.com/equinor/vds-slice/internal/vds"
 	"github.com/equinor/vds-slice/internal/cache"
+	"github.com/equinor/vds-slice/internal/vds"
 )
 
 type Endpoint struct {
@@ -134,7 +135,13 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	)
 
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		var invalidArgument *vds.InvalidArgument
+		switch {
+		case errors.As(err, &invalidArgument):
+			ctx.AbortWithError(http.StatusBadRequest, invalidArgument)
+		default:
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
 		return
 	}
 
@@ -173,16 +180,22 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 	data, err := vds.GetHorizon(
 		conn,
 		request.Horizon,
-		request.Xori,
-		request.Yori,
+		*request.Xori,
+		*request.Yori,
 		request.Xinc,
 		request.Yinc,
-		request.Rotation,
-		request.FillValue,
+		*request.Rotation,
+		*request.FillValue,
 		interpolation,
 	)
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		var invalidArgument *vds.InvalidArgument
+		switch {
+		case errors.As(err, &invalidArgument):
+			ctx.AbortWithError(http.StatusBadRequest, invalidArgument)
+		default:
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
 		return
 	}
 
@@ -256,12 +269,12 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	data, err := vds.GetAttributes(
 		conn,
 		request.Horizon,
-		request.Xori,
-		request.Yori,
+		*request.Xori,
+		*request.Yori,
 		request.Xinc,
 		request.Yinc,
-		request.Rotation,
-		request.FillValue,
+		*request.Rotation,
+		*request.FillValue,
 		*request.Above,
 		*request.Below,
 		request.Attributes,

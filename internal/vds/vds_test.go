@@ -805,6 +805,38 @@ func TestHorizon(t *testing.T) {
 	}
 }
 
+func TestHorizonUnalignedWithSeismic(t *testing.T) {
+	fillValue := float32(-999.25)
+
+	expected := []float32{
+		fillValue, fillValue, fillValue, fillValue, fillValue, fillValue, fillValue,
+		fillValue, fillValue, 120, fillValue, 112, fillValue, 104,
+		fillValue, fillValue, 116, fillValue, 108, fillValue, 100,
+	}
+
+	horizon := [][]float32{
+		{fillValue, fillValue, fillValue, fillValue, fillValue, fillValue, fillValue},
+		{fillValue, fillValue, 4, fillValue, 4, fillValue, 4},
+		{fillValue, fillValue, 4, fillValue, 4, fillValue, 4},
+	}
+
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	buf, err := GetHorizon(
+		well_known,
+		horizon,
+		16,
+		18,
+		well_known_grid.xinc/2.0,
+		-well_known_grid.yinc,
+		well_known_grid.rotation+270,
+		fillValue,
+		interpolationMethod,
+	)
+	require.NoError(t, err, "Failed to fetch horizon")
+	result, err := toFloat32(buf)
+	require.NoError(t, err, "Failed to covert to float32 buffer")
+	require.Equalf(t, expected, *result, "Horizon not as expected")
+}
 
 func TestHorizonVerticalBounds(t *testing.T) {
 	testcases := []struct {

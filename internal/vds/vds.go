@@ -257,7 +257,7 @@ func GetFence(
 				coordinates[i],
 				i,
 			)
-			return nil, errors.New(msg)
+			return nil, NewInvalidArgument(msg)
 		}
 
 		for j := range coordinates[i] {
@@ -335,11 +335,11 @@ func getHorizon(
 	for i := range data {
 		if len(data[i]) != ncols  {
 			msg := fmt.Sprintf(
-				"Invalid coordinate %v at position %d, expected [x y] pair",
-				data[i],
-				i,
+				"Surface rows are not of the same length. "+
+					"Row 0 has %d elements. Row %d has %d elements",
+				ncols, i, len(data[i]),
 			)
-			return nil, errors.New(msg)
+			return nil, NewInvalidArgument(msg)
 		}
 
 		for j := range data[i] {

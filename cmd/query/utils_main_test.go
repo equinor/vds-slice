@@ -99,6 +99,44 @@ func (m metadataTest) requestAsJSON() (string, error) {
 	return string(req), nil
 }
 
+type horizonTest struct {
+	baseTest
+	horizon testHorizonRequest
+}
+
+func (h horizonTest) endpoint() string {
+	return "/horizon"
+}
+
+func (h horizonTest) base() baseTest {
+	return h.baseTest
+}
+
+func (h horizonTest) requestAsJSON() (string, error) {
+	out := map[string]interface{}{}
+
+	out["vds"] = h.horizon.Vds
+	out["sas"] = h.horizon.Sas
+	out["horizon"] = h.horizon.Horizon
+	out["rotation"] = 33.69
+	out["xinc"] = 7.2111
+	out["yinc"] = 3.6056
+	out["xori"] = 2
+	out["yori"] = 0
+	out["fillValue"] = 666.66
+	if h.horizon.Interpolation != "" {
+		out["interpolation"] = h.horizon.Interpolation
+	} else {
+		out["interpolation"] = "cubic"
+	}
+
+	req, err := json.Marshal(out)
+	if err != nil {
+		return "", fmt.Errorf("cannot marshal horizon request %v", h.horizon)
+	}
+	return string(req), nil
+}
+
 // define own help types to assure separation between production and test code
 type testErrorResponse struct {
 	Error string `json:"error" binding:"required"`
@@ -121,6 +159,13 @@ type testFenceRequest struct {
 type testMetadataRequest struct {
 	Vds string `json:"vds"`
 	Sas string `json:"sas"`
+}
+
+type testHorizonRequest struct {
+	Vds           string
+	Sas           string
+	Horizon       [][]float32
+	Interpolation string
 }
 
 type testSliceAxis struct {

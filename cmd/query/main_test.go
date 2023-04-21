@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -48,14 +47,9 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 
 		requireStatus(t, testcase, w)
 		parts := readMultipartData(t, w)
-		if len(parts) != 2 {
-			msg := "Got %d parts in reply; want it to always contain 2 in case '%s'"
-			t.Errorf(
-				msg,
-				len(parts),
-				testcase.name,
-			)
-		}
+
+		require.Equalf(t, 2, len(parts),
+			"Wrong number of multipart data parts in case '%s'", testcase.name)
 
 		inlineAxis := testSliceAxis{
 			Annotation: "Inline", Max: 5.0, Min: 1.0, Samples: 3, Unit: "unitless",
@@ -86,36 +80,14 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 
 		metadata := &testSliceMetadata{}
 		err := json.Unmarshal(parts[0], metadata)
-
-		if err != nil {
-			msg := "Failed json metadata extraction in case '%s'"
-			t.Fatalf(
-				msg,
-				testcase.name,
-			)
-		}
-
-		if !reflect.DeepEqual(metadata, expectedMetadata) {
-			msg := "Got %v as metadata; want it to be %v in case '%s'"
-			t.Fatalf(
-				msg,
-				metadata,
-				expectedMetadata,
-				testcase.name,
-			)
-		}
+		require.NoErrorf(t, err, "Failed json metadata extraction in case '%s'", testcase.name)
+		require.EqualValuesf(t, expectedMetadata, metadata,
+			"Metadata not equal in case '%s'", testcase.name)
 
 		expectedDataLength := expectedMetadata.X.Samples *
 			expectedMetadata.Y.Samples * 4 //4 bytes each
-		if len(parts[1]) != expectedDataLength {
-			msg := "Got %d bytes in data reply; want it to be %d in case '%s'"
-			t.Errorf(
-				msg,
-				len(parts[2]),
-				expectedDataLength,
-				testcase.name,
-			)
-		}
+		require.Equalf(t, expectedDataLength, len(parts[1]),
+			"Wrong number of bytes in data reply in case '%s'", testcase.name)
 	}
 }
 
@@ -232,36 +204,21 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 
 		requireStatus(t, testcase, w)
 		parts := readMultipartData(t, w)
-		if len(parts) != 2 {
-			msg := "Got %d parts in reply; want it to always contain 3 in case '%s'"
-			t.Errorf(
-				msg,
-				len(parts),
-				testcase.name,
-			)
-		}
+		require.Equalf(t, 2, len(parts),
+			"Wrong number of multipart data parts in case '%s'", testcase.name)
 
 		metadata := string(parts[0])
+		coordinatesLength := len(testcase.fence.Coordinates)
 		expectedMetadata := `{
-			"shape": [` + fmt.Sprint(len(testcase.fence.Coordinates)) + `, 4],
+			"shape": [` + fmt.Sprint(coordinatesLength) + `, 4],
 			"format": "<f4"
 		}`
+		require.JSONEqf(t, expectedMetadata, metadata,
+			"Metadata not equal in case '%s'", testcase.name)
 
-		if metadata != expectedMetadata {
-			msg := "Metadata not equal in case '%s'"
-			require.JSONEq(t, expectedMetadata, metadata, fmt.Sprintf(msg, testcase.name))
-		}
-
-		expectedDataLength := len(testcase.fence.Coordinates) * 4 * 4 //4 bytes, 4 samples per each requested
-		if len(parts[1]) != expectedDataLength {
-			msg := "Got %d bytes in data reply; want it to be %d in case '%s'"
-			t.Errorf(
-				msg,
-				len(parts[2]),
-				expectedDataLength,
-				testcase.name,
-			)
-		}
+		expectedDataLength := coordinatesLength * 4 * 4 //4 bytes, 4 samples per each requested
+		require.Equalf(t, expectedDataLength, len(parts[1]),
+			"Wrong number of bytes in data reply in case '%s'", testcase.name)
 	}
 }
 
@@ -320,6 +277,20 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 				Vds:              well_known,
 				CoordinateSystem: "unknown",
 				Coordinates:      [][]float32{{3, 12}, {2, 10}},
+				Sas:              "n/a",
+			},
+		},
+		fenceTest{
+			baseTest{
+				name:           "Request with incorrect coordinate pair length",
+				method:         http.MethodGet,
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid coordinate [2 10 3 4] at position 2, expected [x y] pair",
+			},
+			testFenceRequest{
+				Vds:              well_known,
+				CoordinateSystem: "cdp",
+				Coordinates:      [][]float32{{3, 1001}, {200, 10}, {2, 10, 3, 4}, {1, 1}},
 				Sas:              "n/a",
 			},
 		},
@@ -387,10 +358,7 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 			"crs": "utmXX"
 		}`
 
-		if metadata != expectedMetadata {
-			msg := "Metadata not equal in case '%s'"
-			require.JSONEq(t, expectedMetadata, metadata, fmt.Sprintf(msg, testcase.name))
-		}
+		require.JSONEqf(t, expectedMetadata, metadata, "Metadata not equal in case '%s'", testcase.name)
 	}
 }
 
@@ -443,6 +411,116 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 			testMetadataRequest{
 				Vds: "unknown",
 				Sas: "n/a",
+			},
+		},
+	}
+	testErrorHTTPResponse(t, testcases)
+}
+
+func TestHorizonHappyHTTPResponse(t *testing.T) {
+	testcases := []horizonTest{
+		{
+			baseTest{
+				name:           "Valid json POST Request",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusOK,
+			},
+
+			testHorizonRequest{
+				Vds:     well_known,
+				Horizon: [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:     "n/a",
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		w := setupTest(t, testcase)
+
+		requireStatus(t, testcase, w)
+
+		parts := readMultipartData(t, w)
+		require.Equalf(t, 2, len(parts),
+			"Wrong number of multipart data parts in case '%s'", testcase.name)
+
+		metadata := string(parts[0])
+		xLength := len(testcase.horizon.Horizon)
+		yLength := len(testcase.horizon.Horizon[0])
+		expectedMetadata := `{
+			"shape": [` + fmt.Sprint(xLength) + `,` + fmt.Sprint(yLength) + `],
+			"format": "<f4"
+		}`
+		require.JSONEqf(t, expectedMetadata, metadata,
+			"Metadata not equal in case '%s'", testcase.name)
+
+		expectedDataLength := xLength * yLength * 4 //4 bytes each
+		require.Equalf(t, expectedDataLength, len(parts[1]),
+			"Wrong number of bytes in data reply in case '%s'", testcase.name)
+	}
+}
+
+func TestHorizonErrorHTTPResponse(t *testing.T) {
+	testcases := []endpointTest{
+		horizonTest{
+			baseTest{
+				name:           "Invalid json POST request",
+				method:         http.MethodPost,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			},
+			testHorizonRequest{},
+		},
+		horizonTest{
+			baseTest{
+				name:   "Missing parameters POST Request",
+				method: http.MethodPost,
+				jsonRequest: "{\"vds\":\"" + well_known +
+					"\", \"interpolation\":\"cubic\", \"sas\": \"n/a\"}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for",
+			},
+			testHorizonRequest{},
+		},
+		horizonTest{
+			baseTest{
+				name:           "Request with incorrect row size",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusBadRequest,
+				expectedError: "Surface rows are not of the same length. " +
+					"Row 0 has 2 elements. Row 1 has 3 elements",
+			},
+			testHorizonRequest{
+				Vds:     well_known,
+				Horizon: [][]float32{{4, 4}, {4, 4, 4}, {4, 4}},
+				Sas:     "n/a",
+			},
+		},
+		horizonTest{
+			baseTest{
+				name:           "Request with incorrect interpolation method",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid interpolation method",
+			},
+			testHorizonRequest{
+				Vds:           well_known,
+				Horizon:       [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:           "n/a",
+				Interpolation: "unsupported",
+			},
+		},
+		horizonTest{
+			baseTest{
+				name:           "Request which passed all input checks but still should fail",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusInternalServerError,
+				expectedError:  "Could not open VDS",
+			},
+			testHorizonRequest{
+				Vds:     "unknown",
+				Horizon: [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:     "n/a",
 			},
 		},
 	}

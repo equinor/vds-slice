@@ -148,13 +148,13 @@ type HorizonRequest struct {
 	Horizon [][]float32 `json:"horizon" binding:"required"`
 
 	// Rotation of the X-axis (East), counter-clockwise, in degrees
-	Rotation float32 `json:"rotation" binding:"required"`
+	Rotation *float32 `json:"rotation" binding:"required"`
 
 	// X-coordinate of the origin
-	Xori float32 `json:"xori" binding:"required"`
+	Xori *float32 `json:"xori" binding:"required"`
 
 	// Y-coordinate of the origin
-	Yori float32 `json:"yori" binding:"required"`
+	Yori *float32 `json:"yori" binding:"required"`
 
 	// X-increment - The physical distance between columns in horizon
 	Xinc float32 `json:"xinc" binding:"required"`
@@ -168,7 +168,7 @@ type HorizonRequest struct {
 	// output[i][j] == fillValue.
 	// Additionally, the fillValue is used for any point in the horizon that
 	// falls outside the bounds of the seismic volume.
-	FillValue float32 `json:"fillValue" binding:"required"`
+	FillValue *float32 `json:"fillValue" binding:"required"`
 
 	// Interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
@@ -196,12 +196,12 @@ func (h HorizonRequest) toString() (string, error) {
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
-		h.Rotation,
-		h.Xori,
-		h.Yori,
+		*h.Rotation,
+		*h.Xori,
+		*h.Yori,
 		h.Xinc,
 		h.Yinc,
-		h.FillValue,
+		*h.FillValue,
 		h.Interpolation,
 	), nil
 }
@@ -248,12 +248,12 @@ func (h AttributeRequest) toString() (string, error) {
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
-		h.Rotation,
-		h.Xori,
-		h.Yori,
+		*h.Rotation,
+		*h.Xori,
+		*h.Yori,
 		h.Xinc,
 		h.Yinc,
-		h.FillValue,
+		*h.FillValue,
 		h.Interpolation,
 		*h.Above,
 		*h.Below,

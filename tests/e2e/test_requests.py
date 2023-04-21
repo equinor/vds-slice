@@ -21,6 +21,16 @@ STORAGE_ACCOUNT = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
 VDSURL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
 
 
+def horizon_surface():
+    return {
+        "xinc": 7.2111,
+        "yinc": 3.6056,
+        "xori": 2,
+        "yori": 0,
+        "rotation": 33.69,
+    }
+
+
 def make_slice_request(vds=VDSURL, direction="inline", lineno=3, sas="sas"):
     return {
         "vds": vds,
@@ -44,6 +54,18 @@ def make_metadata_request(vds=VDSURL, sas="sas"):
         "vds": vds,
         "sas": sas
     }
+
+
+def make_horizon_request(vds=VDSURL, surface=horizon_surface(), horizon=[[8]], sas="sas"):
+    request = {
+        "fillValue": -999.25,
+        "horizon": horizon,
+        "interpolation": "nearest",
+        "vds": vds,
+        "sas": sas
+    }
+    request.update(surface)
+    return request
 
 
 @pytest.mark.parametrize("method", [
@@ -111,10 +133,31 @@ def test_metadata(method):
     assert metadata == expected_metadata
 
 
+def test_horizon():
+    horizon = [
+        [8, 8],
+        [8, 8],
+        [8, 8]
+    ]
+    meta, data = request_horizon("post", horizon)
+
+    expected = np.array([[101, 105], [109, 113], [117, 121]])
+    assert np.array_equal(data, expected)
+
+    expected_meta = json.loads("""
+    {
+        "shape": [3, 2],
+        "format": "<f4"
+    }
+    """)
+    assert meta == expected_meta
+
+
 @pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
+    ("horizon", make_horizon_request()),
 ])
 @pytest.mark.parametrize("sas, allowed_error_messages", [
     (
@@ -132,8 +175,7 @@ def test_metadata(method):
 ])
 def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_messages):
     payload.update({"sas": sas})
-    res = requests.get(f'{ENDPOINT}/{path}',
-                       params={"query": json.dumps(payload)})
+    res = send_request(path, "post", payload)
     assert res.status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR
     error_body = json.loads(res.content)['error']
     assert any([error_msg in error_body for error_msg in allowed_error_messages]), \
@@ -142,7 +184,8 @@ def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_message
 
 @pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request(vds=VDSURL)),
-    ("fence", make_fence_request(vds=VDSURL))
+    ("fence", make_fence_request(vds=VDSURL)),
+    ("horizon", make_horizon_request(vds=VDSURL)),
 ])
 @pytest.mark.parametrize("token, status, error", [
     (generate_container_signature(
@@ -178,17 +221,13 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
             STORAGE_ACCOUNT_KEY,
             permission=blob.ContainerSasPermissions(read=True))
         payload.update({"sas": container_sas})
-        res = requests.post(f'{ENDPOINT}/{path}', json=payload)
+        res = send_request(path, "post", payload)
         assert res.status_code == http.HTTPStatus.OK
 
     make_caching_call()
 
     payload.update({"sas": token})
-    res = requests.get(
-        f'{ENDPOINT}/{path}',
-        params={"query": json.dumps(payload)}
-    )
-
+    res = send_request(path, "post", payload)
     assert res.status_code == status
     if error:
         assert error in json.loads(res.content)['error']
@@ -198,13 +237,13 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
+    ("horizon", make_horizon_request()),
 ])
 def test_assure_only_allowed_storage_accounts(path, payload):
     payload.update({
         "vds": "https://dummy.blob.core.windows.net/container/blob",
     })
-    res = requests.get(f'{ENDPOINT}/{path}',
-                       params={"query": json.dumps(payload)})
+    res = send_request(path, "post", payload)
     assert res.status_code == http.HTTPStatus.BAD_REQUEST
     body = json.loads(res.content)
     assert "unsupported storage account" in body['error']
@@ -213,33 +252,15 @@ def test_assure_only_allowed_storage_accounts(path, payload):
 @pytest.mark.parametrize("path, payload, error_code, error", [
     (
         "slice",
-        {"param": "irrelevant"},
-        http.HTTPStatus.BAD_REQUEST,
-        "Error:Field validation for"
-    ),
-    (
-        "fence",
-        {"param": "irrelevant"},
-        http.HTTPStatus.BAD_REQUEST,
-        "Error:Field validation for"
-    ),
-    (
-        "metadata",
-        {"param": "irrelevant"},
-        http.HTTPStatus.BAD_REQUEST,
-        "Error:Field validation for"
-    ),
-    (
-        "slice",
         make_slice_request(direction="inline", lineno=4),
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "Invalid lineno: 4, valid range: [1.000000:5.000000:2.000000]"
     ),
     (
         "fence",
-        make_fence_request(coordinate_system="ij", coordinates=[[1, 2, 3]]),
-        http.HTTPStatus.INTERNAL_SERVER_ERROR,
-        "expected [x y] pair"
+        {"param": "irrelevant"},
+        http.HTTPStatus.BAD_REQUEST,
+        "Error:Field validation for"
     ),
     (
         "metadata",
@@ -247,16 +268,34 @@ def test_assure_only_allowed_storage_accounts(path, payload):
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "The specified blob does not exist"
     ),
+    (
+        "horizon",
+        make_horizon_request(surface={}),
+        http.HTTPStatus.BAD_REQUEST,
+        "Error:Field validation for"
+    ),
 ])
 def test_errors(path, payload, error_code, error):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
     payload.update({"sas": sas})
-    res = requests.post(f'{ENDPOINT}/{path}', json=payload)
+    res = send_request(path, "post", payload)
     assert res.status_code == error_code
 
     body = json.loads(res.content)
     assert error in body['error']
+
+
+def send_request(path, method, payload):
+    if method == "get":
+        json_payload = json.dumps(payload)
+        encoded_payload = urllib.parse.quote(json_payload)
+        data = requests.get(f'{ENDPOINT}/{path}?query={encoded_payload}')
+    elif method == "post":
+        data = requests.post(f'{ENDPOINT}/{path}', json=payload)
+    else:
+        raise ValueError(f'Unknown method {method}')
+    return data
 
 
 def request_slice(method, lineno, direction):
@@ -264,17 +303,8 @@ def request_slice(method, lineno, direction):
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
     payload = make_slice_request(VDSURL, direction, lineno, sas)
-    json_payload = json.dumps(payload)
-    encoded_payload = urllib.parse.quote(json_payload)
-
-    if method == "get":
-        rdata = requests.get(f'{ENDPOINT}/slice?query={encoded_payload}')
-        rdata.raise_for_status()
-    elif method == "post":
-        rdata = requests.post(f'{ENDPOINT}/slice', json=payload)
-        rdata.raise_for_status()
-    else:
-        raise ValueError(f'Unknown method {method}')
+    rdata = send_request("slice", method, payload)
+    rdata.raise_for_status()
 
     multipart_data = decoder.MultipartDecoder.from_response(rdata)
     assert len(multipart_data.parts) == 2
@@ -295,17 +325,8 @@ def request_fence(method, coordinates, coordinate_system):
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
     payload = make_fence_request(VDSURL, coordinate_system, coordinates, sas)
-    json_payload = json.dumps(payload)
-    encoded_payload = urllib.parse.quote(json_payload)
-
-    if method == "get":
-        rdata = requests.get(f'{ENDPOINT}/fence?query={encoded_payload}')
-        rdata.raise_for_status()
-    elif method == "post":
-        rdata = requests.post(f'{ENDPOINT}/fence', json=payload)
-        rdata.raise_for_status()
-    else:
-        raise ValueError(f'Unknown method {method}')
+    rdata = send_request("fence", method, payload)
+    rdata.raise_for_status()
 
     multipart_data = decoder.MultipartDecoder.from_response(rdata)
     assert len(multipart_data.parts) == 2
@@ -321,16 +342,24 @@ def request_metadata(method):
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
     payload = make_metadata_request(VDSURL, sas)
-    json_payload = json.dumps(payload)
-    encoded_payload = urllib.parse.quote(json_payload)
-
-    if method == "get":
-        rdata = requests.get(f'{ENDPOINT}/metadata?query={encoded_payload}')
-        rdata.raise_for_status()
-    elif method == "post":
-        rdata = requests.post(f'{ENDPOINT}/metadata', json=payload)
-        rdata.raise_for_status()
-    else:
-        raise ValueError(f'Unknown method {method}')
+    rdata = send_request("metadata", method, payload)
+    rdata.raise_for_status()
 
     return rdata.json()
+
+
+def request_horizon(method, horizon):
+    sas = generate_container_signature(
+        STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
+
+    payload = make_horizon_request(VDSURL, horizon_surface(), horizon, sas)
+    rdata = send_request("horizon", method, payload)
+    rdata.raise_for_status()
+
+    multipart_data = decoder.MultipartDecoder.from_response(rdata)
+    assert len(multipart_data.parts) == 2
+    metadata = json.loads(multipart_data.parts[0].content)
+    data = multipart_data.parts[1].content
+
+    data = np.ndarray(metadata['shape'], metadata['format'], data)
+    return metadata, data
