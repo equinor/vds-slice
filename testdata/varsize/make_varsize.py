@@ -17,6 +17,7 @@ def create_varsize(path, ilines_number, xlines_number, samples_number):
         ilines_number, xlines_number, samples_number))
 
     # We use scaling constant of -10, meaning that values will be divided by 10
+    # note that lines are not perpendicular
     il_step_x = int(1.1 * 10)
     il_step_y = int(0 * 10)
     xl_step_x = int(0 * 10)
