@@ -9,10 +9,10 @@ struct Cdp {
     double y;
 };
 
-struct Transform : private std::array< std::array< double, 3>, 2 > {
+struct AffineTransformation : private std::array< std::array< double, 3>, 2 > {
     using base_type = std::array< std::array< double, 3 >, 2 >;
 
-    explicit Transform(base_type x) : base_type(std::move(x)) {}
+    explicit AffineTransformation(base_type x) : base_type(std::move(x)) {}
 
     Cdp to_world(std::size_t col, std::size_t row) const noexcept (true) {
         return {
@@ -21,7 +21,7 @@ struct Transform : private std::array< std::array< double, 3>, 2 > {
         };
     };
 
-    static Transform from_rotation(
+    static AffineTransformation from_rotation(
         float xori,
         float yori,
         float xinc,
@@ -42,7 +42,7 @@ struct Transform : private std::array< std::array< double, 3>, 2 > {
          *
          * [1] https://en.wikipedia.org/wiki/Affine_transformation
         */
-        return Transform(base_type({{
+        return AffineTransformation(base_type({{
             xinc * std::cos(rad),  -yinc * std::sin(rad), xori,
             xinc * std::sin(rad),   yinc * std::cos(rad), yori
         }}));
@@ -68,8 +68,8 @@ public:
         const float* data,
         std::size_t  nrows,
         std::size_t  ncols,
-        Transform    transform
-    ) : m_data(data), m_nrows(nrows), m_ncols(ncols), m_transform(transform)
+        AffineTransformation    transformation
+    ) : m_data(data), m_nrows(nrows), m_ncols(ncols), m_transformation(transformation)
     {}
 
     /* Grid position (row, col) -> world coordinates */
@@ -80,7 +80,7 @@ public:
         if (row >= this->nrows()) throw std::runtime_error("Row out of range");
         if (col >= this->ncols()) throw std::runtime_error("Col out of range");
 
-        return this->m_transform.to_world(col, row);
+        return this->m_transformation.to_world(col, row);
     }
 
     /* Value at grid position (row, col) */
@@ -101,7 +101,7 @@ private:
     const float* m_data;
     std::size_t  m_nrows;
     std::size_t  m_ncols;
-    Transform    m_transform;
+    AffineTransformation    m_transformation;
 };
 
 // } // namespace surface
