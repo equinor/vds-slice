@@ -68,8 +68,16 @@ public:
         const float* data,
         std::size_t  nrows,
         std::size_t  ncols,
-        AffineTransformation    transformation
-    ) : m_data(data), m_nrows(nrows), m_ncols(ncols), m_transformation(transformation)
+        float xori,
+        float yori,
+        float xinc,
+        float yinc,
+        float rot
+    ) : m_data(data),
+        m_nrows(nrows),
+        m_ncols(ncols),
+        m_transformation(
+            AffineTransformation::from_rotation(xori, yori, xinc, yinc, rot))
     {}
 
     /* Grid position (row, col) -> world coordinates */

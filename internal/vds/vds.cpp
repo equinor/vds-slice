@@ -620,9 +620,7 @@ struct response horizon(
         std::string cube(vdspath);
         std::string cred(credentials);
 
-        auto affine = AffineTransformation::from_rotation(xori, yori, xinc, yinc, rot);
-
-        RegularSurface surface{data, nrows, ncols, affine};
+        RegularSurface surface{data, nrows, ncols, xori, yori, xinc, yinc, rot};
 
         return fetch_horizon(
             cube,
