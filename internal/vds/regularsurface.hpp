@@ -10,7 +10,10 @@ struct Point {
 };
 
 
-/** Regular Surface - 2D array with geospacial information
+/** Regular Surface - a set of data points over the finite part of 2D plane.
+ * It is represented as 2D array with geospacial information. Each array value
+ * can mean anything, but in practice it would likely be the depth at the grid
+ * position used to calculate the horizon.
  *
  * A regular surface is defined by a 2D regular grid with a shape of nrows *
  * ncols. The grid is located in physical space. The mapping from grid
