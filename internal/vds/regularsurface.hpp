@@ -84,7 +84,7 @@ public:
     }
 
     /* Value at grid position (row, col) */
-    float sample(
+    float value(
         std::size_t const row,
         std::size_t const col
     ) noexcept (false) {
