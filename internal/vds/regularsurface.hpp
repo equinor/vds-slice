@@ -4,7 +4,7 @@
 #include <array>
 #include <cmath>
 
-struct Cdp {
+struct Point {
     double x;
     double y;
 };
@@ -14,7 +14,7 @@ struct AffineTransformation : private std::array< std::array< double, 3>, 2 > {
 
     explicit AffineTransformation(base_type x) : base_type(std::move(x)) {}
 
-    Cdp to_world(std::size_t col, std::size_t row) const noexcept (true) {
+    Point to_world(std::size_t col, std::size_t row) const noexcept (true) {
         return {
             this->at(0)[0] * row + this->at(0)[1] * col + this->at(0)[2],
             this->at(1)[0] * row + this->at(1)[1] * col + this->at(1)[2],
@@ -73,7 +73,7 @@ public:
     {}
 
     /* Grid position (row, col) -> world coordinates */
-    Cdp coordinate(
+    Point coordinate(
         std::size_t const row,
         std::size_t const col
     ) noexcept (false) {
