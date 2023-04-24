@@ -14,10 +14,10 @@ struct AffineTransformation : private std::array< std::array< double, 3>, 2 > {
 
     explicit AffineTransformation(base_type x) : base_type(std::move(x)) {}
 
-    Point to_world(std::size_t col, std::size_t row) const noexcept (true) {
+    Point operator*(Point p) const noexcept (true) {
         return {
-            this->at(0)[0] * row + this->at(0)[1] * col + this->at(0)[2],
-            this->at(1)[0] * row + this->at(1)[1] * col + this->at(1)[2],
+            this->at(0)[0] * p.x + this->at(0)[1] * p.y + this->at(0)[2],
+            this->at(1)[0] * p.x + this->at(1)[1] * p.y + this->at(1)[2],
         };
     };
 
@@ -80,7 +80,9 @@ public:
         if (row >= this->nrows()) throw std::runtime_error("Row out of range");
         if (col >= this->ncols()) throw std::runtime_error("Col out of range");
 
-        return this->m_transformation.to_world(col, row);
+        Point point {static_cast<double>(row), static_cast<double>(col)};
+
+        return this->m_transformation * point;
     }
 
     /* Value at grid position (row, col) */
