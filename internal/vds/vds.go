@@ -104,18 +104,18 @@ type FenceMetadata struct {
 
 func GetAxis(direction string) (int, error) {
 	switch direction {
-		case "i":         return AxisI,         nil
-		case "j":         return AxisJ,         nil
-		case "k":         return AxisK,         nil
-		case "inline":    return AxisInline,    nil
-		case "crossline": return AxisCrossline, nil
-		case "depth":     return AxisDepth,     nil
-		case "time":      return AxisTime,      nil
-		case "sample":    return AxisSample,    nil
-		default:
-			options := "i, j, k, inline, crossline or depth/time/sample"
-			msg := "invalid direction '%s', valid options are: %s"
-			return -1, fmt.Errorf(msg, direction, options)
+	case "i":         return AxisI,         nil
+	case "j":         return AxisJ,         nil
+	case "k":         return AxisK,         nil
+	case "inline":    return AxisInline,    nil
+	case "crossline": return AxisCrossline, nil
+	case "depth":     return AxisDepth,     nil
+	case "time":      return AxisTime,      nil
+	case "sample":    return AxisSample,    nil
+	default:
+		options := "i, j, k, inline, crossline or depth/time/sample"
+		msg := "invalid direction '%s', valid options are: %s"
+		return -1, fmt.Errorf(msg, direction, options)
 	}
 }
 
@@ -268,7 +268,7 @@ func GetFence(
 		}
 	}
 
-    result := C.fence(
+	result := C.fence(
 		cvds,
 		ccred,
 		C.enum_coordinate_system(coordinateSystem),
@@ -282,7 +282,7 @@ func GetFence(
 	if result.err != nil {
 		err := C.GoString(result.err)
 		return nil, errors.New(err)
-    }
+	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
