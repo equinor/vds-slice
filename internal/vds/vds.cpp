@@ -413,7 +413,7 @@ struct response fetch_horizon(
     std::size_t i = 0;
     for (int row = 0; row < surface.nrows(); row++) {
         for (int col = 0; col < surface.ncols(); col++) {
-            float const depth = surface.sample(row, col);
+            float const depth = surface.value(row, col);
             if (depth == fillvalue) {
                 noval_indicies.push_back(i);
                 i += verical_size;
@@ -620,9 +620,7 @@ struct response horizon(
         std::string cube(vdspath);
         std::string cred(credentials);
 
-        auto affine = Transform::from_rotation(xori, yori, xinc, yinc, rot);
-
-        RegularSurface surface{data, nrows, ncols, affine};
+        RegularSurface surface{data, nrows, ncols, xori, yori, xinc, yinc, rot};
 
         return fetch_horizon(
             cube,
