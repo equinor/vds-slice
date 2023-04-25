@@ -313,6 +313,7 @@ struct response metadata(
     nlohmann::json meta;
 
     meta["crs"] = metadata.crs();
+    meta["inputFileName"] = metadata.input_filename();
 
     auto bbox = metadata.bounding_box();
     meta["boundingBox"]["ij"]   = bbox.index();

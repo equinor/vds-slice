@@ -75,6 +75,7 @@ func TestMetadata(t *testing.T) {
 			Ij:   [][]float64{ {0, 0}, {2, 0}, {2, 1}, {0, 1}},
 		},
 		Crs: "utmXX",
+		InputFileName: "well_known.segy",
 	}
 
 	buf, err := GetMetadata(well_known)

@@ -80,6 +80,11 @@ std::string MetadataHandle::crs() const noexcept (true) {
     return this->m_layout->GetMetadataString(crs.GetCategory(), crs.GetName());
 }
 
+std::string MetadataHandle::input_filename() const noexcept (true) {
+    auto const disp_name = OpenVDS::KnownMetadata::ImportInformationInputFileName();
+    return this->m_layout->GetMetadataString(disp_name.GetCategory(), disp_name.GetName());
+}
+
 Axis const& MetadataHandle::get_axis(
     Direction const direction
 ) const noexcept (false) {

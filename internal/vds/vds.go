@@ -80,6 +80,9 @@ type Metadata struct {
 	// Coordinate reference system
 	Crs string `json:"crs" example:"PROJCS[\"ED50 / UTM zone 31N\",..."`
 
+	// The original input file name
+	InputFileName string `json:"inputFileName" example:"file.segy"`
+
 	// Bounding box
 	BoundingBox BoundingBox `json:"boundingBox"`
 

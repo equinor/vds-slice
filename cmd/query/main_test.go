@@ -355,7 +355,8 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 				"ilxl": [[1, 10], [5, 10], [5, 11], [1, 11]],
 				"ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
 			},
-			"crs": "utmXX"
+			"crs": "utmXX",
+			"inputFileName": "well_known.segy"
 		}`
 
 		require.JSONEqf(t, expectedMetadata, metadata, "Metadata not equal in case '%s'", testcase.name)
