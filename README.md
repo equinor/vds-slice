@@ -30,6 +30,31 @@ directly.
 
 # Development
 
+## Running the server
+
+Server can be run from the project root directory
+```
+go run cmd/query/main.go --storage-accounts "https://<account>.blob.core.windows.net"
+```
+
+Or it can be installed first and then run
+```
+export VDSSLICE_INSTALL_DIR=<where to install the server>
+GOBIN=$VDSSLICE_INSTALL_DIR  go install ./...
+VDSSLICE_STORAGE_ACCOUNTS="https://<account>.blob.core.windows.net" $VDSSLICE_INSTALL_DIR/query
+```
+
+Run `$VDSSLICE_INSTALL_DIR/query --help` to print available server options.
+
+Note that for server to build and run properly `openvds` library should be
+reachable. For example:
+```
+PATH_TO_OPENVDS_LIBRARY=<location where openvds is installed>
+export CGO_CPPFLAGS="-isystem $PATH_TO_OPENVDS_LIBRARY/include"
+export CGO_LDFLAGS="-L$PATH_TO_OPENVDS_LIBRARY/lib"
+export LD_LIBRARY_PATH=$PATH_TO_OPENVDS_LIBRARY/lib:$LD_LIBRARY_PATH
+```
+
 ## CI
 
 E2E tests use secrets to access Azure environment and due to security reasons
