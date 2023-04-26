@@ -19,6 +19,7 @@ public:
 
     BoundingBox bounding_box() const noexcept (true);
     std::string crs()          const noexcept (true);
+    std::string input_filename() const noexcept (true);
 
     Axis const& get_axis(Direction const direction) const noexcept (false);
 
