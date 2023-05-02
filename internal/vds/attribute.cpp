@@ -18,7 +18,7 @@ Horizon::HorizontalIt Horizon::end() const noexcept (true) {
 
 void Horizon::calc_attributes(
     std::vector< attributes::Attribute >& attrs
-) const {
+) const noexcept (false) {
     using namespace attributes;
 
     AttributeFillVisitor fill(this->fillvalue());

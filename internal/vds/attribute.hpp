@@ -239,7 +239,9 @@ public:
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
-    void calc_attributes(std::vector< attributes::Attribute >& attrs) const;
+    void calc_attributes(
+        std::vector< attributes::Attribute >& attrs
+    ) const noexcept (false);
 
 private:
     HorizontalIt begin() const noexcept (true);
