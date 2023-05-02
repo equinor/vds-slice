@@ -15,83 +15,68 @@ Horizon::HorizontalIt Horizon::end() const noexcept (true) {
     return HorizontalIt(this->m_ptr + this->hsize() * this->vsize(), this->vsize());
 }
 
-template< typename Func >
-void Horizon::calc_attribute(void* dst, std::size_t size, Func func) const {
-    if (size < this->mapsize()) {
-        throw std::runtime_error("Buffer to small");
-    }
+void Horizon::calc_attribute(AttributeMap& attr) const {
+    auto fill = this->fillvalue();
 
-    std::size_t offset = 0;
-    std::for_each(this->begin(), this->end(), [&](const float& front) {
-        float value = (front == this->fillvalue())
-            ? this->fillvalue()
-            : func(VerticalIt(&front), VerticalIt(&front + this->vsize()))
-        ;
+    std::size_t i = 0;
+    auto calculate = [&](const float& front) {
+        auto value = fill;
+        if (front != fill) {
+            value = attr.compute(
+                VerticalIt(&front),
+                VerticalIt(&front + this->vsize())
+            );
+        }
 
-        memcpy((char*)dst + offset * sizeof(float), &value, sizeof(float));
-        ++offset;
-    });
-}
-
-namespace attributes {
-
-void min(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
-    auto minfunc = [](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
-        return *std::min_element(beg, end);
+        attr.write(value, i);
+        ++i;
     };
 
-    return horizon.calc_attribute(dst, size, minfunc);
+    std::for_each(this->begin(), this->end(), calculate);
 }
 
-void max(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
-    auto maxfunc = [](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
-        return *std::max_element(beg, end);
-    };
-
-    return horizon.calc_attribute(dst, size, maxfunc);
+float Min::compute(
+    Horizon::VerticalIt begin,
+    Horizon::VerticalIt end
+) noexcept (false) {
+    return *std::min_element(begin, end);
 }
 
-void mean(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
-    std::size_t vsize = horizon.vsize();
-
-    auto meanfunc = [vsize](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
-        float sum = std::accumulate(beg, end, 0.0f);
-        return sum / vsize;
-    };
-
-    return horizon.calc_attribute(dst, size, meanfunc);
+float Max::compute(
+    Horizon::VerticalIt begin,
+    Horizon::VerticalIt end
+) noexcept (false) {
+    return *std::max_element(begin, end);
 }
 
-void rms(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
-    std::size_t vsize = horizon.vsize();
-
-    auto rmsfunc = [vsize](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
-        float sum = std::accumulate(beg, end, 0.0f,
-            [](float a, float b) {
-                return a + std::pow(b, 2);
-            }
-        );
-        return std::sqrt(sum / vsize);
-    };
-
-    return horizon.calc_attribute(dst, size, rmsfunc);
+float Mean::compute(
+    Horizon::VerticalIt begin,
+    Horizon::VerticalIt end
+) noexcept (false) {
+    float sum = std::accumulate(begin, end, 0.0f);
+    return sum / this->vsize;
 }
 
-void sd(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
-    std::size_t vsize = horizon.vsize();
-
-    auto sdfunc = [vsize](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
-        float sum = std::accumulate(beg, end, 0.0f);
-        float mean = sum / vsize;
-        float stdSum = std::accumulate(beg, end, 0.0f,
-        [&](float a, float b){
-            return a + std::pow(b - mean, 2);
-            }
-        );
-        return std::sqrt(stdSum / vsize);
-    };
-
-    return horizon.calc_attribute(dst, size, sdfunc);
+float Rms::compute(
+    Horizon::VerticalIt begin,
+    Horizon::VerticalIt end
+) noexcept (false) {
+    float sum = std::accumulate(begin, end, 0.0f,
+        [](float a, float b) {
+            return a + std::pow(b, 2);
+        }
+    );
+    return std::sqrt(sum / this->vsize);
 }
 
-} // namespace attributes
+float Sd::compute(
+    Horizon::VerticalIt begin,
+    Horizon::VerticalIt end
+) noexcept (false) {
+    float sum = std::accumulate(begin, end, 0.0f);
+    float mean = sum / vsize;
+    float stdSum = std::accumulate(begin, end, 0.0f,
+        [&](float a, float b){ return a + std::pow(b - mean, 2); }
+    );
+    return std::sqrt(stdSum / vsize);
+}

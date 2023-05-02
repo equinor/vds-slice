@@ -489,20 +489,41 @@ struct response calculate_attribute(
     enum attribute target
 ) {
     std::size_t size = horizon.mapsize();
-    std::unique_ptr< char[] > attr(new char[size]());
+    std::size_t vsize = horizon.vsize();
 
-    using namespace attributes;
+    std::unique_ptr< char[] > buffer(new char[size]());
+
     switch (target) {
-        case MIN:  {  min(horizon, attr.get(), size); break; }
-        case MAX:  {  max(horizon, attr.get(), size); break; }
-        case MEAN: { mean(horizon, attr.get(), size); break; }
-        case RMS:  {  rms(horizon, attr.get(), size); break; }
-        case SD:   {   sd(horizon, attr.get(), size); break; }
+        case MIN:  {
+            Min attr(buffer.get(), size);
+            horizon.calc_attribute(attr);
+            break;
+        }
+        case MAX: {
+            Max attr(buffer.get(), size);
+            horizon.calc_attribute(attr);
+            break;
+        }
+        case MEAN: {
+            Mean attr(buffer.get(), size, vsize);
+            horizon.calc_attribute(attr);
+            break;
+        }
+        case RMS: {
+            Rms attr(buffer.get(), size, vsize);
+            horizon.calc_attribute(attr);
+            break;
+        }
+        case SD: {
+            Sd attr(buffer.get(), size, vsize);
+            horizon.calc_attribute(attr);
+            break;
+        }
         default:
             throw std::runtime_error("Attribute not implemented");
     }
 
-    return to_response(std::move(attr), size);
+    return to_response(std::move(buffer), size);
 }
 
 struct response fetch_horizon_metadata(
