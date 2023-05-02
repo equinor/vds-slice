@@ -486,40 +486,33 @@ struct response fetch_horizon(
 
 struct response calculate_attribute(
     Horizon const& horizon,
-    enum attribute target
+    enum attribute* attributes,
+    size_t nattributes
 ) {
     using namespace attributes;
 
     std::size_t size = horizon.mapsize();
     std::size_t vsize = horizon.vsize();
 
-    std::unique_ptr< char[] > buffer(new char[size]());
+    std::unique_ptr< char[] > buffer(new char[size * nattributes]());
 
-    /* Initializing attr to Min is a dirty, but temporary hack. What I really
-     * want is just a default initialized attribute and then correctly set it
-     * in the swich below. I.e:
-     *
-     * Attribute attr;
-     *
-     * However, that require the variant to include std::monostate, and that in
-     * turn requires me to handle monostate in the variant's visitors. Which is
-     * not something I want to deal with just for this case here. Mostly
-     * because this will be swapped out in favor of std::vector< Attribute >
-     * very soon and then this hack goes away by iself.
-     */
-    Attribute attr = Min(buffer.get(), size);
+    std::vector< Attribute > attrs;
+    for (int i = 0; i < nattributes; ++i) {
+        char* dst = buffer.get() + (i * size);
 
-    switch (target) {
-        case MIN:  { attr = Min( buffer.get(), size)       ; break; }
-        case MAX:  { attr = Max( buffer.get(), size)       ; break; }
-        case MEAN: { attr = Mean(buffer.get(), size, vsize); break; }
-        case RMS:  { attr = Rms( buffer.get(), size, vsize); break; }
-        default:
-            throw std::runtime_error("Attribute not implemented");
+        switch (*attributes) {
+            case MIN:  { attrs.push_back(  Min(dst, size) )       ; break; }
+            case MAX:  { attrs.push_back(  Max(dst, size) )       ; break; }
+            case MEAN: { attrs.push_back( Mean(dst, size, vsize) ); break; }
+            case RMS:  { attrs.push_back(  Rms(dst, size, vsize) ); break; }
+            default:
+                throw std::runtime_error("Attribute not implemented");
+        }
+        ++attributes;
     }
 
-    horizon.calc_attribute(attr);
-    return to_response(std::move(buffer), size);
+    horizon.calc_attributes(attrs);
+    return to_response(std::move(buffer), size * nattributes);
 }
 
 struct response fetch_horizon_metadata(
@@ -676,11 +669,12 @@ struct response attribute(
     size_t size,
     size_t vertical_window,
     float  fillvalue,
-    enum attribute attribute
+    enum attribute* attributes,
+    size_t nattributes
 ) {
     try {
         Horizon horizon((float*)data, size, vertical_window, fillvalue);
-        return calculate_attribute(horizon, attribute);
+        return calculate_attribute(horizon, attributes, nattributes);
     } catch (const std::exception& e) {
         return to_response(e);
     }
