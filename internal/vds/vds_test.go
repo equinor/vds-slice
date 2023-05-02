@@ -21,6 +21,7 @@ func make_connection(name string) Connection {
 }
 
 var well_known = make_connection("well_known")
+var samples10 = make_connection("10_samples")
 var prestack = make_connection("prestack")
 
 type gridDefinition struct {
@@ -43,6 +44,8 @@ var well_known_grid gridDefinition = gridDefinition{
 	yinc:     float32(3.6056),
 	rotation: float32(33.69),
 }
+
+var samples10_grid = well_known_grid
 
 func toFloat32(buf []byte) (*[]float32, error) {
 	fsize := 4 // sizeof(float32)
@@ -1063,32 +1066,34 @@ func TestAttribute(t *testing.T) {
 
 	targetAttributes := []string{ "min", "max", "mean", "rms"}
 	expected := [][]float32{
-		{ 100, 104, 108, 112, fill, 120, fill, fill }, // min
-		{ 102, 106, 110, 114, fill, 122, fill, fill }, // max
-		{ 101, 105, 109, 113, fill, 121, fill, fill }, // mean
-		{ 101.003300, 105.003174, 109.003058, 113.002949, fill, 121.002755, fill, fill }, // rms
+		{ -4.0,     -2.0,     -14.0,      0.0,       fill, -24.0,      fill, fill }, // min
+		{  2.0,      4.0,      -2.0,     12.0,       fill,  -4.0,      fill, fill }, // max
+		{ -1.0,      1.0,      -8.0,      6.0,       fill, -14.857142, fill, fill }, // mean
+		{  2.236068, 2.236068,  8.944272, 7.2111025, fill,  16.283207, fill, fill }, // rms
 	}
 	
 	horizon := [][]float32{
-		{ 8,    8 },
-		{ 8,    8 },
-		{ fill, 8 },
-		{ 8,    8 }, // Out-of-bounds, should return fill
+		{ 20,    20 },
+		{ 20,    20 },
+		{ fill,  20 },
+		{ 20,    20 }, // Out-of-bounds, should return fill
 	}
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	const above = float32(12.0)
+	const below = float32(12.0)
 
 	buf, err := GetAttributes(
-		well_known,
+		samples10,
 		horizon,
-		well_known_grid.xori,
-		well_known_grid.yori,
-		well_known_grid.xinc,
-		well_known_grid.yinc,
-		well_known_grid.rotation,
+		samples10_grid.xori,
+		samples10_grid.yori,
+		samples10_grid.xinc,
+		samples10_grid.yinc,
+		samples10_grid.rotation,
 		fill,
-		4,
-		4,
+		above,
+		below,
 		targetAttributes,
 		interpolationMethod,
 	)
