@@ -106,7 +106,9 @@ public:
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
-    void calc_attribute(AttributeMap& attr) const;
+    void calc_attributes(
+        std::vector< std::unique_ptr< AttributeMap > >& attrs
+    ) const;
 
 private:
     HorizontalIt begin() const noexcept (true);

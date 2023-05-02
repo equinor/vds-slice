@@ -3,7 +3,9 @@
 #include <cstring>
 #include <functional>
 #include <numeric>
+#include <memory>
 #include <stdexcept>
+#include <vector>
 
 #include "attribute.hpp"
 
@@ -15,20 +17,27 @@ Horizon::HorizontalIt Horizon::end() const noexcept (true) {
     return HorizontalIt(this->m_ptr + this->hsize() * this->vsize(), this->vsize());
 }
 
-void Horizon::calc_attribute(AttributeMap& attr) const {
+void Horizon::calc_attributes(
+    std::vector< std::unique_ptr< AttributeMap > >& attrs
+) const {
     auto fill = this->fillvalue();
 
     std::size_t i = 0;
     auto calculate = [&](const float& front) {
-        auto value = fill;
         if (front != fill) {
-            value = attr.compute(
-                VerticalIt(&front),
-                VerticalIt(&front + this->vsize())
-            );
+            std::for_each(attrs.begin(), attrs.end(), [&](std::unique_ptr< AttributeMap>& attr) {
+                float value = attr->compute(
+                    VerticalIt(&front),
+                    VerticalIt(&front + this->vsize())
+                );
+                attr->write(value, i);
+            });
+        } else {
+            std::for_each(attrs.begin(), attrs.end(), [&](std::unique_ptr< AttributeMap >& attr) {
+                attr->write(fill, i);
+            });
         }
 
-        attr.write(value, i);
         ++i;
     };
 
