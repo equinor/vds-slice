@@ -488,20 +488,38 @@ struct response calculate_attribute(
     Horizon const& horizon,
     enum attribute target
 ) {
-    std::size_t size = horizon.mapsize();
-    std::unique_ptr< char[] > attr(new char[size]());
-
     using namespace attributes;
+
+    std::size_t size = horizon.mapsize();
+    std::size_t vsize = horizon.vsize();
+
+    std::unique_ptr< char[] > buffer(new char[size]());
+
+    /* Initializing attr to Min is a dirty, but temporary hack. What I really
+     * want is just a default initialized attribute and then correctly set it
+     * in the swich below. I.e:
+     *
+     * Attribute attr;
+     *
+     * However, that require the variant to include std::monostate, and that in
+     * turn requires me to handle monostate in the variant's visitors. Which is
+     * not something I want to deal with just for this case here. Mostly
+     * because this will be swapped out in favor of std::vector< Attribute >
+     * very soon and then this hack goes away by iself.
+     */
+    Attribute attr = Min(buffer.get(), size);
+
     switch (target) {
-        case MIN:  {  min(horizon, attr.get(), size); break; }
-        case MAX:  {  max(horizon, attr.get(), size); break; }
-        case MEAN: { mean(horizon, attr.get(), size); break; }
-        case RMS:  {  rms(horizon, attr.get(), size); break; }
+        case MIN:  { attr = Min( buffer.get(), size)       ; break; }
+        case MAX:  { attr = Max( buffer.get(), size)       ; break; }
+        case MEAN: { attr = Mean(buffer.get(), size, vsize); break; }
+        case RMS:  { attr = Rms( buffer.get(), size, vsize); break; }
         default:
             throw std::runtime_error("Attribute not implemented");
     }
 
-    return to_response(std::move(attr), size);
+    horizon.calc_attribute(attr);
+    return to_response(std::move(buffer), size);
 }
 
 struct response fetch_horizon_metadata(
