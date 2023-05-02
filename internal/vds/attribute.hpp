@@ -2,6 +2,144 @@
 #define VDS_SLICE_ATTRIBUTE_HPP
 
 #include <functional>
+#include <variant>
+
+namespace attributes {
+namespace {
+
+/* Base class for attribute calculations
+ *
+ * The base class centralizes buffer writes. It's write interface is designed
+ * for succesive writes and the class maintains it's own pointer to the next
+ * element in the dst buffer to be written.
+ */
+template< typename Derived >
+struct AttributeBase {
+public:
+    AttributeBase(void* dst, std::size_t size, std::size_t initial_offset)
+        : dst(dst), size(size), next(initial_offset)
+    {};
+
+    template< typename InputIt >
+    void compute(InputIt begin, InputIt end) noexcept (false) {
+        static_cast< Derived& >(*this).compute(begin, end);
+    }
+
+    void write(float value) {
+        if (this->next >= this->size) {
+            throw std::out_of_range("Attempting write outside attribute buffer");
+        }
+
+        char* dst = (char*)this->dst + this->next * sizeof(float);
+        memcpy(dst, &value, sizeof(float));
+        ++this->next;
+    }
+private:
+    void*       dst;
+    std::size_t size;
+    std::size_t next;
+};
+
+} // namespace
+
+struct Min : public AttributeBase< Min > {
+    Min(void* dst, std::size_t size, std::size_t initial_offset = 0)
+        : AttributeBase< Min >(dst, size, initial_offset)
+    {}
+
+    template< typename InputIt >
+    void compute(InputIt begin, InputIt end) noexcept (false) {
+        float value = *std::min_element(begin, end);
+        this->write(value);
+    }
+};
+
+struct Max : public AttributeBase< Max > {
+    Max(void* dst, std::size_t size, std::size_t initial_offset = 0)
+        : AttributeBase< Max >(dst, size, initial_offset)
+    {}
+
+    template< typename InputIt >
+    void compute(InputIt begin, InputIt end) noexcept (false) {
+        float value = *std::max_element(begin, end);
+        this->write(value);
+    }
+};
+
+struct Mean : public AttributeBase< Mean > {
+    Mean(void*      dst,
+        std::size_t size,
+        std::size_t vsize,
+        std::size_t initial_offset = 0
+    ) : AttributeBase< Mean >(dst, size, initial_offset), vsize(vsize)
+    {}
+
+    template< typename InputIt >
+    void compute(InputIt begin, InputIt end) noexcept (false) {
+        float sum = std::accumulate(begin, end, 0.0f);
+        this->write(sum / this->vsize);
+    }
+private:
+    std::size_t vsize;
+};
+
+struct Rms : public AttributeBase< Rms > {
+    Rms(void*       dst,
+        std::size_t size,
+        std::size_t vsize,
+        std::size_t initial_offset = 0
+    ) : AttributeBase< Rms >(dst, size, initial_offset), vsize(vsize)
+    {}
+
+    template< typename InputIt >
+    void compute(InputIt begin, InputIt end) noexcept (false) {
+        float sum = std::accumulate(begin, end, 0,
+            [](float a, float b) {
+                return a + std::pow(b, 2);
+            }
+        );
+        this->write(std::sqrt(sum / this->vsize));
+    }
+private:
+    std::size_t vsize;
+};
+
+using Attribute = std::variant<
+    Min,
+    Max,
+    Mean,
+    Rms
+>;
+
+struct AttributeFillVisitor {
+    AttributeFillVisitor(float fillvalue) : fillvalue(fillvalue) {}
+
+    template< typename Attr >
+    void operator()(Attr& attribute) const {
+        attribute.write(this->fillvalue);
+    }
+
+private:
+    float fillvalue;
+};
+
+template< typename InputIt >
+struct AttributeComputeVisitor {
+    AttributeComputeVisitor(InputIt begin, InputIt end)
+        : begin(begin), end(end)
+    {}
+
+    template< typename Attr >
+    void operator()(Attr& attribute) const {
+        attribute.compute(this->begin, this->end);
+    }
+
+private:
+    InputIt begin;
+    InputIt end;
+};
+
+} // namespace attributes
 
 /** Windowed horizon
  *
@@ -104,31 +242,7 @@ public:
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
-    /** Workhorse for attribute calculation
-     *
-     * The provided lambda func is called with an iterator pair (begin, end)
-     * for each vertical window in the horizon. The results of each lambda call
-     * is memcpy'd into the output-buffer 'dst'. 'dst' needs to be at least
-     * this->mapsize() large. Example of an lambda that will calculate the
-     * minimum value of each vertical window:
-     *
-     *     auto min_value = [](It beg, It end) {
-     *         return *std::min_element(beg, end);
-     *     }
-     *
-     * Calling calc_attribute() like so, will write the entire attribute to dst:
-     *
-     *     horizon.calc_attribute(dst, size, min_value)
-     *
-     * Like the horzion itself, attribute values are written as floating
-     * points.
-     *
-     * The first value of each window is compared to fillvalue. If true, no
-     * computation takes place for that window and the output buffer will be
-     * populated with the fillvalue instead.
-     */
-    template< typename Func >
-    void calc_attribute(void* dst, std::size_t size, Func func) const;
+    void calc_attribute(attributes::Attribute attr) const;
 
 private:
     HorizontalIt begin() const noexcept (true);
@@ -139,16 +253,5 @@ private:
     std::size_t  m_vsize;
     float        m_fillvalue;
 };
-
-namespace attributes {
-
-/* Attribute computations */
-
-void  min(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
-void  max(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
-void mean(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
-void  rms(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
-
-} // namespace attributes
 
 #endif /* VDS_SLICE_ATTRIBUTE_HPP */
