@@ -362,9 +362,6 @@ struct response fetch_horizon(
     float                     below,
     enum interpolation_method interpolation
 ) {
-    if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
-    if (below < 0) throw std::invalid_argument("'below' must be >= 0");
-
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
     auto transform = metadata.coordinate_transformer();
@@ -373,10 +370,10 @@ struct response fetch_horizon(
     auto const& xline  = metadata.xline();
     auto const& sample = metadata.sample();
 
-    std::size_t samples_above = std::floor( above / sample.stride() );
-    std::size_t samples_below = std::floor( below / sample.stride() );
-    std::size_t verical_size = samples_above + samples_below + 1;
-    std::size_t const nsamples = surface.size() * verical_size;
+    auto vertical = VerticalWindow(above, below, sample.stride());
+    vertical.squeeze();
+
+    std::size_t const nsamples = surface.size() * vertical.size();
 
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
@@ -417,7 +414,7 @@ struct response fetch_horizon(
             float const depth = surface.value(row, col);
             if (depth == fillvalue) {
                 noval_indicies.push_back(i);
-                i += verical_size;
+                i += vertical.size();
                 continue;
             }
 
@@ -442,12 +439,12 @@ struct response fetch_horizon(
 
             if (not inrange(iline, ij[0]) or not inrange(xline, ij[1])) {
                 noval_indicies.push_back(i);
-                i += verical_size;
+                i += vertical.size();
                 continue;
             }
 
-            double top    = k[2] - samples_above;
-            double bottom = k[2] + samples_below;
+            double top    = k[2] - vertical.nsamples_above();
+            double bottom = k[2] + vertical.nsamples_below();
             if (not inrange(sample, top) or not inrange(sample, bottom)) {
                 throw std::runtime_error(
                     "Vertical window is out of vertical bounds at"
@@ -479,7 +476,7 @@ struct response fetch_horizon(
         interpolation
     );
 
-    write_fillvalue(buffer.get(), noval_indicies, verical_size, fillvalue);
+    write_fillvalue(buffer.get(), noval_indicies, vertical.size(), fillvalue);
 
     return to_response(std::move(buffer), size);
 }
@@ -490,13 +487,20 @@ struct response calculate_attribute(
     Horizon const& horizon,
     enum attribute* attributes,
     size_t nattributes,
-    float above
+    float above,
+    float below
 ) {
     using namespace attributes;
 
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
-    std::size_t index = std::floor( above / metadata.sample().stride() );
+
+    auto const& sample = metadata.sample();
+
+    auto vertical = VerticalWindow(above, below, sample.stride());
+    vertical.squeeze();
+
+    std::size_t index = vertical.nsamples_above();
 
     std::size_t size = horizon.mapsize();
     std::size_t vsize = horizon.vsize();
@@ -681,7 +685,8 @@ struct response attribute(
     float  fillvalue,
     enum attribute* attributes,
     size_t nattributes,
-    float above
+    float above,
+    float below
 ) {
     try {
         std::string cube(vdspath);
@@ -693,7 +698,8 @@ struct response attribute(
             horizon,
             attributes,
             nattributes,
-            above
+            above,
+            below
         );
     } catch (const std::exception& e) {
         return to_response(e);
