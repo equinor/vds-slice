@@ -45,7 +45,11 @@ Horizon::HorizontalIt Horizon::begin() const noexcept (true) {
 }
 
 Horizon::HorizontalIt Horizon::end() const noexcept (true) {
-    return HorizontalIt(this->m_ptr + this->hsize() * this->vsize(), this->vsize());
+    return HorizontalIt(this->m_ptr + this->size(), this->vsize());
+}
+
+std::size_t Horizon::size() const noexcept (true) {
+    return this->hsize() * this->vsize();
 }
 
 void Horizon::calc_attributes(

@@ -311,6 +311,8 @@ public:
     /* Size of attributes maps calculated by this Horizon */
     std::size_t mapsize() const noexcept (true) { return this->hsize() * sizeof(float); };
 
+    std::size_t size() const noexcept (true);
+
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
     void calc_attributes(
