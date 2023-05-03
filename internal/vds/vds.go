@@ -428,6 +428,7 @@ func GetAttributes(
 		&cattributes[0],
 		C.size_t(len(targetAttributes)),
 		C.float(above),
+		C.float(below),
 	)
 	defer C.response_delete(&buffer)
 

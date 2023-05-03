@@ -111,7 +111,8 @@ struct response attribute(
     float  fillvalue,
     enum attribute* attributes,
     size_t nattributes,
-    float above
+    float above,
+    float below
 );
 
 void response_delete(struct response*);

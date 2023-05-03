@@ -160,6 +160,58 @@ private:
 
 } // namespace attributes
 
+/** Vertical window
+ *
+ * The vertical window defines some interval around an unknown reference-point.
+ * I.e. how many samples are above and below, and the samplingerate:
+ *
+ *    06ms       -
+ *               |
+ *    04ms       |
+ *               |
+ *    02ms       |
+ *               |
+ *    ref        x
+ *               |
+ *    02ms       |
+ *               |
+ *    04ms       -
+ */
+struct VerticalWindow {
+    VerticalWindow(float above, float below, float samplerate);
+
+    float nsamples_above()   const noexcept (true);
+    float nsamples_below() const noexcept (true);
+
+    float samplerate() const noexcept (true);
+    std::size_t size() const noexcept (true);
+
+    /* Squeeze to samplerate
+     *
+     * Truncate the window such above/below align with the
+     * samplerate. E.g if samplerate is 4 and the window is initially
+     * constructed with above = 6 and below = 10:
+     *
+     *       before  after
+     *       ------  -----
+     *    8
+     *    6     -
+     *    4     |      -
+     *    2     |      |
+     *    x     x      x
+     *    2     |      |
+     *    4     |      |
+     *    6     |      |
+     *    8     |      -
+     *    10    -
+     */
+    void squeeze() noexcept (true);
+private:
+    float m_samplerate;
+    float m_above;
+    float m_below;
+};
+
 /** Windowed horizon
  *
  * Definition and layout of a windowed horizon
