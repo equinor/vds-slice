@@ -313,70 +313,6 @@ func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) 
 	return buf, nil
 }
 
-func getHorizon(
-	conn          Connection,
-	data          [][]float32,
-	originX       float32,
-	originY       float32,
-	increaseX     float32,
-	increaseY     float32,
-	rotation      float32,
-	fillValue     float32,
-	above         float32,
-	below         float32,
-	interpolation int,
-) (*C.struct_response, error) {
-	curl := C.CString(conn.Url())
-	defer C.free(unsafe.Pointer(curl))
-
-	ccred := C.CString(conn.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
-
-	nrows := len(data)
-	ncols := len(data[0])
-
-	cdata := make([]C.float, nrows * ncols)
-	for i := range data {
-		if len(data[i]) != ncols  {
-			msg := fmt.Sprintf(
-				"Surface rows are not of the same length. "+
-					"Row 0 has %d elements. Row %d has %d elements",
-				ncols, i, len(data[i]),
-			)
-			return nil, NewInvalidArgument(msg)
-		}
-
-		for j := range data[i] {
-			cdata[i * ncols  + j] = C.float(data[i][j])
-		}
-	}
-
-	result := C.horizon(
-		curl,
-		ccred,
-		&cdata[0],
-		C.size_t(nrows),
-		C.size_t(ncols),
-		C.float(originX),
-		C.float(originY),
-		C.float(increaseX),
-		C.float(increaseY),
-		C.float(rotation),
-		C.float(fillValue),
-		C.float(above),
-		C.float(below),
-		C.enum_interpolation_method(interpolation),
-	)
-
-	if result.err != nil {
-		err := C.GoString(result.err)
-		C.response_delete(&result)
-		return nil, errors.New(err)
-	}
-
-	return &result, nil
-}
-
 func GetAttributeMetadata(conn Connection, data [][]float32) ([]byte, error) {
 	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
@@ -404,7 +340,7 @@ func GetAttributeMetadata(conn Connection, data [][]float32) ([]byte, error) {
 
 func GetAttributes(
 	conn          Connection,
-	data          [][]float32,
+	surface       [][]float32,
 	originX       float32,
 	originY       float32,
 	increaseX     float32,
@@ -416,6 +352,11 @@ func GetAttributes(
 	attributes    []string,
 	interpolation int,
 ) ([][]byte, error) {
+	var nrows   = len(surface)
+	var ncols   = len(surface[0])
+	var hsize   = nrows * ncols
+	var mapsize = hsize * 4
+
 	var targetAttributes []int
 	for _, attr := range attributes {
 		id, err := GetAttributeType(attr)
@@ -425,41 +366,58 @@ func GetAttributes(
 		targetAttributes = append(targetAttributes, id);
 	}
 
-	horizon, err := getHorizon(
-		conn,
-		data,
-		originX,
-		originY,
-		increaseX,
-		increaseY,
-		rotation,
-		fillValue,
-		above,
-		below,
-		interpolation,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer C.response_delete(horizon)
-
-	var nrows   = len(data)
-	var ncols   = len(data[0])
-	var hsize   = nrows * ncols
-	var mapsize = hsize * 4
-	var vsize   = int(horizon.size) / mapsize
-
-	cattributes := make([]C.enum_attribute, len(targetAttributes))
-	for i := range targetAttributes {
-		cattributes[i] = C.enum_attribute(targetAttributes[i])
-	}
-
 	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
 	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
+	csurface := make([]C.float, nrows * ncols)
+	for i := range surface {
+		if len(surface[i]) != ncols  {
+			msg := fmt.Sprintf(
+				"Surface rows are not of the same length. "+
+					"Row 0 has %d elements. Row %d has %d elements",
+				ncols, i, len(surface[i]),
+			)
+			return nil, NewInvalidArgument(msg)
+		}
+
+		for j := range surface[i] {
+			csurface[i * ncols  + j] = C.float(surface[i][j])
+		}
+	}
+
+	horizon := C.horizon(
+		curl,
+		ccred,
+		&csurface[0],
+		C.size_t(nrows),
+		C.size_t(ncols),
+		C.float(originX),
+		C.float(originY),
+		C.float(increaseX),
+		C.float(increaseY),
+		C.float(rotation),
+		C.float(fillValue),
+		C.float(above),
+		C.float(below),
+		C.enum_interpolation_method(interpolation),
+	)
+
+	defer C.response_delete(&horizon)
+
+	if horizon.err != nil {
+		err := C.GoString(horizon.err)
+		return nil, errors.New(err)
+	}
+
+	cattributes := make([]C.enum_attribute, len(targetAttributes))
+	for i := range targetAttributes {
+		cattributes[i] = C.enum_attribute(targetAttributes[i])
+	}
+	
+	var vsize = int(horizon.size) / mapsize
 	buffer := C.attribute(
 		curl,
 		ccred,
