@@ -95,7 +95,7 @@ struct response horizon(
     enum interpolation_method interpolation_method
 );
 
-struct response horizon_metadata(
+struct response attribute_metadata(
     const char*  vdspath,
     const char* credentials,
     size_t nrows,

@@ -377,14 +377,14 @@ func getHorizon(
 	return &result, nil
 }
 
-func GetHorizonMetadata(conn Connection, data [][]float32) ([]byte, error) {
+func GetAttributeMetadata(conn Connection, data [][]float32) ([]byte, error) {
 	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
 	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
-	result := C.horizon_metadata(
+	result := C.attribute_metadata(
 		curl,
 		ccred,
 		C.size_t(len(data)),

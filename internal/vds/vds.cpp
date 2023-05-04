@@ -523,7 +523,7 @@ struct response calculate_attribute(
     return to_response(std::move(buffer), size * nattributes);
 }
 
-struct response fetch_horizon_metadata(
+struct response fetch_attribute_metadata(
     std::string const& url,
     std::string const& credentials,
     std::size_t nrows,
@@ -656,7 +656,7 @@ struct response horizon(
     }
 }
 
-struct response horizon_metadata(
+struct response attribute_metadata(
     const char*  vdspath,
     const char* credentials,
     size_t nrows,
@@ -666,7 +666,7 @@ struct response horizon_metadata(
         std::string cube(vdspath);
         std::string cred(credentials);
 
-        return fetch_horizon_metadata(cube, cred, nrows, ncols);
+        return fetch_attribute_metadata(cube, cred, nrows, ncols);
     } catch (const std::exception& e) {
         return to_response(e);
     }
