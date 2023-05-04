@@ -809,8 +809,11 @@ func TestHorizon(t *testing.T) {
 	}
 }
 
-func TestHorizonUnalignedWithSeismic(t *testing.T) {
-	fillValue := float32(-999.25)
+func TestSurfaceUnalignedWithSeismic(t *testing.T) {
+	const fillValue = float32(-999.25)
+	const above = float32(0.0)
+	const below = float32(0.0)
+	var targetAttributes = []string{"samplevalue"}
 
 	expected := []float32{
 		fillValue, fillValue, fillValue, fillValue, fillValue, fillValue, fillValue,
@@ -825,7 +828,7 @@ func TestHorizonUnalignedWithSeismic(t *testing.T) {
 	}
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	buf, err := GetHorizon(
+	buf, err := GetAttributes(
 		well_known,
 		horizon,
 		16,
@@ -834,10 +837,14 @@ func TestHorizonUnalignedWithSeismic(t *testing.T) {
 		-well_known_grid.yinc,
 		well_known_grid.rotation+270,
 		fillValue,
+		above,
+		below,
+		targetAttributes,
 		interpolationMethod,
 	)
+	require.Len(t, buf, len(targetAttributes), "Wrong number of attribute")
 	require.NoError(t, err, "Failed to fetch horizon")
-	result, err := toFloat32(buf)
+	result, err := toFloat32(buf[0])
 	require.NoError(t, err, "Failed to covert to float32 buffer")
 	require.Equalf(t, expected, *result, "Horizon not as expected")
 }
@@ -953,7 +960,7 @@ func TestHorizonVerticalBounds(t *testing.T) {
  *        0         14             0        14
  *        
  */
-func TestHorizonHorizontalBounds(t *testing.T) {
+func TestSurfaceHorizontalBounds(t *testing.T) {
 	fill   := float32(-999.25)
 	xinc   := float64(well_known_grid.xinc)
 	yinc   := float64(well_known_grid.yinc)
@@ -961,6 +968,11 @@ func TestHorizonHorizontalBounds(t *testing.T) {
 	rotrad := rot * math.Pi / 180
 
 	horizon := [][]float32{ { 4, 4 }, { 4, 4 }, { 4, 4 } }
+
+	targetAttributes := []string{"samplevalue"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	const above = float32(0.0)
+	const below = float32(4.0)
 
 	testcases := []struct {
 		name     string
@@ -1018,9 +1030,9 @@ func TestHorizonHorizontalBounds(t *testing.T) {
 		},
 	}
 
+
 	for _, testcase := range testcases {
-		interpolationMethod, _ := GetInterpolationMethod("nearest")
-		buf, err := GetHorizon(
+		buf, err := GetAttributes(
 			well_known,
 			horizon,
 			float32(testcase.xori),
@@ -1029,35 +1041,27 @@ func TestHorizonHorizontalBounds(t *testing.T) {
 			float32(yinc),
 			float32(rot),
 			fill,
+			above,
+			below,
+			targetAttributes,
 			interpolationMethod,
 		)
 		if err != nil {
 			t.Errorf("[%s] Failed to fetch horizon, err: %v", testcase.name, err)
 		}
 
-		result, err := toFloat32(buf)
-		if err != nil {
-			t.Errorf("Err: %v", err)
-		}
+		require.Len(t, buf, len(targetAttributes), "Wrong number of attribute")
 
-		if len(*result) != len(testcase.expected) {
-			msg := "[%s] Expected horizon of len: %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.name,
-				len(testcase.expected),
-				len(*result),
-			)
-		}
+		result, err := toFloat32(buf[0])
+		require.NoError(t, err, "Couldn't convert to float32")
 
-		for i, x := range *result {
-			if x == testcase.expected[i] {
-				continue
-			}
-
-			msg := "[%s] Expected %v in pos %v, got: %v"
-			t.Errorf(msg, testcase.name, testcase.expected[i], i, x)
-		}
+		assert.Equalf(
+			t,
+			testcase.expected,
+			*result,
+			"[%v]",
+			targetAttributes[0],
+		)
 	}
 }
 
