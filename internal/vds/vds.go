@@ -404,41 +404,6 @@ func (v VDSHandle) getHorizon(
 	return &result, nil
 }
 
-func (v VDSHandle) GetHorizon(
-	data          [][]float32,
-	originX       float32,
-	originY       float32,
-	increaseX     float32,
-	increaseY     float32,
-	rotation      float32,
-	fillValue     float32,
-	interpolation int,
-) ([]byte, error) {
-	const above = 0
-	const below = 0
-
-	result, err := v.getHorizon(
-		data,
-		originX,
-		originY,
-		increaseX,
-		increaseY,
-		rotation,
-		fillValue,
-		above,
-		below,
-		interpolation,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-	defer C.response_delete(result)
-
-	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
-	return buf, nil
-}
-
 func (v VDSHandle) GetHorizonMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.horizon_metadata(
