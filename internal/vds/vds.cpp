@@ -511,7 +511,7 @@ void calculate_attribute(
     return to_response(std::move(buffer), size, out);
 }
 
-void fetch_horizon_metadata(
+void fetch_attribute_metadata(
     DataHandle& handle,
     std::size_t nrows,
     std::size_t ncols,
@@ -734,7 +734,7 @@ int horizon(
     }
 }
 
-int horizon_metadata(
+int attribute_metadata(
     Context* ctx,
     DataHandle* handle,
     size_t nrows,
@@ -745,7 +745,7 @@ int horizon_metadata(
         if (not out)    throw detail::nullptr_error("Invalid out pointer");
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        fetch_horizon_metadata(*handle, nrows, ncols, out);
+        fetch_attribute_metadata(*handle, nrows, ncols, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());

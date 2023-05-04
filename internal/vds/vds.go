@@ -404,9 +404,9 @@ func (v VDSHandle) getHorizon(
 	return &result, nil
 }
 
-func (v VDSHandle) GetHorizonMetadata(data [][]float32) ([]byte, error) {
+func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
-	cerr := C.horizon_metadata(
+	cerr := C.attribute_metadata(
 		v.context(),
 		v.Handle(),
 		C.size_t(len(data)),

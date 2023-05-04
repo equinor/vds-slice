@@ -191,10 +191,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
 	if abortOnError(ctx, err) { return }
 
-	/* The metadata is identical to that of an horizon request (shape and
-	 * dataformat).
-	 */
-	metadata, err := handle.GetHorizonMetadata(request.Horizon)
+	metadata, err := handle.GetAttributeMetadata(request.Horizon)
 	if abortOnError(ctx, err) { return }
 
 	data, err := handle.GetAttributes(

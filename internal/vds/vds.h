@@ -153,7 +153,7 @@ int horizon(
     response* out
 );
 
-int horizon_metadata(
+int attribute_metadata(
     Context* ctx,
     DataHandle* handle,
     size_t nrows,
