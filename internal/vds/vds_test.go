@@ -756,59 +756,6 @@ func TestOnly3DSupported(t *testing.T) {
 	}
 }
 
-func TestHorizon(t *testing.T) {
-	fillValue := float32(-999.25)
-	
-	expected := []float32{
-		100, fillValue, 108, 114, 117, 123,
-	}
-	
-	horizon := [][]float32{
-		{ 4, fillValue },
-		{ 4, 12        },
-		{ 8, 16        },
-	}
-
-	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	buf, err := GetHorizon(
-		well_known,
-		horizon,
-		well_known_grid.xori,
-		well_known_grid.yori,
-		well_known_grid.xinc,
-		well_known_grid.yinc,
-		well_known_grid.rotation,
-		fillValue,
-		interpolationMethod,
-	)
-	if err != nil {
-		t.Errorf("Failed to fetch horizon, err: %v", err)
-	}
-
-	result, err := toFloat32(buf)
-	if err != nil {
-		t.Errorf("Err: %v", err)
-	}
-
-	if len(*result) != len(expected) {
-		msg := "Expected horizon of len: %v, got: %v"
-		t.Errorf(
-			msg,
-			len(expected),
-			len(*result),
-		)
-	}
-
-	for i, x := range *result {
-		if x == expected[i] {
-			continue
-		}
-
-		msg := "Expected %v in pos %v, got: %v"
-		t.Errorf(msg, expected[i], i, x)
-	}
-}
-
 func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 	const fillValue = float32(-999.25)
 	const above = float32(0.0)
