@@ -197,10 +197,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		return
 	}
 
-	/* The metadata is identical to that of an horizon request (shape and
-	 * dataformat).
-	 */
-	metadata, err := vds.GetHorizonMetadata(conn, request.Horizon)
+	metadata, err := vds.GetAttributeMetadata(conn, request.Horizon)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
