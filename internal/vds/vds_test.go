@@ -849,7 +849,7 @@ func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 	require.Equalf(t, expected, *result, "Horizon not as expected")
 }
 
-func TestHorizonVerticalBounds(t *testing.T) {
+func TestSurfaceWindowVerticalBounds(t *testing.T) {
 	testcases := []struct {
 		name    string
 		horizon [][]float32
@@ -893,10 +893,13 @@ func TestHorizonVerticalBounds(t *testing.T) {
 	}
 
 	fillValue  := float32(-999.25)
+	targetAttributes := []string{"samplevalue"}
+	const above = float32(0.0)
+	const below = float32(0.0)
 
 	for _, testcase := range testcases {
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
-		_, boundsErr := GetHorizon(
+		_, boundsErr := GetAttributes(
 			well_known,
 			testcase.horizon,
 			well_known_grid.xori,
@@ -905,6 +908,9 @@ func TestHorizonVerticalBounds(t *testing.T) {
 			well_known_grid.yinc,
 			well_known_grid.rotation,
 			fillValue,
+			above,
+			below,
+			targetAttributes,
 			interpolationMethod,
 		)
 
@@ -1122,63 +1128,5 @@ func TestAttribute(t *testing.T) {
 			expected[i],
 			result,
 		)
-	}
-}
-
-func TestAttributeVerticalBounds(t *testing.T) {
-	testCases := []struct{
-		name    string
-		horizon [][]float32
-		above   float32
-		below   float32
-	} {
-		{
-			name:    "Horizon target is more than half a sample above",
-			horizon: [][]float32{{ 1.99 }},
-			above:   0,
-			below:   0,
-		},
-		{
-			name:    "Horizon target is more than half a sample below",
-			horizon: [][]float32{{ 18.01 }},
-			above:   0,
-			below:   0,
-		},
-		{
-			name: "'Above' is more than half a sample above seismic",
-			horizon: [][]float32{{ 5.99 }},
-			above:   4,
-			below:   0,
-		},
-		{
-			name: "'below' is more than half a sample below seismic",
-			horizon: [][]float32{{ 14.01 }},
-			above:   0,
-			below:   4,
-		},
-	}
-
-	fill := float32(-999.25)
-	targetAttributes := []string{ "min" }
-	interpolationMethod, _ := GetInterpolationMethod("nearest")
-
-	for _, testCase := range testCases {
-		_, err := GetAttributes(
-			well_known,
-			testCase.horizon,
-			well_known_grid.xori,
-			well_known_grid.yori,
-			well_known_grid.xinc,
-			well_known_grid.yinc,
-			well_known_grid.rotation,
-			fill,
-			testCase.above,
-			testCase.below,
-			targetAttributes,
-			interpolationMethod,
-		)
-		if err == nil {
-			t.Errorf("[%s] Expected out of range error", testCase.name)
-		}
 	}
 }
