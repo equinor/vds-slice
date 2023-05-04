@@ -281,7 +281,13 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		interpolation,
 	)
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		var invalidArgument *vds.InvalidArgument
+			switch {
+			case errors.As(err, &invalidArgument):
+				ctx.AbortWithError(http.StatusBadRequest, invalidArgument)
+			default:
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
 		return
 	}
 
