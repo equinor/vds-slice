@@ -418,8 +418,8 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 	testErrorHTTPResponse(t, testcases)
 }
 
-func TestHorizonHappyHTTPResponse(t *testing.T) {
-	testcases := []horizonTest{
+func TestAttributeHappyHTTPResponse(t *testing.T) {
+	testcases := []attributeTest{
 		{
 			baseTest{
 				name:           "Valid json POST Request",
@@ -427,10 +427,13 @@ func TestHorizonHappyHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusOK,
 			},
 
-			testHorizonRequest{
+			testAttributeRequest{
 				Vds:     well_known,
 				Horizon: [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:     "n/a",
+				Above:   0.0,
+				Below:   4.0,
+				Attributes: []string{"samplevalue"},
 			},
 		},
 	}
@@ -445,8 +448,8 @@ func TestHorizonHappyHTTPResponse(t *testing.T) {
 			"Wrong number of multipart data parts in case '%s'", testcase.name)
 
 		metadata := string(parts[0])
-		xLength := len(testcase.horizon.Horizon)
-		yLength := len(testcase.horizon.Horizon[0])
+		xLength := len(testcase.attribute.Horizon)
+		yLength := len(testcase.attribute.Horizon[0])
 		expectedMetadata := `{
 			"shape": [` + fmt.Sprint(xLength) + `,` + fmt.Sprint(yLength) + `],
 			"format": "<f4"
@@ -462,7 +465,7 @@ func TestHorizonHappyHTTPResponse(t *testing.T) {
 
 func TestHorizonErrorHTTPResponse(t *testing.T) {
 	testcases := []endpointTest{
-		horizonTest{
+		attributeTest{
 			baseTest{
 				name:           "Invalid json POST request",
 				method:         http.MethodPost,
@@ -470,9 +473,9 @@ func TestHorizonErrorHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "invalid character",
 			},
-			testHorizonRequest{},
+			testAttributeRequest{},
 		},
-		horizonTest{
+		attributeTest{
 			baseTest{
 				name:   "Missing parameters POST Request",
 				method: http.MethodPost,
@@ -481,9 +484,9 @@ func TestHorizonErrorHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for",
 			},
-			testHorizonRequest{},
+			testAttributeRequest{},
 		},
-		horizonTest{
+		attributeTest{
 			baseTest{
 				name:           "Request with incorrect row size",
 				method:         http.MethodPost,
@@ -491,37 +494,40 @@ func TestHorizonErrorHTTPResponse(t *testing.T) {
 				expectedError: "Surface rows are not of the same length. " +
 					"Row 0 has 2 elements. Row 1 has 3 elements",
 			},
-			testHorizonRequest{
+			testAttributeRequest{
 				Vds:     well_known,
 				Horizon: [][]float32{{4, 4}, {4, 4, 4}, {4, 4}},
 				Sas:     "n/a",
+				Attributes: []string{"samplevalue"},
 			},
 		},
-		horizonTest{
+		attributeTest{
 			baseTest{
 				name:           "Request with incorrect interpolation method",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "invalid interpolation method",
 			},
-			testHorizonRequest{
+			testAttributeRequest{
 				Vds:           well_known,
 				Horizon:       [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:           "n/a",
 				Interpolation: "unsupported",
+				Attributes: []string{"samplevalue"},
 			},
 		},
-		horizonTest{
+		attributeTest{
 			baseTest{
 				name:           "Request which passed all input checks but still should fail",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusInternalServerError,
 				expectedError:  "Could not open VDS",
 			},
-			testHorizonRequest{
+			testAttributeRequest{
 				Vds:     "unknown",
 				Horizon: [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:     "n/a",
+				Attributes: []string{"samplevalue"},
 			},
 		},
 	}

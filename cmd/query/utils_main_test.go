@@ -99,40 +99,43 @@ func (m metadataTest) requestAsJSON() (string, error) {
 	return string(req), nil
 }
 
-type horizonTest struct {
+type attributeTest struct {
 	baseTest
-	horizon testHorizonRequest
+	attribute testAttributeRequest
 }
 
-func (h horizonTest) endpoint() string {
-	return "/horizon"
+func (h attributeTest) endpoint() string {
+	return "/horizon/attributes"
 }
 
-func (h horizonTest) base() baseTest {
+func (h attributeTest) base() baseTest {
 	return h.baseTest
 }
 
-func (h horizonTest) requestAsJSON() (string, error) {
+func (h attributeTest) requestAsJSON() (string, error) {
 	out := map[string]interface{}{}
 
-	out["vds"] = h.horizon.Vds
-	out["sas"] = h.horizon.Sas
-	out["horizon"] = h.horizon.Horizon
+	out["vds"] = h.attribute.Vds
+	out["sas"] = h.attribute.Sas
+	out["horizon"] = h.attribute.Horizon
 	out["rotation"] = 33.69
 	out["xinc"] = 7.2111
 	out["yinc"] = 3.6056
 	out["xori"] = 2
 	out["yori"] = 0
 	out["fillValue"] = 666.66
-	if h.horizon.Interpolation != "" {
-		out["interpolation"] = h.horizon.Interpolation
+	out["above"] = h.attribute.Above
+	out["below"] = h.attribute.Below
+	out["Attributes"] = h.attribute.Attributes
+	if h.attribute.Interpolation != "" {
+		out["interpolation"] = h.attribute.Interpolation
 	} else {
 		out["interpolation"] = "cubic"
 	}
 
 	req, err := json.Marshal(out)
 	if err != nil {
-		return "", fmt.Errorf("cannot marshal horizon request %v", h.horizon)
+		return "", fmt.Errorf("cannot marshal attribute request %v", h.attribute)
 	}
 	return string(req), nil
 }
@@ -161,11 +164,14 @@ type testMetadataRequest struct {
 	Sas string `json:"sas"`
 }
 
-type testHorizonRequest struct {
+type testAttributeRequest struct {
 	Vds           string
 	Sas           string
 	Horizon       [][]float32
 	Interpolation string
+	Above         float32
+	Below         float32
+	Attributes    []string
 }
 
 type testSliceAxis struct {
