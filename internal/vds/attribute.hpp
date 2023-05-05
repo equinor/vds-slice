@@ -307,11 +307,6 @@ public:
     using HorizontalIt = StridedIterator;
     using VerticalIt   = VerticalIterator;
 
-    /* Vertical size of the horizon*/
-    std::size_t vsize() const noexcept (true) {
-        return this->vertical().size();
-    }
-
     std::size_t size() const noexcept (true);
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
