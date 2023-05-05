@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "attribute.hpp"
+#include "interpolators.hpp"
 
 VerticalWindow::VerticalWindow(float above, float below, float samplerate)
     : m_above(above), m_below(below), m_samplerate(samplerate)
@@ -36,8 +37,25 @@ std::size_t VerticalWindow::size() const noexcept (true) {
 }
 
 void VerticalWindow::squeeze() noexcept (true) {
-    this->m_above -= std::fmod(this->m_above, this->m_samplerate);
-    this->m_below -= std::fmod(this->m_below, this->m_samplerate);
+    this->m_above -= std::remainder(this->m_above, this->m_samplerate);
+    this->m_below -= std::remainder(this->m_below, this->m_samplerate);
+}
+
+float VerticalWindow::snap(float x) const noexcept (true) {
+    return x - std::fmod(x, this->samplerate());
+}
+
+VerticalWindow VerticalWindow::fit_to_samplerate(
+    float samplerate
+) const noexcept (false) {
+    if (samplerate < this->samplerate()) {
+        throw std::invalid_argument("upsampling not supported");
+    }
+
+    float const above = this->m_above;
+    float const below = this->m_below + 1 * samplerate;
+
+    return {above, below, samplerate};
 }
 
 Horizon::HorizontalIt Horizon::begin() const noexcept (true) {
@@ -66,27 +84,59 @@ VerticalWindow const& Horizon::vertical() const noexcept (true) {
 }
 
 void Horizon::calc_attributes(
-    std::vector< attributes::Attribute >& attrs
+    std::vector< attributes::Attribute >& attrs,
+    VerticalWindow target
 ) const noexcept (false) {
+    auto const& surface  = this->surface();
+    auto const& vertical = this->vertical();
+
+    std::size_t const vsize = vertical.size();
+
+    float const srcrate = vertical.samplerate();
+    float const dstrate = target.samplerate();
+
+    std::vector< double > vsrc(vsize);
+    std::vector< double > vdst(target.size());
+
     using namespace attributes;
+    AttributeFillVisitor    fill(this->fillvalue());
+    AttributeComputeVisitor compute(vdst.begin(), vdst.end());
 
-    std::size_t const vsize = this->vertical().size();
-
-    AttributeFillVisitor fill(this->fillvalue());
+    std::size_t i = 0;
     auto calculate = [&](const float& front) {
         if (front == this->fillvalue()) {
             std::for_each(attrs.begin(), attrs.end(), [&](auto& attr) {
                 std::visit(fill, attr);
             });
-        } else {
-            AttributeComputeVisitor compute(
-                VerticalIt(&front),
-                VerticalIt(&front + vsize)
-            );
-            std::for_each(attrs.begin(), attrs.end(), [&](auto& attr) {
-                std::visit(compute, attr);
-            });
+            ++i;
+            return;
         }
+
+        float const depth = surface.at(i);
+        float const vshift = std::fmod(depth, vertical.samplerate());
+
+        std::transform(
+            VerticalIt(&front),
+            VerticalIt(&front + vsize),
+            vsrc.begin(),
+            [](float x) { return (double)x; }
+        );
+
+        interpolation::cubic< double >(
+            vsrc.begin(),
+            vsrc.end(),
+            srcrate,
+            vdst.begin(),
+            vdst.end(),
+            dstrate,
+            vshift
+        );
+
+        std::for_each(attrs.begin(), attrs.end(), [&](auto& attr) {
+            std::visit(compute, attr);
+        });
+
+        ++i;
     };
 
     std::for_each(this->begin(), this->end(), calculate);

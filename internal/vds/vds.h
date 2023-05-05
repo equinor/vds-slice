@@ -92,6 +92,7 @@ struct response horizon(
     float fillvalue,
     float above,
     float below,
+    float samplerate,
     enum interpolation_method interpolation_method
 );
 
@@ -117,6 +118,7 @@ struct response attribute(
     const char* horizon_data,
     float above,
     float below,
+    float samplerate,
     enum attribute* attributes,
     size_t nattributes
 );

@@ -205,6 +205,11 @@ struct VerticalWindow {
      *    10    -
      */
     void squeeze() noexcept (true);
+
+    // TODO doc
+    float snap(float x) const noexcept (true);
+
+    VerticalWindow fit_to_samplerate(float samplerate) const noexcept (false);
 private:
     float m_samplerate;
     float m_above;
@@ -312,7 +317,8 @@ public:
     VerticalWindow const& vertical() const noexcept (true);
 
     void calc_attributes(
-        std::vector< attributes::Attribute >& attrs
+        std::vector< attributes::Attribute >& attrs,
+        VerticalWindow target
     ) const noexcept (false);
 
 private:

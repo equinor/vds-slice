@@ -349,6 +349,7 @@ func GetAttributes(
 	fillValue     float32,
 	above         float32,
 	below         float32,
+	samplerate    float32,
 	attributes    []string,
 	interpolation int,
 ) ([][]byte, error) {
@@ -402,6 +403,7 @@ func GetAttributes(
 		C.float(fillValue),
 		C.float(above),
 		C.float(below),
+		C.float(samplerate),
 		C.enum_interpolation_method(interpolation),
 	)
 
@@ -432,6 +434,7 @@ func GetAttributes(
 		horizon.data,
 		C.float(above),
 		C.float(below),
+		C.float(samplerate),
 		&cattributes[0],
 		C.size_t(len(targetAttributes)),
 	)

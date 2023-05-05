@@ -127,6 +127,7 @@ func (h attributeTest) requestAsJSON() (string, error) {
 	out["fillValue"] = 666.66
 	out["above"] = h.attribute.Above
 	out["below"] = h.attribute.Below
+	out["samplerate"] = 4
 	out["Attributes"] = h.attribute.Attributes
 	if h.attribute.Interpolation != "" {
 		out["interpolation"] = h.attribute.Interpolation
@@ -172,6 +173,7 @@ type testAttributeRequest struct {
 	Interpolation string
 	Above         float32
 	Below         float32
+	Samplerate    float32
 	Attributes    []string
 }
 
