@@ -493,10 +493,10 @@ struct response calculate_attribute(
 
     auto const& vertical = horizon.vertical();
     std::size_t index = vertical.nsamples_above();
+    std::size_t vsize = vertical.size();
 
     auto const& surface = horizon.surface();
     std::size_t size = surface.size() * sizeof(float);
-    std::size_t vsize = horizon.vsize();
 
     std::unique_ptr< char[] > buffer(new char[size * nattributes]());
 

@@ -41,16 +41,20 @@ void VerticalWindow::squeeze() noexcept (true) {
 }
 
 Horizon::HorizontalIt Horizon::begin() const noexcept (true) {
-    return HorizontalIt(this->m_ptr, this->vsize());
+    auto const& vertical = this->vertical();
+    return HorizontalIt(this->m_ptr, vertical.size());
 }
 
 Horizon::HorizontalIt Horizon::end() const noexcept (true) {
-    return HorizontalIt(this->m_ptr + this->size(), this->vsize());
+    auto const& vertical = this->vertical();
+    return HorizontalIt(this->m_ptr + this->size(), vertical.size());
 }
 
 std::size_t Horizon::size() const noexcept (true) {
-    auto const& surface = this->surface();
-    return surface.size() * this->vsize();
+    auto const& surface  = this->surface();
+    auto const& vertical = this->vertical();
+
+    return surface.size() * vertical.size();
 }
 
 RegularSurface const& Horizon::surface() const noexcept (true) {
@@ -66,6 +70,8 @@ void Horizon::calc_attributes(
 ) const noexcept (false) {
     using namespace attributes;
 
+    std::size_t const vsize = this->vertical().size();
+
     AttributeFillVisitor fill(this->fillvalue());
     auto calculate = [&](const float& front) {
         if (front == this->fillvalue()) {
@@ -75,7 +81,7 @@ void Horizon::calc_attributes(
         } else {
             AttributeComputeVisitor compute(
                 VerticalIt(&front),
-                VerticalIt(&front + this->vsize())
+                VerticalIt(&front + vsize)
             );
             std::for_each(attrs.begin(), attrs.end(), [&](auto& attr) {
                 std::visit(compute, attr);
