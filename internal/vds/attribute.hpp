@@ -4,6 +4,8 @@
 #include <functional>
 #include <variant>
 
+#include "regularsurface.hpp"
+
 namespace attributes {
 
 /* Base class for attribute calculations
@@ -289,11 +291,16 @@ private:
 
 public:
     Horizon(
-        const float* data,
-        std::size_t hsize,
-        std::size_t vsize,
-        float       fillvalue
-    ) : m_ptr(data), m_hsize(hsize), m_vsize(vsize), m_fillvalue(fillvalue)
+        const float*   data,
+        RegularSurface surface,
+        std::size_t    hsize,
+        std::size_t    vsize,
+        float          fillvalue
+    ) : m_ptr(data)
+      , m_surface(std::move(surface))
+      , m_hsize(hsize)
+      , m_vsize(vsize)
+      , m_fillvalue(fillvalue)
     {}
 
     using HorizontalIt = StridedIterator;
@@ -312,6 +319,8 @@ public:
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
+    RegularSurface const& surface() const noexcept (true);
+
     void calc_attributes(
         std::vector< attributes::Attribute >& attrs
     ) const noexcept (false);
@@ -320,10 +329,11 @@ private:
     HorizontalIt begin() const noexcept (true);
     HorizontalIt end()   const noexcept (true);
 
-    const float* m_ptr;
-    std::size_t  m_hsize;
-    std::size_t  m_vsize;
-    float        m_fillvalue;
+    const float*   m_ptr;
+    RegularSurface m_surface;
+    std::size_t    m_hsize;
+    std::size_t    m_vsize;
+    float          m_fillvalue;
 };
 
 #endif /* VDS_SLICE_ATTRIBUTE_HPP */

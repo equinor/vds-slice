@@ -105,14 +105,20 @@ struct response attribute_metadata(
 struct response attribute(
     const char* vdspath,
     const char* credentials,
-    const char* data,
-    size_t size,
-    size_t vertical_window,
-    float  fillvalue,
-    enum attribute* attributes,
-    size_t nattributes,
+    const float* surface_data,
+    size_t nrows,
+    size_t ncols,
+    float xori,
+    float yori,
+    float xinc,
+    float yinc,
+    float rot,
+    float fillvalue,
+    const char* horizon_data,
     float above,
-    float below
+    float below,
+    enum attribute* attributes,
+    size_t nattributes
 );
 
 void response_delete(struct response*);

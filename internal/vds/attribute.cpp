@@ -49,7 +49,12 @@ Horizon::HorizontalIt Horizon::end() const noexcept (true) {
 }
 
 std::size_t Horizon::size() const noexcept (true) {
-    return this->hsize() * this->vsize();
+    auto const& surface = this->surface();
+    return surface.size() * this->vsize();
+}
+
+RegularSurface const& Horizon::surface() const noexcept (true) {
+    return this->m_surface;
 }
 
 void Horizon::calc_attributes(

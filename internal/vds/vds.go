@@ -417,18 +417,23 @@ func GetAttributes(
 		cattributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 	
-	var vsize = int(horizon.size) / mapsize
 	buffer := C.attribute(
 		curl,
 		ccred,
-		horizon.data,
-		C.size_t(hsize),
-		C.size_t(vsize),
+		&csurface[0],
+		C.size_t(nrows),
+		C.size_t(ncols),
+		C.float(originX),
+		C.float(originY),
+		C.float(increaseX),
+		C.float(increaseY),
+		C.float(rotation),
 		C.float(fillValue),
-		&cattributes[0],
-		C.size_t(len(targetAttributes)),
+		horizon.data,
 		C.float(above),
 		C.float(below),
+		&cattributes[0],
+		C.size_t(len(targetAttributes)),
 	)
 	defer C.response_delete(&buffer)
 
