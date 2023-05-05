@@ -749,33 +749,33 @@ func TestOnly3DSupported(t *testing.T) {
 
 func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 	const fillValue = float32(-999.25)
-	const above = float32(0.0)
-	const below = float32(0.0)
+	const above = float32(8.0)
+	const below = float32(8.0)
 	var targetAttributes = []string{"samplevalue"}
 
 	expected := []float32{
 		fillValue, fillValue, fillValue, fillValue, fillValue, fillValue, fillValue,
-		fillValue, fillValue, 120, fillValue, 112, fillValue, 104,
-		fillValue, fillValue, 116, fillValue, 108, fillValue, 100,
+		fillValue, fillValue, -12.5, fillValue,   4.5, fillValue,  1.5,
+		fillValue, fillValue,  12.5, fillValue, -10.5, fillValue, -1.5,
 	}
 
 	horizon := [][]float32{
 		{fillValue, fillValue, fillValue, fillValue, fillValue, fillValue, fillValue},
-		{fillValue, fillValue, 4, fillValue, 4, fillValue, 4},
-		{fillValue, fillValue, 4, fillValue, 4, fillValue, 4},
+		{fillValue, fillValue, 16, fillValue, 16, fillValue, 16},
+		{fillValue, fillValue, 16, fillValue, 16, fillValue, 16},
 	}
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
-	handle, _ := NewVDSHandle(well_known)
+	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
 		horizon,
 		16,
 		18,
-		well_known_grid.xinc/2.0,
-		-well_known_grid.yinc,
-		well_known_grid.rotation+270,
+		samples10_grid.xinc/2.0,
+		-samples10_grid.yinc,
+		samples10_grid.rotation+270,
 		fillValue,
 		above,
 		below,
@@ -812,17 +812,17 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 		},
 		{
 			name: "Bottom of window is at last depth recording",
-			horizon: [][]float32{{ 12.00 }},
+			horizon: [][]float32{{ 36.00 }},
 			inbounds: true,
 		},
 		{
 			name: "Bottom of window is half stride below last recording",
-			horizon: [][]float32{{ 13.99 }},
+			horizon: [][]float32{{ 37.99 }},
 			inbounds: true,
 		},
 		{
 			name: "Bottom of window is more than a half stride below last recording",
-			horizon: [][]float32{{ 14.00 }},
+			horizon: [][]float32{{ 38.00 }},
 			inbounds: false,
 		},
 		{
@@ -839,15 +839,15 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 
 	for _, testcase := range testcases {
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		_, boundsErr := handle.GetAttributes(
 			testcase.horizon,
-			well_known_grid.xori,
-			well_known_grid.yori,
-			well_known_grid.xinc,
-			well_known_grid.yinc,
-			well_known_grid.rotation,
+			samples10_grid.xori,
+			samples10_grid.yori,
+			samples10_grid.xinc,
+			samples10_grid.yinc,
+			samples10_grid.rotation,
 			fillValue,
 			above,
 			below,
@@ -909,17 +909,17 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
  */
 func TestSurfaceHorizontalBounds(t *testing.T) {
 	fill   := float32(-999.25)
-	xinc   := float64(well_known_grid.xinc)
-	yinc   := float64(well_known_grid.yinc)
-	rot    := float64(well_known_grid.rotation)
+	xinc   := float64(samples10_grid.xinc)
+	yinc   := float64(samples10_grid.yinc)
+	rot    := float64(samples10_grid.rotation)
 	rotrad := rot * math.Pi / 180
 
-	horizon := [][]float32{ { 4, 4 }, { 4, 4 }, { 4, 4 } }
+	horizon := [][]float32{ { 16, 16 }, { 16, 16 }, { 16, 16 } }
 
 	targetAttributes := []string{"samplevalue"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	const above = float32(0.0)
-	const below = float32(0.0)
+	const above = float32(8.0)
+	const below = float32(8.0)
 
 	testcases := []struct {
 		name     string
@@ -931,55 +931,55 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 			name: "X coordinate is almost half a bingrid too high",
 			xori: 2.0 + 0.49 * xinc * math.Cos(rotrad),
 			yori: 0.0 + 0.49 * xinc * math.Sin(rotrad),
-			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+			expected: []float32{ -1.5, 1.5, -10.5, 4.5, 12.5, -12.5 },
 		},
 		{
 			name: "X coordinate is more than half a bingrid too high",
 			xori: 2.0 + 0.51 * xinc * math.Cos(rotrad),
 			yori: 0.0 + 0.51 * xinc * math.Sin(rotrad),
-			expected: []float32{ 108, 112, 116, 120, fill, fill },
+			expected: []float32{ -10.5, 4.5, 12.5, -12.5, fill, fill },
 		},
 		{
 			name: "X coordinate is almost half a bingrid too low",
 			xori: 2.0 - 0.49 * xinc * math.Cos(rotrad),
 			yori: 0.0 - 0.49 * xinc * math.Sin(rotrad),
-			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+			expected: []float32{ -1.5, 1.5, -10.5, 4.5, 12.5, -12.5 },
 		},
 		{
 			name: "X coordinate is more than half a bingrid too low",
 			xori: 2.0 - 0.51 * xinc * math.Cos(rotrad),
 			yori: 0.0 - 0.51 * xinc * math.Sin(rotrad),
-			expected: []float32{ fill, fill, 100, 104, 108, 112 },
+			expected: []float32{ fill, fill, -1.5, 1.5, -10.5, 4.5 },
 		},
 		{
 			name: "Y coordinate is almost half a bingrid too high",
 			xori: 2.0 + 0.49 * yinc * -math.Sin(rotrad),
 			yori: 0.0 + 0.49 * yinc *  math.Cos(rotrad),
-			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+			expected: []float32{ -1.5, 1.5, -10.5, 4.5, 12.5, -12.5 },
 		},
 		{
 			name: "Y coordinate is more than half a bingrid too high",
 			xori: 2.0 + 0.51 * yinc * -math.Sin(rotrad),
 			yori: 0.0 + 0.51 * yinc *  math.Cos(rotrad),
-			expected: []float32{ 104, fill, 112, fill, 120, fill},
+			expected: []float32{ 1.5, fill, 4.5, fill, -12.5, fill},
 		},
 		{
 			name: "Y coordinate is almost half a bingrid too low",
 			xori: 2.0 - 0.49 * yinc * -math.Sin(rotrad),
 			yori: 0.0 - 0.49 * yinc *  math.Cos(rotrad),
-			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+			expected: []float32{ -1.5, 1.5, -10.5, 4.5, 12.5, -12.5 },
 		},
 		{
 			name: "Y coordinate is more than half a bingrid too low",
 			xori: 2.0 - 0.51 * yinc * -math.Sin(rotrad),
 			yori: 0.0 - 0.51 * yinc *  math.Cos(rotrad),
-			expected: []float32{ fill, 100, fill, 108, fill, 116 },
+			expected: []float32{ fill, -1.5, fill, -10.5, fill, 12.5 },
 		},
 	}
 
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributes(
 			horizon,
