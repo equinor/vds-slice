@@ -101,11 +101,30 @@ private:
     std::size_t vsize;
 };
 
+struct Value : public AttributeBase< Value > {
+    Value(
+        void*       dst,
+        std::size_t size,
+        std::size_t idx,
+        std::size_t initial_offset = 0
+    ) : AttributeBase< Value >(dst, size, initial_offset), idx(idx)
+    {}
+
+    template< typename InputIt >
+    void compute(InputIt begin, InputIt end) noexcept (false) {
+        std::advance(begin, this->idx);
+        this->write(*begin);
+    }
+private:
+    std::size_t idx;
+};
+
 using Attribute = std::variant<
     Min,
     Max,
     Mean,
-    Rms
+    Rms,
+    Value
 >;
 
 struct AttributeFillVisitor {

@@ -485,11 +485,18 @@ struct response fetch_horizon(
 }
 
 struct response calculate_attribute(
+    std::string const& url,
+    std::string const& credentials,
     Horizon const& horizon,
     enum attribute* attributes,
-    size_t nattributes
+    size_t nattributes,
+    float above
 ) {
     using namespace attributes;
+
+    DataHandle handle(url, credentials);
+    MetadataHandle const& metadata = handle.get_metadata();
+    std::size_t index = std::floor( above / metadata.sample().stride() );
 
     std::size_t size = horizon.mapsize();
     std::size_t vsize = horizon.vsize();
@@ -501,10 +508,11 @@ struct response calculate_attribute(
         char* dst = buffer.get() + (i * size);
 
         switch (*attributes) {
-            case MIN:  { attrs.push_back(  Min(dst, size) )       ; break; }
-            case MAX:  { attrs.push_back(  Max(dst, size) )       ; break; }
-            case MEAN: { attrs.push_back( Mean(dst, size, vsize) ); break; }
-            case RMS:  { attrs.push_back(  Rms(dst, size, vsize) ); break; }
+            case VALUE:  { attrs.push_back( Value(dst, size, index) ); break; }
+            case MIN:    { attrs.push_back(   Min(dst, size) )       ; break; }
+            case MAX:    { attrs.push_back(   Max(dst, size) )       ; break; }
+            case MEAN:   { attrs.push_back(  Mean(dst, size, vsize) ); break; }
+            case RMS:    { attrs.push_back(   Rms(dst, size, vsize) ); break; }
             default:
                 throw std::runtime_error("Attribute not implemented");
         }
@@ -665,16 +673,28 @@ struct response horizon_metadata(
 }
 
 struct response attribute(
+    const char* vdspath,
+    const char* credentials,
     const char* data,
     size_t size,
     size_t vertical_window,
     float  fillvalue,
     enum attribute* attributes,
-    size_t nattributes
+    size_t nattributes,
+    float above
 ) {
     try {
+        std::string cube(vdspath);
+        std::string cred(credentials);
         Horizon horizon((float*)data, size, vertical_window, fillvalue);
-        return calculate_attribute(horizon, attributes, nattributes);
+        return calculate_attribute(
+            cube,
+            cred,
+            horizon,
+            attributes,
+            nattributes,
+            above
+        );
     } catch (const std::exception& e) {
         return to_response(e);
     }
