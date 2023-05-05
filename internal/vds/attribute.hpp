@@ -293,12 +293,10 @@ public:
     Horizon(
         const float*   data,
         RegularSurface surface,
-        std::size_t    hsize,
         std::size_t    vsize,
         float          fillvalue
     ) : m_ptr(data)
       , m_surface(std::move(surface))
-      , m_hsize(hsize)
       , m_vsize(vsize)
       , m_fillvalue(fillvalue)
     {}
@@ -308,12 +306,6 @@ public:
 
     /* Vertical size of the horizon*/
     std::size_t vsize() const noexcept (true) { return this->m_vsize; };
-
-    /* Number of points in the horizontal plane */
-    std::size_t hsize() const noexcept (true) { return this->m_hsize; };
-
-    /* Size of attributes maps calculated by this Horizon */
-    std::size_t mapsize() const noexcept (true) { return this->hsize() * sizeof(float); };
 
     std::size_t size() const noexcept (true);
 
@@ -331,7 +323,6 @@ private:
 
     const float*   m_ptr;
     RegularSurface m_surface;
-    std::size_t    m_hsize;
     std::size_t    m_vsize;
     float          m_fillvalue;
 };
