@@ -24,6 +24,7 @@ min       | Minimum value
 max       | Maximum value
 mean      | Mean value
 rms       | Root mean square
+sd        | Standard deviation
 
 ## Response
 On success (200) the multipart/mixed response consists of n parts. The first

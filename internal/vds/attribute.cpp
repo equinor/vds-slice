@@ -77,4 +77,21 @@ void rms(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
     return horizon.calc_attribute(dst, size, rmsfunc);
 }
 
+void sd(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
+    std::size_t vsize = horizon.vsize();
+
+    auto sdfunc = [vsize](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
+        float sum = std::accumulate(beg, end, 0.0f);
+        float mean = sum / vsize;
+        float stdSum = std::accumulate(beg, end, 0,
+        [&](float a, float b){
+            return a + std::pow(b - mean, 2);
+            }
+        );
+        return std::sqrt(stdSum / vsize);
+    };
+
+    return horizon.calc_attribute(dst, size, sdfunc);
+}
+
 } // namespace attributes

@@ -41,7 +41,8 @@ enum attribute {
     MIN,
     MAX,
     MEAN,
-    RMS
+    RMS,
+    SD
 };
 
 struct response metadata(

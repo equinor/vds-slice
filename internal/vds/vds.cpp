@@ -497,6 +497,7 @@ struct response calculate_attribute(
         case MAX:  {  max(horizon, attr.get(), size); break; }
         case MEAN: { mean(horizon, attr.get(), size); break; }
         case RMS:  {  rms(horizon, attr.get(), size); break; }
+        case SD:   {   sd(horizon, attr.get(), size); break; }
         default:
             throw std::runtime_error("Attribute not implemented");
     }
