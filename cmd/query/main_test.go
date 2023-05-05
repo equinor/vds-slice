@@ -428,10 +428,10 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 			},
 
 			testAttributeRequest{
-				Vds:     well_known,
-				Horizon: [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Vds:     samples10,
+				Horizon: [][]float32{{20, 20}, {20, 20}, {20, 20}},
 				Sas:     "n/a",
-				Above:   0.0,
+				Above:   12.0,
 				Below:   4.0,
 				Attributes: []string{"samplevalue"},
 			},
