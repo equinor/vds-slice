@@ -214,6 +214,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		*request.FillValue,
 		*request.Above,
 		*request.Below,
+		request.Samplerate,
 		request.Attributes,
 		interpolation,
 	)

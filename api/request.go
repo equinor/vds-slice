@@ -170,7 +170,7 @@ type HorizonRequest struct {
 	// falls outside the bounds of the seismic volume.
 	FillValue *float32 `json:"fillValue" binding:"required"`
 
-	// Interpolation method
+	// Horizontal interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
 	// Defaults to nearest.
 	// This field is passed on to OpenVDS, which does the actual interpolation.
@@ -214,15 +214,17 @@ type AttributeRequest struct {
 	// Samples interval above the horizon to include in attribute calculation.
 	// This value should be given in the VDS's vertical domain. E.g. if the
 	// vertical domain is 'ms' then a value of 22 means to include samples up
-	// to 22 ms above the horizon definition. The value is rounded down to the
-	// nearest whole sample. I.e. if the cube is sampled at 4ms, the attribute
-	// calculation will include samples 4, 8, 12, 16 and 20ms above the
-	// horizon, while the sample at 24ms is excluded.
+	// to 22 ms above the horizon definition. The value is rounded down to
+	// match the samplerate. I.e. if you set above to 4.5 ms and samplerate to
+	// 1ms, above will be set to 4ms
 	Above *float32 `json:"above" binding:"required"`
 
 	// Samples interval below the horizon to include in attribute calculation.
 	// Implements the same behaviour as 'above'.
 	Below *float32 `json:"below" binding:"required"`
+
+	// Vertical samplerate
+	Samplerate float32 `json:"samplerate" binding:"required"`
 
 	// Requested attributes. Multiple attributes can be calculated by the same
 	// request. This is considerably faster than doing one request per

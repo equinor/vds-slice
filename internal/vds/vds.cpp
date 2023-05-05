@@ -358,8 +358,7 @@ struct response fetch_horizon(
     std::string const&        credentials,
     RegularSurface            surface,
     float                     fillvalue,
-    float                     above,
-    float                     below,
+    VerticalWindow            target_window,
     enum interpolation_method interpolation
 ) {
     DataHandle handle(url, credentials);
@@ -370,8 +369,7 @@ struct response fetch_horizon(
     auto const& xline  = metadata.xline();
     auto const& sample = metadata.sample();
 
-    auto vertical = VerticalWindow(above, below, sample.stride());
-    vertical.squeeze();
+    auto vertical = target_window.fit_to_samplerate(sample.stride());
 
     std::size_t const nsamples = surface.size() * vertical.size();
 
@@ -411,12 +409,13 @@ struct response fetch_horizon(
     std::size_t i = 0;
     for (int row = 0; row < surface.nrows(); row++) {
         for (int col = 0; col < surface.ncols(); col++) {
-            float const depth = surface.value(row, col);
+            float depth = surface.value(row, col);
             if (depth == fillvalue) {
                 noval_indicies.push_back(i);
                 i += vertical.size();
                 continue;
             }
+            depth = vertical.snap(depth);
 
             auto const cdp = surface.coordinate(row, col);
 
@@ -482,18 +481,17 @@ struct response fetch_horizon(
 }
 
 struct response calculate_attribute(
-    DataHandle& handle,
     Horizon const& horizon,
+    VerticalWindow const& target_window,
     enum attribute* attributes,
     size_t nattributes
 ) {
     using namespace attributes;
 
-    MetadataHandle const& metadata = handle.get_metadata();
+    std::size_t vsize = target_window.size();
 
     auto const& vertical = horizon.vertical();
     std::size_t index = vertical.nsamples_above();
-    std::size_t vsize = vertical.size();
 
     auto const& surface = horizon.surface();
     std::size_t size = surface.size() * sizeof(float);
@@ -516,7 +514,7 @@ struct response calculate_attribute(
         ++attributes;
     }
 
-    horizon.calc_attributes(attrs);
+    horizon.calc_attributes(attrs, target_window);
     return to_response(std::move(buffer), size * nattributes);
 }
 
@@ -631,6 +629,7 @@ struct response horizon(
     float fillvalue,
     float above,
     float below,
+    float samplerate,
     enum interpolation_method interpolation
 ) {
     try {
@@ -638,14 +637,15 @@ struct response horizon(
         std::string cred(credentials);
 
         RegularSurface surface{data, nrows, ncols, xori, yori, xinc, yinc, rot};
+        auto target_window = VerticalWindow(above, below, samplerate);
+        target_window.squeeze();
 
         return fetch_horizon(
             cube,
             cred,
             surface,
             fillvalue,
-            above,
-            below,
+            target_window,
             interpolation
         );
     } catch (const std::exception& e) {
@@ -684,6 +684,7 @@ struct response attribute(
     const char* horizon_data,
     float above,
     float below,
+    float samplerate,
     enum attribute* attributes,
     size_t nattributes
 ) {
@@ -692,8 +693,8 @@ struct response attribute(
         MetadataHandle const& metadata = handle.get_metadata();
         auto const& sample = metadata.sample();
 
-        auto window = VerticalWindow(above, below, sample.stride());
-        window.squeeze();
+        auto target_window = VerticalWindow(above, below, samplerate);
+        target_window.squeeze();
 
         RegularSurface surface(
             surface_data,
@@ -706,16 +707,17 @@ struct response attribute(
             rot
         );
 
+        auto window = target_window.fit_to_samplerate(sample.stride());
         Horizon horizon(
             (float*)horizon_data,
             surface,
-            window,
+            std::move(window),
             fillvalue
         );
 
         return calculate_attribute(
-            handle,
             horizon,
+            target_window,
             attributes,
             nattributes
         );
