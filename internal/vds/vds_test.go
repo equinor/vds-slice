@@ -1059,8 +1059,9 @@ func TestHorizonHorizontalBounds(t *testing.T) {
 func TestAttribute(t *testing.T) {
 	fill := float32(-999.25)
 
-	targetAttributes := []string{"min", "max", "mean", "rms", "sd"}
+	targetAttributes := []string{"samplevalue", "min", "max", "mean", "rms", "sd"}
 	expected := [][]float32{
+		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // samplevalue
 		{ -3.5,      -2.5,      -14.5,       0.5,      fill, -24.5,      fill, fill }, // min
 		{  2.5,       3.5,       -2.5,      12.5,      fill,  -4.5,      fill, fill }, // max
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -15.357142, fill, fill }, // mean

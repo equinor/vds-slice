@@ -89,6 +89,7 @@ enum interpolation_method {
 };
 
 enum attribute {
+    VALUE,
     MIN,
     MAX,
     MEAN,
@@ -162,12 +163,14 @@ int horizon_metadata(
 
 int attribute(
     Context* ctx,
+    DataHandle* handle,
     const char* data,
     size_t size,
     size_t vertical_window,
     float  fillvalue,
     enum attribute* attributes,
     size_t nattributes,
+    float above,
     response* out
 );
 
