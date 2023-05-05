@@ -293,11 +293,11 @@ public:
     Horizon(
         const float*   data,
         RegularSurface surface,
-        std::size_t    vsize,
+        VerticalWindow vertical,
         float          fillvalue
     ) : m_ptr(data)
       , m_surface(std::move(surface))
-      , m_vsize(vsize)
+      , m_vertical(std::move(vertical))
       , m_fillvalue(fillvalue)
     {}
 
@@ -305,13 +305,16 @@ public:
     using VerticalIt   = VerticalIterator;
 
     /* Vertical size of the horizon*/
-    std::size_t vsize() const noexcept (true) { return this->m_vsize; };
+    std::size_t vsize() const noexcept (true) {
+        return this->vertical().size();
+    }
 
     std::size_t size() const noexcept (true);
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
     RegularSurface const& surface() const noexcept (true);
+    VerticalWindow const& vertical() const noexcept (true);
 
     void calc_attributes(
         std::vector< attributes::Attribute >& attrs
@@ -323,7 +326,7 @@ private:
 
     const float*   m_ptr;
     RegularSurface m_surface;
-    std::size_t    m_vsize;
+    VerticalWindow m_vertical;
     float          m_fillvalue;
 };
 

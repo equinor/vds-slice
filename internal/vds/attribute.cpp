@@ -57,6 +57,10 @@ RegularSurface const& Horizon::surface() const noexcept (true) {
     return this->m_surface;
 }
 
+VerticalWindow const& Horizon::vertical() const noexcept (true) {
+    return this->m_vertical;
+}
+
 void Horizon::calc_attributes(
     std::vector< attributes::Attribute >& attrs
 ) const noexcept (false) {
