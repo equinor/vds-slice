@@ -38,6 +38,7 @@ enum interpolation_method {
 };
 
 enum attribute {
+    VALUE,
     MIN,
     MAX,
     MEAN,
@@ -102,12 +103,15 @@ struct response horizon_metadata(
 );
 
 struct response attribute(
+    const char* vdspath,
+    const char* credentials,
     const char* data,
     size_t size,
     size_t vertical_window,
     float  fillvalue,
     enum attribute* attributes,
-    size_t nattributes
+    size_t nattributes,
+    float above
 );
 
 void response_delete(struct response*);

@@ -18,12 +18,13 @@ treated as missing, and the `fillValue` will be written to the attribute maps.
 
 ## Supported attributes
 
-Name      | Description
-----------|------------
-min       | Minimum value
-max       | Maximum value
-mean      | Mean value
-rms       | Root mean square
+Name        | Description
+------------|------------
+samplevalue | Seismic sample value at the exact surface position
+min         | Minimum value
+max         | Maximum value
+mean        | Mean value
+rms         | Root mean square
 
 ## Response
 On success (200) the multipart/mixed response consists of n parts. The first

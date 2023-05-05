@@ -157,13 +157,14 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 
 func GetAttributeType(attribute string) (int, error) {
 	switch strings.ToLower(attribute) {
-	case "min":  return C.MIN,  nil
-	case "max":  return C.MAX,  nil
-	case "mean": return C.MEAN, nil
-	case "rms":  return C.RMS,  nil
-	case "": fallthrough
+	case "samplevalue": return C.VALUE, nil
+	case "min":         return C.MIN,   nil
+	case "max":         return C.MAX,   nil
+	case "mean":        return C.MEAN,  nil
+	case "rms":         return C.RMS,   nil
+	case "":            fallthrough
 	default:
-		options := "min, max, mean, rms"
+		options := "samplevalue, min, max, mean, rms"
 		msg := "invalid attribute '%s', valid options are: %s"
 		return -1, fmt.Errorf(msg, attribute, options)
 	}
@@ -490,13 +491,22 @@ func GetAttributes(
 		cattributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
+	curl := C.CString(conn.Url())
+	defer C.free(unsafe.Pointer(curl))
+
+	ccred := C.CString(conn.ConnectionString())
+	defer C.free(unsafe.Pointer(ccred))
+
 	buffer := C.attribute(
+		curl,
+		ccred,
 		horizon.data,
 		C.size_t(hsize),
 		C.size_t(vsize),
 		C.float(fillValue),
 		&cattributes[0],
 		C.size_t(len(targetAttributes)),
+		C.float(above),
 	)
 	defer C.response_delete(&buffer)
 
