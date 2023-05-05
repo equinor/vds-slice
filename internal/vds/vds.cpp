@@ -482,23 +482,15 @@ struct response fetch_horizon(
 }
 
 struct response calculate_attribute(
-    std::string const& url,
-    std::string const& credentials,
+    DataHandle& handle,
     Horizon const& horizon,
     enum attribute* attributes,
     size_t nattributes,
-    float above,
-    float below
+    VerticalWindow const& vertical
 ) {
     using namespace attributes;
 
-    DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
-
-    auto const& sample = metadata.sample();
-
-    auto vertical = VerticalWindow(above, below, sample.stride());
-    vertical.squeeze();
 
     std::size_t index = vertical.nsamples_above();
 
@@ -679,27 +671,54 @@ struct response attribute_metadata(
 struct response attribute(
     const char* vdspath,
     const char* credentials,
-    const char* data,
-    size_t size,
-    size_t vertical_window,
-    float  fillvalue,
-    enum attribute* attributes,
-    size_t nattributes,
+    const float* surface_data,
+    size_t nrows,
+    size_t ncols,
+    float xori,
+    float yori,
+    float xinc,
+    float yinc,
+    float rot,
+    float fillvalue,
+    const char* horizon_data,
     float above,
-    float below
+    float below,
+    enum attribute* attributes,
+    size_t nattributes
 ) {
     try {
-        std::string cube(vdspath);
-        std::string cred(credentials);
-        Horizon horizon((float*)data, size, vertical_window, fillvalue);
+        DataHandle handle(vdspath, credentials);
+        MetadataHandle const& metadata = handle.get_metadata();
+        auto const& sample = metadata.sample();
+
+        auto window = VerticalWindow(above, below, sample.stride());
+        window.squeeze();
+
+        RegularSurface surface(
+            surface_data,
+            nrows,
+            ncols,
+            xori,
+            yori,
+            xinc,
+            yinc,
+            rot
+        );
+
+        Horizon horizon(
+            (float*)horizon_data,
+            surface,
+            surface.size(),
+            window.size(),
+            fillvalue
+        );
+
         return calculate_attribute(
-            cube,
-            cred,
+            handle,
             horizon,
             attributes,
             nattributes,
-            above,
-            below
+            window
         );
     } catch (const std::exception& e) {
         return to_response(e);
