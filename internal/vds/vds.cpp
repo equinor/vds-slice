@@ -485,13 +485,13 @@ struct response calculate_attribute(
     DataHandle& handle,
     Horizon const& horizon,
     enum attribute* attributes,
-    size_t nattributes,
-    VerticalWindow const& vertical
+    size_t nattributes
 ) {
     using namespace attributes;
 
     MetadataHandle const& metadata = handle.get_metadata();
 
+    auto const& vertical = horizon.vertical();
     std::size_t index = vertical.nsamples_above();
 
     auto const& surface = horizon.surface();
@@ -709,7 +709,7 @@ struct response attribute(
         Horizon horizon(
             (float*)horizon_data,
             surface,
-            window.size(),
+            window,
             fillvalue
         );
 
@@ -717,8 +717,7 @@ struct response attribute(
             handle,
             horizon,
             attributes,
-            nattributes,
-            window
+            nattributes
         );
     } catch (const std::exception& e) {
         return to_response(e);
