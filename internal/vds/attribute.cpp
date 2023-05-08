@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstring>
 #include <functional>
+#include <iterator>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -85,7 +86,9 @@ VerticalWindow const& Horizon::vertical() const noexcept (true) {
 
 void Horizon::calc_attributes(
     std::vector< attributes::Attribute >& attrs,
-    VerticalWindow target
+    VerticalWindow target,
+    Horizon::HorizontalIt begin,
+    Horizon::HorizontalIt end
 ) const noexcept (false) {
     auto const& surface  = this->surface();
     auto const& vertical = this->vertical();
@@ -102,7 +105,7 @@ void Horizon::calc_attributes(
     AttributeFillVisitor    fill(this->fillvalue());
     AttributeComputeVisitor compute(vdst.begin(), vdst.end());
 
-    std::size_t i = 0;
+    std::size_t i = std::distance(this->begin(), begin);
     auto calculate = [&](const float& front) {
         if (front == this->fillvalue()) {
             std::for_each(attrs.begin(), attrs.end(), [&](auto& attr) {
@@ -139,5 +142,5 @@ void Horizon::calc_attributes(
         ++i;
     };
 
-    std::for_each(this->begin(), this->end(), calculate);
+    std::for_each(begin, end, calculate);
 }

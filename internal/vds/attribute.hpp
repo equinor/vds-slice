@@ -312,6 +312,9 @@ public:
     using HorizontalIt = StridedIterator;
     using VerticalIt   = VerticalIterator;
 
+    HorizontalIt begin() const noexcept (true);
+    HorizontalIt end()   const noexcept (true);
+
     std::size_t size() const noexcept (true);
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
@@ -321,13 +324,12 @@ public:
 
     void calc_attributes(
         std::vector< attributes::Attribute >& attrs,
-        VerticalWindow target
+        VerticalWindow target,
+        HorizontalIt begin,
+        HorizontalIt end
     ) const noexcept (false);
 
 private:
-    HorizontalIt begin() const noexcept (true);
-    HorizontalIt end()   const noexcept (true);
-
     const float*   m_ptr;
     RegularSurface m_surface;
     VerticalWindow m_vertical;

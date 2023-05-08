@@ -2,6 +2,7 @@
 
 #include <array>
 #include <algorithm>
+#include <iterator>
 #include <string>
 #include <stdexcept>
 #include <memory>
@@ -480,11 +481,14 @@ struct response fetch_horizon(
     return to_response(std::move(buffer), size);
 }
 
-struct response calculate_attribute(
+void calculate_attribute(
     Horizon const& horizon,
     VerticalWindow const& target_window,
     enum attribute* attributes,
-    size_t nattributes
+    size_t nattributes,
+    std::size_t from,
+    std::size_t to,
+    void* out
 ) {
     using namespace attributes;
 
@@ -496,26 +500,38 @@ struct response calculate_attribute(
     auto const& surface = horizon.surface();
     std::size_t size = surface.size() * sizeof(float);
 
-    std::unique_ptr< char[] > buffer(new char[size * nattributes]());
-
     std::vector< Attribute > attrs;
     for (int i = 0; i < nattributes; ++i) {
-        char* dst = buffer.get() + (i * size);
+        char* dst = (char*)out + (i * size);
 
         switch (*attributes) {
-            case VALUE:  { attrs.push_back( Value(dst, size, index) ); break; }
-            case MIN:    { attrs.push_back(   Min(dst, size) )       ; break; }
-            case MAX:    { attrs.push_back(   Max(dst, size) )       ; break; }
-            case MEAN:   { attrs.push_back(  Mean(dst, size, vsize) ); break; }
-            case RMS:    { attrs.push_back(   Rms(dst, size, vsize) ); break; }
+            case VALUE:  { attrs.push_back( Value(dst, size, index, from) ); break; }
+            case MIN:    { attrs.push_back(   Min(dst, size, from) )       ; break; }
+            case MAX:    { attrs.push_back(   Max(dst, size, from) )       ; break; }
+            case MEAN:   { attrs.push_back(  Mean(dst, size, vsize, from) ); break; }
+            case RMS:    { attrs.push_back(   Rms(dst, size, vsize, from) ); break; }
             default:
                 throw std::runtime_error("Attribute not implemented");
         }
         ++attributes;
     }
 
-    horizon.calc_attributes(attrs, target_window);
-    return to_response(std::move(buffer), size * nattributes);
+    if (from >= surface.size()) {
+        throw std::runtime_error("Invalid surface range");
+    }
+
+    if (to > surface.size()) {
+        throw std::runtime_error("Invalid surface range");
+    }
+
+    auto begin = horizon.begin();
+    std::advance(begin, from);
+
+    auto end = horizon.begin();
+    std::advance(end, to);
+
+
+    horizon.calc_attributes(attrs, target_window, begin, end);
 }
 
 struct response fetch_attribute_metadata(
@@ -703,7 +719,10 @@ struct response attribute(
     float below,
     float samplerate,
     enum attribute* attributes,
-    size_t nattributes
+    size_t nattributes,
+    void*  out,
+    size_t from,
+    size_t to
 ) {
     try {
         auto target_window = VerticalWindow(above, below, samplerate);
@@ -728,12 +747,16 @@ struct response attribute(
             fillvalue
         );
 
-        return calculate_attribute(
+        calculate_attribute(
             horizon,
             target_window,
             attributes,
-            nattributes
+            nattributes,
+            from,
+            to,
+            out
         );
+        return response{};
     } catch (const std::exception& e) {
         return to_response(e);
     }

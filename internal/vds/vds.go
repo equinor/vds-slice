@@ -10,6 +10,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"unsafe"
 )
@@ -418,44 +419,78 @@ func GetAttributes(
 	for i := range targetAttributes {
 		cattributes[i] = C.enum_attribute(targetAttributes[i])
 	}
-
 	var cVdsSamplerate C.float
 	err := C.samplerate(curl, ccred, &cVdsSamplerate);
 	if err != 0 {
 		return nil, errors.New("Could not read samplerate from file")
 	}
 	
-	buffer := C.attribute(
-		cVdsSamplerate,
-		&csurface[0],
-		C.size_t(nrows),
-		C.size_t(ncols),
-		C.float(originX),
-		C.float(originY),
-		C.float(increaseX),
-		C.float(increaseY),
-		C.float(rotation),
-		C.float(fillValue),
-		horizon.data,
-		C.float(above),
-		C.float(below),
-		C.float(samplerate),
-		&cattributes[0],
-		C.size_t(len(targetAttributes)),
-	)
-	defer C.response_delete(&buffer)
+	buffer := make([]byte, len(targetAttributes) * mapsize)
+	
+	/** How many vertical windows to be computed by each Goroutine
+	 *
+	 * This value will determine the total number of goroutine. The number is
+	 * more or less a guess for now. We should do performance measurements on
+	 * differently sized files (on target hardware) to determine a good value.
+	 */
+	var windowsPerRoutine = 8192.0
+	nRoutines := int(math.Ceil(float64(hsize) / windowsPerRoutine))
+	remaining := float64(hsize);
+	
+	success := make(chan bool,  nRoutines)
+	errs    := make(chan error, nRoutines)
+	
+	var from = 0.0
+	for n :=0; n < nRoutines; n++ {
+		size := math.Min(windowsPerRoutine, remaining);
+		to := from + size;
+		
+		go func(from, to float64) {
+			response := C.attribute(
+				cVdsSamplerate,
+				&csurface[0],
+				C.size_t(nrows),
+				C.size_t(ncols),
+				C.float(originX),
+				C.float(originY),
+				C.float(increaseX),
+				C.float(increaseY),
+				C.float(rotation),
+				C.float(fillValue),
+				horizon.data,
+				C.float(above),
+				C.float(below),
+				C.float(samplerate),
+				&cattributes[0],
+				C.size_t(len(targetAttributes)),
+				unsafe.Pointer(&buffer[0]),
+				C.size_t(from),
+				C.size_t(to),
+			)
+			defer C.response_delete(&response)
 
-	if buffer.err != nil {
-		err := C.GoString(buffer.err)
-		return nil, errors.New(err)
+			if response.err != nil {
+				err := C.GoString(response.err)
+				errs <- errors.New(err)
+			}
+			success <- true
+		}(from, to)
+
+		from += size;
+		remaining -= size;
+	}
+
+	for i := 0; i < nRoutines; i++ {
+		select {
+		case _ = <- success:
+		case err := <- errs:
+			return nil, err
+		}
 	}
 
 	out := make([][]byte, len(targetAttributes))
 	for i := range targetAttributes {
-		out[i] = C.GoBytes(
-			unsafe.Add(unsafe.Pointer(buffer.data), uintptr(i * mapsize)),
-			C.int(mapsize),
-		)
+		out[i] = buffer[i * mapsize : (i + 1) * mapsize]
 	}
 
 	return out, nil
