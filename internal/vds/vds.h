@@ -125,7 +125,10 @@ struct response attribute(
     float below,
     float samplerate,
     enum attribute* attributes,
-    size_t nattributes
+    size_t nattributes,
+    void*  out,
+    size_t from,
+    size_t to
 );
 
 void response_delete(struct response*);
