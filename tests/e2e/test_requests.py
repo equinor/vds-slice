@@ -56,18 +56,6 @@ def make_metadata_request(vds=VDSURL, sas="sas"):
     }
 
 
-def make_horizon_request(vds=VDSURL, surface=horizon_surface(), horizon=[[8]], sas="sas"):
-    request = {
-        "fillValue": -999.25,
-        "horizon": horizon,
-        "interpolation": "nearest",
-        "vds": vds,
-        "sas": sas
-    }
-    request.update(surface)
-    return request
-
-
 @pytest.mark.parametrize("method", [
     ("get"),
     ("post")
@@ -134,31 +122,10 @@ def test_metadata(method):
     assert metadata == expected_metadata
 
 
-def test_horizon():
-    horizon = [
-        [8, 8],
-        [8, 8],
-        [8, 8]
-    ]
-    meta, data = request_horizon("post", horizon)
-
-    expected = np.array([[101, 105], [109, 113], [117, 121]])
-    assert np.array_equal(data, expected)
-
-    expected_meta = json.loads("""
-    {
-        "shape": [3, 2],
-        "format": "<f4"
-    }
-    """)
-    assert meta == expected_meta
-
-
 @pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
-    ("horizon", make_horizon_request()),
 ])
 @pytest.mark.parametrize("sas, allowed_error_messages", [
     (
@@ -186,7 +153,6 @@ def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_message
 @pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request(vds=VDSURL)),
     ("fence", make_fence_request(vds=VDSURL)),
-    ("horizon", make_horizon_request(vds=VDSURL)),
 ])
 @pytest.mark.parametrize("token, status, error", [
     (generate_container_signature(
@@ -238,7 +204,6 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
-    ("horizon", make_horizon_request()),
 ])
 def test_assure_only_allowed_storage_accounts(path, payload):
     payload.update({
@@ -268,12 +233,6 @@ def test_assure_only_allowed_storage_accounts(path, payload):
         make_metadata_request(vds=f'{STORAGE_ACCOUNT}/{CONTAINER}/notfound'),
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "The specified blob does not exist"
-    ),
-    (
-        "horizon",
-        make_horizon_request(surface={}),
-        http.HTTPStatus.BAD_REQUEST,
-        "Error:Field validation for"
     ),
 ])
 def test_errors(path, payload, error_code, error):
