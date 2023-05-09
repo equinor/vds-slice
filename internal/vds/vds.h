@@ -40,6 +40,7 @@ struct response {
     char*         err;
     unsigned long size;
 };
+typedef struct response response;
 
 void response_delete(struct response*);
 
