@@ -6,6 +6,11 @@
 extern "C" {
 #endif
 
+/** Return value status codes */
+enum status_code {
+    STATUS_OK = 0
+};
+
 struct response {
     char*         data;
     char*         err;
