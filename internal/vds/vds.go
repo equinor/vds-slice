@@ -418,10 +418,15 @@ func GetAttributes(
 	for i := range targetAttributes {
 		cattributes[i] = C.enum_attribute(targetAttributes[i])
 	}
+
+	var cVdsSamplerate C.float
+	err := C.samplerate(curl, ccred, &cVdsSamplerate);
+	if err != 0 {
+		return nil, errors.New("Could not read samplerate from file")
+	}
 	
 	buffer := C.attribute(
-		curl,
-		ccred,
+		cVdsSamplerate,
 		&csurface[0],
 		C.size_t(nrows),
 		C.size_t(ncols),

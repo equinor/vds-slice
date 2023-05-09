@@ -615,6 +615,24 @@ struct response metadata(
     }
 }
 
+int samplerate(
+    const char* vds,
+    const char* credentials,
+    float *samplerate
+) {
+    try {
+        if (not samplerate) return -1;
+        DataHandle handle(vds, credentials);
+        MetadataHandle const& metadata = handle.get_metadata();
+        auto const& sample = metadata.sample();
+
+        *samplerate = sample.stride();
+        return 0;
+    } catch (...) {
+        return -1;
+    }
+}
+
 struct response horizon(
     const char*  vdspath,
     const char* credentials,
@@ -670,8 +688,7 @@ struct response attribute_metadata(
 }
 
 struct response attribute(
-    const char* vdspath,
-    const char* credentials,
+    float vdssamplerate,
     const float* surface_data,
     size_t nrows,
     size_t ncols,
@@ -689,10 +706,6 @@ struct response attribute(
     size_t nattributes
 ) {
     try {
-        DataHandle handle(vdspath, credentials);
-        MetadataHandle const& metadata = handle.get_metadata();
-        auto const& sample = metadata.sample();
-
         auto target_window = VerticalWindow(above, below, samplerate);
         target_window.squeeze();
 
@@ -707,7 +720,7 @@ struct response attribute(
             rot
         );
 
-        auto window = target_window.fit_to_samplerate(sample.stride());
+        auto window = target_window.fit_to_samplerate(vdssamplerate);
         Horizon horizon(
             (float*)horizon_data,
             surface,
