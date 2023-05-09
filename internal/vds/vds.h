@@ -78,6 +78,12 @@ struct response fence_metadata(
     size_t npoints
 );
 
+int samplerate(
+    const char* vds,
+    const char* credentials,
+    float *samplerate
+);
+
 struct response horizon(
     const char* vds,
     const char* credentials,
@@ -104,8 +110,7 @@ struct response attribute_metadata(
 );
 
 struct response attribute(
-    const char* vdspath,
-    const char* credentials,
+    float vdssamplerate,
     const float* surface_data,
     size_t nrows,
     size_t ncols,
