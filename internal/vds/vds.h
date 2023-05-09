@@ -11,6 +11,30 @@ enum status_code {
     STATUS_OK = 0
 };
 
+/** Carry additional context between caller and functions
+ *
+ * Any function that accepts a context as one of its input parameters can use
+ * it to write additional information that might be of use to the caller. This
+ * includes, but is not limited, to writting error messages into the context if
+ * the function should fail. In that case the caller can call errmsg(Context*
+ * ctx) to retrieve the error message.
+ */
+struct Context;
+typedef struct Context Context;
+
+/** Create a new context instance
+ *
+ * The returned instance must always be explicitly free'd by a
+ * call to context_free().
+ */
+Context* context_new();
+
+/** Free up the resources managed internally by the context */
+int context_free(Context* ctx);
+
+/** Read out the last error msg set on the context */
+const char* errmsg(Context* ctx);
+
 struct response {
     char*         data;
     char*         err;

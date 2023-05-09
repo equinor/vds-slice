@@ -530,6 +530,26 @@ struct response fetch_horizon_metadata(
     return to_response(meta);
 }
 
+struct Context {
+    std::string errmsg;
+};
+
+Context* context_new() {
+    return new Context{};
+}
+
+int context_free(Context* ctx) {
+    if (not ctx) return STATUS_OK;
+
+    delete ctx;
+    return STATUS_OK;
+}
+
+const char* errmsg(Context* ctx) {
+    if (not ctx) return nullptr;
+    return ctx->errmsg.c_str();
+}
+
 struct response slice(
     const char* vds,
     const char* credentials,
