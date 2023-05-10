@@ -26,22 +26,14 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
 
 } /* namespace */
 
-DataHandle::DataHandle(std::string const url, std::string const credentials) {
-    OpenVDS::Error error;
-    auto handle = OpenVDS::Open(url, credentials, error);
-    if(error.code != 0) {
-        throw std::runtime_error("Could not open VDS: " + error.string);
-    }
-
-    this->m_file_handle = handle;
-    this->m_access_manager = OpenVDS::GetAccessManager(this->m_file_handle);
-    this->m_metadata = std::unique_ptr<MetadataHandle>(
-        new MetadataHandle(this->m_access_manager.GetVolumeDataLayout())
-    );
-}
+DataHandle::DataHandle(OpenVDS::VDSHandle handle)
+    : m_file_handle(handle)
+    , m_access_manager(OpenVDS::GetAccessManager(handle))
+    , m_metadata(m_access_manager.GetVolumeDataLayout())
+{}
 
 MetadataHandle const& DataHandle::get_metadata() const noexcept (true) {
-    return *(this->m_metadata);
+    return this->m_metadata;
 }
 
 OpenVDS::VolumeDataFormat DataHandle::format() noexcept (true) {

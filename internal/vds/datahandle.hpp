@@ -13,7 +13,7 @@ using voxel = float[OpenVDS::Dimensionality_Max];
 
 class DataHandle {
 public:
-    DataHandle(std::string const url, std::string const credentials);
+    DataHandle(OpenVDS::VDSHandle handle);
 
     MetadataHandle const& get_metadata() const noexcept (true);
 
@@ -51,8 +51,7 @@ public:
 private:
     OpenVDS::ScopedVDSHandle m_file_handle;
     OpenVDS::VolumeDataAccessManager m_access_manager;
-    // Must be pointer due to delayed initialization.
-    std::unique_ptr<MetadataHandle> m_metadata;
+    MetadataHandle m_metadata;
 
     static int constexpr lod_level = 0;
     static int constexpr channel = 0;
