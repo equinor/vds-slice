@@ -28,7 +28,6 @@ void response_delete(struct response* buf) {
         return;
 
     delete[] buf->data;
-    delete[] buf->err;
     *buf = response {};
 }
 
@@ -67,15 +66,6 @@ void to_response(
     /* The data should *not* be free'd on success, as it's returned to CGO */
     response->data = data.release();
     response->size = static_cast<unsigned long>(size);
-}
-
-void to_response(std::exception const& e, response* response) {
-    std::size_t size = std::char_traits<char>::length(e.what()) + 1;
-
-    std::unique_ptr<char[]> msg(new char[size]);
-    std::copy(e.what(), e.what() + size, msg.get());
-
-    response->err = msg.release();
 }
 
 /*
@@ -568,6 +558,7 @@ const char* errmsg(Context* ctx) {
 }
 
 int slice(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     int lineno,
@@ -584,15 +575,16 @@ int slice(
         fetch_slice(cube, cred, direction, lineno, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
 }
 
 int slice_metadata(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     axis_name ax,
@@ -608,15 +600,16 @@ int slice_metadata(
         fetch_slice_metadata(cube, cred, direction, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
 }
 
 int fence(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     enum coordinate_system coordinate_system,
@@ -642,15 +635,16 @@ int fence(
         );
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
 }
 
 int fence_metadata(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     size_t npoints,
@@ -665,15 +659,16 @@ int fence_metadata(
         fetch_fence_metadata(cube, cred, npoints, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
 }
 
 int metadata(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     response* out
@@ -686,15 +681,16 @@ int metadata(
         metadata(cube, cred, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
 }
 
 int horizon(
+    Context* ctx,
     const char*  vdspath,
     const char* credentials,
     const float* data,
@@ -731,15 +727,16 @@ int horizon(
         );
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
 }
 
 int horizon_metadata(
+    Context* ctx,
     const char*  vdspath,
     const char* credentials,
     size_t nrows,
@@ -755,15 +752,16 @@ int horizon_metadata(
         fetch_horizon_metadata(cube, cred, nrows, ncols, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
 }
 
 int attribute(
+    Context* ctx,
     const char* data,
     size_t size,
     size_t vertical_window,
@@ -780,10 +778,10 @@ int attribute(
         calculate_attribute(horizon, attributes, nattributes, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
-        to_response(e, out);
+        if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
 }

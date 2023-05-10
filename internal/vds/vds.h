@@ -39,7 +39,6 @@ const char* errmsg(Context* ctx);
 
 struct response {
     char*         data;
-    char*         err;
     unsigned long size;
 };
 typedef struct response response;
@@ -80,12 +79,14 @@ enum attribute {
 };
 
 int metadata(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     response* out
 );
 
 int slice(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     int lineno,
@@ -94,6 +95,7 @@ int slice(
 );
 
 int slice_metadata(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     enum axis_name direction,
@@ -101,6 +103,7 @@ int slice_metadata(
 );
 
 int fence(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     enum coordinate_system coordinate_system,
@@ -111,6 +114,7 @@ int fence(
 );
 
 int fence_metadata(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     size_t npoints,
@@ -118,6 +122,7 @@ int fence_metadata(
 );
 
 int horizon(
+    Context* ctx,
     const char* vds,
     const char* credentials,
     const float* data,
@@ -136,6 +141,7 @@ int horizon(
 );
 
 int horizon_metadata(
+    Context* ctx,
     const char*  vdspath,
     const char* credentials,
     size_t nrows,
@@ -144,6 +150,7 @@ int horizon_metadata(
 );
 
 int attribute(
+    Context* ctx,
     const char* data,
     size_t size,
     size_t vertical_window,
