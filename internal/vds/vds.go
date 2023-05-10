@@ -178,11 +178,11 @@ func GetMetadata(conn Connection) ([]byte, error) {
 	defer C.free(unsafe.Pointer(ccred))
 
 	var result C.struct_response
-	C.metadata(curl, ccred, &result)
+	cerr := C.metadata(curl, ccred, &result)
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
+	if cerr != C.STATUS_OK {
 		err := C.GoString(result.err)
 		return nil, errors.New(err)
 	}
@@ -199,7 +199,7 @@ func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
 	defer C.free(unsafe.Pointer(ccred))
 
 	var result C.struct_response
-	C.slice(
+	cerr := C.slice(
 		curl,
 		ccred,
 		C.int(lineno),
@@ -208,8 +208,7 @@ func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
 	)
 
 	defer C.response_delete(&result)
-
-	if result.err != nil {
+	if cerr != C.STATUS_OK {
 		err := C.GoString(result.err)
 		return nil, errors.New(err)
 	}
@@ -226,7 +225,7 @@ func GetSliceMetadata(conn Connection, direction int) ([]byte, error) {
 	defer C.free(unsafe.Pointer(ccred))
 
 	var result C.struct_response
-	C.slice_metadata(
+	cerr := C.slice_metadata(
 		curl,
 		ccred,
 		C.enum_axis_name(direction),
@@ -235,7 +234,7 @@ func GetSliceMetadata(conn Connection, direction int) ([]byte, error) {
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
+	if cerr != C.STATUS_OK {
 		err := C.GoString(result.err)
 		return nil, errors.New(err)
 	}
@@ -275,7 +274,7 @@ func GetFence(
 	}
 
 	var result C.struct_response
-	C.fence(
+	cerr := C.fence(
 		cvds,
 		ccred,
 		C.enum_coordinate_system(coordinateSystem),
@@ -287,7 +286,7 @@ func GetFence(
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
+	if cerr != C.STATUS_OK {
 		err := C.GoString(result.err)
 		return nil, errors.New(err)
 	}
@@ -304,7 +303,7 @@ func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) 
 	defer C.free(unsafe.Pointer(ccred))
 
 	var result C.struct_response
-	C.fence_metadata(
+	cerr := C.fence_metadata(
 		curl,
 		ccred,
 		C.size_t(len(coordinates)),
@@ -313,7 +312,7 @@ func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) 
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
+	if cerr != C.STATUS_OK {
 		err := C.GoString(result.err)
 		return nil, errors.New(err)
 	}
@@ -361,7 +360,7 @@ func getHorizon(
 	}
 
 	var result C.struct_response
-	C.horizon(
+	cerr := C.horizon(
 		curl,
 		ccred,
 		&cdata[0],
@@ -379,7 +378,7 @@ func getHorizon(
 		&result,
 	)
 
-	if result.err != nil {
+	if cerr != C.STATUS_OK {
 		err := C.GoString(result.err)
 		C.response_delete(&result)
 		return nil, errors.New(err)
@@ -433,7 +432,7 @@ func GetHorizonMetadata(conn Connection, data [][]float32) ([]byte, error) {
 	defer C.free(unsafe.Pointer(ccred))
 
 	var result C.struct_response
-	C.horizon_metadata(
+	cerr := C.horizon_metadata(
 		curl,
 		ccred,
 		C.size_t(len(data)),
@@ -443,7 +442,7 @@ func GetHorizonMetadata(conn Connection, data [][]float32) ([]byte, error) {
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
+	if cerr != C.STATUS_OK {
 		err := C.GoString(result.err)
 		return nil, errors.New(err)
 	}
@@ -505,7 +504,7 @@ func GetAttributes(
 	}
 
 	var buffer C.struct_response
-	C.attribute(
+	cerr := C.attribute(
 		horizon.data,
 		C.size_t(hsize),
 		C.size_t(vsize),
@@ -516,7 +515,7 @@ func GetAttributes(
 	)
 	defer C.response_delete(&buffer)
 
-	if buffer.err != nil {
+	if cerr != C.STATUS_OK {
 		err := C.GoString(buffer.err)
 		return nil, errors.New(err)
 	}

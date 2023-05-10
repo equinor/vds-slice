@@ -567,7 +567,7 @@ const char* errmsg(Context* ctx) {
     return ctx->errmsg.c_str();
 }
 
-void slice(
+int slice(
     const char* vds,
     const char* credentials,
     int lineno,
@@ -582,14 +582,17 @@ void slice(
         if (not out) throw detail::nullptr_error("Invalid out pointer");
 
         fetch_slice(cube, cred, direction, lineno, out);
+        return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         to_response(e, out);
+        return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
         to_response(e, out);
+        return STATUS_RUNTIME_ERROR;
     }
 }
 
-void slice_metadata(
+int slice_metadata(
     const char* vds,
     const char* credentials,
     axis_name ax,
@@ -603,14 +606,17 @@ void slice_metadata(
         if (not out) throw detail::nullptr_error("Invalid out pointer");
 
         fetch_slice_metadata(cube, cred, direction, out);
+        return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         to_response(e, out);
+        return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
         to_response(e, out);
+        return STATUS_RUNTIME_ERROR;
     }
 }
 
-void fence(
+int fence(
     const char* vds,
     const char* credentials,
     enum coordinate_system coordinate_system,
@@ -634,14 +640,17 @@ void fence(
             interpolation_method,
             out
         );
+        return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         to_response(e, out);
+        return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
         to_response(e, out);
+        return STATUS_RUNTIME_ERROR;
     }
 }
 
-void fence_metadata(
+int fence_metadata(
     const char* vds,
     const char* credentials,
     size_t npoints,
@@ -654,14 +663,17 @@ void fence_metadata(
         if (not out) throw detail::nullptr_error("Invalid out pointer");
 
         fetch_fence_metadata(cube, cred, npoints, out);
+        return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         to_response(e, out);
+        return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
         to_response(e, out);
+        return STATUS_RUNTIME_ERROR;
     }
 }
 
-void metadata(
+int metadata(
     const char* vds,
     const char* credentials,
     response* out
@@ -672,14 +684,17 @@ void metadata(
         std::string cube(vds);
         std::string cred(credentials);
         metadata(cube, cred, out);
+        return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         to_response(e, out);
+        return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
         to_response(e, out);
+        return STATUS_RUNTIME_ERROR;
     }
 }
 
-void horizon(
+int horizon(
     const char*  vdspath,
     const char* credentials,
     const float* data,
@@ -714,14 +729,17 @@ void horizon(
             interpolation,
             out
         );
+        return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         to_response(e, out);
+        return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
         to_response(e, out);
+        return STATUS_RUNTIME_ERROR;
     }
 }
 
-void horizon_metadata(
+int horizon_metadata(
     const char*  vdspath,
     const char* credentials,
     size_t nrows,
@@ -735,14 +753,17 @@ void horizon_metadata(
         std::string cred(credentials);
 
         fetch_horizon_metadata(cube, cred, nrows, ncols, out);
+        return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         to_response(e, out);
+        return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
         to_response(e, out);
+        return STATUS_RUNTIME_ERROR;
     }
 }
 
-void attribute(
+int attribute(
     const char* data,
     size_t size,
     size_t vertical_window,
@@ -755,10 +776,14 @@ void attribute(
         if (not out) throw detail::nullptr_error("Invalid out pointer");
 
         Horizon horizon((float*)data, size, vertical_window, fillvalue);
+
         calculate_attribute(horizon, attributes, nattributes, out);
+        return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         to_response(e, out);
+        return STATUS_NULLPTR_ERROR;
     } catch (const std::exception& e) {
         to_response(e, out);
+        return STATUS_RUNTIME_ERROR;
     }
 }

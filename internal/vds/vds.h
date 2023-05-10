@@ -8,7 +8,9 @@ extern "C" {
 
 /** Return value status codes */
 enum status_code {
-    STATUS_OK = 0
+    STATUS_OK = 0,
+    STATUS_NULLPTR_ERROR,
+    STATUS_RUNTIME_ERROR
 };
 
 /** Carry additional context between caller and functions
@@ -77,13 +79,13 @@ enum attribute {
     SD
 };
 
-void metadata(
+int metadata(
     const char* vds,
     const char* credentials,
     response* out
 );
 
-void slice(
+int slice(
     const char* vds,
     const char* credentials,
     int lineno,
@@ -91,14 +93,14 @@ void slice(
     response* out
 );
 
-void slice_metadata(
+int slice_metadata(
     const char* vds,
     const char* credentials,
     enum axis_name direction,
     response* out
 );
 
-void fence(
+int fence(
     const char* vds,
     const char* credentials,
     enum coordinate_system coordinate_system,
@@ -108,14 +110,14 @@ void fence(
     response* out
 );
 
-void fence_metadata(
+int fence_metadata(
     const char* vds,
     const char* credentials,
     size_t npoints,
     response* out
 );
 
-void horizon(
+int horizon(
     const char* vds,
     const char* credentials,
     const float* data,
@@ -133,7 +135,7 @@ void horizon(
     response* out
 );
 
-void horizon_metadata(
+int horizon_metadata(
     const char*  vdspath,
     const char* credentials,
     size_t nrows,
@@ -141,7 +143,7 @@ void horizon_metadata(
     response* out
 );
 
-void attribute(
+int attribute(
     const char* data,
     size_t size,
     size_t vertical_window,
