@@ -183,6 +183,15 @@ func (v VDSHandle) context() *C.struct_Context{
 	return v.ctx
 }
 
+func (v VDSHandle) Error(status C.int) error {
+	if status == C.STATUS_OK {
+		return nil
+	}
+
+	msg := C.GoString(C.errmsg(v.context()))
+	return errors.New(msg)
+}
+
 func (v VDSHandle) Close() error {
 	defer C.context_free(v.ctx)
 
@@ -222,9 +231,8 @@ func (v VDSHandle) GetMetadata() ([]byte, error) {
 
 	defer C.response_delete(&result)
 
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.context()))
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
@@ -242,9 +250,8 @@ func (v VDSHandle) GetSlice(lineno, direction int) ([]byte, error) {
 	)
 
 	defer C.response_delete(&result)
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.context()))
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
@@ -262,9 +269,8 @@ func (v VDSHandle) GetSliceMetadata(direction int) ([]byte, error) {
 
 	defer C.response_delete(&result)
 
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.context()))
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
@@ -307,9 +313,8 @@ func (v VDSHandle) GetFence(
 
 	defer C.response_delete(&result)
 
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.context()))
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
@@ -327,9 +332,8 @@ func (v VDSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
 
 	defer C.response_delete(&result)
 
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.context()))
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
@@ -386,10 +390,8 @@ func (v VDSHandle) getHorizon(
 		&result,
 	)
 
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.context()))
-		C.response_delete(&result)
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	return &result, nil
@@ -442,9 +444,8 @@ func (v VDSHandle) GetHorizonMetadata(data [][]float32) ([]byte, error) {
 
 	defer C.response_delete(&result)
 
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.context()))
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
@@ -514,9 +515,8 @@ func (v VDSHandle) GetAttributes(
 	)
 	defer C.response_delete(&buffer)
 
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.context()))
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	out := make([][]byte, len(targetAttributes))
