@@ -33,7 +33,14 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 		return
 	}
 
-	buffer, err := vds.GetMetadata(conn)
+	handle, err := vds.NewVDSHandle(conn)
+	defer handle.Close()
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	buffer, err := handle.GetMetadata()
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -63,19 +70,26 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		return
 	}
 
+	handle, err := vds.NewVDSHandle(conn)
+	defer handle.Close()
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
 	axis, err := vds.GetAxis(strings.ToLower(request.Direction))
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	metadata, err := vds.GetSliceMetadata(conn, axis)
+	metadata, err := handle.GetSliceMetadata(axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	data, err := vds.GetSlice(conn, *request.Lineno, axis)
+	data, err := handle.GetSlice(*request.Lineno, axis)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -107,6 +121,13 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 		return
 	}
 
+	handle, err := vds.NewVDSHandle(conn)
+	defer handle.Close()
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
 	coordinateSystem, err := vds.GetCoordinateSystem(
 		strings.ToLower(request.CoordinateSystem),
 	)
@@ -121,14 +142,13 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 		return
 	}
 
-	metadata, err := vds.GetFenceMetadata(conn, request.Coordinates)
+	metadata, err := handle.GetFenceMetadata(request.Coordinates)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	data, err := vds.GetFence(
-		conn,
+	data, err := handle.GetFence(
 		coordinateSystem,
 		request.Coordinates,
 		interpolation,
@@ -171,14 +191,20 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 		return
 	}
 
+	handle, err := vds.NewVDSHandle(conn)
+	defer handle.Close()
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
 	if err != nil {
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	data, err := vds.GetHorizon(
-		conn,
+	data, err := handle.GetHorizon(
 		request.Horizon,
 		*request.Xori,
 		*request.Yori,
@@ -199,7 +225,7 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 		return
 	}
 
-	metadata, err := vds.GetHorizonMetadata(conn, request.Horizon)
+	metadata, err := handle.GetHorizonMetadata(request.Horizon)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -244,6 +270,13 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		return
 	}
 
+	handle, err := vds.NewVDSHandle(conn)
+	defer handle.Close()
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
 		ctx.Set("cache-hit", true)
@@ -260,14 +293,13 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	/* The metadata is identical to that of an horizon request (shape and
 	 * dataformat).
 	 */
-	metadata, err := vds.GetHorizonMetadata(conn, request.Horizon)
+	metadata, err := handle.GetHorizonMetadata(request.Horizon)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	data, err := vds.GetAttributes(
-		conn,
+	data, err := handle.GetAttributes(
 		request.Horizon,
 		*request.Xori,
 		*request.Yori,
