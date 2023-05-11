@@ -23,6 +23,34 @@ func httpStatusCode(err error) int {
 	}
 }
 
+/* Call abortOnError on the context in case of an error
+ *
+ * This function is designed specifically for our endpoint handler functions
+ * and aims at making the errorhandling as short and concise as possible.
+ *
+ * If err != nil the error will be mapped to an appropriate http status code
+ * through the httpStatusCode mapper, and ctx.AbortWithError will be called
+ * with this status and the error itself. It then returns true to indicate that
+ * the context have been aborted.
+ *
+ * If err == nil the ctx is left untouched and this function returns false,
+ * indicating that the context was not aborted.
+ *
+ * The result is a oneline error handling:
+ *
+ *     err, _ := func()
+ *     if abortOnError(ctx, err) { return }
+ */
+func abortOnError(ctx *gin.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	ctx.AbortWithError(httpStatusCode(err), err)
+
+	return true
+}
+
 type Endpoint struct {
 	MakeVdsConnection vds.ConnectionMaker
 	Cache             cache.Cache
