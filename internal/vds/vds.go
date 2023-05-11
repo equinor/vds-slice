@@ -189,7 +189,13 @@ func (v VDSHandle) Error(status C.int) error {
 	}
 
 	msg := C.GoString(C.errmsg(v.context()))
-	return errors.New(msg)
+
+	switch status {
+	case C.STATUS_NULLPTR_ERROR: fallthrough
+	case C.STATUS_RUNTIME_ERROR: return NewInternalError(msg)
+	default:
+		return errors.New(msg)
+	}
 }
 
 func (v VDSHandle) Close() error {
