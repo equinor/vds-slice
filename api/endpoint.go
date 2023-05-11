@@ -14,6 +14,15 @@ import (
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
+func httpStatusCode(err error) int {
+	switch err.(type){
+	case *vds.InvalidArgument: return http.StatusBadRequest
+	case *vds.InternalError:   return http.StatusInternalServerError
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
 type Endpoint struct {
 	MakeVdsConnection vds.ConnectionMaker
 	Cache             cache.Cache
