@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"errors"
 	"net/http"
 	"strings"
 
@@ -65,23 +64,14 @@ func prepareRequestLogging(ctx *gin.Context, request Request) {
 func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
 	defer handle.Close()
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
 
 	buffer, err := handle.GetMetadata()
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	ctx.Data(http.StatusOK, "application/json", buffer)
 }
@@ -89,16 +79,10 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheKey, err := request.Hash()
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -108,29 +92,17 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 	}
 
 	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
 	defer handle.Close()
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
 
 	axis, err := vds.GetAxis(strings.ToLower(request.Direction))
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	metadata, err := handle.GetSliceMetadata(axis)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	data, err := handle.GetSlice(*request.Lineno, axis)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
 
@@ -140,16 +112,10 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheKey, err := request.Hash()
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -159,48 +125,26 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	}
 
 	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
 	defer handle.Close()
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
 
 	coordinateSystem, err := vds.GetCoordinateSystem(
 		strings.ToLower(request.CoordinateSystem),
 	)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	metadata, err := handle.GetFenceMetadata(request.Coordinates)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	data, err := handle.GetFence(
 		coordinateSystem,
 		request.Coordinates,
 		interpolation,
 	)
-
-	if err != nil {
-		var invalidArgument *vds.InvalidArgument
-		switch {
-		case errors.As(err, &invalidArgument):
-			ctx.AbortWithError(http.StatusBadRequest, invalidArgument)
-		default:
-			ctx.AbortWithError(http.StatusInternalServerError, err)
-		}
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
 
@@ -210,16 +154,10 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheKey, err := request.Hash()
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -229,17 +167,11 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 	}
 
 	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
 	defer handle.Close()
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
 
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	data, err := handle.GetHorizon(
 		request.Horizon,
@@ -251,22 +183,10 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 		*request.FillValue,
 		interpolation,
 	)
-	if err != nil {
-		var invalidArgument *vds.InvalidArgument
-		switch {
-		case errors.As(err, &invalidArgument):
-			ctx.AbortWithError(http.StatusBadRequest, invalidArgument)
-		default:
-			ctx.AbortWithError(http.StatusInternalServerError, err)
-		}
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	metadata, err := handle.GetHorizonMetadata(request.Horizon)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
 
@@ -296,23 +216,14 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	}
 
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheKey, err := request.Hash()
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
 	defer handle.Close()
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -322,19 +233,13 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	}
 
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	/* The metadata is identical to that of an horizon request (shape and
 	 * dataformat).
 	 */
 	metadata, err := handle.GetHorizonMetadata(request.Horizon)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	data, err := handle.GetAttributes(
 		request.Horizon,
@@ -349,10 +254,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		request.Attributes,
 		interpolation,
 	)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
 
