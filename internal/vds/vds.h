@@ -45,6 +45,24 @@ typedef struct response response;
 
 void response_delete(struct response*);
 
+struct DataHandle;
+typedef struct DataHandle DataHandle;
+
+/** Create a new (VDS) DataHandle instance */
+int datahandle_new(
+    Context* ctx,
+    const char* url,
+    const char* credentials,
+    DataHandle** f
+);
+
+/** Free up the handle
+ *
+ * Closes the attached OpenVDS handle and frees the handle instance
+ * itself.
+ */
+int datahandle_free(Context* ctx, DataHandle* f);
+
 enum axis_name {
     I         = 0,
     J         = 1,

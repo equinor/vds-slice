@@ -170,6 +170,48 @@ func GetAttributeType(attribute string) (int, error) {
 	}
 }
 
+type VDSHandle struct {
+	handle *C.struct_DataHandle
+	ctx    *C.struct_Context
+}
+
+func (v VDSHandle) get() *C.struct_DataHandle {
+	return v.handle
+}
+
+func (v VDSHandle) close() error {
+	defer C.context_free(v.ctx)
+	cerr := C.datahandle_free(v.ctx, v.handle)
+
+	if cerr != C.STATUS_OK {
+		err := C.GoString(C.errmsg(v.ctx))
+		return errors.New(err)
+	}
+
+	return nil
+}
+
+func NewVDSHandle(conn Connection) (VDSHandle, error) {
+	curl := C.CString(conn.Url())
+	defer C.free(unsafe.Pointer(curl))
+
+	ccred := C.CString(conn.ConnectionString())
+	defer C.free(unsafe.Pointer(ccred))
+
+	var cctx = C.context_new()
+	var handle *C.struct_DataHandle
+
+	cerr := C.datahandle_new(cctx, curl, ccred, &handle);
+
+	if cerr != C.STATUS_OK {
+		err := C.GoString(C.errmsg(cctx))
+		C.context_free(cctx)
+		return VDSHandle{}, errors.New(err)
+	}
+
+	return VDSHandle{ handle: handle, ctx: cctx }, nil
+}
+
 func GetMetadata(conn Connection) ([]byte, error) {
 	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))

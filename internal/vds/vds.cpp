@@ -557,6 +557,38 @@ const char* errmsg(Context* ctx) {
     return ctx->errmsg.c_str();
 }
 
+int datahandle_new(
+    Context* ctx,
+    const char* url,
+    const char* credentials,
+    DataHandle** out
+) {
+    try {
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+        *out = new DataHandle(url, credentials);
+        return STATUS_OK;
+    } catch (const detail::nullptr_error& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_NULLPTR_ERROR;
+    } catch (const std::exception& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_RUNTIME_ERROR;
+    }
+}
+
+int datahandle_free(Context* ctx, DataHandle* f) {
+    try {
+        if (not f) return STATUS_OK;
+
+        delete f;
+
+        return STATUS_OK;
+    } catch (const std::exception& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_RUNTIME_ERROR;
+    }
+}
+
 int slice(
     Context* ctx,
     const char* vds,
