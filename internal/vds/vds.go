@@ -115,7 +115,7 @@ func GetAxis(direction string) (int, error) {
 	default:
 		options := "i, j, k, inline, crossline or depth/time/sample"
 		msg := "invalid direction '%s', valid options are: %s"
-		return -1, fmt.Errorf(msg, direction, options)
+		return -1, NewInvalidArgument(fmt.Sprintf(msg, direction, options))
 	}
 }
 
@@ -130,7 +130,7 @@ func GetCoordinateSystem(coordinateSystem string) (int, error) {
 	default:
 		options := "ij, ilxl, cdp"
 		msg := "coordinate system not recognized: '%s', valid options are: %s"
-		return -1, fmt.Errorf(msg, coordinateSystem, options)
+		return -1, NewInvalidArgument(fmt.Sprintf(msg, coordinateSystem, options))
 	}
 }
 
@@ -151,7 +151,7 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 	default:
 		options := "nearest, linear, cubic, angular or triangular"
 		msg := "invalid interpolation method '%s', valid options are: %s"
-		return -1, fmt.Errorf(msg, interpolation, options)
+		return -1, NewInvalidArgument(fmt.Sprintf(msg, interpolation, options))
 	}
 }
 
@@ -166,7 +166,7 @@ func GetAttributeType(attribute string) (int, error) {
 	default:
 		options := "min, max, mean, rms, sd"
 		msg := "invalid attribute '%s', valid options are: %s"
-		return -1, fmt.Errorf(msg, attribute, options)
+		return -1, NewInvalidArgument(fmt.Sprintf(msg, attribute, options))
 	}
 }
 
