@@ -161,9 +161,10 @@ func GetAttributeType(attribute string) (int, error) {
 	case "max":  return C.MAX,  nil
 	case "mean": return C.MEAN, nil
 	case "rms":  return C.RMS,  nil
+	case "sd":   return C.SD,   nil
 	case "": fallthrough
 	default:
-		options := "min, max, mean, rms"
+		options := "min, max, mean, rms, sd"
 		msg := "invalid attribute '%s', valid options are: %s"
 		return -1, fmt.Errorf(msg, attribute, options)
 	}

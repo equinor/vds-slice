@@ -149,6 +149,11 @@ void  max(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
 void mean(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
 void  rms(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
 
+/* The provided sd function will return the population standard deviation
+ * as we are interested in standard deviation strictly for the data defined by each window.
+ */
+void   sd(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
+
 } // namespace attributes
 
 #endif /* VDS_SLICE_ATTRIBUTE_HPP */
