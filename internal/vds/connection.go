@@ -39,11 +39,11 @@ func srtContainsContainer(srt string) bool {
 func validateSasSrt(connection *AzureConnection) error {
 	query, err := url.ParseQuery(connection.sas)
 	if err != nil {
-		return fmt.Errorf(
+		return NewInvalidArgument(fmt.Sprintf(
 			"illegal sas-token, was: '%s',  err: %v",
 			connection.sas,
 			err,
-		)
+		))
 	}
 
 	if !query.Has("srt") {
@@ -54,10 +54,10 @@ func validateSasSrt(connection *AzureConnection) error {
 	if srtContainsObject(srt) && srtContainsContainer(srt) {
 		return nil
 	}
-	return fmt.Errorf(
+	return NewInvalidArgument(fmt.Sprintf(
 		"invalid sas-token, expected 'c' and 'o' in 'srt', found: '%s'",
 		srt,
-	)
+	))
 }
 
 type Connection interface {
@@ -183,7 +183,7 @@ func isAllowed(allowlist []*url.URL, requested *url.URL) error {
 	msg := "unsupported storage account: %s. This API is configured to work "  +
 		"with a pre-defined set of storage accounts. Contact the system admin " +
 		"to get your storage account on the allowlist"
-	return fmt.Errorf(msg, requested.Host)
+	return NewInvalidArgument(fmt.Sprintf(msg, requested.Host))
 }
 /*
  * Strip leading ? if present from the input SAS token
@@ -218,7 +218,7 @@ func MakeAzureConnection(accounts []string) ConnectionMaker {
 	return func(blob string, sas string) (Connection, error) {
 		blobUrl, err := makeUrl(blob)
 		if err != nil {
-			return nil, err
+			return nil, NewInvalidArgument(err.Error())
 		}
 
 		if err := isAllowed(allowlist, blobUrl); err != nil {
