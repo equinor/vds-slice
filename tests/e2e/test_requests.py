@@ -14,7 +14,7 @@ from requests_toolbelt.multipart import decoder
 
 STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")
 STORAGE_ACCOUNT_KEY = os.getenv("STORAGE_ACCOUNT_KEY")
-ENDPOINT = os.getenv("ENDPOINT").rstrip("/")
+ENDPOINT = os.getenv("ENDPOINT", "http://localhost:8080").rstrip("/")
 CONTAINER = "testdata"
 VDS = "well_known/well_known_default"
 STORAGE_ACCOUNT = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
