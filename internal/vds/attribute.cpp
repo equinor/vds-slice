@@ -83,7 +83,7 @@ void sd(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
     auto sdfunc = [vsize](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
         float sum = std::accumulate(beg, end, 0.0f);
         float mean = sum / vsize;
-        float stdSum = std::accumulate(beg, end, 0,
+        float stdSum = std::accumulate(beg, end, 0.0f,
         [&](float a, float b){
             return a + std::pow(b - mean, 2);
             }
