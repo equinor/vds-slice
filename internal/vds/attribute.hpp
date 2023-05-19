@@ -1,7 +1,7 @@
 #ifndef VDS_SLICE_ATTRIBUTE_HPP
 #define VDS_SLICE_ATTRIBUTE_HPP
 
-#include <functional>
+class AttributeMap;
 
 /** Windowed horizon
  *
@@ -102,33 +102,13 @@ public:
     /* Size of attributes maps calculated by this Horizon */
     std::size_t mapsize() const noexcept (true) { return this->hsize() * sizeof(float); };
 
+    std::pair< VerticalIt, VerticalIt > at(std::size_t i) const noexcept (false);
+
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
-    /** Workhorse for attribute calculation
-     *
-     * The provided lambda func is called with an iterator pair (begin, end)
-     * for each vertical window in the horizon. The results of each lambda call
-     * is memcpy'd into the output-buffer 'dst'. 'dst' needs to be at least
-     * this->mapsize() large. Example of an lambda that will calculate the
-     * minimum value of each vertical window:
-     *
-     *     auto min_value = [](It beg, It end) {
-     *         return *std::min_element(beg, end);
-     *     }
-     *
-     * Calling calc_attribute() like so, will write the entire attribute to dst:
-     *
-     *     horizon.calc_attribute(dst, size, min_value)
-     *
-     * Like the horzion itself, attribute values are written as floating
-     * points.
-     *
-     * The first value of each window is compared to fillvalue. If true, no
-     * computation takes place for that window and the output buffer will be
-     * populated with the fillvalue instead.
-     */
-    template< typename Func >
-    void calc_attribute(void* dst, std::size_t size, Func func) const;
+    void calc_attributes(
+        std::vector< std::unique_ptr< AttributeMap > >& attrs
+    ) const;
 
 private:
     HorizontalIt begin() const noexcept (true);
@@ -140,20 +120,108 @@ private:
     float        m_fillvalue;
 };
 
-namespace attributes {
-
-/* Attribute computations */
-
-void  min(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
-void  max(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
-void mean(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
-void  rms(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
-
-/* The provided sd function will return the population standard deviation
- * as we are interested in standard deviation strictly for the data defined by each window.
+/* Base class for attribute calculations
+ *
+ * The base class main role is to centralize buffer writes such that
+ * implementations of new attributes, in the form of derived classes, don't
+ * have to deal with pointer arithmetic.
  */
-void   sd(Horizon const& horizon, void* dst, std::size_t size) noexcept (false);
+class AttributeMap {
+public:
+    AttributeMap(void* dst, std::size_t size) : dst(dst), size(size) {};
 
-} // namespace attributes
+    virtual float compute(
+        Horizon::VerticalIt begin,
+        Horizon::VerticalIt end
+    ) noexcept (false) = 0;
+
+    void write(float value, std::size_t index) {
+        std::size_t offset = index * sizeof(float);
+
+        if (offset >= this->size) {
+            throw std::out_of_range("Attempting write outside attribute buffer");
+        }
+
+        memcpy((char*)this->dst + offset, &value, sizeof(float));
+    }
+
+    virtual ~AttributeMap() {};
+private:
+    void*       dst;
+    std::size_t size;
+};
+
+class Min final : public AttributeMap {
+public:
+    Min(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(
+        Horizon::VerticalIt begin,
+        Horizon::VerticalIt end
+    ) noexcept (false) override;
+};
+
+class Max final : public AttributeMap {
+public:
+    Max(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(
+        Horizon::VerticalIt begin,
+        Horizon::VerticalIt end
+    ) noexcept (false) override;
+};
+
+class Mean final : public AttributeMap {
+public:
+    Mean(void* dst, std::size_t size, std::size_t vsize)
+        : AttributeMap(dst, size), vsize(vsize)
+    {}
+
+    float compute(
+        Horizon::VerticalIt begin,
+        Horizon::VerticalIt end
+    ) noexcept (false) override;
+
+private:
+    /** vsize is essentially std::distance(begin, end), but that has a linear
+     * complexity and would require compute() to find the same vsize for every
+     * invocation. Hence it's much more efficient to store the value
+     * explicitly.
+     */
+    std::size_t vsize;
+};
+
+class Rms final : public AttributeMap {
+public:
+    Rms(void* dst, std::size_t size, std::size_t vsize)
+        : AttributeMap(dst, size), vsize(vsize)
+    {}
+
+    float compute(
+        Horizon::VerticalIt begin,
+        Horizon::VerticalIt end
+    ) noexcept (false) override;
+
+private:
+    std::size_t vsize;
+};
+
+/* Calculated the population standard deviation as we are interested in
+ * standard deviation strictly for the data defined by each window.
+ */
+class Sd final : public AttributeMap {
+public:
+    Sd(void* dst, std::size_t size, std::size_t vsize)
+        : AttributeMap(dst, size), vsize(vsize)
+    {}
+
+    float compute(
+        Horizon::VerticalIt begin,
+        Horizon::VerticalIt end
+    ) noexcept (false) override;
+
+private:
+    std::size_t vsize;
+};
 
 #endif /* VDS_SLICE_ATTRIBUTE_HPP */

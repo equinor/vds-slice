@@ -480,26 +480,38 @@ func GetAttributes(
 	}
 	defer C.response_delete(horizon)
 
-	nrows := len(data)
-	ncols := len(data[0])
+	var nrows   = len(data)
+	var ncols   = len(data[0])
+	var hsize   = nrows * ncols
+	var mapsize = hsize * 4
+	var vsize   = int(horizon.size) / mapsize
 
-	var out [][]byte
-	vertical_window := int(horizon.size) / (nrows * ncols * 4)
-	for _, attr := range targetAttributes {
-		buffer := C.attribute(
-			horizon.data,
-			C.size_t(nrows * ncols),
-			C.size_t(vertical_window),
-			C.float(fillValue),
-			C.enum_attribute(attr),
+	cattributes := make([]C.enum_attribute, len(targetAttributes))
+	for i := range targetAttributes {
+		cattributes[i] = C.enum_attribute(targetAttributes[i])
+	}
+
+	buffer := C.attribute(
+		horizon.data,
+		C.size_t(hsize),
+		C.size_t(vsize),
+		C.float(fillValue),
+		&cattributes[0],
+		C.size_t(len(targetAttributes)),
+	)
+	defer C.response_delete(&buffer)
+
+	if buffer.err != nil {
+		err := C.GoString(buffer.err)
+		return nil, errors.New(err)
+	}
+
+	out := make([][]byte, len(targetAttributes))
+	for i := range targetAttributes {
+		out[i] = C.GoBytes(
+			unsafe.Add(unsafe.Pointer(buffer.data), uintptr(i * mapsize)),
+			C.int(mapsize),
 		)
-		defer C.response_delete(&buffer)
-		
-		if buffer.err != nil {
-			err := C.GoString(buffer.err)
-			return nil, errors.New(err)
-		}
-		out = append(out, C.GoBytes(unsafe.Pointer(buffer.data), C.int(buffer.size)))
 	}
 
 	return out, nil

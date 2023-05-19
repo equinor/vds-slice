@@ -107,7 +107,8 @@ struct response attribute(
     size_t size,
     size_t vertical_window,
     float  fillvalue,
-    enum attribute attribute
+    enum attribute* attributes,
+    size_t nattributes
 );
 
 void response_delete(struct response*);

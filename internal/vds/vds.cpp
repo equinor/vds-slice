@@ -486,23 +486,32 @@ struct response fetch_horizon(
 
 struct response calculate_attribute(
     Horizon const& horizon,
-    enum attribute target
+    enum attribute* attributes,
+    std::size_t nattributes
 ) {
     std::size_t size = horizon.mapsize();
-    std::unique_ptr< char[] > attr(new char[size]());
+    std::size_t vsize = horizon.vsize();
 
-    using namespace attributes;
-    switch (target) {
-        case MIN:  {  min(horizon, attr.get(), size); break; }
-        case MAX:  {  max(horizon, attr.get(), size); break; }
-        case MEAN: { mean(horizon, attr.get(), size); break; }
-        case RMS:  {  rms(horizon, attr.get(), size); break; }
-        case SD:   {   sd(horizon, attr.get(), size); break; }
-        default:
-            throw std::runtime_error("Attribute not implemented");
+    std::unique_ptr< char[] > buffer(new char[size * nattributes]());
+
+    std::vector< std::unique_ptr< AttributeMap > > attrs;
+    for (int i = 0; i < nattributes; ++i) {
+        char* dst = buffer.get() + (i * size);
+
+        switch (*attributes) {
+            case MIN:  { attrs.push_back( std::unique_ptr< Min  >(new  Min(dst, size)) ); break; }
+            case MAX:  { attrs.push_back( std::unique_ptr< Max  >(new  Max(dst, size)) ); break; }
+            case MEAN: { attrs.push_back( std::unique_ptr< Mean >(new Mean(dst, size, vsize)) ); break; }
+            case RMS:  { attrs.push_back( std::unique_ptr< Rms  >(new  Rms(dst, size, vsize)) ); break; }
+            case SD:   { attrs.push_back( std::unique_ptr< Sd   >(new   Sd(dst, size, vsize)) ); break; }
+            default:
+                throw std::runtime_error("Attribute not implemented");
+        }
+        ++attributes;
     }
 
-    return to_response(std::move(attr), size);
+    horizon.calc_attributes(attrs);
+    return to_response(std::move(buffer), size * nattributes);
 }
 
 struct response fetch_horizon_metadata(
@@ -659,11 +668,12 @@ struct response attribute(
     size_t size,
     size_t vertical_window,
     float  fillvalue,
-    enum attribute attribute
+    enum attribute* attributes,
+    size_t nattributes
 ) {
     try {
         Horizon horizon((float*)data, size, vertical_window, fillvalue);
-        return calculate_attribute(horizon, attribute);
+        return calculate_attribute(horizon, attributes, nattributes);
     } catch (const std::exception& e) {
         return to_response(e);
     }
