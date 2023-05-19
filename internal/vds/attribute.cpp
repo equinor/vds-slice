@@ -66,7 +66,7 @@ void rms(Horizon const& horizon, void* dst, std::size_t size) noexcept (false) {
     std::size_t vsize = horizon.vsize();
 
     auto rmsfunc = [vsize](Horizon::VerticalIt beg, Horizon::VerticalIt end) {
-        float sum = std::accumulate(beg, end, 0,
+        float sum = std::accumulate(beg, end, 0.0f,
             [](float a, float b) {
                 return a + std::pow(b, 2);
             }

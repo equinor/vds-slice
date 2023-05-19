@@ -1066,11 +1066,11 @@ func TestAttribute(t *testing.T) {
 
 	targetAttributes := []string{"min", "max", "mean", "rms", "sd"}
 	expected := [][]float32{
-		{ -4.0,     -2.0,     -14.0,      0.0,       fill, -24.0,      fill, fill }, // min
-		{  2.0,      4.0,      -2.0,     12.0,       fill,  -4.0,      fill, fill }, // max
-		{ -1.0,      1.0,      -8.0,      6.0,       fill, -14.857142, fill, fill }, // mean
-		{  2.236068, 2.236068,  8.944272, 7.2111025, fill,  16.283207, fill, fill }, // rms
-		{  2.0,      2.0,       4.0,      4.0,       fill,   6.663945, fill, fill }, // sd
+		{ -3.5,      -2.5,      -14.5,       0.5,      fill, -24.5,      fill, fill }, // min
+		{  2.5,       3.5,       -2.5,      12.5,      fill,  -4.5,      fill, fill }, // max
+		{ -0.5,       0.5,       -8.5,       6.5,      fill, -15.357142, fill, fill }, // mean
+		{  2.0615528, 2.0615528,  9.394147,  7.632169, fill,  16.740669, fill, fill }, // rms
+		{  2.0,       2.0,        4.0,       4.0,      fill,   6.663945, fill, fill }, // sd
 	}
 	
 	horizon := [][]float32{
