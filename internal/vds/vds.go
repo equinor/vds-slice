@@ -177,7 +177,8 @@ func GetMetadata(conn Connection) ([]byte, error) {
 	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
-	result := C.metadata(curl, ccred)
+	var result C.struct_response
+	C.metadata(curl, ccred, &result)
 
 	defer C.response_delete(&result)
 
@@ -197,11 +198,13 @@ func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
 	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
-	result := C.slice(
+	var result C.struct_response
+	C.slice(
 		curl,
 		ccred,
 		C.int(lineno),
 		C.enum_axis_name(direction),
+		&result,
 	)
 
 	defer C.response_delete(&result)
@@ -222,10 +225,12 @@ func GetSliceMetadata(conn Connection, direction int) ([]byte, error) {
 	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
-	result := C.slice_metadata(
+	var result C.struct_response
+	C.slice_metadata(
 		curl,
 		ccred,
 		C.enum_axis_name(direction),
+		&result,
 	)
 
 	defer C.response_delete(&result)
@@ -269,13 +274,15 @@ func GetFence(
 		}
 	}
 
-	result := C.fence(
+	var result C.struct_response
+	C.fence(
 		cvds,
 		ccred,
 		C.enum_coordinate_system(coordinateSystem),
 		&ccoordinates[0],
 		C.size_t(len(coordinates)),
 		C.enum_interpolation_method(interpolation),
+		&result,
 	)
 
 	defer C.response_delete(&result)
@@ -296,10 +303,12 @@ func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) 
 	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
-	result := C.fence_metadata(
+	var result C.struct_response
+	C.fence_metadata(
 		curl,
 		ccred,
 		C.size_t(len(coordinates)),
+		&result,
 	)
 
 	defer C.response_delete(&result)
@@ -351,7 +360,8 @@ func getHorizon(
 		}
 	}
 
-	result := C.horizon(
+	var result C.struct_response
+	C.horizon(
 		curl,
 		ccred,
 		&cdata[0],
@@ -366,6 +376,7 @@ func getHorizon(
 		C.float(above),
 		C.float(below),
 		C.enum_interpolation_method(interpolation),
+		&result,
 	)
 
 	if result.err != nil {
@@ -421,11 +432,13 @@ func GetHorizonMetadata(conn Connection, data [][]float32) ([]byte, error) {
 	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
-	result := C.horizon_metadata(
+	var result C.struct_response
+	C.horizon_metadata(
 		curl,
 		ccred,
 		C.size_t(len(data)),
 		C.size_t(len(data[0])),
+		&result,
 	)
 
 	defer C.response_delete(&result)
@@ -491,13 +504,15 @@ func GetAttributes(
 		cattributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
-	buffer := C.attribute(
+	var buffer C.struct_response
+	C.attribute(
 		horizon.data,
 		C.size_t(hsize),
 		C.size_t(vsize),
 		C.float(fillValue),
 		&cattributes[0],
 		C.size_t(len(targetAttributes)),
+		&buffer,
 	)
 	defer C.response_delete(&buffer)
 

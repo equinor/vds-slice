@@ -77,40 +77,45 @@ enum attribute {
     SD
 };
 
-struct response metadata(
+void metadata(
     const char* vds,
-    const char* credentials
+    const char* credentials,
+    response* out
 );
 
-struct response slice(
+void slice(
     const char* vds,
     const char* credentials,
     int lineno,
-    enum axis_name direction
+    enum axis_name direction,
+    response* out
 );
 
-struct response slice_metadata(
+void slice_metadata(
     const char* vds,
     const char* credentials,
-    enum axis_name direction
+    enum axis_name direction,
+    response* out
 );
 
-struct response fence(
+void fence(
     const char* vds,
     const char* credentials,
     enum coordinate_system coordinate_system,
     const float* points,
     size_t npoints,
-    enum interpolation_method interpolation_method
+    enum interpolation_method interpolation_method,
+    response* out
 );
 
-struct response fence_metadata(
+void fence_metadata(
     const char* vds,
     const char* credentials,
-    size_t npoints
+    size_t npoints,
+    response* out
 );
 
-struct response horizon(
+void horizon(
     const char* vds,
     const char* credentials,
     const float* data,
@@ -124,23 +129,26 @@ struct response horizon(
     float fillvalue,
     float above,
     float below,
-    enum interpolation_method interpolation_method
+    enum interpolation_method interpolation_method,
+    response* out
 );
 
-struct response horizon_metadata(
+void horizon_metadata(
     const char*  vdspath,
     const char* credentials,
     size_t nrows,
-    size_t ncols
+    size_t ncols,
+    response* out
 );
 
-struct response attribute(
+void attribute(
     const char* data,
     size_t size,
     size_t vertical_window,
     float  fillvalue,
     enum attribute* attributes,
-    size_t nattributes
+    size_t nattributes,
+    response* out
 );
 
 #ifdef __cplusplus

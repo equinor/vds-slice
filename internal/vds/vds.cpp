@@ -18,6 +18,7 @@
 #include "boundingbox.hpp"
 #include "datahandle.hpp"
 #include "direction.hpp"
+#include "exceptions.hpp"
 #include "metadatahandle.hpp"
 #include "regularsurface.hpp"
 #include "subvolume.hpp"
@@ -49,24 +50,32 @@ std::string fmtstr(OpenVDS::VolumeDataFormat format) {
     }
 }
 
-struct response to_response(nlohmann::json const& metadata) {
+void to_response(nlohmann::json const& metadata, response* response) {
     auto const dump = metadata.dump();
     std::unique_ptr< char[] > tmp(new char[dump.size()]);
     std::copy(dump.begin(), dump.end(), tmp.get());
-    return response{tmp.release(), nullptr, dump.size()};
+
+    response->data = tmp.release();
+    response->size = dump.size();
 }
 
-struct response to_response(std::unique_ptr< char[] > data, std::int64_t const size) {
+void to_response(
+    std::unique_ptr< char[] > data,
+    std::int64_t const size,
+    response* response
+) {
     /* The data should *not* be free'd on success, as it's returned to CGO */
-    return response{data.release(), nullptr, static_cast<unsigned long>(size)};
+    response->data = data.release();
+    response->size = static_cast<unsigned long>(size);
 }
 
-struct response to_response(std::exception const& e) {
+void to_response(std::exception const& e, response* response) {
     std::size_t size = std::char_traits<char>::length(e.what()) + 1;
 
     std::unique_ptr<char[]> msg(new char[size]);
     std::copy(e.what(), e.what() + size, msg.get());
-    return response{nullptr, msg.release(), 0};
+
+    response->err = msg.release();
 }
 
 /*
@@ -130,11 +139,12 @@ nlohmann::json json_axis(
     return doc;
 }
 
-struct response fetch_slice(
+void fetch_slice(
     std::string url,
     std::string credentials,
     Direction const direction,
-    int lineno
+    int lineno,
+    response* out
 ) {
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
@@ -155,13 +165,14 @@ struct response fetch_slice(
     std::unique_ptr< char[] > data(new char[size]);
     handle.read_subvolume(data.get(), size, bounds);
 
-    return to_response(std::move(data), size);
+    return to_response(std::move(data), size, out);
 }
 
-struct response fetch_slice_metadata(
+void fetch_slice_metadata(
     std::string url,
     std::string credentials,
-    Direction const direction
+    Direction const direction,
+    response* out
 ) {
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
@@ -199,16 +210,17 @@ struct response fetch_slice_metadata(
         throw std::runtime_error("Unhandled direction");
     }
 
-    return to_response(meta);
+    return to_response(meta, out);
 }
 
-struct response fetch_fence(
+void fetch_fence(
     const std::string& url,
     const std::string& credentials,
     enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
-    enum interpolation_method interpolation_method
+    enum interpolation_method interpolation_method,
+    response* out
 ) {
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
@@ -284,13 +296,14 @@ struct response fetch_fence(
         interpolation_method
     );
 
-    return to_response(std::move(data), size);
+    return to_response(std::move(data), size, out);
 }
 
-struct response fetch_fence_metadata(
+void fetch_fence_metadata(
     std::string url,
     std::string credentials,
-    size_t npoints
+    size_t npoints,
+    response* out
 ) {
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
@@ -300,12 +313,13 @@ struct response fetch_fence_metadata(
     meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
     meta["format"] = fmtstr(DataHandle::format());
 
-    return to_response(meta);
+    return to_response(meta, out);
 }
 
-struct response metadata(
+void metadata(
     const std::string& url,
-    const std::string& credentials
+    const std::string& credentials,
+    response* out
 ) {
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
@@ -330,7 +344,7 @@ struct response metadata(
     Axis const& sample_axis = metadata.sample();
     meta["axis"].push_back(json_axis(sample_axis));
 
-    return to_response(meta);
+    return to_response(meta, out);
 }
 
 /**
@@ -353,14 +367,15 @@ void write_fillvalue(
     });
 }
 
-struct response fetch_horizon(
+void fetch_horizon(
     std::string const&        url,
     std::string const&        credentials,
     RegularSurface            surface,
     float                     fillvalue,
     float                     above,
     float                     below,
-    enum interpolation_method interpolation
+    enum interpolation_method interpolation,
+    response* out
 ) {
     if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
     if (below < 0) throw std::invalid_argument("'below' must be >= 0");
@@ -481,13 +496,14 @@ struct response fetch_horizon(
 
     write_fillvalue(buffer.get(), noval_indicies, verical_size, fillvalue);
 
-    return to_response(std::move(buffer), size);
+    return to_response(std::move(buffer), size, out);
 }
 
-struct response calculate_attribute(
+void calculate_attribute(
     Horizon const& horizon,
     enum attribute* attributes,
-    std::size_t nattributes
+    std::size_t nattributes,
+    response* out
 ) {
     std::size_t size = horizon.mapsize();
     std::size_t vsize = horizon.vsize();
@@ -511,14 +527,15 @@ struct response calculate_attribute(
     }
 
     horizon.calc_attributes(attrs);
-    return to_response(std::move(buffer), size * nattributes);
+    return to_response(std::move(buffer), size, out);
 }
 
-struct response fetch_horizon_metadata(
+void fetch_horizon_metadata(
     std::string const& url,
     std::string const& credentials,
     std::size_t nrows,
-    std::size_t ncols
+    std::size_t ncols,
+    response* out
 ) {
     DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
@@ -527,7 +544,7 @@ struct response fetch_horizon_metadata(
     meta["shape"] = nlohmann::json::array({nrows, ncols});
     meta["format"] = fmtstr(DataHandle::format());
 
-    return to_response(meta);
+    return to_response(meta, out);
 }
 
 struct Context {
@@ -550,88 +567,119 @@ const char* errmsg(Context* ctx) {
     return ctx->errmsg.c_str();
 }
 
-struct response slice(
+void slice(
     const char* vds,
     const char* credentials,
     int lineno,
-    axis_name ax
+    axis_name ax,
+    response* out
 ) {
     std::string cube(vds);
     std::string cred(credentials);
     Direction const direction(ax);
 
     try {
-        return fetch_slice(cube, cred, direction, lineno);
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
+        fetch_slice(cube, cred, direction, lineno, out);
+    } catch (const detail::nullptr_error& e) {
+        to_response(e, out);
     } catch (const std::exception& e) {
-        return to_response(e);
+        to_response(e, out);
     }
 }
 
-struct response slice_metadata(
+void slice_metadata(
     const char* vds,
     const char* credentials,
-    axis_name ax
+    axis_name ax,
+    response* out
 ) {
     std::string cube(vds);
     std::string cred(credentials);
     Direction const direction(ax);
 
     try {
-        return fetch_slice_metadata(cube, cred, direction);
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
+        fetch_slice_metadata(cube, cred, direction, out);
+    } catch (const detail::nullptr_error& e) {
+        to_response(e, out);
     } catch (const std::exception& e) {
-        return to_response(e);
+        to_response(e, out);
     }
 }
 
-struct response fence(
+void fence(
     const char* vds,
     const char* credentials,
     enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
-    enum interpolation_method interpolation_method
+    enum interpolation_method interpolation_method,
+    response* out
 ) {
     std::string cube(vds);
     std::string cred(credentials);
 
     try {
-        return fetch_fence(
-            cube, cred, coordinate_system, coordinates, npoints,
-            interpolation_method);
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
+        fetch_fence(
+            cube,
+            cred,
+            coordinate_system,
+            coordinates,
+            npoints,
+            interpolation_method,
+            out
+        );
+    } catch (const detail::nullptr_error& e) {
+        to_response(e, out);
     } catch (const std::exception& e) {
-        return to_response(e);
+        to_response(e, out);
     }
 }
 
-struct response fence_metadata(
+void fence_metadata(
     const char* vds,
     const char* credentials,
-    size_t npoints
+    size_t npoints,
+    response* out
 ) {
     std::string cube(vds);
     std::string cred(credentials);
 
     try {
-        return fetch_fence_metadata(cube, cred, npoints);
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
+        fetch_fence_metadata(cube, cred, npoints, out);
+    } catch (const detail::nullptr_error& e) {
+        to_response(e, out);
     } catch (const std::exception& e) {
-        return to_response(e);
+        to_response(e, out);
     }
 }
 
-struct response metadata(
+void metadata(
     const char* vds,
-    const char* credentials
+    const char* credentials,
+    response* out
 ) {
     try {
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
         std::string cube(vds);
         std::string cred(credentials);
-        return metadata(cube, cred);
+        metadata(cube, cred, out);
+    } catch (const detail::nullptr_error& e) {
+        to_response(e, out);
     } catch (const std::exception& e) {
-        return to_response(e);
+        to_response(e, out);
     }
 }
 
-struct response horizon(
+void horizon(
     const char*  vdspath,
     const char* credentials,
     const float* data,
@@ -645,56 +693,72 @@ struct response horizon(
     float fillvalue,
     float above,
     float below,
-    enum interpolation_method interpolation
+    enum interpolation_method interpolation,
+    response* out
 ) {
     try {
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
         std::string cube(vdspath);
         std::string cred(credentials);
 
         RegularSurface surface{data, nrows, ncols, xori, yori, xinc, yinc, rot};
 
-        return fetch_horizon(
+        fetch_horizon(
             cube,
             cred,
             surface,
             fillvalue,
             above,
             below,
-            interpolation
+            interpolation,
+            out
         );
+    } catch (const detail::nullptr_error& e) {
+        to_response(e, out);
     } catch (const std::exception& e) {
-        return to_response(e);
+        to_response(e, out);
     }
 }
 
-struct response horizon_metadata(
+void horizon_metadata(
     const char*  vdspath,
     const char* credentials,
     size_t nrows,
-    size_t ncols
+    size_t ncols,
+    response* out
 ) {
     try {
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
         std::string cube(vdspath);
         std::string cred(credentials);
 
-        return fetch_horizon_metadata(cube, cred, nrows, ncols);
+        fetch_horizon_metadata(cube, cred, nrows, ncols, out);
+    } catch (const detail::nullptr_error& e) {
+        to_response(e, out);
     } catch (const std::exception& e) {
-        return to_response(e);
+        to_response(e, out);
     }
 }
 
-struct response attribute(
+void attribute(
     const char* data,
     size_t size,
     size_t vertical_window,
     float  fillvalue,
     enum attribute* attributes,
-    size_t nattributes
+    size_t nattributes,
+    response* out
 ) {
     try {
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
         Horizon horizon((float*)data, size, vertical_window, fillvalue);
-        return calculate_attribute(horizon, attributes, nattributes);
+        calculate_attribute(horizon, attributes, nattributes, out);
+    } catch (const detail::nullptr_error& e) {
+        to_response(e, out);
     } catch (const std::exception& e) {
-        return to_response(e);
+        to_response(e, out);
     }
 }
