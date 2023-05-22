@@ -98,15 +98,13 @@ enum attribute {
 
 int metadata(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     response* out
 );
 
 int slice(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     int lineno,
     enum axis_name direction,
     response* out
@@ -114,16 +112,14 @@ int slice(
 
 int slice_metadata(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     enum axis_name direction,
     response* out
 );
 
 int fence(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     enum coordinate_system coordinate_system,
     const float* points,
     size_t npoints,
@@ -133,16 +129,14 @@ int fence(
 
 int fence_metadata(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     size_t npoints,
     response* out
 );
 
 int horizon(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     const float* data,
     size_t nrows,
     size_t ncols,
@@ -160,8 +154,7 @@ int horizon(
 
 int horizon_metadata(
     Context* ctx,
-    const char*  vdspath,
-    const char* credentials,
+    DataHandle* handle,
     size_t nrows,
     size_t ncols,
     response* out

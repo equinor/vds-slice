@@ -130,13 +130,11 @@ nlohmann::json json_axis(
 }
 
 void fetch_slice(
-    std::string url,
-    std::string credentials,
+    DataHandle& handle,
     Direction const direction,
     int lineno,
     response* out
 ) {
-    DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
     Axis const& axis = metadata.get_axis(direction);
@@ -159,12 +157,10 @@ void fetch_slice(
 }
 
 void fetch_slice_metadata(
-    std::string url,
-    std::string credentials,
+    DataHandle& handle,
     Direction const direction,
     response* out
 ) {
-    DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
@@ -204,15 +200,13 @@ void fetch_slice_metadata(
 }
 
 void fetch_fence(
-    const std::string& url,
-    const std::string& credentials,
+    DataHandle& handle,
     enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method,
     response* out
 ) {
-    DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
     std::unique_ptr< voxel[] > coords(new voxel[npoints]{{0}});
@@ -290,12 +284,10 @@ void fetch_fence(
 }
 
 void fetch_fence_metadata(
-    std::string url,
-    std::string credentials,
+    DataHandle& handle,
     size_t npoints,
     response* out
 ) {
-    DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
@@ -306,12 +298,7 @@ void fetch_fence_metadata(
     return to_response(meta, out);
 }
 
-void metadata(
-    const std::string& url,
-    const std::string& credentials,
-    response* out
-) {
-    DataHandle handle(url, credentials);
+void metadata(DataHandle& handle, response* out) {
     MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
@@ -358,19 +345,17 @@ void write_fillvalue(
 }
 
 void fetch_horizon(
-    std::string const&        url,
-    std::string const&        credentials,
-    RegularSurface            surface,
-    float                     fillvalue,
-    float                     above,
-    float                     below,
+    DataHandle& handle,
+    RegularSurface surface,
+    float fillvalue,
+    float above,
+    float below,
     enum interpolation_method interpolation,
     response* out
 ) {
     if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
     if (below < 0) throw std::invalid_argument("'below' must be >= 0");
 
-    DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
     auto transform = metadata.coordinate_transformer();
 
@@ -521,13 +506,11 @@ void calculate_attribute(
 }
 
 void fetch_horizon_metadata(
-    std::string const& url,
-    std::string const& credentials,
+    DataHandle& handle,
     std::size_t nrows,
     std::size_t ncols,
     response* out
 ) {
-    DataHandle handle(url, credentials);
     MetadataHandle const& metadata = handle.get_metadata();
 
     nlohmann::json meta;
@@ -591,20 +574,17 @@ int datahandle_free(Context* ctx, DataHandle* f) {
 
 int slice(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     int lineno,
     axis_name ax,
     response* out
 ) {
-    std::string cube(vds);
-    std::string cred(credentials);
-    Direction const direction(ax);
-
     try {
-        if (not out) throw detail::nullptr_error("Invalid out pointer");
+        if (not out)    throw detail::nullptr_error("Invalid out pointer");
+        if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        fetch_slice(cube, cred, direction, lineno, out);
+        Direction const direction(ax);
+        fetch_slice(*handle, direction, lineno, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         if (ctx) ctx->errmsg = e.what();
@@ -617,19 +597,16 @@ int slice(
 
 int slice_metadata(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     axis_name ax,
     response* out
 ) {
-    std::string cube(vds);
-    std::string cred(credentials);
-    Direction const direction(ax);
-
     try {
-        if (not out) throw detail::nullptr_error("Invalid out pointer");
+        if (not out)    throw detail::nullptr_error("Invalid out pointer");
+        if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        fetch_slice_metadata(cube, cred, direction, out);
+        Direction const direction(ax);
+        fetch_slice_metadata(*handle, direction, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         if (ctx) ctx->errmsg = e.what();
@@ -642,23 +619,19 @@ int slice_metadata(
 
 int fence(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method,
     response* out
 ) {
-    std::string cube(vds);
-    std::string cred(credentials);
-
     try {
-        if (not out) throw detail::nullptr_error("Invalid out pointer");
+        if (not out)    throw detail::nullptr_error("Invalid out pointer");
+        if (not handle) throw detail::nullptr_error("Invalid handle");
 
         fetch_fence(
-            cube,
-            cred,
+            *handle,
             coordinate_system,
             coordinates,
             npoints,
@@ -677,18 +650,15 @@ int fence(
 
 int fence_metadata(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     size_t npoints,
     response* out
 ) {
-    std::string cube(vds);
-    std::string cred(credentials);
-
     try {
-        if (not out) throw detail::nullptr_error("Invalid out pointer");
+        if (not out)    throw detail::nullptr_error("Invalid out pointer");
+        if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        fetch_fence_metadata(cube, cred, npoints, out);
+        fetch_fence_metadata(*handle, npoints, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         if (ctx) ctx->errmsg = e.what();
@@ -701,16 +671,14 @@ int fence_metadata(
 
 int metadata(
     Context* ctx,
-    const char* vds,
-    const char* credentials,
+    DataHandle* handle,
     response* out
 ) {
     try {
-        if (not out) throw detail::nullptr_error("Invalid out pointer");
+        if (not out)    throw detail::nullptr_error("Invalid out pointer");
+        if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        std::string cube(vds);
-        std::string cred(credentials);
-        metadata(cube, cred, out);
+        metadata(*handle, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         if (ctx) ctx->errmsg = e.what();
@@ -723,8 +691,7 @@ int metadata(
 
 int horizon(
     Context* ctx,
-    const char*  vdspath,
-    const char* credentials,
+    DataHandle* handle,
     const float* data,
     size_t nrows,
     size_t ncols,
@@ -740,16 +707,13 @@ int horizon(
     response* out
 ) {
     try {
-        if (not out) throw detail::nullptr_error("Invalid out pointer");
-
-        std::string cube(vdspath);
-        std::string cred(credentials);
+        if (not out)    throw detail::nullptr_error("Invalid out pointer");
+        if (not handle) throw detail::nullptr_error("Invalid handle");
 
         RegularSurface surface{data, nrows, ncols, xori, yori, xinc, yinc, rot};
 
         fetch_horizon(
-            cube,
-            cred,
+            *handle,
             surface,
             fillvalue,
             above,
@@ -769,19 +733,16 @@ int horizon(
 
 int horizon_metadata(
     Context* ctx,
-    const char*  vdspath,
-    const char* credentials,
+    DataHandle* handle,
     size_t nrows,
     size_t ncols,
     response* out
 ) {
     try {
-        if (not out) throw detail::nullptr_error("Invalid out pointer");
+        if (not out)    throw detail::nullptr_error("Invalid out pointer");
+        if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        std::string cube(vdspath);
-        std::string cred(credentials);
-
-        fetch_horizon_metadata(cube, cred, nrows, ncols, out);
+        fetch_horizon_metadata(*handle, nrows, ncols, out);
         return STATUS_OK;
     } catch (const detail::nullptr_error& e) {
         if (ctx) ctx->errmsg = e.what();
