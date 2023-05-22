@@ -271,6 +271,13 @@ func parseGetRequest(ctx *gin.Context, v interface{}) error {
 	return nil
 }
 
+func parsePostRequest(ctx *gin.Context, request interface{}) error {
+	if err := ctx.ShouldBind(&request); err != nil {
+		return vds.NewInvalidArgument(err.Error())
+	}
+	return nil
+}
+
 func (e *Endpoint) Health(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "I am up and running")
 }
@@ -303,10 +310,9 @@ func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 // @Router   /metadata  [post]
 func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 	var request MetadataRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.metadata(ctx, request)
 }
 
@@ -341,10 +347,9 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	var request SliceRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.slice(ctx, request)
 }
 
@@ -380,10 +385,9 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 // @Router   /fence  [post]
 func (e *Endpoint) FencePost(ctx *gin.Context) {
 	var request FenceRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.fence(ctx, request)
 }
 
@@ -400,10 +404,9 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 // @Router   /horizon  [post]
 func (e *Endpoint) HorizonPost(ctx *gin.Context) {
 	var request HorizonRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.horizon(ctx, request)
 }
 
@@ -417,9 +420,8 @@ func (e *Endpoint) HorizonPost(ctx *gin.Context) {
 // @Router   /horizon/attributes  [post]
 func (e *Endpoint) AttributesPost(ctx *gin.Context) {
 	var request AttributeRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.attributes(ctx, request)
 }
