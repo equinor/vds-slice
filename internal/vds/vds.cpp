@@ -579,6 +579,20 @@ int datahandle_free(Context* ctx, DataHandle* f) {
     }
 }
 
+int handle_exception(Context* ctx, std::exception_ptr eptr) {
+    try {
+        if (eptr) std::rethrow_exception(eptr);
+    } catch (const detail::nullptr_error& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_NULLPTR_ERROR;
+    } catch (const std::exception& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_RUNTIME_ERROR;
+    }
+
+    return STATUS_OK;
+}
+
 int slice(
     Context* ctx,
     DataHandle* handle,
@@ -593,12 +607,8 @@ int slice(
         Direction const direction(ax);
         fetch_slice(*handle, direction, lineno, out);
         return STATUS_OK;
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
     }
 }
 
@@ -615,12 +625,8 @@ int slice_metadata(
         Direction const direction(ax);
         fetch_slice_metadata(*handle, direction, out);
         return STATUS_OK;
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
     }
 }
 
@@ -646,12 +652,8 @@ int fence(
             out
         );
         return STATUS_OK;
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
     }
 }
 
@@ -667,12 +669,8 @@ int fence_metadata(
 
         fetch_fence_metadata(*handle, npoints, out);
         return STATUS_OK;
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
     }
 }
 
@@ -687,12 +685,8 @@ int metadata(
 
         metadata(*handle, out);
         return STATUS_OK;
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
     }
 }
 
@@ -729,12 +723,8 @@ int horizon(
             out
         );
         return STATUS_OK;
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
     }
 }
 
@@ -751,12 +741,8 @@ int horizon_metadata(
 
         fetch_horizon_metadata(*handle, nrows, ncols, out);
         return STATUS_OK;
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
     }
 }
 
@@ -777,11 +763,7 @@ int attribute(
 
         calculate_attribute(horizon, attributes, nattributes, out);
         return STATUS_OK;
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
     }
 }
