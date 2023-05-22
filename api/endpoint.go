@@ -261,10 +261,14 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 
 func parseGetRequest(ctx *gin.Context, v interface{}) error {
 	if err := json.Unmarshal([]byte(ctx.Query("query")), v); err != nil {
-		return err
+		return vds.NewInvalidArgument(err.Error())
 	}
 
-	return binding.Validator.ValidateStruct(v)
+	if err := binding.Validator.ValidateStruct(v); err != nil {
+		return vds.NewInvalidArgument(err.Error())
+	}
+
+	return nil
 }
 
 func (e *Endpoint) Health(ctx *gin.Context) {
@@ -282,10 +286,9 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 // @Router   /metadata  [get]
 func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 	var request MetadataRequest
-	if err := parseGetRequest(ctx, &request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parseGetRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.metadata(ctx, request)
 }
 
@@ -319,10 +322,9 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 // @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	var request SliceRequest
-	if err := parseGetRequest(ctx, &request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parseGetRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.slice(ctx, request)
 }
 
@@ -359,10 +361,9 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 // @Router   /fence  [get]
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	var request FenceRequest
-	if err := parseGetRequest(ctx, &request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parseGetRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.fence(ctx, request)
 }
 
