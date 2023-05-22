@@ -81,7 +81,9 @@ func TestMetadata(t *testing.T) {
 		InputFileName: "well_known.segy",
 	}
 
-	buf, err := GetMetadata(well_known)
+	handle, _ := NewVDSHandle(well_known)
+	defer handle.Close()
+	buf, err := handle.GetMetadata()
 	if err != nil {
 		t.Fatalf("Failed to retrive metadata, err %v", err)
 	}
@@ -130,7 +132,9 @@ func TestSliceData(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		buf, err := GetSlice(well_known, testcase.lineno, testcase.direction)
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		buf, err := handle.GetSlice(testcase.lineno, testcase.direction)
 		if err != nil {
 			t.Errorf(
 				"[case: %v] Failed to fetch slice, err: %v",
@@ -181,7 +185,9 @@ func TestSliceOutOfBounds(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := GetSlice(well_known, testcase.lineno, testcase.direction)
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		_, err := handle.GetSlice(testcase.lineno, testcase.direction)
 		if err == nil {
 			t.Errorf(
 				"[case: %v] Expected slice to fail",
@@ -211,7 +217,9 @@ func TestSliceStridedLineno(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := GetSlice(well_known, testcase.lineno, testcase.direction)
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		_, err := handle.GetSlice(testcase.lineno, testcase.direction)
 		if err == nil {
 			t.Errorf(
 				"[case: %v] Expected slice to fail",
@@ -239,7 +247,9 @@ func TestSliceInvalidAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := GetSlice(well_known, 0, testcase.direction)
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		_, err := handle.GetSlice(0, testcase.direction)
 
 		if err == nil {
 			t.Errorf(
@@ -277,7 +287,9 @@ func TestDepthAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		_, err := GetSlice(well_known, 0, testcase.direction)
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		_, err := handle.GetSlice(0, testcase.direction)
 
 		if err == nil {
 			t.Errorf(
@@ -343,7 +355,9 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		buf, err := GetSliceMetadata(well_known, testcase.direction)
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		buf, err := handle.GetSliceMetadata(testcase.direction)
 		if err != nil {
 			t.Fatalf(
 				"[case: %v] Failed to get slice metadata, err: %v",
@@ -409,8 +423,9 @@ func TestFence(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testcase := range testcases {
-		buf, err := GetFence(
-			well_known,
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		buf, err := handle.GetFence(
 			testcase.coordinate_system,
 			testcase.coordinates,
 			interpolationMethod,
@@ -501,7 +516,9 @@ func TestFenceBorders(t *testing.T) {
 
 	for _, testcase := range testcases {
 		interpolationMethod, _ := GetInterpolationMethod("linear")
-		_, err := GetFence(well_known, testcase.coordinate_system, testcase.coordinates, interpolationMethod)
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		_, err := handle.GetFence(testcase.coordinate_system, testcase.coordinates, interpolationMethod)
 
 		if err == nil {
 			msg := "in testcase \"%s\" expected to fail given fence is out of bounds %v"
@@ -576,8 +593,9 @@ func TestFenceNearestInterpolationSnap(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testcase := range testcases {
-		buf, err := GetFence(
-			well_known,
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		buf, err := handle.GetFence(
 			testcase.coordinate_system,
 			testcase.coordinates,
 			interpolationMethod,
@@ -631,7 +649,9 @@ func TestInvalidFence(t *testing.T) {
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
-	_, err := GetFence(well_known, CoordinateSystemIndex, fence, interpolationMethod)
+	handle, _ := NewVDSHandle(well_known)
+	defer handle.Close()
+	_, err := handle.GetFence(CoordinateSystemIndex, fence, interpolationMethod)
 
 	if err == nil {
 		msg := "Expected to fail given invalid fence %v"
@@ -656,10 +676,12 @@ func TestFenceInterpolation(t *testing.T) {
 	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular", "angular"}
 	for i, v1 := range interpolationMethods {
 		interpolationMethod, _ := GetInterpolationMethod(v1)
-		buf1, _ := GetFence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		buf1, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod)
 		for _, v2 := range interpolationMethods[i+1:] {
 			interpolationMethod, _ := GetInterpolationMethod(v2)
-			buf2, _ := GetFence(well_known, CoordinateSystemCdp, fence, interpolationMethod)
+			buf2, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod)
 			different := false
 			for k := range buf1 {
 				if buf1[k] != buf2[k] {
@@ -710,49 +732,18 @@ func TestFenceInterpolationCaseInsensitive(t *testing.T) {
 }
 
 func TestOnly3DSupported(t *testing.T) {
-	testcases := []struct {
-		name     string
-		function func() ([]byte, error)
-	}{
-		{
-			name:     "Slice",
-			function: func() ([]byte, error) { return GetSlice(prestack, 0, 0) },
-		},
-		{
-			name:     "SliceMetadata",
-			function: func() ([]byte, error) { return GetSliceMetadata(prestack, 0) },
-		},
-		{
-			name:     "Fence",
-			function: func() ([]byte, error) { return GetFence(prestack, 0, [][]float32{{0, 0}}, 0) },
-		},
-		{
-			name:     "FenceMetadata",
-			function: func() ([]byte, error) { return GetFenceMetadata(prestack, [][]float32{{0, 0}}) },
-		},
-		{
-			name:     "Metadata",
-			function: func() ([]byte, error) { return GetMetadata(prestack) },
-		},
+	handle, err := NewVDSHandle(prestack)
+	if err == nil {
+		t.Error("Expected open to fail")
 	}
 
-	for _, testcase := range testcases {
-		_, err := testcase.function()
+	defer handle.Close()
 
-		if err == nil {
-			t.Errorf(
-				"[case: %v] Expected slice to fail",
-				testcase.name,
-			)
-		}
-
-		if !strings.Contains(err.Error(), "3 dimensions, got 4") {
-			t.Errorf(
-				"[case: %s] Expected error to contain '3 dimensions, got 4', was: %v",
-				testcase.name,
-				err,
-			)
-		}
+	if !strings.Contains(err.Error(), "3 dimensions, got 4") {
+		t.Errorf(
+			"Expected error to contain '3 dimensions, got 4', was: %v",
+			err,
+		)
 	}
 }
 
@@ -770,8 +761,9 @@ func TestHorizon(t *testing.T) {
 	}
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	buf, err := GetHorizon(
-		well_known,
+	handle, _ := NewVDSHandle(well_known)
+	defer handle.Close()
+	buf, err := handle.GetHorizon(
 		horizon,
 		well_known_grid.xori,
 		well_known_grid.yori,
@@ -825,8 +817,9 @@ func TestHorizonUnalignedWithSeismic(t *testing.T) {
 	}
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	buf, err := GetHorizon(
-		well_known,
+	handle, _ := NewVDSHandle(well_known)
+	defer handle.Close()
+	buf, err := handle.GetHorizon(
 		horizon,
 		16,
 		18,
@@ -889,8 +882,9 @@ func TestHorizonVerticalBounds(t *testing.T) {
 
 	for _, testcase := range testcases {
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
-		_, boundsErr := GetHorizon(
-			well_known,
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		_, boundsErr := handle.GetHorizon(
 			testcase.horizon,
 			well_known_grid.xori,
 			well_known_grid.yori,
@@ -1020,8 +1014,9 @@ func TestHorizonHorizontalBounds(t *testing.T) {
 
 	for _, testcase := range testcases {
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
-		buf, err := GetHorizon(
-			well_known,
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		buf, err := handle.GetHorizon(
 			horizon,
 			float32(testcase.xori),
 			float32(testcase.yori),
@@ -1084,8 +1079,9 @@ func TestAttribute(t *testing.T) {
 	const above = float32(12.0)
 	const below = float32(12.0)
 
-	buf, err := GetAttributes(
-		samples10,
+	handle, _ := NewVDSHandle(samples10)
+	defer handle.Close()
+	buf, err := handle.GetAttributes(
 		horizon,
 		samples10_grid.xori,
 		samples10_grid.yori,
@@ -1159,8 +1155,9 @@ func TestAttributeVerticalBounds(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testCase := range testCases {
-		_, err := GetAttributes(
-			well_known,
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		_, err := handle.GetAttributes(
 			testCase.horizon,
 			well_known_grid.xori,
 			well_known_grid.yori,

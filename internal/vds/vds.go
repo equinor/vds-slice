@@ -115,7 +115,7 @@ func GetAxis(direction string) (int, error) {
 	default:
 		options := "i, j, k, inline, crossline or depth/time/sample"
 		msg := "invalid direction '%s', valid options are: %s"
-		return -1, fmt.Errorf(msg, direction, options)
+		return -1, NewInvalidArgument(fmt.Sprintf(msg, direction, options))
 	}
 }
 
@@ -130,7 +130,7 @@ func GetCoordinateSystem(coordinateSystem string) (int, error) {
 	default:
 		options := "ij, ilxl, cdp"
 		msg := "coordinate system not recognized: '%s', valid options are: %s"
-		return -1, fmt.Errorf(msg, coordinateSystem, options)
+		return -1, NewInvalidArgument(fmt.Sprintf(msg, coordinateSystem, options))
 	}
 }
 
@@ -151,7 +151,7 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 	default:
 		options := "nearest, linear, cubic, angular or triangular"
 		msg := "invalid interpolation method '%s', valid options are: %s"
-		return -1, fmt.Errorf(msg, interpolation, options)
+		return -1, NewInvalidArgument(fmt.Sprintf(msg, interpolation, options))
 	}
 }
 
@@ -166,91 +166,128 @@ func GetAttributeType(attribute string) (int, error) {
 	default:
 		options := "min, max, mean, rms, sd"
 		msg := "invalid attribute '%s', valid options are: %s"
-		return -1, fmt.Errorf(msg, attribute, options)
+		return -1, NewInvalidArgument(fmt.Sprintf(msg, attribute, options))
 	}
 }
 
-func GetMetadata(conn Connection) ([]byte, error) {
+type VDSHandle struct {
+	handle *C.struct_DataHandle
+	ctx    *C.struct_Context
+}
+
+func (v VDSHandle) Handle() *C.struct_DataHandle {
+	return v.handle
+}
+
+func (v VDSHandle) context() *C.struct_Context{
+	return v.ctx
+}
+
+func (v VDSHandle) Error(status C.int) error {
+	if status == C.STATUS_OK {
+		return nil
+	}
+
+	msg := C.GoString(C.errmsg(v.context()))
+
+	switch status {
+	case C.STATUS_NULLPTR_ERROR: fallthrough
+	case C.STATUS_RUNTIME_ERROR: return NewInternalError(msg)
+	default:
+		return errors.New(msg)
+	}
+}
+
+func (v VDSHandle) Close() error {
+	defer C.context_free(v.ctx)
+
+	cerr := C.datahandle_free(v.ctx, v.handle)
+	if cerr != C.STATUS_OK {
+		err := C.GoString(C.errmsg(v.ctx))
+		return errors.New(err)
+	}
+
+	return nil
+}
+
+func NewVDSHandle(conn Connection) (VDSHandle, error) {
 	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
 	ccred := C.CString(conn.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
-	result := C.metadata(curl, ccred)
+	var cctx = C.context_new()
+	var handle *C.struct_DataHandle
+
+	cerr := C.datahandle_new(cctx, curl, ccred, &handle);
+
+	if cerr != C.STATUS_OK {
+		err := C.GoString(C.errmsg(cctx))
+		C.context_free(cctx)
+		return VDSHandle{}, errors.New(err)
+	}
+
+	return VDSHandle{ handle: handle, ctx: cctx }, nil
+}
+
+func (v VDSHandle) GetMetadata() ([]byte, error) {
+	var result C.struct_response
+	cerr := C.metadata(v.context(), v.Handle(), &result)
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
-		err := C.GoString(result.err)
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
 }
 
-func GetSlice(conn Connection, lineno, direction int) ([]byte, error) {
-	curl := C.CString(conn.Url())
-	defer C.free(unsafe.Pointer(curl))
-
-	ccred := C.CString(conn.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
-
-	result := C.slice(
-		curl,
-		ccred,
+func (v VDSHandle) GetSlice(lineno, direction int) ([]byte, error) {
+	var result C.struct_response
+	cerr := C.slice(
+		v.context(),
+		v.Handle(),
 		C.int(lineno),
 		C.enum_axis_name(direction),
+		&result,
 	)
 
 	defer C.response_delete(&result)
-
-	if result.err != nil {
-		err := C.GoString(result.err)
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
 }
 
-func GetSliceMetadata(conn Connection, direction int) ([]byte, error) {
-	curl := C.CString(conn.Url())
-	defer C.free(unsafe.Pointer(curl))
-
-	ccred := C.CString(conn.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
-
-	result := C.slice_metadata(
-		curl,
-		ccred,
+func (v VDSHandle) GetSliceMetadata(direction int) ([]byte, error) {
+	var result C.struct_response
+	cerr := C.slice_metadata(
+		v.context(),
+		v.Handle(),
 		C.enum_axis_name(direction),
+		&result,
 	)
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
-		err := C.GoString(result.err)
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
 }
 
-func GetFence(
-	conn Connection,
+func (v VDSHandle) GetFence(
 	coordinateSystem int,
 	coordinates [][]float32,
 	interpolation int,
 ) ([]byte, error) {
-	cvds := C.CString(conn.Url())
-	defer C.free(unsafe.Pointer(cvds))
-
-	ccred := C.CString(conn.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
-
 	coordinate_len := 2
 	ccoordinates := make([]C.float, len(coordinates) * coordinate_len)
 	for i := range coordinates {
@@ -269,52 +306,47 @@ func GetFence(
 		}
 	}
 
-	result := C.fence(
-		cvds,
-		ccred,
+	var result C.struct_response
+	cerr := C.fence(
+		v.context(),
+		v.Handle(),
 		C.enum_coordinate_system(coordinateSystem),
 		&ccoordinates[0],
 		C.size_t(len(coordinates)),
 		C.enum_interpolation_method(interpolation),
+		&result,
 	)
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
-		err := C.GoString(result.err)
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
 }
 
-func GetFenceMetadata(conn Connection, coordinates [][]float32) ([]byte, error) {
-	curl := C.CString(conn.Url())
-	defer C.free(unsafe.Pointer(curl))
-
-	ccred := C.CString(conn.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
-
-	result := C.fence_metadata(
-		curl,
-		ccred,
+func (v VDSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
+	var result C.struct_response
+	cerr := C.fence_metadata(
+		v.context(),
+		v.Handle(),
 		C.size_t(len(coordinates)),
+		&result,
 	)
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
-		err := C.GoString(result.err)
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
 }
 
-func getHorizon(
-	conn          Connection,
+func (v VDSHandle) getHorizon(
 	data          [][]float32,
 	originX       float32,
 	originY       float32,
@@ -326,12 +358,6 @@ func getHorizon(
 	below         float32,
 	interpolation int,
 ) (*C.struct_response, error) {
-	curl := C.CString(conn.Url())
-	defer C.free(unsafe.Pointer(curl))
-
-	ccred := C.CString(conn.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
-
 	nrows := len(data)
 	ncols := len(data[0])
 
@@ -351,9 +377,10 @@ func getHorizon(
 		}
 	}
 
-	result := C.horizon(
-		curl,
-		ccred,
+	var result C.struct_response
+	cerr := C.horizon(
+		v.context(),
+		v.Handle(),
 		&cdata[0],
 		C.size_t(nrows),
 		C.size_t(ncols),
@@ -366,19 +393,17 @@ func getHorizon(
 		C.float(above),
 		C.float(below),
 		C.enum_interpolation_method(interpolation),
+		&result,
 	)
 
-	if result.err != nil {
-		err := C.GoString(result.err)
-		C.response_delete(&result)
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	return &result, nil
 }
 
-func GetHorizon(
-	conn          Connection,
+func (v VDSHandle) GetHorizon(
 	data          [][]float32,
 	originX       float32,
 	originY       float32,
@@ -391,8 +416,7 @@ func GetHorizon(
 	const above = 0
 	const below = 0
 
-	result, err := getHorizon(
-		conn,
+	result, err := v.getHorizon(
 		data,
 		originX,
 		originY,
@@ -414,33 +438,27 @@ func GetHorizon(
 	return buf, nil
 }
 
-func GetHorizonMetadata(conn Connection, data [][]float32) ([]byte, error) {
-	curl := C.CString(conn.Url())
-	defer C.free(unsafe.Pointer(curl))
-
-	ccred := C.CString(conn.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
-
-	result := C.horizon_metadata(
-		curl,
-		ccred,
+func (v VDSHandle) GetHorizonMetadata(data [][]float32) ([]byte, error) {
+	var result C.struct_response
+	cerr := C.horizon_metadata(
+		v.context(),
+		v.Handle(),
 		C.size_t(len(data)),
 		C.size_t(len(data[0])),
+		&result,
 	)
 
 	defer C.response_delete(&result)
 
-	if result.err != nil {
-		err := C.GoString(result.err)
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
 	return buf, nil
 }
 
-func GetAttributes(
-	conn          Connection,
+func (v VDSHandle) GetAttributes(
 	data          [][]float32,
 	originX       float32,
 	originY       float32,
@@ -462,8 +480,7 @@ func GetAttributes(
 		targetAttributes = append(targetAttributes, id);
 	}
 
-	horizon, err := getHorizon(
-		conn,
+	horizon, err := v.getHorizon(
 		data,
 		originX,
 		originY,
@@ -491,19 +508,21 @@ func GetAttributes(
 		cattributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
-	buffer := C.attribute(
+	var buffer C.struct_response
+	cerr := C.attribute(
+		v.context(),
 		horizon.data,
 		C.size_t(hsize),
 		C.size_t(vsize),
 		C.float(fillValue),
 		&cattributes[0],
 		C.size_t(len(targetAttributes)),
+		&buffer,
 	)
 	defer C.response_delete(&buffer)
 
-	if buffer.err != nil {
-		err := C.GoString(buffer.err)
-		return nil, errors.New(err)
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
 	out := make([][]byte, len(targetAttributes))

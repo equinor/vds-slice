@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"errors"
 	"net/http"
 	"strings"
 
@@ -13,6 +12,43 @@ import (
 	"github.com/equinor/vds-slice/internal/cache"
 	"github.com/equinor/vds-slice/internal/vds"
 )
+
+func httpStatusCode(err error) int {
+	switch err.(type){
+	case *vds.InvalidArgument: return http.StatusBadRequest
+	case *vds.InternalError:   return http.StatusInternalServerError
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
+/* Call abortOnError on the context in case of an error
+ *
+ * This function is designed specifically for our endpoint handler functions
+ * and aims at making the errorhandling as short and concise as possible.
+ *
+ * If err != nil the error will be mapped to an appropriate http status code
+ * through the httpStatusCode mapper, and ctx.AbortWithError will be called
+ * with this status and the error itself. It then returns true to indicate that
+ * the context have been aborted.
+ *
+ * If err == nil the ctx is left untouched and this function returns false,
+ * indicating that the context was not aborted.
+ *
+ * The result is a oneline error handling:
+ *
+ *     err, _ := func()
+ *     if abortOnError(ctx, err) { return }
+ */
+func abortOnError(ctx *gin.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	ctx.AbortWithError(httpStatusCode(err), err)
+
+	return true
+}
 
 type Endpoint struct {
 	MakeVdsConnection vds.ConnectionMaker
@@ -28,16 +64,14 @@ func prepareRequestLogging(ctx *gin.Context, request Request) {
 func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
-	buffer, err := vds.GetMetadata(conn)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
+	defer handle.Close()
+
+	buffer, err := handle.GetMetadata()
+	if abortOnError(ctx, err) { return }
 
 	ctx.Data(http.StatusOK, "application/json", buffer)
 }
@@ -45,16 +79,10 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheKey, err := request.Hash()
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -63,23 +91,18 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		return
 	}
 
+	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
+	defer handle.Close()
+
 	axis, err := vds.GetAxis(strings.ToLower(request.Direction))
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
-	metadata, err := vds.GetSliceMetadata(conn, axis)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	metadata, err := handle.GetSliceMetadata(axis)
+	if abortOnError(ctx, err) { return }
 
-	data, err := vds.GetSlice(conn, *request.Lineno, axis)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	data, err := handle.GetSlice(*request.Lineno, axis)
+	if abortOnError(ctx, err) { return }
 
 	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
 
@@ -89,16 +112,10 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheKey, err := request.Hash()
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -107,43 +124,27 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 		return
 	}
 
+	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
+	defer handle.Close()
+
 	coordinateSystem, err := vds.GetCoordinateSystem(
 		strings.ToLower(request.CoordinateSystem),
 	)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
-	metadata, err := vds.GetFenceMetadata(conn, request.Coordinates)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	metadata, err := handle.GetFenceMetadata(request.Coordinates)
+	if abortOnError(ctx, err) { return }
 
-	data, err := vds.GetFence(
-		conn,
+	data, err := handle.GetFence(
 		coordinateSystem,
 		request.Coordinates,
 		interpolation,
 	)
-
-	if err != nil {
-		var invalidArgument *vds.InvalidArgument
-		switch {
-		case errors.As(err, &invalidArgument):
-			ctx.AbortWithError(http.StatusBadRequest, invalidArgument)
-		default:
-			ctx.AbortWithError(http.StatusInternalServerError, err)
-		}
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
 
@@ -153,16 +154,10 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheKey, err := request.Hash()
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -171,14 +166,14 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 		return
 	}
 
-	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
+	defer handle.Close()
 
-	data, err := vds.GetHorizon(
-		conn,
+	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
+	if abortOnError(ctx, err) { return }
+
+	data, err := handle.GetHorizon(
 		request.Horizon,
 		*request.Xori,
 		*request.Yori,
@@ -188,22 +183,10 @@ func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
 		*request.FillValue,
 		interpolation,
 	)
-	if err != nil {
-		var invalidArgument *vds.InvalidArgument
-		switch {
-		case errors.As(err, &invalidArgument):
-			ctx.AbortWithError(http.StatusBadRequest, invalidArgument)
-		default:
-			ctx.AbortWithError(http.StatusInternalServerError, err)
-		}
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
-	metadata, err := vds.GetHorizonMetadata(conn, request.Horizon)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	metadata, err := handle.GetHorizonMetadata(request.Horizon)
+	if abortOnError(ctx, err) { return }
 
 	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
 
@@ -217,32 +200,28 @@ func validateVerticalWindow(above float32, below float32,) error {
 	if lower <= above && above < upper { return nil }
 	if lower <= below && below < upper { return nil }
 	
-	return fmt.Errorf(
+	return vds.NewInvalidArgument(fmt.Sprintf(
 		"'above'/'below' out of range! Must be within [%d, %d]",
 		lower,
 		upper,
-	)
+	))
 }
 
 func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	prepareRequestLogging(ctx, request)
 
-	if err := validateVerticalWindow(*request.Above, *request.Below); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := validateVerticalWindow(*request.Above, *request.Below)
+	if abortOnError(ctx, err) { return }
 
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	cacheKey, err := request.Hash()
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
+
+	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
+	defer handle.Close()
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -252,22 +231,15 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	}
 
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	/* The metadata is identical to that of an horizon request (shape and
 	 * dataformat).
 	 */
-	metadata, err := vds.GetHorizonMetadata(conn, request.Horizon)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	metadata, err := handle.GetHorizonMetadata(request.Horizon)
+	if abortOnError(ctx, err) { return }
 
-	data, err := vds.GetAttributes(
-		conn,
+	data, err := handle.GetAttributes(
 		request.Horizon,
 		*request.Xori,
 		*request.Yori,
@@ -280,10 +252,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		request.Attributes,
 		interpolation,
 	)
-	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	if abortOnError(ctx, err) { return }
 
 	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
 
@@ -292,10 +261,21 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 
 func parseGetRequest(ctx *gin.Context, v interface{}) error {
 	if err := json.Unmarshal([]byte(ctx.Query("query")), v); err != nil {
-		return err
+		return vds.NewInvalidArgument(err.Error())
 	}
 
-	return binding.Validator.ValidateStruct(v)
+	if err := binding.Validator.ValidateStruct(v); err != nil {
+		return vds.NewInvalidArgument(err.Error())
+	}
+
+	return nil
+}
+
+func parsePostRequest(ctx *gin.Context, request interface{}) error {
+	if err := ctx.ShouldBind(&request); err != nil {
+		return vds.NewInvalidArgument(err.Error())
+	}
+	return nil
 }
 
 func (e *Endpoint) Health(ctx *gin.Context) {
@@ -313,10 +293,9 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 // @Router   /metadata  [get]
 func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 	var request MetadataRequest
-	if err := parseGetRequest(ctx, &request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parseGetRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.metadata(ctx, request)
 }
 
@@ -331,10 +310,9 @@ func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 // @Router   /metadata  [post]
 func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 	var request MetadataRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.metadata(ctx, request)
 }
 
@@ -350,10 +328,9 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 // @Router   /slice  [get]
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	var request SliceRequest
-	if err := parseGetRequest(ctx, &request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parseGetRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.slice(ctx, request)
 }
 
@@ -370,10 +347,9 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // @Router   /slice  [post]
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	var request SliceRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.slice(ctx, request)
 }
 
@@ -390,10 +366,9 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 // @Router   /fence  [get]
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	var request FenceRequest
-	if err := parseGetRequest(ctx, &request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parseGetRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.fence(ctx, request)
 }
 
@@ -410,10 +385,9 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 // @Router   /fence  [post]
 func (e *Endpoint) FencePost(ctx *gin.Context) {
 	var request FenceRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.fence(ctx, request)
 }
 
@@ -430,10 +404,9 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 // @Router   /horizon  [post]
 func (e *Endpoint) HorizonPost(ctx *gin.Context) {
 	var request HorizonRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.horizon(ctx, request)
 }
 
@@ -447,9 +420,8 @@ func (e *Endpoint) HorizonPost(ctx *gin.Context) {
 // @Router   /horizon/attributes  [post]
 func (e *Endpoint) AttributesPost(ctx *gin.Context) {
 	var request AttributeRequest
-	if err := ctx.ShouldBind(&request); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
 	e.attributes(ctx, request)
 }

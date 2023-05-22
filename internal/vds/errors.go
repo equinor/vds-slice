@@ -13,3 +13,15 @@ func NewInvalidArgument(msg string) *InvalidArgument {
 		message: msg,
 	}
 }
+
+type InternalError struct {
+	message string
+}
+
+func (e *InternalError) Error() string {
+	return e.message
+}
+
+func NewInternalError(msg string) *InternalError {
+	return &InternalError{ message: msg }
+}
