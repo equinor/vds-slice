@@ -200,20 +200,18 @@ func validateVerticalWindow(above float32, below float32,) error {
 	if lower <= above && above < upper { return nil }
 	if lower <= below && below < upper { return nil }
 	
-	return fmt.Errorf(
+	return vds.NewInvalidArgument(fmt.Sprintf(
 		"'above'/'below' out of range! Must be within [%d, %d]",
 		lower,
 		upper,
-	)
+	))
 }
 
 func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	prepareRequestLogging(ctx, request)
 
-	if err := validateVerticalWindow(*request.Above, *request.Below); err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
+	err := validateVerticalWindow(*request.Above, *request.Below)
+	if abortOnError(ctx, err) { return }
 
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
 	if abortOnError(ctx, err) { return }
