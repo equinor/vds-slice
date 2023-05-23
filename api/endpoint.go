@@ -353,7 +353,7 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 // @Param    body  body  AttributeRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
-// @Router   /horizon/attributes  [post]
+// @Router   /horizon  [post]
 func (e *Endpoint) AttributesPost(ctx *gin.Context) {
 	var request AttributeRequest
 	err := parsePostRequest(ctx, &request)

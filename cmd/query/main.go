@@ -149,7 +149,7 @@ func setupApp(app *gin.Engine, endpoint *api.Endpoint, metric * metrics.Metrics)
 	seismic.GET("fence", endpoint.FenceGet)
 	seismic.POST("fence", endpoint.FencePost)
 
-	seismic.POST("horizon/attributes", endpoint.AttributesPost)
+	seismic.POST("horizon", endpoint.AttributesPost)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }

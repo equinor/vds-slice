@@ -170,7 +170,7 @@ def test_attributes():
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
-    ("horizon/attributes", make_attribute_request()),
+    ("horizon", make_attribute_request()),
 ])
 @pytest.mark.parametrize("sas, allowed_error_messages", [
     (
@@ -198,7 +198,7 @@ def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_message
 @pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request(vds=VDSURL)),
     ("fence", make_fence_request(vds=VDSURL)),
-    ("horizon/attributes", make_attribute_request()),
+    ("horizon", make_attribute_request()),
 ])
 @pytest.mark.parametrize("token, status, error", [
     (generate_container_signature(
@@ -250,7 +250,7 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
-    ("horizon/attributes", make_attribute_request()),
+    ("horizon", make_attribute_request()),
 ])
 def test_assure_only_allowed_storage_accounts(path, payload):
     payload.update({
@@ -282,7 +282,7 @@ def test_assure_only_allowed_storage_accounts(path, payload):
         "The specified blob does not exist"
     ),
     (
-        "horizon/attributes",
+        "horizon",
         make_attribute_request(surface={}),
         http.HTTPStatus.BAD_REQUEST,
         "Error:Field validation for"
@@ -366,7 +366,7 @@ def request_attributes(method, horizon):
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
     payload = make_attribute_request(horizon=horizon, sas=sas)
-    rdata = send_request("horizon/attributes", method, payload)
+    rdata = send_request("horizon", method, payload)
     rdata.raise_for_status()
 
     multipart_data = decoder.MultipartDecoder.from_response(rdata)

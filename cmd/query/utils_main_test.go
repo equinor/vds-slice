@@ -106,7 +106,7 @@ type attributeTest struct {
 }
 
 func (h attributeTest) endpoint() string {
-	return "/horizon/attributes"
+	return "/horizon"
 }
 
 func (h attributeTest) base() baseTest {
