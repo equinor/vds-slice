@@ -475,6 +475,11 @@ void fetch_horizon(
     return to_response(std::move(buffer), size, out);
 }
 
+template< typename T >
+void append(std::vector< std::unique_ptr< AttributeMap > >& vec, T obj) {
+    vec.push_back( std::unique_ptr< T >( new T( std::move(obj) ) ) );
+}
+
 void calculate_attribute(
     DataHandle& handle,
     Horizon const& horizon,
@@ -496,12 +501,12 @@ void calculate_attribute(
         char* dst = buffer.get() + (i * size);
 
         switch (*attributes) {
-            case VALUE: { attrs.push_back( std::unique_ptr< Value >(new Value(dst, size, index)) ); break; }
-            case MIN:   { attrs.push_back( std::unique_ptr< Min   >(new   Min(dst, size)) ); break; }
-            case MAX:   { attrs.push_back( std::unique_ptr< Max   >(new   Max(dst, size)) ); break; }
-            case MEAN:  { attrs.push_back( std::unique_ptr< Mean  >(new  Mean(dst, size, vsize)) ); break; }
-            case RMS:   { attrs.push_back( std::unique_ptr< Rms   >(new   Rms(dst, size, vsize)) ); break; }
-            case SD:    { attrs.push_back( std::unique_ptr< Sd    >(new    Sd(dst, size, vsize)) ); break; }
+            case VALUE: { append(attrs, Value(dst, size, index)); break; }
+            case MIN:   { append(attrs,   Min(dst, size)       ); break; }
+            case MAX:   { append(attrs,   Max(dst, size)       ); break; }
+            case MEAN:  { append(attrs,  Mean(dst, size, vsize)); break; }
+            case RMS:   { append(attrs,   Rms(dst, size, vsize)); break; }
+            case SD:    { append(attrs,    Sd(dst, size, vsize)); break; }
             default:
                 throw std::runtime_error("Attribute not implemented");
         }
