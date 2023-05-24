@@ -432,38 +432,26 @@ func (v VDSHandle) getHorizon(
 	below         float32,
 	interpolation int,
 ) (*C.struct_response, error) {
-	nrows := len(data)
-	ncols := len(data[0])
-
-	cdata := make([]C.float, nrows * ncols)
-	for i := range data {
-		if len(data[i]) != ncols  {
-			msg := fmt.Sprintf(
-				"Surface rows are not of the same length. "+
-					"Row 0 has %d elements. Row %d has %d elements",
-				ncols, i, len(data[i]),
-			)
-			return nil, NewInvalidArgument(msg)
-		}
-
-		for j := range data[i] {
-			cdata[i * ncols  + j] = C.float(data[i][j])
-		}
+	surface, err := NewRegularSurface(
+		data,
+		originX,
+		originY,
+		increaseX,
+		increaseY,
+		rotation,
+		fillValue,
+	)
+	if err != nil {
+		return nil, err
 	}
+
+	defer surface.Close()
 
 	var result C.struct_response
 	cerr := C.horizon(
 		v.context(),
 		v.Handle(),
-		&cdata[0],
-		C.size_t(nrows),
-		C.size_t(ncols),
-		C.float(originX),
-		C.float(originY),
-		C.float(increaseX),
-		C.float(increaseY),
-		C.float(rotation),
-		C.float(fillValue),
+		surface.get(),
 		C.float(above),
 		C.float(below),
 		C.enum_interpolation_method(interpolation),

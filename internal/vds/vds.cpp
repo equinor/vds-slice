@@ -346,7 +346,7 @@ void write_fillvalue(
 
 void fetch_horizon(
     DataHandle& handle,
-    RegularSurface surface,
+    RegularSurface const& surface,
     float above,
     float below,
     enum interpolation_method interpolation,
@@ -746,29 +746,20 @@ int metadata(
 int horizon(
     Context* ctx,
     DataHandle* handle,
-    const float* data,
-    size_t nrows,
-    size_t ncols,
-    float xori,
-    float yori,
-    float xinc,
-    float yinc,
-    float rot,
-    float fillvalue,
+    RegularSurface* surface,
     float above,
     float below,
     enum interpolation_method interpolation,
     response* out
 ) {
     try {
-        if (not out)    throw detail::nullptr_error("Invalid out pointer");
-        if (not handle) throw detail::nullptr_error("Invalid handle");
-
-        RegularSurface surface(data, nrows, ncols, xori, yori, xinc, yinc, rot, fillvalue);
+        if (not out)     throw detail::nullptr_error("Invalid out pointer");
+        if (not handle)  throw detail::nullptr_error("Invalid handle");
+        if (not surface) throw detail::nullptr_error("Invalid surface");
 
         fetch_horizon(
             *handle,
-            surface,
+            *surface,
             above,
             below,
             interpolation,
