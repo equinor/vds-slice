@@ -171,6 +171,22 @@ func GetAttributeType(attribute string) (int, error) {
 	}
 }
 
+/** Translate C status codes into Go error types */
+func toError(status C.int, ctx *C.Context) error {
+	if status == C.STATUS_OK {
+		return nil
+	}
+
+	msg := C.GoString(C.errmsg(ctx))
+
+	switch status {
+	case C.STATUS_NULLPTR_ERROR: fallthrough
+	case C.STATUS_RUNTIME_ERROR: return NewInternalError(msg)
+	default:
+		return errors.New(msg)
+	}
+}
+
 type VDSHandle struct {
 	handle *C.struct_DataHandle
 	ctx    *C.struct_Context
@@ -185,18 +201,7 @@ func (v VDSHandle) context() *C.struct_Context{
 }
 
 func (v VDSHandle) Error(status C.int) error {
-	if status == C.STATUS_OK {
-		return nil
-	}
-
-	msg := C.GoString(C.errmsg(v.context()))
-
-	switch status {
-	case C.STATUS_NULLPTR_ERROR: fallthrough
-	case C.STATUS_RUNTIME_ERROR: return NewInternalError(msg)
-	default:
-		return errors.New(msg)
-	}
+	return toError(status, v.context())
 }
 
 func (v VDSHandle) Close() error {
