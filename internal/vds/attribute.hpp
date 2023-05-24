@@ -93,6 +93,9 @@ public:
     using HorizontalIt = StridedIterator;
     using VerticalIt   = VerticalIterator;
 
+    HorizontalIt begin() const noexcept (true);
+    HorizontalIt end()   const noexcept (true);
+
     /* Vertical size of the horizon*/
     std::size_t vsize() const noexcept (true) { return this->m_vsize; };
 
@@ -111,9 +114,6 @@ public:
     ) const;
 
 private:
-    HorizontalIt begin() const noexcept (true);
-    HorizontalIt end()   const noexcept (true);
-
     const float* m_ptr;
     std::size_t  m_hsize;
     std::size_t  m_vsize;
