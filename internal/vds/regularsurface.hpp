@@ -76,10 +76,12 @@ public:
         float yori,
         float xinc,
         float yinc,
-        float rot
+        float rot,
+        float fillvalue
     ) : m_data(data),
         m_nrows(nrows),
         m_ncols(ncols),
+        m_fillvalue(fillvalue),
         m_transformation(
             AffineTransformation::from_rotation(xori, yori, xinc, yinc, rot))
     {}
@@ -108,6 +110,8 @@ public:
         return this->m_data[row * this->ncols() + col];
     };
 
+    float fillvalue() const noexcept (true) { return this->m_fillvalue; };
+
     std::size_t nrows() noexcept (true) { return this->m_nrows; };
     std::size_t ncols() noexcept (true) { return this->m_ncols; };
     std::size_t size()  noexcept (true) { return this->ncols() * this->nrows(); };
@@ -115,6 +119,7 @@ private:
     const float* m_data;
     std::size_t  m_nrows;
     std::size_t  m_ncols;
+    float        m_fillvalue;
     AffineTransformation    m_transformation;
 };
 

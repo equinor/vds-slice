@@ -347,7 +347,6 @@ void write_fillvalue(
 void fetch_horizon(
     DataHandle& handle,
     RegularSurface surface,
-    float fillvalue,
     float above,
     float below,
     enum interpolation_method interpolation,
@@ -369,6 +368,8 @@ void fetch_horizon(
     std::size_t const nsamples = surface.size() * verical_size;
 
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
+
+    float const fillvalue = surface.fillvalue();
 
     auto inrange = [](Axis const& axis, double const voxel) {
         return (0 <= voxel) and (voxel < axis.nsamples());
@@ -717,12 +718,11 @@ int horizon(
         if (not out)    throw detail::nullptr_error("Invalid out pointer");
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        RegularSurface surface{data, nrows, ncols, xori, yori, xinc, yinc, rot};
+        RegularSurface surface(data, nrows, ncols, xori, yori, xinc, yinc, rot, fillvalue);
 
         fetch_horizon(
             *handle,
             surface,
-            fillvalue,
             above,
             below,
             interpolation,
