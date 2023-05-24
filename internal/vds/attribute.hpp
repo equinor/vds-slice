@@ -1,8 +1,6 @@
 #ifndef VDS_SLICE_ATTRIBUTE_HPP
 #define VDS_SLICE_ATTRIBUTE_HPP
 
-class AttributeMap;
-
 /** Windowed horizon
  *
  * Definition and layout of a windowed horizon
@@ -39,12 +37,6 @@ class AttributeMap;
  * In short this class is an abstraction around a float pointer to a 3D array
  * with the properties described above. The reason for the raw pointer is to be
  * compatible with C, and hence CGO and GO.
- *
- * `calc_attribute` is the main interface and provides a way for the caller to
- * specify a calculation (in form of a lambda) that is applied to every
- * vertical window. This makes it very easy for the consumer to implement their
- * own attributes without having to implement correct looping of the windows
- * each time.
  */
 class Horizon{
 private:
@@ -108,10 +100,6 @@ public:
     std::pair< VerticalIt, VerticalIt > at(std::size_t i) const noexcept (false);
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
-
-    void calc_attributes(
-        std::vector< std::unique_ptr< AttributeMap > >& attrs
-    ) const;
 
 private:
     const float* m_ptr;
@@ -238,5 +226,11 @@ public:
 private:
     std::size_t vsize;
 };
+
+
+void calc_attributes(
+    Horizon const& horizon,
+    std::vector< std::unique_ptr< AttributeMap > >& attrs
+) noexcept (false);
 
 #endif /* VDS_SLICE_ATTRIBUTE_HPP */

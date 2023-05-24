@@ -17,33 +17,6 @@ Horizon::HorizontalIt Horizon::end() const noexcept (true) {
     return HorizontalIt(this->m_ptr + this->hsize() * this->vsize(), this->vsize());
 }
 
-void Horizon::calc_attributes(
-    std::vector< std::unique_ptr< AttributeMap > >& attrs
-) const {
-    auto fill = this->fillvalue();
-
-    std::size_t i = 0;
-    auto calculate = [&](const float& front) {
-        if (front != fill) {
-            std::for_each(attrs.begin(), attrs.end(), [&](std::unique_ptr< AttributeMap>& attr) {
-                float value = attr->compute(
-                    VerticalIt(&front),
-                    VerticalIt(&front + this->vsize())
-                );
-                attr->write(value, i);
-            });
-        } else {
-            std::for_each(attrs.begin(), attrs.end(), [&](std::unique_ptr< AttributeMap >& attr) {
-                attr->write(fill, i);
-            });
-        }
-
-        ++i;
-    };
-
-    std::for_each(this->begin(), this->end(), calculate);
-}
-
 float Value::compute(
     Horizon::VerticalIt begin,
     Horizon::VerticalIt end
@@ -96,4 +69,32 @@ float Sd::compute(
         [&](float a, float b){ return a + std::pow(b - mean, 2); }
     );
     return std::sqrt(stdSum / vsize);
+}
+
+void calc_attributes(
+    Horizon const& horizon,
+    std::vector< std::unique_ptr< AttributeMap > >& attrs
+) noexcept (false) {
+    auto fill = horizon.fillvalue();
+
+    std::size_t i = 0;
+    auto calculate = [&](const float& front) {
+        if (front != fill) {
+            std::for_each(attrs.begin(), attrs.end(), [&](std::unique_ptr< AttributeMap>& attr) {
+                float value = attr->compute(
+                    Horizon::VerticalIt(&front),
+                    Horizon::VerticalIt(&front + horizon.vsize())
+                );
+                attr->write(value, i);
+            });
+        } else {
+            std::for_each(attrs.begin(), attrs.end(), [&](std::unique_ptr< AttributeMap >& attr) {
+                attr->write(fill, i);
+            });
+        }
+
+        ++i;
+    };
+
+    std::for_each(horizon.begin(), horizon.end(), calculate);
 }

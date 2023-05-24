@@ -508,7 +508,7 @@ void calculate_attribute(
         ++attributes;
     }
 
-    horizon.calc_attributes(attrs);
+    calc_attributes(horizon, attrs);
     return to_response(std::move(buffer), size, out);
 }
 
