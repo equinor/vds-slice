@@ -208,12 +208,7 @@ func (v VDSHandle) Close() error {
 	defer C.context_free(v.ctx)
 
 	cerr := C.datahandle_free(v.ctx, v.handle)
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.ctx))
-		return errors.New(err)
-	}
-
-	return nil
+	return toError(cerr, v.ctx)
 }
 
 func NewVDSHandle(conn Connection) (VDSHandle, error) {
@@ -228,10 +223,9 @@ func NewVDSHandle(conn Connection) (VDSHandle, error) {
 
 	cerr := C.datahandle_new(cctx, curl, ccred, &handle);
 
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(cctx))
-		C.context_free(cctx)
-		return VDSHandle{}, errors.New(err)
+	if err := toError(cerr, cctx); err != nil {
+		defer C.context_free(cctx)
+		return VDSHandle{}, err
 	}
 
 	return VDSHandle{ handle: handle, ctx: cctx }, nil
