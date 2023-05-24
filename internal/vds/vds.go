@@ -187,6 +187,80 @@ func toError(status C.int, ctx *C.Context) error {
 	}
 }
 
+type RegularSurface struct {
+	cSurface *C.struct_RegularSurface
+}
+
+func (r *RegularSurface) get() *C.struct_RegularSurface {
+	return r.cSurface
+}
+
+func (r *RegularSurface) Close() error {
+	var cCtx = C.context_new()
+	defer C.context_free(cCtx)
+
+	cErr :=	C.regular_surface_free(cCtx, r.cSurface)
+	if err := toError(cErr, cCtx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func NewRegularSurface(
+	data          [][]float32,
+	originX       float32,
+	originY       float32,
+	increaseX     float32,
+	increaseY     float32,
+	rotation      float32,
+	fillValue     float32,
+) (RegularSurface, error) {
+	var cCtx = C.context_new()
+	defer C.context_free(cCtx)
+
+	nrows := len(data)
+	ncols := len(data[0])
+
+	cdata := make([]C.float, nrows * ncols)
+	for i := range data {
+		if len(data[i]) != ncols  {
+			msg := fmt.Sprintf(
+				"Surface rows are not of the same length. "+
+					"Row 0 has %d elements. Row %d has %d elements",
+				ncols, i, len(data[i]),
+			)
+			return RegularSurface{}, NewInvalidArgument(msg)
+		}
+
+		for j := range data[i] {
+			cdata[i * ncols  + j] = C.float(data[i][j])
+		}
+	}
+
+	var cSurface *C.struct_RegularSurface
+	cErr := C.regular_surface_new(
+		cCtx,
+		&cdata[0],
+		C.size_t(nrows),
+		C.size_t(ncols),
+		C.float(originX),
+		C.float(originY),
+		C.float(increaseX),
+		C.float(increaseY),
+		C.float(rotation),
+		C.float(fillValue),
+		&cSurface,
+	)
+
+	if err := toError(cErr, cCtx); err != nil {
+		C.regular_surface_free(cCtx, cSurface)
+		return RegularSurface{}, err
+	}
+
+	return RegularSurface{ cSurface: cSurface }, nil
+}
+
 type VDSHandle struct {
 	handle *C.struct_DataHandle
 	ctx    *C.struct_Context

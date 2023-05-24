@@ -600,6 +600,52 @@ int datahandle_free(Context* ctx, DataHandle* f) {
     }
 }
 
+int regular_surface_new(
+    Context* ctx,
+    const float* data,
+    size_t nrows,
+    size_t ncols,
+    float xori,
+    float yori,
+    float xinc,
+    float yinc,
+    float rot,
+    float fillvalue,
+    RegularSurface** out
+) {
+    try {
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
+        *out = new RegularSurface(
+            data,
+            nrows,
+            ncols,
+            xori,
+            yori,
+            xinc,
+            yinc,
+            rot,
+            fillvalue
+        );
+        return STATUS_OK;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
+    }
+}
+
+int regular_surface_free(Context* ctx, RegularSurface* surface) {
+    try {
+        if (not surface) return STATUS_OK;
+
+        delete surface;
+
+        return STATUS_OK;
+    } catch (const std::exception& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_RUNTIME_ERROR;
+    }
+}
+
 int slice(
     Context* ctx,
     DataHandle* handle,
