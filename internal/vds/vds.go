@@ -420,51 +420,6 @@ func (v VDSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
 	return buf, nil
 }
 
-func (v VDSHandle) getHorizon(
-	data          [][]float32,
-	originX       float32,
-	originY       float32,
-	increaseX     float32,
-	increaseY     float32,
-	rotation      float32,
-	fillValue     float32,
-	above         float32,
-	below         float32,
-	interpolation int,
-) (*C.struct_response, error) {
-	surface, err := NewRegularSurface(
-		data,
-		originX,
-		originY,
-		increaseX,
-		increaseY,
-		rotation,
-		fillValue,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	defer surface.Close()
-
-	var result C.struct_response
-	cerr := C.horizon(
-		v.context(),
-		v.Handle(),
-		surface.get(),
-		C.float(above),
-		C.float(below),
-		C.enum_interpolation_method(interpolation),
-		&result,
-	)
-
-	if err := v.Error(cerr); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
 func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.attribute_metadata(
@@ -507,7 +462,17 @@ func (v VDSHandle) GetAttributes(
 		targetAttributes = append(targetAttributes, id);
 	}
 
-	horizon, err := v.getHorizon(
+	var nrows   = len(data)
+	var ncols   = len(data[0])
+	var hsize   = nrows * ncols
+	var mapsize = hsize * 4
+
+	cattributes := make([]C.enum_attribute, len(targetAttributes))
+	for i := range targetAttributes {
+		cattributes[i] = C.enum_attribute(targetAttributes[i])
+	}
+
+	surface, err := NewRegularSurface(
 		data,
 		originX,
 		originY,
@@ -515,28 +480,32 @@ func (v VDSHandle) GetAttributes(
 		increaseY,
 		rotation,
 		fillValue,
-		above,
-		below,
-		interpolation,
 	)
 	if err != nil {
 		return nil, err
 	}
-	defer C.response_delete(horizon)
+	defer surface.Close()
 
-	var nrows   = len(data)
-	var ncols   = len(data[0])
-	var hsize   = nrows * ncols
-	var mapsize = hsize * 4
-	var vsize   = int(horizon.size) / mapsize
+	var horizon C.struct_response
+	cerr := C.horizon(
+		v.context(),
+		v.Handle(),
+		surface.get(),
+		C.float(above),
+		C.float(below),
+		C.enum_interpolation_method(interpolation),
+		&horizon,
+	)
 
-	cattributes := make([]C.enum_attribute, len(targetAttributes))
-	for i := range targetAttributes {
-		cattributes[i] = C.enum_attribute(targetAttributes[i])
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
+	defer C.response_delete(&horizon)
+
+	var vsize = int(horizon.size) / mapsize
 	var buffer C.struct_response
-	cerr := C.attribute(
+	cerr = C.attribute(
 		v.context(),
 		v.Handle(),
 		horizon.data,
