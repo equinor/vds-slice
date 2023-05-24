@@ -157,14 +157,15 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 
 func GetAttributeType(attribute string) (int, error) {
 	switch strings.ToLower(attribute) {
-	case "min":  return C.MIN,  nil
-	case "max":  return C.MAX,  nil
-	case "mean": return C.MEAN, nil
-	case "rms":  return C.RMS,  nil
-	case "sd":   return C.SD,   nil
-	case "": fallthrough
+	case "samplevalue": return C.VALUE, nil
+	case "min":         return C.MIN,   nil
+	case "max":         return C.MAX,   nil
+	case "mean":        return C.MEAN,  nil
+	case "rms":         return C.RMS,   nil
+	case "sd":          return C.SD,    nil
+	case "":            fallthrough
 	default:
-		options := "min, max, mean, rms, sd"
+		options := "samplevalue, min, max, mean, rms, sd"
 		msg := "invalid attribute '%s', valid options are: %s"
 		return -1, NewInvalidArgument(fmt.Sprintf(msg, attribute, options))
 	}
@@ -403,44 +404,9 @@ func (v VDSHandle) getHorizon(
 	return &result, nil
 }
 
-func (v VDSHandle) GetHorizon(
-	data          [][]float32,
-	originX       float32,
-	originY       float32,
-	increaseX     float32,
-	increaseY     float32,
-	rotation      float32,
-	fillValue     float32,
-	interpolation int,
-) ([]byte, error) {
-	const above = 0
-	const below = 0
-
-	result, err := v.getHorizon(
-		data,
-		originX,
-		originY,
-		increaseX,
-		increaseY,
-		rotation,
-		fillValue,
-		above,
-		below,
-		interpolation,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-	defer C.response_delete(result)
-
-	buf := C.GoBytes(unsafe.Pointer(result.data), C.int(result.size))
-	return buf, nil
-}
-
-func (v VDSHandle) GetHorizonMetadata(data [][]float32) ([]byte, error) {
+func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
-	cerr := C.horizon_metadata(
+	cerr := C.attribute_metadata(
 		v.context(),
 		v.Handle(),
 		C.size_t(len(data)),
@@ -511,12 +477,14 @@ func (v VDSHandle) GetAttributes(
 	var buffer C.struct_response
 	cerr := C.attribute(
 		v.context(),
+		v.Handle(),
 		horizon.data,
 		C.size_t(hsize),
 		C.size_t(vsize),
 		C.float(fillValue),
 		&cattributes[0],
 		C.size_t(len(targetAttributes)),
+		C.float(above),
 		&buffer,
 	)
 	defer C.response_delete(&buffer)

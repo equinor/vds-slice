@@ -151,48 +151,6 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	writeResponse(ctx, metadata, [][]byte{data})
 }
 
-func (e *Endpoint) horizon(ctx *gin.Context, request HorizonRequest) {
-	prepareRequestLogging(ctx, request)
-	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if abortOnError(ctx, err) { return }
-
-	cacheKey, err := request.Hash()
-	if abortOnError(ctx, err) { return }
-
-	cacheEntry, hit := e.Cache.Get(cacheKey)
-	if hit && conn.IsAuthorizedToRead() {
-		ctx.Set("cache-hit", true)
-		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
-		return
-	}
-
-	handle, err := vds.NewVDSHandle(conn)
-	if abortOnError(ctx, err) { return }
-	defer handle.Close()
-
-	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
-	if abortOnError(ctx, err) { return }
-
-	data, err := handle.GetHorizon(
-		request.Horizon,
-		*request.Xori,
-		*request.Yori,
-		request.Xinc,
-		request.Yinc,
-		*request.Rotation,
-		*request.FillValue,
-		interpolation,
-	)
-	if abortOnError(ctx, err) { return }
-
-	metadata, err := handle.GetHorizonMetadata(request.Horizon)
-	if abortOnError(ctx, err) { return }
-
-	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
-
-	writeResponse(ctx, metadata, [][]byte{data})
-}
-
 func validateVerticalWindow(above float32, below float32,) error {
 	const lower = 0
 	const upper = 250
@@ -233,10 +191,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
 	if abortOnError(ctx, err) { return }
 
-	/* The metadata is identical to that of an horizon request (shape and
-	 * dataformat).
-	 */
-	metadata, err := handle.GetHorizonMetadata(request.Horizon)
+	metadata, err := handle.GetAttributeMetadata(request.Horizon)
 	if abortOnError(ctx, err) { return }
 
 	data, err := handle.GetAttributes(
@@ -391,25 +346,6 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 	e.fence(ctx, request)
 }
 
-// FencePost godoc
-// @Summary  Returns seismic amplitures along a horizon
-// @description.markdown horizon
-// @Tags     horizon
-// @Param    body  body  HorizonRequest  True  "Request Parameters"
-// @Accept   application/json
-// @Produce  multipart/mixed
-// @Success  200 {object} vds.FenceMetadata "(Example below only for metadata part)"
-// @Failure  400 {object} ErrorResponse "Request is invalid"
-// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
-// @Router   /horizon  [post]
-func (e *Endpoint) HorizonPost(ctx *gin.Context) {
-	var request HorizonRequest
-	err := parsePostRequest(ctx, &request)
-	if abortOnError(ctx, err) { return }
-
-	e.horizon(ctx, request)
-}
-
 // AttributesPost godoc
 // @Summary  Returns horizon attributes
 // @description.markdown attribute
@@ -417,7 +353,7 @@ func (e *Endpoint) HorizonPost(ctx *gin.Context) {
 // @Param    body  body  AttributeRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
-// @Router   /horizon/attributes  [post]
+// @Router   /horizon  [post]
 func (e *Endpoint) AttributesPost(ctx *gin.Context) {
 	var request AttributeRequest
 	err := parsePostRequest(ctx, &request)

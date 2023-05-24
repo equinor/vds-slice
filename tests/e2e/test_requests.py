@@ -20,8 +20,9 @@ VDS = "well_known/well_known_default"
 STORAGE_ACCOUNT = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
 VDSURL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
 
+SAMPLES10_URL = f"{STORAGE_ACCOUNT}/{CONTAINER}/10_samples/10_samples_default"
 
-def horizon_surface():
+def surface():
     return {
         "xinc": 7.2111,
         "yinc": 3.6056,
@@ -56,13 +57,24 @@ def make_metadata_request(vds=VDSURL, sas="sas"):
     }
 
 
-def make_horizon_request(vds=VDSURL, surface=horizon_surface(), horizon=[[8]], sas="sas"):
+def make_attribute_request(
+    vds=SAMPLES10_URL,
+    surface=surface(),
+    horizon=[[20]],
+    above=8,
+    below=8,
+    attributes=["samplevalue"],
+    sas="sas"
+):
     request = {
         "fillValue": -999.25,
         "horizon": horizon,
         "interpolation": "nearest",
         "vds": vds,
-        "sas": sas
+        "sas": sas,
+        "above": above,
+        "below": below,
+        "attributes": attributes
     }
     request.update(surface)
     return request
@@ -134,15 +146,15 @@ def test_metadata(method):
     assert metadata == expected_metadata
 
 
-def test_horizon():
+def test_attributes():
     horizon = [
-        [8, 8],
-        [8, 8],
-        [8, 8]
+        [20, 20],
+        [20, 20],
+        [20, 20]
     ]
-    meta, data = request_horizon("post", horizon)
+    meta, data = request_attributes("post", horizon)
 
-    expected = np.array([[101, 105], [109, 113], [117, 121]])
+    expected = np.array([[-0.5, 0.5], [-8.5, 6.5], [16.5, -16.5]])
     assert np.array_equal(data, expected)
 
     expected_meta = json.loads("""
@@ -158,7 +170,7 @@ def test_horizon():
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
-    ("horizon", make_horizon_request()),
+    ("horizon", make_attribute_request()),
 ])
 @pytest.mark.parametrize("sas, allowed_error_messages", [
     (
@@ -186,7 +198,7 @@ def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_message
 @pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request(vds=VDSURL)),
     ("fence", make_fence_request(vds=VDSURL)),
-    ("horizon", make_horizon_request(vds=VDSURL)),
+    ("horizon", make_attribute_request()),
 ])
 @pytest.mark.parametrize("token, status, error", [
     (generate_container_signature(
@@ -238,7 +250,7 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
-    ("horizon", make_horizon_request()),
+    ("horizon", make_attribute_request()),
 ])
 def test_assure_only_allowed_storage_accounts(path, payload):
     payload.update({
@@ -271,7 +283,7 @@ def test_assure_only_allowed_storage_accounts(path, payload):
     ),
     (
         "horizon",
-        make_horizon_request(surface={}),
+        make_attribute_request(surface={}),
         http.HTTPStatus.BAD_REQUEST,
         "Error:Field validation for"
     ),
@@ -349,11 +361,11 @@ def request_metadata(method):
     return rdata.json()
 
 
-def request_horizon(method, horizon):
+def request_attributes(method, horizon):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = make_horizon_request(VDSURL, horizon_surface(), horizon, sas)
+    payload = make_attribute_request(horizon=horizon, sas=sas)
     rdata = send_request("horizon", method, payload)
     rdata.raise_for_status()
 

@@ -151,6 +151,21 @@ private:
     std::size_t size;
 };
 
+struct Value final : public AttributeMap {
+    Value(void* dst, std::size_t size, std::size_t idx)
+        : AttributeMap(dst, size), idx(idx)
+    {}
+
+    float compute(
+        Horizon::VerticalIt begin,
+        Horizon::VerticalIt end
+    ) noexcept (false) override;
+
+private:
+    std::size_t idx;
+};
+
+
 class Min final : public AttributeMap {
 public:
     Min(void* dst, std::size_t size) : AttributeMap(dst, size) {}

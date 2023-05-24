@@ -44,6 +44,14 @@ void Horizon::calc_attributes(
     std::for_each(this->begin(), this->end(), calculate);
 }
 
+float Value::compute(
+    Horizon::VerticalIt begin,
+    Horizon::VerticalIt end
+) noexcept (false) {
+    std::advance(begin, this->idx);
+    return *begin;
+}
+
 float Min::compute(
     Horizon::VerticalIt begin,
     Horizon::VerticalIt end

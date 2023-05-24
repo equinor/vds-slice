@@ -475,11 +475,16 @@ void fetch_horizon(
 }
 
 void calculate_attribute(
+    DataHandle& handle,
     Horizon const& horizon,
     enum attribute* attributes,
     std::size_t nattributes,
+    float above,
     response* out
 ) {
+    MetadataHandle const& metadata = handle.get_metadata();
+    std::size_t index = std::floor( above / metadata.sample().stride() );
+
     std::size_t size = horizon.mapsize();
     std::size_t vsize = horizon.vsize();
 
@@ -490,11 +495,12 @@ void calculate_attribute(
         char* dst = buffer.get() + (i * size);
 
         switch (*attributes) {
-            case MIN:  { attrs.push_back( std::unique_ptr< Min  >(new  Min(dst, size)) ); break; }
-            case MAX:  { attrs.push_back( std::unique_ptr< Max  >(new  Max(dst, size)) ); break; }
-            case MEAN: { attrs.push_back( std::unique_ptr< Mean >(new Mean(dst, size, vsize)) ); break; }
-            case RMS:  { attrs.push_back( std::unique_ptr< Rms  >(new  Rms(dst, size, vsize)) ); break; }
-            case SD:   { attrs.push_back( std::unique_ptr< Sd   >(new   Sd(dst, size, vsize)) ); break; }
+            case VALUE: { attrs.push_back( std::unique_ptr< Value >(new Value(dst, size, index)) ); break; }
+            case MIN:   { attrs.push_back( std::unique_ptr< Min   >(new   Min(dst, size)) ); break; }
+            case MAX:   { attrs.push_back( std::unique_ptr< Max   >(new   Max(dst, size)) ); break; }
+            case MEAN:  { attrs.push_back( std::unique_ptr< Mean  >(new  Mean(dst, size, vsize)) ); break; }
+            case RMS:   { attrs.push_back( std::unique_ptr< Rms   >(new   Rms(dst, size, vsize)) ); break; }
+            case SD:    { attrs.push_back( std::unique_ptr< Sd    >(new    Sd(dst, size, vsize)) ); break; }
             default:
                 throw std::runtime_error("Attribute not implemented");
         }
@@ -505,7 +511,7 @@ void calculate_attribute(
     return to_response(std::move(buffer), size, out);
 }
 
-void fetch_horizon_metadata(
+void fetch_attribute_metadata(
     DataHandle& handle,
     std::size_t nrows,
     std::size_t ncols,
@@ -728,7 +734,7 @@ int horizon(
     }
 }
 
-int horizon_metadata(
+int attribute_metadata(
     Context* ctx,
     DataHandle* handle,
     size_t nrows,
@@ -739,7 +745,7 @@ int horizon_metadata(
         if (not out)    throw detail::nullptr_error("Invalid out pointer");
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        fetch_horizon_metadata(*handle, nrows, ncols, out);
+        fetch_attribute_metadata(*handle, nrows, ncols, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -748,20 +754,23 @@ int horizon_metadata(
 
 int attribute(
     Context* ctx,
+    DataHandle* handle,
     const char* data,
     size_t size,
     size_t vertical_window,
     float  fillvalue,
     enum attribute* attributes,
     size_t nattributes,
+    float above,
     response* out
 ) {
     try {
-        if (not out) throw detail::nullptr_error("Invalid out pointer");
+        if (not out)    throw detail::nullptr_error("Invalid out pointer");
+        if (not handle) throw detail::nullptr_error("Invalid handle");
 
         Horizon horizon((float*)data, size, vertical_window, fillvalue);
 
-        calculate_attribute(horizon, attributes, nattributes, out);
+        calculate_attribute(*handle, horizon, attributes, nattributes, above, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());

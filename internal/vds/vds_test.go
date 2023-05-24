@@ -747,128 +747,82 @@ func TestOnly3DSupported(t *testing.T) {
 	}
 }
 
-func TestHorizon(t *testing.T) {
-	fillValue := float32(-999.25)
-	
-	expected := []float32{
-		100, fillValue, 108, 114, 117, 123,
-	}
-	
-	horizon := [][]float32{
-		{ 4, fillValue },
-		{ 4, 12        },
-		{ 8, 16        },
-	}
-
-	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	handle, _ := NewVDSHandle(well_known)
-	defer handle.Close()
-	buf, err := handle.GetHorizon(
-		horizon,
-		well_known_grid.xori,
-		well_known_grid.yori,
-		well_known_grid.xinc,
-		well_known_grid.yinc,
-		well_known_grid.rotation,
-		fillValue,
-		interpolationMethod,
-	)
-	if err != nil {
-		t.Errorf("Failed to fetch horizon, err: %v", err)
-	}
-
-	result, err := toFloat32(buf)
-	if err != nil {
-		t.Errorf("Err: %v", err)
-	}
-
-	if len(*result) != len(expected) {
-		msg := "Expected horizon of len: %v, got: %v"
-		t.Errorf(
-			msg,
-			len(expected),
-			len(*result),
-		)
-	}
-
-	for i, x := range *result {
-		if x == expected[i] {
-			continue
-		}
-
-		msg := "Expected %v in pos %v, got: %v"
-		t.Errorf(msg, expected[i], i, x)
-	}
-}
-
-func TestHorizonUnalignedWithSeismic(t *testing.T) {
-	fillValue := float32(-999.25)
+func TestSurfaceUnalignedWithSeismic(t *testing.T) {
+	const fillValue = float32(-999.25)
+	const above = float32(8.0)
+	const below = float32(8.0)
+	var targetAttributes = []string{"samplevalue"}
 
 	expected := []float32{
 		fillValue, fillValue, fillValue, fillValue, fillValue, fillValue, fillValue,
-		fillValue, fillValue, 120, fillValue, 112, fillValue, 104,
-		fillValue, fillValue, 116, fillValue, 108, fillValue, 100,
+		fillValue, fillValue, -12.5, fillValue,   4.5, fillValue,  1.5,
+		fillValue, fillValue,  12.5, fillValue, -10.5, fillValue, -1.5,
 	}
 
 	horizon := [][]float32{
 		{fillValue, fillValue, fillValue, fillValue, fillValue, fillValue, fillValue},
-		{fillValue, fillValue, 4, fillValue, 4, fillValue, 4},
-		{fillValue, fillValue, 4, fillValue, 4, fillValue, 4},
+		{fillValue, fillValue, 16, fillValue, 16, fillValue, 16},
+		{fillValue, fillValue, 16, fillValue, 16, fillValue, 16},
 	}
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	handle, _ := NewVDSHandle(well_known)
+
+	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
-	buf, err := handle.GetHorizon(
+	buf, err := handle.GetAttributes(
 		horizon,
 		16,
 		18,
-		well_known_grid.xinc/2.0,
-		-well_known_grid.yinc,
-		well_known_grid.rotation+270,
+		samples10_grid.xinc/2.0,
+		-samples10_grid.yinc,
+		samples10_grid.rotation+270,
 		fillValue,
+		above,
+		below,
+		targetAttributes,
 		interpolationMethod,
 	)
+	require.Len(t, buf, len(targetAttributes), "Wrong number of attributes")
 	require.NoError(t, err, "Failed to fetch horizon")
-	result, err := toFloat32(buf)
+	result, err := toFloat32(buf[0])
 	require.NoError(t, err, "Failed to covert to float32 buffer")
 	require.Equalf(t, expected, *result, "Horizon not as expected")
 }
 
-func TestHorizonVerticalBounds(t *testing.T) {
+func TestSurfaceWindowVerticalBounds(t *testing.T) {
 	testcases := []struct {
 		name    string
 		horizon [][]float32
 		inbounds bool
 	}{
 		{
-			name: "First depth recording",
-			horizon: [][]float32{{ 4.00 }},
+			name: "Top of window is at first depth recording",
+			horizon: [][]float32{{ 8.00 }},
 			inbounds: true,
 		},
 		{
-			name: "Half stride above first recording",
-			horizon: [][]float32{{ 2.00 }},
+			name: "Top of window is half stride above first recording",
+			horizon: [][]float32{{ 6.00 }},
 			inbounds: true,
 		},
 		{
-			name: "More than a half stride above first recording",
-			horizon: [][]float32{{ 1.99 }},
+			name: "Top of window is at more than a half stride above first recording",
+			horizon: [][]float32{{ 5.99 }},
 			inbounds: false,
 		},
 		{
-			name: "Last depth recording",
-			horizon: [][]float32{{ 16.00 }},
+			name: "Bottom of window is at last depth recording",
+			horizon: [][]float32{{ 36.00 }},
 			inbounds: true,
 		},
 		{
-			name: "Half stride below last recording",
-			horizon: [][]float32{{ 17.99 }},
+			name: "Bottom of window is half stride below last recording",
+			horizon: [][]float32{{ 37.99 }},
 			inbounds: true,
 		},
 		{
-			name: "More than a half stride below last recording",
-			horizon: [][]float32{{ 18.00 }},
+			name: "Bottom of window is more than a half stride below last recording",
+			horizon: [][]float32{{ 38.00 }},
 			inbounds: false,
 		},
 		{
@@ -879,19 +833,25 @@ func TestHorizonVerticalBounds(t *testing.T) {
 	}
 
 	fillValue  := float32(-999.25)
+	targetAttributes := []string{"min", "samplevalue"}
+	const above = float32(4.0)
+	const below = float32(4.0)
 
 	for _, testcase := range testcases {
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
-		_, boundsErr := handle.GetHorizon(
+		_, boundsErr := handle.GetAttributes(
 			testcase.horizon,
-			well_known_grid.xori,
-			well_known_grid.yori,
-			well_known_grid.xinc,
-			well_known_grid.yinc,
-			well_known_grid.rotation,
+			samples10_grid.xori,
+			samples10_grid.yori,
+			samples10_grid.xinc,
+			samples10_grid.yinc,
+			samples10_grid.rotation,
 			fillValue,
+			above,
+			below,
+			targetAttributes,
 			interpolationMethod,
 		)
 
@@ -947,14 +907,19 @@ func TestHorizonVerticalBounds(t *testing.T) {
  *        0         14             0        14
  *        
  */
-func TestHorizonHorizontalBounds(t *testing.T) {
+func TestSurfaceHorizontalBounds(t *testing.T) {
 	fill   := float32(-999.25)
-	xinc   := float64(well_known_grid.xinc)
-	yinc   := float64(well_known_grid.yinc)
-	rot    := float64(well_known_grid.rotation)
+	xinc   := float64(samples10_grid.xinc)
+	yinc   := float64(samples10_grid.yinc)
+	rot    := float64(samples10_grid.rotation)
 	rotrad := rot * math.Pi / 180
 
-	horizon := [][]float32{ { 4, 4 }, { 4, 4 }, { 4, 4 } }
+	horizon := [][]float32{ { 16, 16 }, { 16, 16 }, { 16, 16 } }
+
+	targetAttributes := []string{"samplevalue"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	const above = float32(8.0)
+	const below = float32(8.0)
 
 	testcases := []struct {
 		name     string
@@ -966,57 +931,57 @@ func TestHorizonHorizontalBounds(t *testing.T) {
 			name: "X coordinate is almost half a bingrid too high",
 			xori: 2.0 + 0.49 * xinc * math.Cos(rotrad),
 			yori: 0.0 + 0.49 * xinc * math.Sin(rotrad),
-			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+			expected: []float32{ -1.5, 1.5, -10.5, 4.5, 12.5, -12.5 },
 		},
 		{
 			name: "X coordinate is more than half a bingrid too high",
 			xori: 2.0 + 0.51 * xinc * math.Cos(rotrad),
 			yori: 0.0 + 0.51 * xinc * math.Sin(rotrad),
-			expected: []float32{ 108, 112, 116, 120, fill, fill },
+			expected: []float32{ -10.5, 4.5, 12.5, -12.5, fill, fill },
 		},
 		{
 			name: "X coordinate is almost half a bingrid too low",
 			xori: 2.0 - 0.49 * xinc * math.Cos(rotrad),
 			yori: 0.0 - 0.49 * xinc * math.Sin(rotrad),
-			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+			expected: []float32{ -1.5, 1.5, -10.5, 4.5, 12.5, -12.5 },
 		},
 		{
 			name: "X coordinate is more than half a bingrid too low",
 			xori: 2.0 - 0.51 * xinc * math.Cos(rotrad),
 			yori: 0.0 - 0.51 * xinc * math.Sin(rotrad),
-			expected: []float32{ fill, fill, 100, 104, 108, 112 },
+			expected: []float32{ fill, fill, -1.5, 1.5, -10.5, 4.5 },
 		},
 		{
 			name: "Y coordinate is almost half a bingrid too high",
 			xori: 2.0 + 0.49 * yinc * -math.Sin(rotrad),
 			yori: 0.0 + 0.49 * yinc *  math.Cos(rotrad),
-			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+			expected: []float32{ -1.5, 1.5, -10.5, 4.5, 12.5, -12.5 },
 		},
 		{
 			name: "Y coordinate is more than half a bingrid too high",
 			xori: 2.0 + 0.51 * yinc * -math.Sin(rotrad),
 			yori: 0.0 + 0.51 * yinc *  math.Cos(rotrad),
-			expected: []float32{ 104, fill, 112, fill, 120, fill},
+			expected: []float32{ 1.5, fill, 4.5, fill, -12.5, fill},
 		},
 		{
 			name: "Y coordinate is almost half a bingrid too low",
 			xori: 2.0 - 0.49 * yinc * -math.Sin(rotrad),
 			yori: 0.0 - 0.49 * yinc *  math.Cos(rotrad),
-			expected: []float32{ 100, 104, 108, 112, 116, 120 },
+			expected: []float32{ -1.5, 1.5, -10.5, 4.5, 12.5, -12.5 },
 		},
 		{
 			name: "Y coordinate is more than half a bingrid too low",
 			xori: 2.0 - 0.51 * yinc * -math.Sin(rotrad),
 			yori: 0.0 - 0.51 * yinc *  math.Cos(rotrad),
-			expected: []float32{ fill, 100, fill, 108, fill, 116 },
+			expected: []float32{ fill, -1.5, fill, -10.5, fill, 12.5 },
 		},
 	}
 
+
 	for _, testcase := range testcases {
-		interpolationMethod, _ := GetInterpolationMethod("nearest")
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
-		buf, err := handle.GetHorizon(
+		buf, err := handle.GetAttributes(
 			horizon,
 			float32(testcase.xori),
 			float32(testcase.yori),
@@ -1024,43 +989,36 @@ func TestHorizonHorizontalBounds(t *testing.T) {
 			float32(yinc),
 			float32(rot),
 			fill,
+			above,
+			below,
+			targetAttributes,
 			interpolationMethod,
 		)
 		if err != nil {
 			t.Errorf("[%s] Failed to fetch horizon, err: %v", testcase.name, err)
 		}
 
-		result, err := toFloat32(buf)
-		if err != nil {
-			t.Errorf("Err: %v", err)
-		}
+		require.Len(t, buf, len(targetAttributes), "Wrong number of attributes")
 
-		if len(*result) != len(testcase.expected) {
-			msg := "[%s] Expected horizon of len: %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.name,
-				len(testcase.expected),
-				len(*result),
-			)
-		}
+		result, err := toFloat32(buf[0])
+		require.NoError(t, err, "Couldn't convert to float32")
 
-		for i, x := range *result {
-			if x == testcase.expected[i] {
-				continue
-			}
-
-			msg := "[%s] Expected %v in pos %v, got: %v"
-			t.Errorf(msg, testcase.name, testcase.expected[i], i, x)
-		}
+		assert.Equalf(
+			t,
+			testcase.expected,
+			*result,
+			"[%v]",
+			targetAttributes[0],
+		)
 	}
 }
 
 func TestAttribute(t *testing.T) {
 	fill := float32(-999.25)
 
-	targetAttributes := []string{"min", "max", "mean", "rms", "sd"}
+	targetAttributes := []string{"samplevalue", "min", "max", "mean", "rms", "sd"}
 	expected := [][]float32{
+		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // samplevalue
 		{ -3.5,      -2.5,      -14.5,       0.5,      fill, -24.5,      fill, fill }, // min
 		{  2.5,       3.5,       -2.5,      12.5,      fill,  -4.5,      fill, fill }, // max
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -15.357142, fill, fill }, // mean
@@ -1114,64 +1072,5 @@ func TestAttribute(t *testing.T) {
 			expected[i],
 			result,
 		)
-	}
-}
-
-func TestAttributeVerticalBounds(t *testing.T) {
-	testCases := []struct{
-		name    string
-		horizon [][]float32
-		above   float32
-		below   float32
-	} {
-		{
-			name:    "Horizon target is more than half a sample above",
-			horizon: [][]float32{{ 1.99 }},
-			above:   0,
-			below:   0,
-		},
-		{
-			name:    "Horizon target is more than half a sample below",
-			horizon: [][]float32{{ 18.01 }},
-			above:   0,
-			below:   0,
-		},
-		{
-			name: "'Above' is more than half a sample above seismic",
-			horizon: [][]float32{{ 5.99 }},
-			above:   4,
-			below:   0,
-		},
-		{
-			name: "'below' is more than half a sample below seismic",
-			horizon: [][]float32{{ 14.01 }},
-			above:   0,
-			below:   4,
-		},
-	}
-
-	fill := float32(-999.25)
-	targetAttributes := []string{ "min" }
-	interpolationMethod, _ := GetInterpolationMethod("nearest")
-
-	for _, testCase := range testCases {
-		handle, _ := NewVDSHandle(well_known)
-		defer handle.Close()
-		_, err := handle.GetAttributes(
-			testCase.horizon,
-			well_known_grid.xori,
-			well_known_grid.yori,
-			well_known_grid.xinc,
-			well_known_grid.yinc,
-			well_known_grid.rotation,
-			fill,
-			testCase.above,
-			testCase.below,
-			targetAttributes,
-			interpolationMethod,
-		)
-		if err == nil {
-			t.Errorf("[%s] Expected out of range error", testCase.name)
-		}
 	}
 }
