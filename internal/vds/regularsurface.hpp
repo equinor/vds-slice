@@ -90,7 +90,7 @@ public:
     Point coordinate(
         std::size_t const row,
         std::size_t const col
-    ) noexcept (false) {
+    ) const noexcept (false) {
         if (row >= this->nrows()) throw std::runtime_error("Row out of range");
         if (col >= this->ncols()) throw std::runtime_error("Col out of range");
 
@@ -103,7 +103,7 @@ public:
     float value(
         std::size_t const row,
         std::size_t const col
-    ) noexcept (false) {
+    ) const noexcept (false) {
         if (row >= this->nrows()) throw std::runtime_error("Row out of range");
         if (col >= this->ncols()) throw std::runtime_error("Col out of range");
 
@@ -112,9 +112,9 @@ public:
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
-    std::size_t nrows() noexcept (true) { return this->m_nrows; };
-    std::size_t ncols() noexcept (true) { return this->m_ncols; };
-    std::size_t size()  noexcept (true) { return this->ncols() * this->nrows(); };
+    std::size_t nrows() const noexcept (true) { return this->m_nrows; };
+    std::size_t ncols() const noexcept (true) { return this->m_ncols; };
+    std::size_t size()  const noexcept (true) { return this->ncols() * this->nrows(); };
 private:
     const float* m_data;
     std::size_t  m_nrows;
