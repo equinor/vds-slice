@@ -546,6 +546,20 @@ const char* errmsg(Context* ctx) {
     return ctx->errmsg.c_str();
 }
 
+int handle_exception(Context* ctx, std::exception_ptr eptr) {
+    try {
+        if (eptr) std::rethrow_exception(eptr);
+    } catch (const detail::nullptr_error& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_NULLPTR_ERROR;
+    } catch (const std::exception& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_RUNTIME_ERROR;
+    }
+
+    return STATUS_OK;
+}
+
 int datahandle_new(
     Context* ctx,
     const char* url,
@@ -583,20 +597,6 @@ int datahandle_free(Context* ctx, DataHandle* f) {
         if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
-}
-
-int handle_exception(Context* ctx, std::exception_ptr eptr) {
-    try {
-        if (eptr) std::rethrow_exception(eptr);
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
-    }
-
-    return STATUS_OK;
 }
 
 int slice(
