@@ -92,6 +92,16 @@ public:
     HorizontalIt begin() const noexcept (true);
     HorizontalIt end()   const noexcept (true);
 
+    struct Window {
+        Window(VerticalIt begin, VerticalIt end) : m_begin(begin), m_end(end) {}
+
+        VerticalIt& begin() noexcept (true) { return this->m_begin; }
+        VerticalIt& end()   noexcept (true) { return this->m_end; }
+    private:
+        VerticalIt m_begin;
+        VerticalIt m_end;
+    };
+
     /* Vertical size of the horizon*/
     std::size_t vsize() const noexcept (true) { return this->m_vsize; };
 
@@ -101,7 +111,7 @@ public:
     /* Size of attributes maps calculated by this Horizon */
     std::size_t mapsize() const noexcept (true) { return this->hsize() * sizeof(float); };
 
-    std::pair< VerticalIt, VerticalIt > at(std::size_t i) const noexcept (false);
+    Window at(std::size_t i) const noexcept (false);
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
