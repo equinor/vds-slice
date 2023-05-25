@@ -346,8 +346,7 @@ void write_fillvalue(
 
 void fetch_horizon(
     DataHandle& handle,
-    RegularSurface surface,
-    float fillvalue,
+    RegularSurface const& surface,
     float above,
     float below,
     enum interpolation_method interpolation,
@@ -369,6 +368,8 @@ void fetch_horizon(
     std::size_t const nsamples = surface.size() * verical_size;
 
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
+
+    float const fillvalue = surface.fillvalue();
 
     auto inrange = [](Axis const& axis, double const voxel) {
         return (0 <= voxel) and (voxel < axis.nsamples());
@@ -474,6 +475,11 @@ void fetch_horizon(
     return to_response(std::move(buffer), size, out);
 }
 
+template< typename T >
+void append(std::vector< std::unique_ptr< AttributeMap > >& vec, T obj) {
+    vec.push_back( std::unique_ptr< T >( new T( std::move(obj) ) ) );
+}
+
 void calculate_attribute(
     DataHandle& handle,
     Horizon const& horizon,
@@ -495,19 +501,19 @@ void calculate_attribute(
         char* dst = buffer.get() + (i * size);
 
         switch (*attributes) {
-            case VALUE: { attrs.push_back( std::unique_ptr< Value >(new Value(dst, size, index)) ); break; }
-            case MIN:   { attrs.push_back( std::unique_ptr< Min   >(new   Min(dst, size)) ); break; }
-            case MAX:   { attrs.push_back( std::unique_ptr< Max   >(new   Max(dst, size)) ); break; }
-            case MEAN:  { attrs.push_back( std::unique_ptr< Mean  >(new  Mean(dst, size, vsize)) ); break; }
-            case RMS:   { attrs.push_back( std::unique_ptr< Rms   >(new   Rms(dst, size, vsize)) ); break; }
-            case SD:    { attrs.push_back( std::unique_ptr< Sd    >(new    Sd(dst, size, vsize)) ); break; }
+            case VALUE: { append(attrs, Value(dst, size, index)); break; }
+            case MIN:   { append(attrs,   Min(dst, size)       ); break; }
+            case MAX:   { append(attrs,   Max(dst, size)       ); break; }
+            case MEAN:  { append(attrs,  Mean(dst, size, vsize)); break; }
+            case RMS:   { append(attrs,   Rms(dst, size, vsize)); break; }
+            case SD:    { append(attrs,    Sd(dst, size, vsize)); break; }
             default:
                 throw std::runtime_error("Attribute not implemented");
         }
         ++attributes;
     }
 
-    horizon.calc_attributes(attrs);
+    calc_attributes(horizon, attrs);
     return to_response(std::move(buffer), size, out);
 }
 
@@ -544,6 +550,20 @@ int context_free(Context* ctx) {
 const char* errmsg(Context* ctx) {
     if (not ctx) return nullptr;
     return ctx->errmsg.c_str();
+}
+
+int handle_exception(Context* ctx, std::exception_ptr eptr) {
+    try {
+        if (eptr) std::rethrow_exception(eptr);
+    } catch (const detail::nullptr_error& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_NULLPTR_ERROR;
+    } catch (const std::exception& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_RUNTIME_ERROR;
+    }
+
+    return STATUS_OK;
 }
 
 int datahandle_new(
@@ -585,18 +605,50 @@ int datahandle_free(Context* ctx, DataHandle* f) {
     }
 }
 
-int handle_exception(Context* ctx, std::exception_ptr eptr) {
+int regular_surface_new(
+    Context* ctx,
+    const float* data,
+    size_t nrows,
+    size_t ncols,
+    float xori,
+    float yori,
+    float xinc,
+    float yinc,
+    float rot,
+    float fillvalue,
+    RegularSurface** out
+) {
     try {
-        if (eptr) std::rethrow_exception(eptr);
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
+        if (not out) throw detail::nullptr_error("Invalid out pointer");
+
+        *out = new RegularSurface(
+            data,
+            nrows,
+            ncols,
+            xori,
+            yori,
+            xinc,
+            yinc,
+            rot,
+            fillvalue
+        );
+        return STATUS_OK;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
+    }
+}
+
+int regular_surface_free(Context* ctx, RegularSurface* surface) {
+    try {
+        if (not surface) return STATUS_OK;
+
+        delete surface;
+
+        return STATUS_OK;
     } catch (const std::exception& e) {
         if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
-
-    return STATUS_OK;
 }
 
 int slice(
@@ -699,30 +751,20 @@ int metadata(
 int horizon(
     Context* ctx,
     DataHandle* handle,
-    const float* data,
-    size_t nrows,
-    size_t ncols,
-    float xori,
-    float yori,
-    float xinc,
-    float yinc,
-    float rot,
-    float fillvalue,
+    RegularSurface* surface,
     float above,
     float below,
     enum interpolation_method interpolation,
     response* out
 ) {
     try {
-        if (not out)    throw detail::nullptr_error("Invalid out pointer");
-        if (not handle) throw detail::nullptr_error("Invalid handle");
-
-        RegularSurface surface{data, nrows, ncols, xori, yori, xinc, yinc, rot};
+        if (not out)     throw detail::nullptr_error("Invalid out pointer");
+        if (not handle)  throw detail::nullptr_error("Invalid handle");
+        if (not surface) throw detail::nullptr_error("Invalid surface");
 
         fetch_horizon(
             *handle,
-            surface,
-            fillvalue,
+            *surface,
             above,
             below,
             interpolation,

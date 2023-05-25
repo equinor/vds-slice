@@ -171,6 +171,96 @@ func GetAttributeType(attribute string) (int, error) {
 	}
 }
 
+/** Translate C status codes into Go error types */
+func toError(status C.int, ctx *C.Context) error {
+	if status == C.STATUS_OK {
+		return nil
+	}
+
+	msg := C.GoString(C.errmsg(ctx))
+
+	switch status {
+	case C.STATUS_NULLPTR_ERROR: fallthrough
+	case C.STATUS_RUNTIME_ERROR: return NewInternalError(msg)
+	default:
+		return errors.New(msg)
+	}
+}
+
+type RegularSurface struct {
+	cSurface *C.struct_RegularSurface
+}
+
+func (r *RegularSurface) get() *C.struct_RegularSurface {
+	return r.cSurface
+}
+
+func (r *RegularSurface) Close() error {
+	var cCtx = C.context_new()
+	defer C.context_free(cCtx)
+
+	cErr :=	C.regular_surface_free(cCtx, r.cSurface)
+	if err := toError(cErr, cCtx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func NewRegularSurface(
+	data          [][]float32,
+	originX       float32,
+	originY       float32,
+	increaseX     float32,
+	increaseY     float32,
+	rotation      float32,
+	fillValue     float32,
+) (RegularSurface, error) {
+	var cCtx = C.context_new()
+	defer C.context_free(cCtx)
+
+	nrows := len(data)
+	ncols := len(data[0])
+
+	cdata := make([]C.float, nrows * ncols)
+	for i := range data {
+		if len(data[i]) != ncols  {
+			msg := fmt.Sprintf(
+				"Surface rows are not of the same length. "+
+					"Row 0 has %d elements. Row %d has %d elements",
+				ncols, i, len(data[i]),
+			)
+			return RegularSurface{}, NewInvalidArgument(msg)
+		}
+
+		for j := range data[i] {
+			cdata[i * ncols  + j] = C.float(data[i][j])
+		}
+	}
+
+	var cSurface *C.struct_RegularSurface
+	cErr := C.regular_surface_new(
+		cCtx,
+		&cdata[0],
+		C.size_t(nrows),
+		C.size_t(ncols),
+		C.float(originX),
+		C.float(originY),
+		C.float(increaseX),
+		C.float(increaseY),
+		C.float(rotation),
+		C.float(fillValue),
+		&cSurface,
+	)
+
+	if err := toError(cErr, cCtx); err != nil {
+		C.regular_surface_free(cCtx, cSurface)
+		return RegularSurface{}, err
+	}
+
+	return RegularSurface{ cSurface: cSurface }, nil
+}
+
 type VDSHandle struct {
 	handle *C.struct_DataHandle
 	ctx    *C.struct_Context
@@ -185,30 +275,14 @@ func (v VDSHandle) context() *C.struct_Context{
 }
 
 func (v VDSHandle) Error(status C.int) error {
-	if status == C.STATUS_OK {
-		return nil
-	}
-
-	msg := C.GoString(C.errmsg(v.context()))
-
-	switch status {
-	case C.STATUS_NULLPTR_ERROR: fallthrough
-	case C.STATUS_RUNTIME_ERROR: return NewInternalError(msg)
-	default:
-		return errors.New(msg)
-	}
+	return toError(status, v.context())
 }
 
 func (v VDSHandle) Close() error {
 	defer C.context_free(v.ctx)
 
 	cerr := C.datahandle_free(v.ctx, v.handle)
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(v.ctx))
-		return errors.New(err)
-	}
-
-	return nil
+	return toError(cerr, v.ctx)
 }
 
 func NewVDSHandle(conn Connection) (VDSHandle, error) {
@@ -223,10 +297,9 @@ func NewVDSHandle(conn Connection) (VDSHandle, error) {
 
 	cerr := C.datahandle_new(cctx, curl, ccred, &handle);
 
-	if cerr != C.STATUS_OK {
-		err := C.GoString(C.errmsg(cctx))
-		C.context_free(cctx)
-		return VDSHandle{}, errors.New(err)
+	if err := toError(cerr, cctx); err != nil {
+		defer C.context_free(cctx)
+		return VDSHandle{}, err
 	}
 
 	return VDSHandle{ handle: handle, ctx: cctx }, nil
@@ -347,63 +420,6 @@ func (v VDSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
 	return buf, nil
 }
 
-func (v VDSHandle) getHorizon(
-	data          [][]float32,
-	originX       float32,
-	originY       float32,
-	increaseX     float32,
-	increaseY     float32,
-	rotation      float32,
-	fillValue     float32,
-	above         float32,
-	below         float32,
-	interpolation int,
-) (*C.struct_response, error) {
-	nrows := len(data)
-	ncols := len(data[0])
-
-	cdata := make([]C.float, nrows * ncols)
-	for i := range data {
-		if len(data[i]) != ncols  {
-			msg := fmt.Sprintf(
-				"Surface rows are not of the same length. "+
-					"Row 0 has %d elements. Row %d has %d elements",
-				ncols, i, len(data[i]),
-			)
-			return nil, NewInvalidArgument(msg)
-		}
-
-		for j := range data[i] {
-			cdata[i * ncols  + j] = C.float(data[i][j])
-		}
-	}
-
-	var result C.struct_response
-	cerr := C.horizon(
-		v.context(),
-		v.Handle(),
-		&cdata[0],
-		C.size_t(nrows),
-		C.size_t(ncols),
-		C.float(originX),
-		C.float(originY),
-		C.float(increaseX),
-		C.float(increaseY),
-		C.float(rotation),
-		C.float(fillValue),
-		C.float(above),
-		C.float(below),
-		C.enum_interpolation_method(interpolation),
-		&result,
-	)
-
-	if err := v.Error(cerr); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
 func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.attribute_metadata(
@@ -446,7 +462,17 @@ func (v VDSHandle) GetAttributes(
 		targetAttributes = append(targetAttributes, id);
 	}
 
-	horizon, err := v.getHorizon(
+	var nrows   = len(data)
+	var ncols   = len(data[0])
+	var hsize   = nrows * ncols
+	var mapsize = hsize * 4
+
+	cattributes := make([]C.enum_attribute, len(targetAttributes))
+	for i := range targetAttributes {
+		cattributes[i] = C.enum_attribute(targetAttributes[i])
+	}
+
+	surface, err := NewRegularSurface(
 		data,
 		originX,
 		originY,
@@ -454,28 +480,32 @@ func (v VDSHandle) GetAttributes(
 		increaseY,
 		rotation,
 		fillValue,
-		above,
-		below,
-		interpolation,
 	)
 	if err != nil {
 		return nil, err
 	}
-	defer C.response_delete(horizon)
+	defer surface.Close()
 
-	var nrows   = len(data)
-	var ncols   = len(data[0])
-	var hsize   = nrows * ncols
-	var mapsize = hsize * 4
-	var vsize   = int(horizon.size) / mapsize
+	var horizon C.struct_response
+	cerr := C.horizon(
+		v.context(),
+		v.Handle(),
+		surface.get(),
+		C.float(above),
+		C.float(below),
+		C.enum_interpolation_method(interpolation),
+		&horizon,
+	)
 
-	cattributes := make([]C.enum_attribute, len(targetAttributes))
-	for i := range targetAttributes {
-		cattributes[i] = C.enum_attribute(targetAttributes[i])
+	if err := v.Error(cerr); err != nil {
+		return nil, err
 	}
 
+	defer C.response_delete(&horizon)
+
+	var vsize = int(horizon.size) / mapsize
 	var buffer C.struct_response
-	cerr := C.attribute(
+	cerr = C.attribute(
 		v.context(),
 		v.Handle(),
 		horizon.data,

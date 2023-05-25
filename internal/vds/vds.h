@@ -63,6 +63,28 @@ int datahandle_new(
  */
 int datahandle_free(Context* ctx, DataHandle* f);
 
+struct RegularSurface;
+typedef struct RegularSurface RegularSurface;
+
+int regular_surface_new(
+    Context* ctx,
+    const float* data,
+    size_t nrows,
+    size_t ncols,
+    float xori,
+    float yori,
+    float xinc,
+    float yinc,
+    float rot,
+    float fillvalue,
+    RegularSurface** out
+);
+
+int regular_surface_free(
+    Context* ctx,
+    RegularSurface* surface
+);
+
 enum axis_name {
     I         = 0,
     J         = 1,
@@ -138,15 +160,7 @@ int fence_metadata(
 int horizon(
     Context* ctx,
     DataHandle* handle,
-    const float* data,
-    size_t nrows,
-    size_t ncols,
-    float xori,
-    float yori,
-    float xinc,
-    float yinc,
-    float rot,
-    float fillvalue,
+    RegularSurface* surface,
     float above,
     float below,
     enum interpolation_method interpolation_method,
