@@ -168,7 +168,7 @@ func validateVerticalWindow(above float32, below float32,) error {
 func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	prepareRequestLogging(ctx, request)
 
-	err := validateVerticalWindow(*request.Above, *request.Below)
+	err := validateVerticalWindow(request.Above, request.Below)
 	if abortOnError(ctx, err) { return }
 
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
@@ -202,8 +202,8 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		request.Yinc,
 		*request.Rotation,
 		*request.FillValue,
-		*request.Above,
-		*request.Below,
+		request.Above,
+		request.Below,
 		request.Attributes,
 		interpolation,
 	)

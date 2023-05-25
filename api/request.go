@@ -218,11 +218,15 @@ type AttributeRequest struct {
 	// nearest whole sample. I.e. if the cube is sampled at 4ms, the attribute
 	// calculation will include samples 4, 8, 12, 16 and 20ms above the
 	// horizon, while the sample at 24ms is excluded.
-	Above *float32 `json:"above" binding:"required"`
+	//
+	// Defaults to zero
+	Above float32 `json:"above"`
 
 	// Samples interval below the horizon to include in attribute calculation.
 	// Implements the same behaviour as 'above'.
-	Below *float32 `json:"below" binding:"required"`
+	//
+	// Defaults to zero
+	Below float32 `json:"below"`
 
 	// Requested attributes. Multiple attributes can be calculated by the same
 	// request. This is considerably faster than doing one request per
@@ -255,8 +259,8 @@ func (h AttributeRequest) toString() (string, error) {
 		h.Yinc,
 		*h.FillValue,
 		h.Interpolation,
-		*h.Above,
-		*h.Below,
+		h.Above,
+		h.Below,
 		h.Attributes,
 	), nil
 }
