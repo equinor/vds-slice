@@ -22,6 +22,7 @@
 #include "metadatahandle.hpp"
 #include "regularsurface.hpp"
 #include "subvolume.hpp"
+#include "verticalwindow.hpp"
 
 void response_delete(struct response* buf) {
     if (!buf)
@@ -361,11 +362,10 @@ void fetch_horizon(
     auto const& iline  = metadata.iline ();
     auto const& xline  = metadata.xline();
     auto const& sample = metadata.sample();
+    
+    VerticalWindow window(above, below, sample.stride(), 0, sample.min());
 
-    std::size_t samples_above = std::floor( above / sample.stride() );
-    std::size_t samples_below = std::floor( below / sample.stride() );
-    std::size_t verical_size = samples_above + samples_below + 1;
-    std::size_t const nsamples = surface.size() * verical_size;
+    std::size_t const nsamples = surface.size() * window.size();
 
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
@@ -408,7 +408,7 @@ void fetch_horizon(
             float const depth = surface.value(row, col);
             if (depth == fillvalue) {
                 noval_indicies.push_back(i);
-                i += verical_size;
+                i += window.size();
                 continue;
             }
 
@@ -433,12 +433,12 @@ void fetch_horizon(
 
             if (not inrange(iline, ij[0]) or not inrange(xline, ij[1])) {
                 noval_indicies.push_back(i);
-                i += verical_size;
+                i += window.size();
                 continue;
             }
 
-            double top    = k[2] - samples_above;
-            double bottom = k[2] + samples_below;
+            double top    = k[2] - window.nsamples_above();
+            double bottom = k[2] + window.nsamples_below();
             if (not inrange(sample, top) or not inrange(sample, bottom)) {
                 throw std::runtime_error(
                     "Vertical window is out of vertical bounds at"
@@ -470,7 +470,7 @@ void fetch_horizon(
         interpolation
     );
 
-    write_fillvalue(buffer.get(), noval_indicies, verical_size, fillvalue);
+    write_fillvalue(buffer.get(), noval_indicies, window.size(), fillvalue);
 
     return to_response(std::move(buffer), size, out);
 }
