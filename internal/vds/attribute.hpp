@@ -1,6 +1,10 @@
 #ifndef VDS_SLICE_ATTRIBUTE_HPP
 #define VDS_SLICE_ATTRIBUTE_HPP
 
+#include <cstddef>
+#include <iterator>
+#include <stdexcept>
+
 /** Windowed horizon
  *
  * Definition and layout of a windowed horizon
