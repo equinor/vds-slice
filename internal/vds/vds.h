@@ -178,13 +178,14 @@ int attribute_metadata(
 int attribute(
     Context* ctx,
     DataHandle* handle,
+    RegularSurface* surface,
     const char* data,
     size_t size,
-    size_t vertical_window,
-    float  fillvalue,
     enum attribute* attributes,
     size_t nattributes,
     float above,
+    float below,
+    float stepsize,
     response* out
 );
 

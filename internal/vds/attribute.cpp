@@ -8,6 +8,9 @@
 #include <vector>
 
 #include "attribute.hpp"
+#include "interpolation.hpp"
+#include "regularsurface.hpp"
+#include "verticalwindow.hpp"
 
 Horizon::HorizontalIt Horizon::begin() const noexcept (true) {
     return HorizontalIt(this->m_ptr, this->vsize());
@@ -28,38 +31,38 @@ Horizon::Window Horizon::at(std::size_t i) const noexcept (false) {
 }
 
 float Value::compute(
-    Horizon::VerticalIt begin,
-    Horizon::VerticalIt end
+    std::vector< double >::iterator begin,
+    std::vector< double >::iterator end
 ) noexcept (false) {
     std::advance(begin, this->idx);
     return *begin;
 }
 
 float Min::compute(
-    Horizon::VerticalIt begin,
-    Horizon::VerticalIt end
+    std::vector< double >::iterator begin,
+    std::vector< double >::iterator end
 ) noexcept (false) {
     return *std::min_element(begin, end);
 }
 
 float Max::compute(
-    Horizon::VerticalIt begin,
-    Horizon::VerticalIt end
+    std::vector< double >::iterator begin,
+    std::vector< double >::iterator end
 ) noexcept (false) {
     return *std::max_element(begin, end);
 }
 
 float Mean::compute(
-    Horizon::VerticalIt begin,
-    Horizon::VerticalIt end
+    std::vector< double >::iterator begin,
+    std::vector< double >::iterator end
 ) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0f);
     return sum / this->vsize;
 }
 
 float Rms::compute(
-    Horizon::VerticalIt begin,
-    Horizon::VerticalIt end
+    std::vector< double >::iterator begin,
+    std::vector< double >::iterator end
 ) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0f,
         [](float a, float b) {
@@ -70,8 +73,8 @@ float Rms::compute(
 }
 
 float Sd::compute(
-    Horizon::VerticalIt begin,
-    Horizon::VerticalIt end
+    std::vector< double >::iterator begin,
+    std::vector< double >::iterator end
 ) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0f);
     float mean = sum / vsize;
@@ -81,30 +84,62 @@ float Sd::compute(
     return std::sqrt(stdSum / vsize);
 }
 
+void fill_all(
+    std::vector< std::unique_ptr< AttributeMap > >& attributes,
+    float value,
+    std::size_t pos
+) {
+    for (auto& attr : attributes) {
+        attr->write(value, pos);
+    }
+}
+
+template< typename InputIt >
+void compute_all(
+    std::vector< std::unique_ptr< AttributeMap > >& attributes,
+    std::size_t pos,
+    InputIt begin,
+    InputIt end
+) {
+    for (auto& attr : attributes) {
+        auto value = attr->compute(begin, end);
+        attr->write(value, pos);
+    }
+}
+
 void calc_attributes(
     Horizon const& horizon,
+    RegularSurface const& surface,
+    VerticalWindow const& src_window,
+    VerticalWindow const& dst_window,
     std::vector< std::unique_ptr< AttributeMap > >& attrs
 ) noexcept (false) {
     auto fill = horizon.fillvalue();
 
-    std::size_t i = 0;
-    auto calculate = [&](const float& front) {
-        if (front != fill) {
-            std::for_each(attrs.begin(), attrs.end(), [&](std::unique_ptr< AttributeMap>& attr) {
-                float value = attr->compute(
-                    Horizon::VerticalIt(&front),
-                    Horizon::VerticalIt(&front + horizon.vsize())
-                );
-                attr->write(value, i);
-            });
-        } else {
-            std::for_each(attrs.begin(), attrs.end(), [&](std::unique_ptr< AttributeMap >& attr) {
-                attr->write(fill, i);
-            });
+    for (std::size_t i = 0; i < surface.size(); ++i) {
+        auto depth = surface.at(i);
+        auto data  = horizon.at(i);
+
+        if (*data.begin() == fill) {
+            fill_all(attrs, fill, i);
+            continue;
         }
 
-        ++i;
-    };
+        /**
+         * Interpolation and attribute calculation should be performed on
+         * doubles to avoid loss of precision in these intermediate steps.
+         */
+        std::vector< double > src_buffer(data.begin(), data.end());
+        std::vector< double > dst_buffer(dst_window.size());
 
-    std::for_each(horizon.begin(), horizon.end(), calculate);
+        cubic_makima(
+            std::move( src_buffer ),
+            src_window,
+            dst_buffer,
+            dst_window,
+            depth
+        );
+        
+        compute_all(attrs, i, dst_buffer.begin(), dst_buffer.end());
+    }
 }

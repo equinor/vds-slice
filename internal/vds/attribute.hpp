@@ -1,9 +1,12 @@
 #ifndef VDS_SLICE_ATTRIBUTE_HPP
 #define VDS_SLICE_ATTRIBUTE_HPP
 
+#include "regularsurface.hpp"
+#include "verticalwindow.hpp"
 #include <cstddef>
 #include <iterator>
 #include <stdexcept>
+#include <vector>
 
 /** Windowed horizon
  *
@@ -133,8 +136,8 @@ public:
     AttributeMap(void* dst, std::size_t size) : dst(dst), size(size) {};
 
     virtual float compute(
-        Horizon::VerticalIt begin,
-        Horizon::VerticalIt end
+        std::vector< double >::iterator begin,
+        std::vector< double >::iterator end
     ) noexcept (false) = 0;
 
     void write(float value, std::size_t index) {
@@ -159,8 +162,8 @@ struct Value final : public AttributeMap {
     {}
 
     float compute(
-        Horizon::VerticalIt begin,
-        Horizon::VerticalIt end
+        std::vector< double >::iterator begin,
+        std::vector< double >::iterator end
     ) noexcept (false) override;
 
 private:
@@ -173,8 +176,8 @@ public:
     Min(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
     float compute(
-        Horizon::VerticalIt begin,
-        Horizon::VerticalIt end
+        std::vector< double >::iterator begin,
+        std::vector< double >::iterator end
     ) noexcept (false) override;
 };
 
@@ -183,8 +186,8 @@ public:
     Max(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
     float compute(
-        Horizon::VerticalIt begin,
-        Horizon::VerticalIt end
+        std::vector< double >::iterator begin,
+        std::vector< double >::iterator end
     ) noexcept (false) override;
 };
 
@@ -195,8 +198,8 @@ public:
     {}
 
     float compute(
-        Horizon::VerticalIt begin,
-        Horizon::VerticalIt end
+        std::vector< double >::iterator begin,
+        std::vector< double >::iterator end
     ) noexcept (false) override;
 
 private:
@@ -215,8 +218,8 @@ public:
     {}
 
     float compute(
-        Horizon::VerticalIt begin,
-        Horizon::VerticalIt end
+        std::vector< double >::iterator begin,
+        std::vector< double >::iterator end
     ) noexcept (false) override;
 
 private:
@@ -233,8 +236,8 @@ public:
     {}
 
     float compute(
-        Horizon::VerticalIt begin,
-        Horizon::VerticalIt end
+        std::vector< double >::iterator begin,
+        std::vector< double >::iterator end
     ) noexcept (false) override;
 
 private:
@@ -244,6 +247,9 @@ private:
 
 void calc_attributes(
     Horizon const& horizon,
+    RegularSurface const& surface,
+    VerticalWindow const& src_window,
+    VerticalWindow const& dst_window,
     std::vector< std::unique_ptr< AttributeMap > >& attrs
 ) noexcept (false);
 

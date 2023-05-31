@@ -151,24 +151,43 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	writeResponse(ctx, metadata, [][]byte{data})
 }
 
-func validateVerticalWindow(above float32, below float32,) error {
-	const lower = 0
-	const upper = 250
+func validateVerticalWindow(above float32, below float32, stepSize float32) error {
+	const lowerBound = 0
+	const upperBound = 250
 
-	if lower <= above && above < upper { return nil }
-	if lower <= below && below < upper { return nil }
+	if above < lowerBound || above >= upperBound {
+		return vds.NewInvalidArgument(fmt.Sprintf(
+			"'above' out of range! Must be within [%d, %d], was %f",
+			lowerBound,
+			upperBound,
+			above,
+		))
+	}
 	
-	return vds.NewInvalidArgument(fmt.Sprintf(
-		"'above'/'below' out of range! Must be within [%d, %d]",
-		lower,
-		upper,
-	))
+	if below < lowerBound || below >= upperBound {
+		return vds.NewInvalidArgument(fmt.Sprintf(
+			"'below' out of range! Must be within [%d, %d], was %f",
+			lowerBound,
+			upperBound,
+			below,
+		))
+	}
+	
+	if stepSize < lowerBound {
+		return vds.NewInvalidArgument(fmt.Sprintf(
+			"'stepsize' out of range! Must be bigger than %d, was %f",
+			lowerBound,
+			stepSize,
+		))
+	}
+
+	return nil
 }
 
 func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	prepareRequestLogging(ctx, request)
 
-	err := validateVerticalWindow(request.Above, request.Below)
+	err := validateVerticalWindow(request.Above, request.Below, request.Stepsize)
 	if abortOnError(ctx, err) { return }
 
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
@@ -204,6 +223,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		*request.FillValue,
 		request.Above,
 		request.Below,
+		request.Stepsize,
 		request.Attributes,
 		interpolation,
 	)

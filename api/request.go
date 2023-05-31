@@ -228,6 +228,21 @@ type AttributeRequest struct {
 	// Defaults to zero
 	Below float32 `json:"below"`
 
+	// Stepsize for samples within the window defined by above below
+	//
+	// Samples within the vertical window will be re-sampled to 'stepsize'
+	// using cubic interpolation (modified makima) before the attributes are
+	// calculated.
+	//
+	// This value should be given in the vertical domain of the traces. E.g.
+	// 0.1 implies re-sample samples at an interval of 0.1 meter (if it's a
+	// depth cube) or 0.1 ms (if it's a time cube with vertical units in
+	// milliseconds).
+    //
+	// Setting this to zero, or omitting it will default it to the vertical
+	// stepsize in the VDS volume.
+	Stepsize float32 `json:"stepsize"`
+
 	// Requested attributes. Multiple attributes can be calculated by the same
 	// request. This is considerably faster than doing one request per
 	// attribute.
@@ -248,7 +263,7 @@ func (h AttributeRequest) Hash() (string, error) {
 func (h AttributeRequest) toString() (string, error) {
 	msg := "{vds: %s, Rotation: %.2f, Origin: [%.2f, %.2f], " +
 		"Increment: [%.2f, %.2f], FillValue: %.2f interpolation: %s, " +
-		"Above: %f, Below: %f, Attributes: %v}"
+		"Above: %f, Below: %f, Stepsize: %f, Attributes: %v}"
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
@@ -261,6 +276,7 @@ func (h AttributeRequest) toString() (string, error) {
 		h.Interpolation,
 		h.Above,
 		h.Below,
+		h.Stepsize,
 		h.Attributes,
 	), nil
 }
