@@ -503,8 +503,8 @@ func (v VDSHandle) GetAttributes(
 	}
 
 	defer C.response_delete(&horizon)
-
-	var buffer C.struct_response
+	
+	buffer := make([]byte, mapsize * len(targetAttributes))
 	cerr = C.attribute(
 		v.context(),
 		v.Handle(),
@@ -516,9 +516,8 @@ func (v VDSHandle) GetAttributes(
 		C.float(above),
 		C.float(below),
 		C.float(stepsize),
-		&buffer,
+		unsafe.Pointer(&buffer[0]),
 	)
-	defer C.response_delete(&buffer)
 
 	if err := v.Error(cerr); err != nil {
 		return nil, err
@@ -526,10 +525,7 @@ func (v VDSHandle) GetAttributes(
 
 	out := make([][]byte, len(targetAttributes))
 	for i := range targetAttributes {
-		out[i] = C.GoBytes(
-			unsafe.Add(unsafe.Pointer(buffer.data), uintptr(i * mapsize)),
-			C.int(mapsize),
-		)
+		out[i] = buffer[i * mapsize: (i + 1) * mapsize]
 	}
 
 	return out, nil
