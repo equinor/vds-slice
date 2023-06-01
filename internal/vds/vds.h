@@ -204,6 +204,8 @@ int attribute(
     float above,
     float below,
     float stepsize,
+    size_t from,
+    size_t to,
     void* out
 );
 

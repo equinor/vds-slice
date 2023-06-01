@@ -490,6 +490,8 @@ void calculate_attribute(
     VerticalWindow const& dst_window,
     enum attribute* attributes,
     std::size_t nattributes,
+    std::size_t from,
+    std::size_t to,
     void** out
 ) {
     MetadataHandle const& metadata = handle.get_metadata();
@@ -514,7 +516,7 @@ void calculate_attribute(
         ++attributes;
     }
 
-    calc_attributes(horizon, surface, src_window, dst_window, attrs);
+    calc_attributes(horizon, surface, src_window, dst_window, attrs, from, to);
 }
 
 void fetch_attribute_metadata(
@@ -805,6 +807,8 @@ int attribute(
     float above,
     float below,
     float stepsize,
+    size_t from,
+    size_t to,
     void*  out
 ) {
     try {
@@ -841,6 +845,8 @@ int attribute(
             dst_window,
             attributes,
             nattributes,
+            from,
+            to,
             outs
         );
         return STATUS_OK;

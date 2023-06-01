@@ -10,6 +10,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"unsafe"
 )
@@ -420,6 +421,14 @@ func (v VDSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
 	return buf, nil
 }
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+
 func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.attribute_metadata(
@@ -503,24 +512,55 @@ func (v VDSHandle) GetAttributes(
 	}
 
 	defer C.response_delete(&horizon)
-	
-	buffer := make([]byte, mapsize * len(targetAttributes))
-	cerr = C.attribute(
-		v.context(),
-		v.Handle(),
-		surface.get(),
-		horizon.data,
-		horizon.size,
-		&cattributes[0],
-		C.size_t(len(targetAttributes)),
-		C.float(above),
-		C.float(below),
-		C.float(stepsize),
-		unsafe.Pointer(&buffer[0]),
-	)
 
-	if err := v.Error(cerr); err != nil {
-		return nil, err
+	buffer := make([]byte, mapsize * len(targetAttributes))
+
+	maxConcurrency := 32
+	windowsPerRoutine := int(math.Ceil(float64(hsize) / float64(maxConcurrency)))
+	
+	errs := make(chan error, maxConcurrency)	
+
+	from := 0
+	remaining := hsize;
+	nRoutines := 0;
+	for remaining > 0 {
+		nRoutines++
+
+		size := min(windowsPerRoutine, remaining)
+		to := from + size
+
+		go func(from, to int) {
+			var cCtx = C.context_new()
+			defer C.context_free(cCtx)
+
+			cErr := C.attribute(
+				cCtx,
+				v.Handle(),
+				surface.get(),
+				horizon.data,
+				horizon.size,
+				&cattributes[0],
+				C.size_t(len(targetAttributes)),
+				C.float(above),
+				C.float(below),
+				C.float(stepsize),
+				C.size_t(from),
+				C.size_t(to),
+				unsafe.Pointer(&buffer[0]),
+			)
+
+			errs <- toError(cErr, cCtx)
+		}(from, to)
+
+		from = to
+		remaining -= size
+	}
+
+	for i := 0; i < nRoutines; i++ {
+		err := <- errs
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	out := make([][]byte, len(targetAttributes))

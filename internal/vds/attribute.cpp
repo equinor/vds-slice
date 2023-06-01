@@ -112,11 +112,13 @@ void calc_attributes(
     RegularSurface const& surface,
     VerticalWindow const& src_window,
     VerticalWindow const& dst_window,
-    std::vector< std::unique_ptr< AttributeMap > >& attrs
+    std::vector< std::unique_ptr< AttributeMap > >& attrs,
+    std::size_t from,
+    std::size_t to
 ) noexcept (false) {
     auto fill = horizon.fillvalue();
 
-    for (std::size_t i = 0; i < surface.size(); ++i) {
+    for (std::size_t i = from; i < to; ++i) {
         auto depth = surface.at(i);
         auto data  = horizon.at(i);
 
