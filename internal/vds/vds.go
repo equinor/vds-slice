@@ -2,7 +2,7 @@ package vds
 
 /*
 #cgo LDFLAGS: -lopenvds
-#cgo CXXFLAGS: -std=c++11
+#cgo CXXFLAGS: -std=c++17
 #include <vds.h>
 #include <stdlib.h>
 */
