@@ -9,8 +9,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
+"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -749,8 +748,9 @@ func TestOnly3DSupported(t *testing.T) {
 
 func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 	const fillValue = float32(-999.25)
-	const above = float32(8.0)
-	const below = float32(8.0)
+	const above = float32(4.0)
+	const below = float32(4.0)
+	const stepsize = float32(4.0)
 	var targetAttributes = []string{"samplevalue"}
 
 	expected := []float32{
@@ -779,6 +779,7 @@ func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 		fillValue,
 		above,
 		below,
+		stepsize,
 		targetAttributes,
 		interpolationMethod,
 	)
@@ -795,34 +796,25 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 		horizon [][]float32
 		inbounds bool
 	}{
+		// 2 samples is the margin needed for interpolation
 		{
-			name: "Top of window is at first depth recording",
-			horizon: [][]float32{{ 8.00 }},
+			name: "Top of window is 2 samples from first depth recording",
+			horizon: [][]float32{{ 16.00 }},
 			inbounds: true,
 		},
 		{
-			name: "Top of window is half stride above first recording",
-			horizon: [][]float32{{ 6.00 }},
-			inbounds: true,
-		},
-		{
-			name: "Top of window is at more than a half stride above first recording",
-			horizon: [][]float32{{ 5.99 }},
+			name: "Top of window is less than 2 samples from the top",
+			horizon: [][]float32{{ 13.00 }},
 			inbounds: false,
 		},
 		{
-			name: "Bottom of window is at last depth recording",
-			horizon: [][]float32{{ 36.00 }},
+			name: "Bottom of window is 2 samples from last depth recording",
+			horizon: [][]float32{{ 28.00 }},
 			inbounds: true,
 		},
 		{
-			name: "Bottom of window is half stride below last recording",
-			horizon: [][]float32{{ 37.99 }},
-			inbounds: true,
-		},
-		{
-			name: "Bottom of window is more than a half stride below last recording",
-			horizon: [][]float32{{ 38.00 }},
+			name: "Bottom of window is less than 2 samples from last depth recording",
+			horizon: [][]float32{{ 31.00 }},
 			inbounds: false,
 		},
 		{
@@ -836,6 +828,7 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 	targetAttributes := []string{"min", "samplevalue"}
 	const above = float32(4.0)
 	const below = float32(4.0)
+	const stepsize = float32(4.0)
 
 	for _, testcase := range testcases {
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
@@ -851,6 +844,7 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 			fillValue,
 			above,
 			below,
+			stepsize,
 			targetAttributes,
 			interpolationMethod,
 		)
@@ -918,8 +912,9 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 
 	targetAttributes := []string{"samplevalue"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	const above = float32(8.0)
-	const below = float32(8.0)
+	const above = float32(4.0)
+	const below = float32(4.0)
+	const stepsize = float32(4.0)
 
 	testcases := []struct {
 		name     string
@@ -991,6 +986,7 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 			fill,
 			above,
 			below,
+			stepsize,
 			targetAttributes,
 			interpolationMethod,
 		)
@@ -1019,11 +1015,11 @@ func TestAttribute(t *testing.T) {
 	targetAttributes := []string{"samplevalue", "min", "max", "mean", "rms", "sd"}
 	expected := [][]float32{
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // samplevalue
-		{ -3.5,      -2.5,      -14.5,       0.5,      fill, -24.5,      fill, fill }, // min
-		{  2.5,       3.5,       -2.5,      12.5,      fill,  -4.5,      fill, fill }, // max
-		{ -0.5,       0.5,       -8.5,       6.5,      fill, -15.357142, fill, fill }, // mean
-		{  2.0615528, 2.0615528,  9.394147,  7.632169, fill,  16.740669, fill, fill }, // rms
-		{  2.0,       2.0,        4.0,       4.0,      fill,   6.663945, fill, fill }, // sd
+		{ -2.5,      -1.5,      -12.5,       2.5,      fill, -24.5,      fill, fill }, // min
+		{  1.5,       2.5,       -4.5,      10.5,      fill,  -8.5,      fill, fill }, // max
+		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // mean
+		{  1.5,       1.5,        8.958237,  7.0887237,fill,  17.442764, fill, fill }, // rms
+		{  1.4142135, 1.4142135,  2.828427,  2.828427, fill,   5.656854, fill, fill }, // sd
 	}
 	
 	horizon := [][]float32{
@@ -1034,8 +1030,9 @@ func TestAttribute(t *testing.T) {
 	}
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	const above = float32(12.0)
-	const below = float32(12.0)
+	const above = float32(8.0)
+	const below = float32(8.0)
+	const stepsize = float32(4.0)
 
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
@@ -1049,28 +1046,550 @@ func TestAttribute(t *testing.T) {
 		fill,
 		above,
 		below,
+		stepsize,
 		targetAttributes,
 		interpolationMethod,
 	)
-	if err != nil {
-		t.Errorf("Failed to fetch horizon, err: %v", err)
-	}
-
-	if len(buf) != len(targetAttributes) {
-		t.Errorf("Incorrect number of attributes returned")
-	}
+	require.NoError(t, err, "Failed to fetch horizon, err %v", err)
+	require.Len(t, buf, len(targetAttributes),
+		"Incorrect number of attributes returned",
+	)
 
 	for i, attr := range buf {
 		result, err := toFloat32(attr)
 		require.NoError(t, err, "Couldn't convert to float32")
 
-		assert.Equalf(
+		assert.InDeltaSlice(
 			t,
 			expected[i],
-			*result, "[%v] Expected %v, was %v",
+			*result,
+			0.000001,
+			"[%s]\nExpected: %v\nActual:   %v",
 			targetAttributes[i],
 			expected[i],
-			result,
+			*result,
+		)
+	}
+}
+
+func TestAttributesAboveBelowStepSizeIgnoredForSampleValue(t *testing.T) {
+	testCases := []struct{
+		name     string
+		above    float32
+		below    float32
+		stepsize float32
+	} {
+		{
+			name: "Everything is zero",
+			above:    0,
+			below:    0,
+			stepsize: 0,
+		},
+		{
+			name: "stepsize is none-zero and horizon is unaligned",
+			above:    0,
+			below:    0,
+			stepsize: 3,
+		},
+		{
+			name: "above/below is none-zero, stepsize is not and horizon is unaligned",
+			above:    8,
+			below:    8,
+			stepsize: 0,
+		},
+		{
+			name: "Everything is none-zero and horizon is unaligned",
+			above:    7,
+			below:    8,
+			stepsize: 2,
+		},
+	}
+
+	const fill     = float32(-999.25)
+	horizon  := [][]float32{{ 26.0 }}
+	expected := [][]float32{{  1.0 }}
+
+	targetAttributes := []string{"samplevalue"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	
+	for _, testCase := range testCases {
+		handle, _ := NewVDSHandle(samples10)
+		defer handle.Close()
+		buf, err := handle.GetAttributes(
+			horizon,
+			samples10_grid.xori,
+			samples10_grid.yori,
+			samples10_grid.xinc,
+			samples10_grid.yinc,
+			samples10_grid.rotation,
+			fill,
+			testCase.above,
+			testCase.below,
+			testCase.stepsize,
+			targetAttributes,
+			interpolationMethod,
+		)
+		require.NoError(t, err,
+			"[%s] Failed to fetch horizon, err: %v", testCase.name, err,
+		)
+		require.Len(t, buf, len(targetAttributes),
+			"Incorrect number of attributes returned",
+		)
+
+		for i, attr := range buf {
+			result, err := toFloat32(attr)
+			require.NoError(t, err, "Couldn't convert to float32")
+
+			assert.InDeltaSlice(
+				t,
+				expected[i],
+				*result,
+				0.000001,
+				"[%s][%s]\nExpected: %v\nActual:   %v",
+				testCase.name,
+				targetAttributes[i],
+				expected[i],
+				*result,
+			)
+		}
+	}
+}
+
+/** The vertical domain of the surface is unaligned with the seismic
+ *  but share the stepsize
+ *
+ *  seismic trace   surface window
+ *  -------------   --------------
+ *
+ *            ^
+ *            |
+ *       08ms -
+ *            |       - 9ms
+ *            |       |           - 10ms
+ *            |       |           |           - 11ms
+ *       12ms -       |           |           |
+ *            |       - 13ms      |           |
+ *            |       |           - 14ms      |
+ *            |       |           |           - 15ms
+ *       16ms -       |           |           |
+ *            |       - 17ms      |           |
+ *            |       |           - 18ms      |
+ *            |       |           |           - 19ms
+ *       20ms -       |           |           |
+ *            |       x 21ms      |           |
+ *            |       |           x 22ms      |
+ *            |       |           |           x 23ms
+ *       24ms -       |           |           |
+ *            |       - 25ms      |           |
+ *            |                   - 26ms      |
+ *            |                               - 27ms
+ *       28ms -
+ *            |
+ *            v
+ */
+func TestAttributesUnaligned(t *testing.T) {
+	testCases := []struct{
+		name     string
+		offset   float32
+		expected [][]float32
+	} {
+		{
+			name:   "offset: 0.5",
+			offset: 0.5,
+			expected: [][]float32{ {-2.375}, {0.625}, {-0.875} },
+		},
+		{
+			name:   "offset: 1.0",
+			offset: 1.0,
+			expected: [][]float32{ {-2.250}, {0.750}, {-0.750} },
+		},
+		{
+			name:   "offset: 2.0",
+			offset: 2.0,
+			expected: [][]float32{ {-2.000}, {1.000}, {-0.500} },
+		},
+		{
+			name:   "offset: 3.0",
+			offset: 3.0,
+			expected: [][]float32{ {-1.750}, {1.250}, {-0.250} },
+		},
+		{
+			name:   "offset: 3.5",
+			offset: 3.5,
+			expected: [][]float32{ {-1.625}, {1.375}, {-0.125} },
+		},
+	}
+
+	const fill     = float32(-999.25)
+	const above    = float32(8)
+	const below    = float32(4)
+	const stepsize = float32(4)
+
+	targetAttributes := []string{"min", "max", "mean"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	
+	for _, testCase := range testCases {
+		horizon := [][]float32{{ 20 + testCase.offset} }
+
+		handle, _ := NewVDSHandle(samples10)
+		defer handle.Close()
+		buf, err := handle.GetAttributes(
+			horizon,
+			samples10_grid.xori,
+			samples10_grid.yori,
+			samples10_grid.xinc,
+			samples10_grid.yinc,
+			samples10_grid.rotation,
+			fill,
+			above,
+			below,
+			stepsize,
+			targetAttributes,
+			interpolationMethod,
+		)
+		require.NoError(t, err,
+			"[%s] Failed to fetch horizon, err: %v", testCase.name, err,
+		)
+		require.Len(t, buf, len(targetAttributes),
+			"Incorrect number of attributes returned",
+		)
+
+		for i, attr := range buf {
+			result, err := toFloat32(attr)
+			require.NoError(t, err, "Couldn't convert to float32")
+
+			assert.InDeltaSlice(
+				t,
+				testCase.expected[i],
+				*result,
+				0.000001,
+				"[%s][%s]\nExpected: %v\nActual:   %v",
+				testCase.name,
+				targetAttributes[i],
+				testCase.expected[i],
+				*result,
+			)
+		}
+	}
+}
+
+/** The vertical domain of the surface is perfectly aligned with the seismic
+ *  but subsampled
+ *
+ *  seismic trace   surface window(s)
+ *  -------------   ---------------
+ *
+ *       04ms -
+ *            |
+ *            |      rate: 2ms   rate: 1ms  rate: ....
+ *            |
+ *       08ms -      - 08ms      - 08ms
+ *            |      |           - 09ms
+ *            |      - 10ms      - 10ms
+ *            |      |           - 11ms
+ *       12ms -      - 12ms      - 12ms
+ *            |      |           - 13ms
+ *            |      - 14ms      - 14ms
+ *            |      |           - 15ms
+ *       16ms -      - 16ms      - 16ms
+ *            |      |           - 17ms
+ *            |      - 18ms      - 18ms
+ *            |      |           - 19ms
+ *       20ms -      x 20ms      x 20ms
+ *            |      |           - 21ms
+ *            |      - 22ms      - 22ms
+ *            |      |           - 23ms
+ *       24ms -      - 24ms      - 24ms
+ *            |
+ *            |
+ *            |
+ *       28ms -
+ *            |
+ *            v
+ */
+func TestAttributeSubsamplingAligned(t *testing.T) {
+	testCases := []struct{
+		name     string
+		stepsize float32
+	} {
+		{
+			name:     "stepsize: 4.0",
+			stepsize: 4.0,
+		},
+		{
+			name:     "stepsize: 2.0",
+			stepsize: 2.0,
+		},
+		{
+			name:     "stepsize: 1.0",
+			stepsize: 1.0,
+		},
+		{
+			name:     "stepsize: 0.5",
+			stepsize: 0.5,
+		},
+		{
+			name:     "stepsize: 0.2",
+			stepsize: 0.2,
+		},
+		{
+			name:    "stepsize: 0.1",
+			stepsize: 0.1,
+		},
+	}
+
+	const fill  = float32(-999.25)
+	const above = float32(8)
+	const below = float32(4)
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	targetAttributes := []string{ "min", "max" }
+	
+	horizon := [][]float32{
+		{ 20,    20 },
+		{ 20,    20 },
+		{ fill,  20 },
+		{ 20,    20 }, // Out-of-bounds, should return fill
+	}
+
+	expected := [][]float32{
+		{ -2.5,  -0.5, -12.5, 2.5, fill, -20.5, fill, fill }, // min
+		{  0.5,   2.5,  -6.5, 8.5, fill,  -8.5, fill, fill }, // max
+	}
+	
+	for _, testCase := range testCases {
+		handle, _ := NewVDSHandle(samples10)
+		defer handle.Close()
+		buf, err := handle.GetAttributes(
+			horizon,
+			samples10_grid.xori,
+			samples10_grid.yori,
+			samples10_grid.xinc,
+			samples10_grid.yinc,
+			samples10_grid.rotation,
+			fill,
+			above,
+			below,
+			testCase.stepsize,
+			targetAttributes,
+			interpolationMethod,
+		)
+		require.NoError(t, err,
+			"[%s] Failed to fetch horizon, err: %v", testCase.name, err,
+		)
+		require.Len(t, buf, len(targetAttributes),
+			"Incorrect number of attributes returned",
+		)
+
+		for i, attr := range buf {
+			result, err := toFloat32(attr)
+			require.NoError(t, err, "[%v] Couldn't convert to float32", testCase.name)
+
+			assert.InDeltaSlicef(
+				t,
+				expected[i],
+				*result,
+				0.000001,
+				"[%s][%s]\nExpected: %v\nActual:   %v",
+				testCase.name,
+				targetAttributes[i],
+				expected[i],
+				*result,
+			)
+		}
+	}
+}
+
+/** The vertical domain of the surface is unaligned with the seismic
+ *  and target stepsize is higher than that of the seismic
+ *
+ *  seismic trace   surface window(s)
+ *  -------------   ---------------
+ *
+ *       04ms -
+ *            |
+ *            |
+ *            |
+ *       08ms -
+ *            |      - 09ms
+ *            |      |
+ *            |      - 11ms
+ *       12ms -      |
+ *            |      - 13ms
+ *            |      |
+ *            |      - 15ms
+ *       16ms -      |
+ *            |      - 17ms
+ *            |      |
+ *            |      - 19ms
+ *       20ms -      |
+ *            |      x 21ms
+ *            |      |
+ *            |      - 23ms
+ *       24ms -      |
+ *            |      - 25ms
+ *            |
+ *            |
+ *       28ms -
+ *            |
+ *            v
+ */
+func TestAttributesUnalignedAndSubsampled(t *testing.T) {
+	expected := [][]float32{
+		{ -2.25 }, // min
+		{  0.75 }, // max
+		{ -0.75 }, // mean
+	}
+	const fill     = float32(-999.25)
+	const above    = float32(8)
+	const below    = float32(4)
+	const stepsize = float32(2)
+
+	targetAttributes := []string{"min", "max", "mean"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	horizon := [][]float32{{ 21 }}
+
+	handle, _ := NewVDSHandle(samples10)
+	defer handle.Close()
+	buf, err := handle.GetAttributes(
+		horizon,
+		samples10_grid.xori,
+		samples10_grid.yori,
+		samples10_grid.xinc,
+		samples10_grid.yinc,
+		samples10_grid.rotation,
+		fill,
+		above,
+		below,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.NoError(t, err, "Failed to fetch horizon, err: %v", err)
+	require.Len(t, buf, len(targetAttributes),
+		"Incorrect number of attributes returned",
+	)
+	
+	for i, attr := range buf {
+		result, err := toFloat32(attr)
+		require.NoError(t, err, "Couldn't convert to float32")
+
+		assert.InDeltaSlice(
+			t,
+			expected[i],
+			*result,
+			0.000001,
+			"[%s]\nExpected: %v\nActual:   %v",
+			targetAttributes[i],
+			expected[i],
+			*result,
+		)
+	}
+}
+
+func TestAttributesEverythingUnaligned(t *testing.T) {
+	expected := [][]float32{
+		{ 1.000 }, //samplevalue
+		{ 0.250 }, // min
+		{ 2.500 }, // max
+		{ 1.375 }, // mean
+	}
+	const fill     = float32(-999.25)
+	const above    = float32(5)
+	const below    = float32(7)
+	const stepsize = float32(3)
+
+	targetAttributes := []string{"samplevalue", "min", "max", "mean"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	horizon := [][]float32{{ 26 }}
+
+	handle, _ := NewVDSHandle(samples10)
+	defer handle.Close()
+	buf, err := handle.GetAttributes(
+		horizon,
+		samples10_grid.xori,
+		samples10_grid.yori,
+		samples10_grid.xinc,
+		samples10_grid.yinc,
+		samples10_grid.rotation,
+		fill,
+		above,
+		below,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.NoError(t, err, "Failed to fetch horizon, err: %v", err)
+	require.Len(t, buf, len(targetAttributes),
+		"Incorrect number of attributes returned",
+	)
+	
+	for i, attr := range buf {
+		result, err := toFloat32(attr)
+		require.NoError(t, err, "Couldn't convert to float32")
+
+		assert.InDeltaSlice(
+			t,
+			expected[i],
+			*result,
+			0.000001,
+			"[%s]\nExpected: %v\nActual:   %v",
+			targetAttributes[i],
+			expected[i],
+			*result,
+		)
+	}
+}
+
+func TestAttributesSupersampling(t *testing.T) {
+	expected := [][]float32{
+		{  1.000 }, //samplevalue
+		{ -0.250 }, // min
+		{  2.250 }, // max
+		{  1.000 }, // mean
+	}
+	const fill     = float32(-999.25)
+	const above    = float32(8)
+	const below    = float32(8)
+	const stepsize = float32(5) // VDS is sampled at 4ms
+
+	targetAttributes := []string{"samplevalue", "min", "max", "mean"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	horizon := [][]float32{{ 26 }}
+
+	handle, _ := NewVDSHandle(samples10)
+	defer handle.Close()
+	buf, err := handle.GetAttributes(
+		horizon,
+		samples10_grid.xori,
+		samples10_grid.yori,
+		samples10_grid.xinc,
+		samples10_grid.yinc,
+		samples10_grid.rotation,
+		fill,
+		above,
+		below,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.NoError(t, err, "Failed to fetch horizon, err: %v", err)
+	require.Len(t, buf, len(targetAttributes),
+		"Incorrect number of attributes returned",
+	)
+	
+	for i, attr := range buf {
+		result, err := toFloat32(attr)
+		require.NoError(t, err, "Couldn't convert to float32")
+
+		assert.InDeltaSlice(
+			t,
+			expected[i],
+			*result,
+			0.000001,
+			"[%s]\nExpected: %v\nActual:   %v",
+			targetAttributes[i],
+			expected[i],
+			*result,
 		)
 	}
 }

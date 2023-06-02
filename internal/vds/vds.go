@@ -2,7 +2,7 @@ package vds
 
 /*
 #cgo LDFLAGS: -lopenvds
-#cgo CXXFLAGS: -std=c++11
+#cgo CXXFLAGS: -std=c++17
 #include <vds.h>
 #include <stdlib.h>
 */
@@ -450,6 +450,7 @@ func (v VDSHandle) GetAttributes(
 	fillValue     float32,
 	above         float32,
 	below         float32,
+	stepsize      float32,
 	attributes    []string,
 	interpolation int,
 ) ([][]byte, error) {
@@ -503,18 +504,18 @@ func (v VDSHandle) GetAttributes(
 
 	defer C.response_delete(&horizon)
 
-	var vsize = int(horizon.size) / mapsize
 	var buffer C.struct_response
 	cerr = C.attribute(
 		v.context(),
 		v.Handle(),
+		surface.get(),
 		horizon.data,
-		C.size_t(hsize),
-		C.size_t(vsize),
-		C.float(fillValue),
+		horizon.size,
 		&cattributes[0],
 		C.size_t(len(targetAttributes)),
 		C.float(above),
+		C.float(below),
+		C.float(stepsize),
 		&buffer,
 	)
 	defer C.response_delete(&buffer)

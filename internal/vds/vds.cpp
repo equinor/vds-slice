@@ -22,6 +22,7 @@
 #include "metadatahandle.hpp"
 #include "regularsurface.hpp"
 #include "subvolume.hpp"
+#include "verticalwindow.hpp"
 
 void response_delete(struct response* buf) {
     if (!buf)
@@ -361,11 +362,10 @@ void fetch_horizon(
     auto const& iline  = metadata.iline ();
     auto const& xline  = metadata.xline();
     auto const& sample = metadata.sample();
+    
+    VerticalWindow window(above, below, sample.stride(), 2, sample.min());
 
-    std::size_t samples_above = std::floor( above / sample.stride() );
-    std::size_t samples_below = std::floor( below / sample.stride() );
-    std::size_t verical_size = samples_above + samples_below + 1;
-    std::size_t const nsamples = surface.size() * verical_size;
+    std::size_t const nsamples = surface.size() * window.size();
 
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
@@ -405,12 +405,14 @@ void fetch_horizon(
     std::size_t i = 0;
     for (int row = 0; row < surface.nrows(); row++) {
         for (int col = 0; col < surface.ncols(); col++) {
-            float const depth = surface.value(row, col);
+            float depth = surface.value(row, col);
             if (depth == fillvalue) {
                 noval_indicies.push_back(i);
-                i += verical_size;
+                i += window.size();
                 continue;
             }
+            
+            depth = window.nearest(depth);
 
             auto const cdp = surface.coordinate(row, col);
 
@@ -433,12 +435,12 @@ void fetch_horizon(
 
             if (not inrange(iline, ij[0]) or not inrange(xline, ij[1])) {
                 noval_indicies.push_back(i);
-                i += verical_size;
+                i += window.size();
                 continue;
             }
 
-            double top    = k[2] - samples_above;
-            double bottom = k[2] + samples_below;
+            double top    = k[2] - window.nsamples_above();
+            double bottom = k[2] + window.nsamples_below();
             if (not inrange(sample, top) or not inrange(sample, bottom)) {
                 throw std::runtime_error(
                     "Vertical window is out of vertical bounds at"
@@ -470,7 +472,7 @@ void fetch_horizon(
         interpolation
     );
 
-    write_fillvalue(buffer.get(), noval_indicies, verical_size, fillvalue);
+    write_fillvalue(buffer.get(), noval_indicies, window.size(), fillvalue);
 
     return to_response(std::move(buffer), size, out);
 }
@@ -483,16 +485,18 @@ void append(std::vector< std::unique_ptr< AttributeMap > >& vec, T obj) {
 void calculate_attribute(
     DataHandle& handle,
     Horizon const& horizon,
+    RegularSurface const& surface,
+    VerticalWindow const& src_window,
+    VerticalWindow const& dst_window,
     enum attribute* attributes,
     std::size_t nattributes,
-    float above,
     response* out
 ) {
     MetadataHandle const& metadata = handle.get_metadata();
-    std::size_t index = std::floor( above / metadata.sample().stride() );
+    std::size_t index = dst_window.nsamples_above();
 
     std::size_t size = horizon.mapsize();
-    std::size_t vsize = horizon.vsize();
+    std::size_t vsize = dst_window.size();
 
     std::unique_ptr< char[] > buffer(new char[size * nattributes]());
 
@@ -513,7 +517,7 @@ void calculate_attribute(
         ++attributes;
     }
 
-    calc_attributes(horizon, attrs);
+    calc_attributes(horizon, surface, src_window, dst_window, attrs);
     return to_response(std::move(buffer), size, out);
 }
 
@@ -797,22 +801,47 @@ int attribute_metadata(
 int attribute(
     Context* ctx,
     DataHandle* handle,
+    RegularSurface* surface,
     const char* data,
     size_t size,
-    size_t vertical_window,
-    float  fillvalue,
     enum attribute* attributes,
     size_t nattributes,
     float above,
+    float below,
+    float stepsize,
     response* out
 ) {
     try {
-        if (not out)    throw detail::nullptr_error("Invalid out pointer");
-        if (not handle) throw detail::nullptr_error("Invalid handle");
+        if (not out)     throw detail::nullptr_error("Invalid out pointer");
+        if (not handle)  throw detail::nullptr_error("Invalid handle");
+        if (not surface) throw detail::nullptr_error("Invalid surface");
 
-        Horizon horizon((float*)data, size, vertical_window, fillvalue);
+        std::size_t nsamples = size / sizeof(float);
+        std::size_t hsize = surface->size();
+        std::size_t vsize = nsamples / hsize;
 
-        calculate_attribute(*handle, horizon, attributes, nattributes, above, out);
+        Horizon horizon((float*)data, hsize, vsize, surface->fillvalue());
+
+        MetadataHandle const& metadata = handle->get_metadata();
+        auto const& sample = metadata.sample();
+
+        if (stepsize == 0) {
+            stepsize = sample.stride();
+        }
+
+        VerticalWindow src_window(above, below, sample.stride(), 2, sample.min());
+        VerticalWindow dst_window(above, below, stepsize);
+
+        calculate_attribute(
+            *handle,
+            horizon,
+            *surface,
+            src_window,
+            dst_window,
+            attributes,
+            nattributes,
+            out
+        );
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());

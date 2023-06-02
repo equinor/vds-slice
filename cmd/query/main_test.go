@@ -418,6 +418,41 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 	testErrorHTTPResponse(t, testcases)
 }
 
+func TestAttributeOutOfBounds(t *testing.T) {
+	newCase := func(name string, above, below, stepSize float32, status int) attributeTest {
+		return attributeTest{
+			baseTest{
+				name:           name,
+				method:         http.MethodPost,
+				expectedStatus: status,
+			},
+			testAttributeRequest{
+				Vds:        samples10,
+				Horizon:    [][]float32{{20}},
+				Sas:        "n/a",
+				Above:      above,
+				Below:      below,
+				Stepsize:   stepSize,
+				Attributes: []string{"samplevalue"},
+			},
+		}
+	}
+
+	testCases := []endpointTest{
+		newCase("Min values",           0,   0,   0, http.StatusOK),
+		newCase("Above is too low",    -1,   1,   1, http.StatusBadRequest),
+		newCase("Above is too high",  250,   1,   1, http.StatusBadRequest),
+		newCase("Below is too low",     1,  -1,   1, http.StatusBadRequest),
+		newCase("Below is too high",    1, 250,   1, http.StatusBadRequest),
+		newCase("Stepsize is too low",  1,   1,  -1, http.StatusBadRequest),
+	}
+
+	for _, testcase := range testCases {
+		w := setupTest(t, testcase)
+		requireStatus(t, testcase, w)
+	}
+}
+
 func TestAttributeHappyHTTPResponse(t *testing.T) {
 	testcases := []attributeTest{
 		{
@@ -431,7 +466,7 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 				Vds:     samples10,
 				Horizon: [][]float32{{20, 20}, {20, 20}, {20, 20}},
 				Sas:     "n/a",
-				Above:   12.0,
+				Above:   8.0,
 				Below:   4.0,
 				Attributes: []string{"samplevalue"},
 			},
