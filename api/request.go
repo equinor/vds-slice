@@ -139,9 +139,9 @@ func (s SliceRequest) toString() (string, error) {
 	return str, nil
 }
 
-// Query for Horizon endpoints
-// @Description Query payload for horizon endpoint /horizon.
-type HorizonRequest struct {
+// Query for Attribute endpoints
+// @Description Query payload for attribute endpoint.
+type AttributeRequest struct {
 	RequestedResource
 
 	// Horizon / height-map
@@ -177,39 +177,6 @@ type HorizonRequest struct {
 	// Note: For nearest interpolation result will snap to the nearest point
 	// as per "half up" rounding. This is different from openvds logic.
 	Interpolation string `json:"interpolation" example:"linear"`
-} //@name HorizonRequest
-
-/** Compute a hash of the request that uniquely identifies the requested slice
- *
- * The hash is computed based on all fields that contribute toward a unique response.
- * I.e. every field except the sas token.
- */
-func (h HorizonRequest) Hash() (string, error) {
-	// Strip the sas token before computing hash
-	h.Sas = ""
-	return cache.Hash(h)
-}
-
-func (h HorizonRequest) toString() (string, error) {
-	msg := "{vds: %s, Rotation: %.2f, Origin: [%.2f, %.2f], " +
-		"Increment: [%.2f, %.2f], FillValue: %.2f interpolation: %s}"
-	return fmt.Sprintf(
-		msg,
-		h.Vds,
-		*h.Rotation,
-		*h.Xori,
-		*h.Yori,
-		h.Xinc,
-		h.Yinc,
-		*h.FillValue,
-		h.Interpolation,
-	), nil
-}
-
-// Query for Attribute endpoints
-// @Description Query payload for attribute endpoint.
-type AttributeRequest struct {
-	HorizonRequest
 
 	// Samples interval above the horizon to include in attribute calculation.
 	// This value should be given in the VDS's vertical domain. E.g. if the
