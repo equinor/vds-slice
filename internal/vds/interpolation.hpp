@@ -30,9 +30,11 @@ void cubic_makima(
     using boost::math::interpolators::makima;
     auto spline = makima< std::vector< double >>(std::move(xs), std::move(ys));
 
+    T x = dst_window.at(0, reference_point);
+    step  = dst_window.stepsize();
     for (int i = 0; i < dst_window.size(); i++) {
-        auto x = dst_window.at(i, reference_point);
         dst_buffer[i] = spline(x);
+        x += step;
     }
 }
 
