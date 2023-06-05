@@ -263,7 +263,7 @@ func (h AttributeRequest) Hash() (string, error) {
 func (h AttributeRequest) toString() (string, error) {
 	msg := "{vds: %s, Rotation: %.2f, Origin: [%.2f, %.2f], " +
 		"Increment: [%.2f, %.2f], FillValue: %.2f interpolation: %s, " +
-		"Above: %f, Below: %f, Stepsize: %f, Attributes: %v}"
+		"Above: %.2f, Below: %.2f, Stepsize: %.2f, Attributes: %v}"
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
