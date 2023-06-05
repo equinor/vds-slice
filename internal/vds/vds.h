@@ -175,6 +175,24 @@ int attribute_metadata(
     response* out
 );
 
+/** Attribute calculation
+*
+* Output buffer
+* -------------
+*
+* Ideally we want to allocate n output buffers in Golang. One for every target
+* attribute. Each buffer is passed through C with a void* and since we need N
+* void* they should be passed as an array (void**).
+* However Golang prohibits us from passing Go pointer to memory containing Go
+* pointers (for memory safety reasons) [1].
+*
+* Thus this function instead accepts a single contiguous buffer with enough
+* room for all attributes. The total buffer size should be mapsize *
+* nattributes, where mapsize is the number of bytes for a single attribute
+* result.
+*
+* [1] https://pkg.go.dev/cmd/cgo#hdr-Passing_pointers
+*/
 int attribute(
     Context* ctx,
     DataHandle* handle,
@@ -186,7 +204,9 @@ int attribute(
     float above,
     float below,
     float stepsize,
-    response* out
+    size_t from,
+    size_t to,
+    void* out
 );
 
 #ifdef __cplusplus

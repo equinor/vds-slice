@@ -490,7 +490,9 @@ void calculate_attribute(
     VerticalWindow const& dst_window,
     enum attribute* attributes,
     std::size_t nattributes,
-    response* out
+    std::size_t from,
+    std::size_t to,
+    void** out
 ) {
     MetadataHandle const& metadata = handle.get_metadata();
     std::size_t index = dst_window.nsamples_above();
@@ -498,12 +500,9 @@ void calculate_attribute(
     std::size_t size = horizon.mapsize();
     std::size_t vsize = dst_window.size();
 
-    std::unique_ptr< char[] > buffer(new char[size * nattributes]());
-
     std::vector< std::unique_ptr< AttributeMap > > attrs;
     for (int i = 0; i < nattributes; ++i) {
-        char* dst = buffer.get() + (i * size);
-
+        void* dst = out[i];
         switch (*attributes) {
             case VALUE: { append(attrs, Value(dst, size, index)); break; }
             case MIN:   { append(attrs,   Min(dst, size)       ); break; }
@@ -517,8 +516,7 @@ void calculate_attribute(
         ++attributes;
     }
 
-    calc_attributes(horizon, surface, src_window, dst_window, attrs);
-    return to_response(std::move(buffer), size, out);
+    calc_attributes(horizon, surface, src_window, dst_window, attrs, from, to);
 }
 
 void fetch_attribute_metadata(
@@ -809,7 +807,9 @@ int attribute(
     float above,
     float below,
     float stepsize,
-    response* out
+    size_t from,
+    size_t to,
+    void*  out
 ) {
     try {
         if (not out)     throw detail::nullptr_error("Invalid out pointer");
@@ -832,6 +832,11 @@ int attribute(
         VerticalWindow src_window(above, below, sample.stride(), 2, sample.min());
         VerticalWindow dst_window(above, below, stepsize);
 
+        void* outs[nattributes];
+        for (int i = 0; i < nattributes; ++i) {
+            outs[i] = static_cast< char* >(out) + horizon.mapsize() * i;
+        }
+
         calculate_attribute(
             *handle,
             horizon,
@@ -840,7 +845,9 @@ int attribute(
             dst_window,
             attributes,
             nattributes,
-            out
+            from,
+            to,
+            outs
         );
         return STATUS_OK;
     } catch (...) {

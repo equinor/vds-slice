@@ -250,7 +250,9 @@ void calc_attributes(
     RegularSurface const& surface,
     VerticalWindow const& src_window,
     VerticalWindow const& dst_window,
-    std::vector< std::unique_ptr< AttributeMap > >& attrs
+    std::vector< std::unique_ptr< AttributeMap > >& attrs,
+    std::size_t from,
+    std::size_t to
 ) noexcept (false);
 
 #endif /* VDS_SLICE_ATTRIBUTE_HPP */
