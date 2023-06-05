@@ -135,6 +135,12 @@ class AttributeMap {
 public:
     AttributeMap(void* dst, std::size_t size) : dst(dst), size(size) {};
 
+    /** Iterator type for computations
+     *
+     * All attribute computes produce a float, but the computation itself
+     * should happen on doubles to not lose precision during intermediate
+     * computation steps.
+     */
     using InputIt = std::vector< double >::iterator;
 
     virtual float compute(InputIt begin, InputIt end) noexcept (false) = 0;
