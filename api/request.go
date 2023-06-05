@@ -205,7 +205,7 @@ type AttributeRequest struct {
 	// 0.1 implies re-sample samples at an interval of 0.1 meter (if it's a
 	// depth cube) or 0.1 ms (if it's a time cube with vertical units in
 	// milliseconds).
-    //
+	//
 	// Setting this to zero, or omitting it will default it to the vertical
 	// stepsize in the VDS volume.
 	Stepsize float32 `json:"stepsize"`
