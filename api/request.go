@@ -170,10 +170,13 @@ type AttributeRequest struct {
 	// falls outside the bounds of the seismic volume.
 	FillValue *float32 `json:"fillValue" binding:"required"`
 
-	// Interpolation method
+	// Horizontal interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
 	// Defaults to nearest.
 	// This field is passed on to OpenVDS, which does the actual interpolation.
+	//
+	// This only applies to the horizontal plane. Traces are always
+	// interpolated with cubic interpolation (algorithm: modified makima)
 	// Note: For nearest interpolation result will snap to the nearest point
 	// as per "half up" rounding. This is different from openvds logic.
 	Interpolation string `json:"interpolation" example:"linear"`
