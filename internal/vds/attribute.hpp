@@ -135,10 +135,15 @@ class AttributeMap {
 public:
     AttributeMap(void* dst, std::size_t size) : dst(dst), size(size) {};
 
-    virtual float compute(
-        std::vector< double >::iterator begin,
-        std::vector< double >::iterator end
-    ) noexcept (false) = 0;
+    /** Iterator type for computations
+     *
+     * All attribute computes produce a float, but the computation itself
+     * should happen on doubles to not lose precision during intermediate
+     * computation steps.
+     */
+    using InputIt = std::vector< double >::iterator;
+
+    virtual float compute(InputIt begin, InputIt end) noexcept (false) = 0;
 
     void write(float value, std::size_t index) {
         std::size_t offset = index * sizeof(float);
@@ -161,10 +166,7 @@ struct Value final : public AttributeMap {
         : AttributeMap(dst, size), idx(idx)
     {}
 
-    float compute(
-        std::vector< double >::iterator begin,
-        std::vector< double >::iterator end
-    ) noexcept (false) override;
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
 
 private:
     std::size_t idx;
@@ -175,20 +177,14 @@ class Min final : public AttributeMap {
 public:
     Min(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(
-        std::vector< double >::iterator begin,
-        std::vector< double >::iterator end
-    ) noexcept (false) override;
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
 };
 
 class Max final : public AttributeMap {
 public:
     Max(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(
-        std::vector< double >::iterator begin,
-        std::vector< double >::iterator end
-    ) noexcept (false) override;
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
 };
 
 class Mean final : public AttributeMap {
@@ -197,10 +193,7 @@ public:
         : AttributeMap(dst, size), vsize(vsize)
     {}
 
-    float compute(
-        std::vector< double >::iterator begin,
-        std::vector< double >::iterator end
-    ) noexcept (false) override;
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
 
 private:
     /** vsize is essentially std::distance(begin, end), but that has a linear
@@ -217,10 +210,7 @@ public:
         : AttributeMap(dst, size), vsize(vsize)
     {}
 
-    float compute(
-        std::vector< double >::iterator begin,
-        std::vector< double >::iterator end
-    ) noexcept (false) override;
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
 
 private:
     std::size_t vsize;
@@ -235,10 +225,7 @@ public:
         : AttributeMap(dst, size), vsize(vsize)
     {}
 
-    float compute(
-        std::vector< double >::iterator begin,
-        std::vector< double >::iterator end
-    ) noexcept (false) override;
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
 
 private:
     std::size_t vsize;

@@ -31,39 +31,27 @@ Horizon::Window Horizon::at(std::size_t i) const noexcept (false) {
 }
 
 float Value::compute(
-    std::vector< double >::iterator begin,
-    std::vector< double >::iterator end
+    Value::InputIt begin,
+    Value::InputIt end
 ) noexcept (false) {
     std::advance(begin, this->idx);
     return *begin;
 }
 
-float Min::compute(
-    std::vector< double >::iterator begin,
-    std::vector< double >::iterator end
-) noexcept (false) {
+float Min::compute(Min::InputIt begin, Min::InputIt end) noexcept (false) {
     return *std::min_element(begin, end);
 }
 
-float Max::compute(
-    std::vector< double >::iterator begin,
-    std::vector< double >::iterator end
-) noexcept (false) {
+float Max::compute(Max::InputIt begin, Max::InputIt end) noexcept (false) {
     return *std::max_element(begin, end);
 }
 
-float Mean::compute(
-    std::vector< double >::iterator begin,
-    std::vector< double >::iterator end
-) noexcept (false) {
+float Mean::compute(Mean::InputIt begin, Mean::InputIt end) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0f);
     return sum / this->vsize;
 }
 
-float Rms::compute(
-    std::vector< double >::iterator begin,
-    std::vector< double >::iterator end
-) noexcept (false) {
+float Rms::compute(Rms::InputIt begin, Rms::InputIt end) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0f,
         [](float a, float b) {
             return a + std::pow(b, 2);
@@ -72,10 +60,7 @@ float Rms::compute(
     return std::sqrt(sum / this->vsize);
 }
 
-float Sd::compute(
-    std::vector< double >::iterator begin,
-    std::vector< double >::iterator end
-) noexcept (false) {
+float Sd::compute(Sd::InputIt begin, Sd::InputIt end) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0f);
     float mean = sum / vsize;
     float stdSum = std::accumulate(begin, end, 0.0f,
