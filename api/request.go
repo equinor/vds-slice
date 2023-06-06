@@ -139,9 +139,9 @@ func (s SliceRequest) toString() (string, error) {
 	return str, nil
 }
 
-// Query for Horizon endpoints
-// @Description Query payload for horizon endpoint /horizon.
-type HorizonRequest struct {
+// Query for Attribute endpoints
+// @Description Query payload for attribute endpoint.
+type AttributeRequest struct {
 	RequestedResource
 
 	// Horizon / height-map
@@ -170,46 +170,16 @@ type HorizonRequest struct {
 	// falls outside the bounds of the seismic volume.
 	FillValue *float32 `json:"fillValue" binding:"required"`
 
-	// Interpolation method
+	// Horizontal interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
 	// Defaults to nearest.
 	// This field is passed on to OpenVDS, which does the actual interpolation.
+	//
+	// This only applies to the horizontal plane. Traces are always
+	// interpolated with cubic interpolation (algorithm: modified makima)
 	// Note: For nearest interpolation result will snap to the nearest point
 	// as per "half up" rounding. This is different from openvds logic.
 	Interpolation string `json:"interpolation" example:"linear"`
-} //@name HorizonRequest
-
-/** Compute a hash of the request that uniquely identifies the requested slice
- *
- * The hash is computed based on all fields that contribute toward a unique response.
- * I.e. every field except the sas token.
- */
-func (h HorizonRequest) Hash() (string, error) {
-	// Strip the sas token before computing hash
-	h.Sas = ""
-	return cache.Hash(h)
-}
-
-func (h HorizonRequest) toString() (string, error) {
-	msg := "{vds: %s, Rotation: %.2f, Origin: [%.2f, %.2f], " +
-		"Increment: [%.2f, %.2f], FillValue: %.2f interpolation: %s}"
-	return fmt.Sprintf(
-		msg,
-		h.Vds,
-		*h.Rotation,
-		*h.Xori,
-		*h.Yori,
-		h.Xinc,
-		h.Yinc,
-		*h.FillValue,
-		h.Interpolation,
-	), nil
-}
-
-// Query for Attribute endpoints
-// @Description Query payload for attribute endpoint.
-type AttributeRequest struct {
-	HorizonRequest
 
 	// Samples interval above the horizon to include in attribute calculation.
 	// This value should be given in the VDS's vertical domain. E.g. if the
@@ -238,7 +208,7 @@ type AttributeRequest struct {
 	// 0.1 implies re-sample samples at an interval of 0.1 meter (if it's a
 	// depth cube) or 0.1 ms (if it's a time cube with vertical units in
 	// milliseconds).
-    //
+	//
 	// Setting this to zero, or omitting it will default it to the vertical
 	// stepsize in the VDS volume.
 	Stepsize float32 `json:"stepsize"`
@@ -261,12 +231,15 @@ func (h AttributeRequest) Hash() (string, error) {
 }
 
 func (h AttributeRequest) toString() (string, error) {
-	msg := "{vds: %s, Rotation: %.2f, Origin: [%.2f, %.2f], " +
-		"Increment: [%.2f, %.2f], FillValue: %.2f interpolation: %s, " +
-		"Above: %f, Below: %f, Stepsize: %f, Attributes: %v}"
+	msg := "{vds: %s, Horizon: (ncols: %d, nrows: %d), Rotation: %.2f, " +
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f, " +
+		"interpolation: %s, Above: %.2f, Below: %.2f, Stepsize: %.2f, " +
+		"Attributes: %v}"
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
+		len(h.Horizon[0]),
+		len(h.Horizon),
 		*h.Rotation,
 		*h.Xori,
 		*h.Yori,

@@ -369,7 +369,7 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 // AttributesPost godoc
 // @Summary  Returns horizon attributes
 // @description.markdown attribute
-// @Tags     attribute
+// @Tags     horizon
 // @Param    body  body  AttributeRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
