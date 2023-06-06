@@ -28,7 +28,7 @@ void cubic_makima(
     }
 
     using boost::math::interpolators::makima;
-    auto spline = makima< std::vector< double >>(std::move(xs), std::move(ys));
+    auto spline = makima< std::vector< T >>(std::move(xs), std::move(ys));
 
     for (int i = 0; i < dst_window.size(); i++) {
         auto x = dst_window.at(i, reference_point);
