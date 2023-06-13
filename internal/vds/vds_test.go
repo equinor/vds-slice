@@ -276,12 +276,7 @@ func TestDepthAxis(t *testing.T) {
 		{
 			name: "Depth",
 			direction: AxisDepth,
-			err: "Unable to use Depth on cube with depth units: ms",
-		},
-		{
-			name: "Time",
-			direction: AxisSample,
-			err: "Unable to use Sample on cube with depth units: ms",
+			err: "Cannot fetch depth slice for VDS file with vertical axis unit: ms",
 		},
 	}
 

@@ -69,52 +69,74 @@ void to_response(
     response->size = static_cast<unsigned long>(size);
 }
 
-/*
- * Unit validation of Z-slices
+bool equal(const char* lhs, const char* rhs) {
+    return std::strcmp(lhs, rhs) == 0;
+}
+
+/** Validate the request against the vds' vertical axis
+ *  
+ * Requests for Time and Depth are checked against the axis name and unit of
+ * the actual file, while Sample acts as a fallback option where anything goes
  *
- * Verify that the units of the VDS' Z axis matches the requested slice axis.
- * E.g. a Time slice is only valid if the units of the Z-axis in the VDS is
- * "Seconds" or "Milliseconds"
+ *     Requested axis | VDS axis name   | VDS axis unit
+ *     ---------------+-----------------+---------------------
+ *     Sample         |      any        |      any
+ *     Time           |  Time or Sample | "ms" or "s"
+ *     Depth          | Depth or Sample | "m", "ft", or "usft"
  */
-bool unit_validation(axis_name ax, std::string const& zunit) {
-    /* Define some convenient lookup tables for units */
-    static const std::array< const char*, 3 > depthunits = {
-        OpenVDS::KnownUnitNames::Meter(),
-        OpenVDS::KnownUnitNames::Foot(),
-        OpenVDS::KnownUnitNames::USSurveyFoot()
-    };
+void validate_vertical_axis(
+    Axis const& vertical_axis, 
+    Direction const& request
+) noexcept (false) {
+    const auto& unit = vertical_axis.unit();
+    const char* vdsunit = unit.c_str();
+    
+    const auto& name = vertical_axis.name();
+    const char* vdsname = name.c_str();
 
-    static const std::array< const char*, 2 > timeunits = {
-        OpenVDS::KnownUnitNames::Millisecond(),
-        OpenVDS::KnownUnitNames::Second()
-    };
+    const auto requested_axis = request.name();
 
-    static const std::array< const char*, 1 > sampleunits = {
-        OpenVDS::KnownUnitNames::Unitless(),
-    };
+    using Unit = OpenVDS::KnownUnitNames;
+    using Label = OpenVDS::KnownAxisNames;
+    if (requested_axis == axis_name::DEPTH) {
+        if (not equal(vdsname, Label::Depth()) and 
+            not equal(vdsname, Label::Sample())
+        ) {
+            throw std::runtime_error(
+                "Cannot fetch depth slice for VDS file with vertical axis label: "  + name
+            );
+        }
 
-    auto isoneof = [zunit](const char* x) {
-        return !std::strcmp(x, zunit.c_str());
-    };
+        if (
+            not equal(vdsunit, Unit::Meter()) and 
+            not equal(vdsunit, Unit::Foot())  and 
+            not equal(vdsunit, Unit::USSurveyFoot())
+        ) {
+            throw std::runtime_error(
+                "Cannot fetch depth slice for VDS file with vertical axis unit: "  + unit
+            );
+        }
 
-    switch (ax) {
-        case I:
-        case J:
-        case K:
-        case INLINE:
-        case CROSSLINE:
-            return true;
-        case DEPTH:
-            return std::any_of(depthunits.begin(), depthunits.end(), isoneof);
-        case TIME:
-            return std::any_of(timeunits.begin(), timeunits.end(), isoneof);
-        case SAMPLE:
-            return std::any_of(sampleunits.begin(), sampleunits.end(), isoneof);
-        default: {
-            throw std::runtime_error("Unhandled axis");
+    }
+
+    if (requested_axis == axis_name::TIME) {
+        if (not equal(vdsname, Label::Time()) and 
+            not equal(vdsname, Label::Sample())
+        ) {
+            throw std::runtime_error(
+                "Cannot fetch time slice for VDS file with vertical axis label: "  + name
+            );
+        }
+
+        if (not equal(vdsunit, Unit::Millisecond()) and 
+            not equal(vdsunit, Unit::Second())
+        ) {
+            throw std::runtime_error(
+                "Cannot fetch time slice for VDS file with vertical axis unit: "  + unit
+            );
         }
     }
-};
+}
 
 nlohmann::json json_axis(
     Axis const& axis
@@ -137,14 +159,11 @@ void fetch_slice(
     response* out
 ) {
     MetadataHandle const& metadata = handle.get_metadata();
-
     Axis const& axis = metadata.get_axis(direction);
-    std::string zunit = metadata.sample().unit();
-    if (not unit_validation(direction.name(), zunit)) {
-        std::string msg = "Unable to use " + direction.to_string();
-        msg += " on cube with depth units: " + zunit;
-        throw std::runtime_error(msg);
-    }
+
+    if (direction.is_sample()) {
+        validate_vertical_axis(metadata.sample(), direction);
+    }   
 
     SubVolume bounds(metadata);
     bounds.set_slice(axis, lineno, direction.coordinate_system());
