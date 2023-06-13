@@ -653,6 +653,26 @@ int regular_surface_free(Context* ctx, RegularSurface* surface) {
     }
 }
 
+int shape(
+    Context* ctx,
+    DataHandle* handle,
+    CubeShape* out
+) {
+    try {
+        if (not out)    throw detail::nullptr_error("Invalid out pointer");
+        if (not handle) throw detail::nullptr_error("Invalid handle");
+        
+        auto metadata = handle->get_metadata();
+
+        out->ilines  = metadata.iline().nsamples();
+        out->xlines  = metadata.xline().nsamples();
+        out->samples = metadata.sample().nsamples();
+        return STATUS_OK;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
+    }
+}
+
 int slice(
     Context* ctx,
     DataHandle* handle,

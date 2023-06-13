@@ -119,6 +119,20 @@ enum attribute {
     SD
 };
 
+struct CubeShape {
+    size_t ilines;
+    size_t xlines;
+    size_t samples;
+};
+
+typedef struct CubeShape CubeShape;
+
+int shape(
+    Context* ctx,
+    DataHandle* handle,
+    CubeShape* out
+);
+
 int metadata(
     Context* ctx,
     DataHandle* handle,

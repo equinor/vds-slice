@@ -306,6 +306,26 @@ func NewVDSHandle(conn Connection) (VDSHandle, error) {
 	return VDSHandle{ handle: handle, ctx: cctx }, nil
 }
 
+type CubeShape struct {
+	Ilines  int
+	Xlines  int
+	Samples int
+}
+
+func (v VDSHandle) Shape() (CubeShape, error) {
+	var shape C.struct_CubeShape
+	cErr := C.shape(v.context(), v.Handle(), &shape)
+	if err := v.Error(cErr); err != nil {
+		return CubeShape{}, err
+	}
+
+	return CubeShape{
+		Ilines:  int(shape.ilines),
+		Xlines:  int(shape.xlines),
+		Samples: int(shape.samples),
+	}, nil
+}
+
 func (v VDSHandle) GetMetadata() ([]byte, error) {
 	var result C.struct_response
 	cerr := C.metadata(v.context(), v.Handle(), &result)
