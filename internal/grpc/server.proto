@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option go_package = "github.com/equinor/vds-slice/internal/grpc";
+
+package oneseismic;
+
+// Interface exported by the server.
+service Oneseismic {
+  rpc GetFence(FenceRequest) returns (FenceResponse) {}
+}
+
+enum CoordinateSystem {
+    ANNOTATION = 0;
+    INDEX = 1;
+    WORLD = 2;
+}
+
+enum Interpolation {
+    NEAREST = 0;
+    LINEAR = 1;
+    CUBIC = 2;
+    ANGULAR = 3;
+    TRIANGULAR = 4;
+}
+
+message Info {
+    string pid = 1;
+    int32 part = 2;
+    int32 parts = 3;
+}
+
+message Connection {
+    string url = 1;
+    string credential = 2;
+}
+
+message Coordinate {
+    float x = 1;
+    float y = 2;
+}
+
+message FenceRequest {
+    Info info = 1;
+    Connection connection = 2;
+    int32 coordinateSystem = 3; // TODO change to enum
+    int32 interpolation = 4; //TODO change to enum
+    repeated Coordinate coordinates = 5;
+}
+
+message FenceResponse {
+    Info info = 1;
+    bytes fence = 2;
+}

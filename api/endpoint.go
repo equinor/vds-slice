@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 
 	"github.com/equinor/vds-slice/internal/cache"
+	pb "github.com/equinor/vds-slice/internal/grpc"
 	"github.com/equinor/vds-slice/internal/vds"
 )
 
@@ -380,4 +381,58 @@ func (e *Endpoint) AttributesPost(ctx *gin.Context) {
 	if abortOnError(ctx, err) { return }
 
 	e.attributes(ctx, request)
+}
+
+type HttpRoutes struct {
+	MakeVdsConnection vds.ConnectionMaker
+	scheduler *pb.Scheduler
+}
+
+func (h *HttpRoutes) fence(ctx *gin.Context, request *FenceRequest) {
+	prepareRequestLogging(ctx, request)
+	// TODO Sanitize connection
+	// TODO caching
+	
+	conn, err := h.MakeVdsConnection(request.Vds, request.Sas)
+	if abortOnError(ctx, err) { return }
+
+	handle, err := vds.NewVDSHandle(conn)
+	if abortOnError(ctx, err) { return }
+	defer handle.Close()
+
+	coordinateSystem, err := vds.GetCoordinateSystem(request.CoordinateSystem)
+	if abortOnError(ctx, err) { return }
+
+	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
+	if abortOnError(ctx, err) { return }
+	
+	shape, err := handle.Shape()
+	if abortOnError(ctx, err) { return }
+	
+	fence, err := h.scheduler.Fence(
+		conn.Url(),
+		conn.ConnectionString(),
+		int32(interpolation),
+		int32(coordinateSystem),
+		request.Coordinates,
+		shape,
+	) 
+	if abortOnError(ctx, err) { return }
+
+	metadata, err := handle.GetFenceMetadata(request.Coordinates)
+	if abortOnError(ctx, err) { return }
+
+	writeResponse(ctx, metadata, [][]byte{fence})
+}
+
+func (h *HttpRoutes) FencePost(ctx *gin.Context) {
+	var request FenceRequest
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) { return }
+
+	h.fence(ctx, &request)
+}
+
+func NewHttpRoutes(conn vds.ConnectionMaker, routes *pb.Scheduler) *HttpRoutes {
+	return &HttpRoutes{ MakeVdsConnection: conn, scheduler: routes }
 }

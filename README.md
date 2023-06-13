@@ -28,6 +28,23 @@ However, if your use-case involve reading larger amounts of data, such as
 in a ML pipeline or other seismic processing you are better of using OpenVDS
 directly.
 
+# grpc
+
+See: https://grpc.io/docs/languages/go/quickstart/
+
+Get protoc. Then get go-plugins:
+
+```
+go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
+```
+
+Then run
+```
+ protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=.
+ --go-grpc_opt=paths=source_relative internal/grpc/server.proto
+ ```
+
 # Development
 
 ## Running the server
