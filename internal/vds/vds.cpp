@@ -102,7 +102,7 @@ void validate_vertical_axis(
         if (not equal(vdsname, Label::Depth()) and 
             not equal(vdsname, Label::Sample())
         ) {
-            throw std::runtime_error(
+            throw detail::bad_request(
                 "Cannot fetch depth slice for VDS file with vertical axis label: "  + name
             );
         }
@@ -112,7 +112,7 @@ void validate_vertical_axis(
             not equal(vdsunit, Unit::Foot())  and 
             not equal(vdsunit, Unit::USSurveyFoot())
         ) {
-            throw std::runtime_error(
+            throw detail::bad_request(
                 "Cannot fetch depth slice for VDS file with vertical axis unit: "  + unit
             );
         }
@@ -123,7 +123,7 @@ void validate_vertical_axis(
         if (not equal(vdsname, Label::Time()) and 
             not equal(vdsname, Label::Sample())
         ) {
-            throw std::runtime_error(
+            throw detail::bad_request(
                 "Cannot fetch time slice for VDS file with vertical axis label: "  + name
             );
         }
@@ -131,7 +131,7 @@ void validate_vertical_axis(
         if (not equal(vdsunit, Unit::Millisecond()) and 
             not equal(vdsunit, Unit::Second())
         ) {
-            throw std::runtime_error(
+            throw detail::bad_request(
                 "Cannot fetch time slice for VDS file with vertical axis unit: "  + unit
             );
         }
