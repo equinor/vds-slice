@@ -32,25 +32,31 @@ void MetadataHandle::dimension_validation() const {
 /*
  * We're checking our axis order requirement.
  *
- *     voxel[0] -> sample
+ *     voxel[0] -> sample, time or depth
  *     voxel[1] -> crossline
  *     voxel[2] -> inline
  */
 void MetadataHandle::axis_order_validation() const {
     std::string const msg = "Unsupported axis ordering in VDS, expected "
-        "Sample, Crossline, Inline";
+        "Sample|Time|Depth, Crossline, Inline";
 
     using Names = OpenVDS::KnownAxisNames;
+    static const auto SAMPLE = std::string( Names::Sample() );
+    static const auto TIME   = std::string( Names::Time() );
+    static const auto DEPTH  = std::string( Names::Depth() );
+    static const auto ILINE  = std::string( Names::Inline() );
+    static const auto XLINE  = std::string( Names::Crossline() );
 
-    if (this->sample().name() != std::string(Names::Sample())) {
+    const auto samplename = this->sample().name();
+    if (samplename != SAMPLE and samplename != TIME and samplename != DEPTH) {
         throw std::runtime_error(msg);
     }
 
-    if (this->xline().name() != std::string(Names::Crossline())) {
+    if (this->xline().name() != XLINE) {
         throw std::runtime_error(msg);
     }
 
-    if (this->iline().name() != std::string(Names::Inline())) {
+    if (this->iline().name() != ILINE) {
         throw std::runtime_error(msg);
     }
 }
