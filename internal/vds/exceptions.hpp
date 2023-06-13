@@ -9,6 +9,10 @@ struct nullptr_error : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
+struct bad_request : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
 } // namespace detail
 
 #endif // VDS_SLICE_EXCEPTIONS_H

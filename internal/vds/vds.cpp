@@ -579,6 +579,9 @@ int handle_exception(Context* ctx, std::exception_ptr eptr) {
     } catch (const detail::nullptr_error& e) {
         if (ctx) ctx->errmsg = e.what();
         return STATUS_NULLPTR_ERROR;
+    } catch (const detail::bad_request& e) {
+        if (ctx) ctx->errmsg = e.what();
+        return STATUS_BAD_REQUEST;
     } catch (const std::exception& e) {
         if (ctx) ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
