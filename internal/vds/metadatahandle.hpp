@@ -4,10 +4,13 @@
 #include <string>
 
 #include <OpenVDS/OpenVDS.h>
+#include <OpenVDS/Vector.h>
+#include <OpenVDS/IJKCoordinateTransformer.h>
 
 #include "axis.hpp"
 #include "boundingbox.hpp"
 #include "direction.hpp"
+#include "openvdsvoxelvector.hpp"
 
 class MetadataHandle {
 public:
@@ -22,6 +25,43 @@ public:
     std::string input_filename() const noexcept (true);
 
     Axis const& get_axis(Direction const direction) const noexcept (false);
+
+    /**
+     * Extends IJKCoordinateTransformer with ability to translate to openvds
+     * positions - aka system used in Request- functions.
+
+     * We have a problem that OpenVDS' ToVoxelPosition and data request
+     * functions have different definitions of where a datapoint is. E.g. A
+     * transformer will return (0,0,0) for the first sample in the cube. The
+     * request functions on the other hand assume the data is located in the
+     * center of a voxel. I.e. that the first sample is at (0.5, 0.5, 0.5).
+     *
+     * Thus extending IJKCoordinateTransformer with new methods helps us to
+     * bridge this gap.
+     */
+    class CoordinateTransformer : public OpenVDS::IJKCoordinateTransformer{
+    public:
+        CoordinateTransformer(const MetadataHandle& metadata ) :
+            OpenVDS::IJKCoordinateTransformer(metadata.m_layout), m_metadata(metadata) {};
+
+        OpenvdsVoxelVector IndexToOpenvdsPosition     (const OpenVDS::DoubleVector3& position) const;
+        OpenvdsVoxelVector AnnotationToOpenvdsPosition(const OpenVDS::DoubleVector3& position) const;
+        OpenvdsVoxelVector WorldToOpenvdsPosition     (const OpenVDS::DoubleVector3& position) const;
+
+        OpenvdsVoxelVector ToOpenvdsPosition(
+            const OpenVDS::DoubleVector3& coordinate,
+            enum coordinate_system coordinate_system
+        ) const;
+
+        bool IsOpenvdsPositionOutOfRangeIline (double value) const noexcept(true);
+        bool IsOpenvdsPositionOutOfRangeXline (double value) const noexcept(true);
+        bool IsOpenvdsPositionOutOfRangeSample(double value) const noexcept(true);
+        bool IsOpenvdsPositionOutOfRange   (const OpenvdsVoxelVector& position) const noexcept(true);
+        Axis WhereOpenvdsPositionOutOfRange(const OpenvdsVoxelVector& position) const noexcept(false);
+
+    private:
+        const MetadataHandle& m_metadata;
+    };
 
     OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept (true);
 private:

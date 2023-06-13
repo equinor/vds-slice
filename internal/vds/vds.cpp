@@ -252,16 +252,6 @@ void fetch_fence(
         validate_boundary(0, inline_axis);
         validate_boundary(1, crossline_axis);
 
-        /* OpenVDS' transformers and OpenVDS data request functions have
-         * different definition of where a datapoint is. E.g. A transformer
-         * (To voxel or ijK) will return (0,0,0) for the first sample in
-         * the cube. The request functions on the other hand assumes the
-         * data is located in the center of a voxel. I.e. that the first
-         * sample is at (0.5, 0.5, 0.5). This is a *VERY* sharp edge in the
-         * OpenVDS API and borders on a bug. It means we cannot directly
-         * use the output from the transformers as input to the request
-         * functions.
-         */
         coordinate[0] += 0.5;
         coordinate[1] += 0.5;
 
@@ -419,16 +409,6 @@ void fetch_horizon(
             auto ij = transform.WorldToIJKPosition({cdp.x, cdp.y, 0});
             auto k  = transform.AnnotationToIJKPosition({0, 0, depth});
 
-            /* OpenVDS' transformers and OpenVDS data request functions have
-             * different definition of where a datapoint is. E.g. A transformer
-             * (To voxel or ijK) will return (0,0,0) for the first sample in
-             * the cube. The request functions on the other hand assumes the
-             * data is located in the center of a voxel. I.e. that the first
-             * sample is at (0.5, 0.5, 0.5). This is a *VERY* sharp edge in the
-             * OpenVDS API and borders on a bug. It means we cannot directly
-             * use the output from the transformers as input to the request
-             * functions.
-             */
             ij[0] += 0.5;
             ij[1] += 0.5;
              k[2] += 0.5;
