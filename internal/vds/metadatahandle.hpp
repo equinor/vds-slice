@@ -63,7 +63,7 @@ public:
         const MetadataHandle& m_metadata;
     };
 
-    OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept (true);
+    CoordinateTransformer coordinate_transformer() const noexcept (true);
 private:
     OpenVDS::VolumeDataLayout const * const m_layout;
 

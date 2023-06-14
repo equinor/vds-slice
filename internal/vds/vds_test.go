@@ -485,31 +485,31 @@ func TestFenceBorders(t *testing.T) {
 			name:              "coordinate 2 is just-out-of-upper-bound in direction 0",
 			coordinate_system: CoordinateSystemAnnotation,
 			coordinates:       [][]float32{{5, 9.5}, {6, 11.25}},
-			error:             "is out of boundaries in dimension 0.",
+			error:             "is out of boundaries in dimension Inline.",
 		},
 		{
 			name:              "coordinate 1 is just-out-of-upper-bound in direction 1",
 			coordinate_system: CoordinateSystemAnnotation,
 			coordinates:       [][]float32{{5.5, 11.5}, {3, 10}},
-			error:             "is out of boundaries in dimension 1.",
+			error:             "is out of boundaries in dimension Crossline.",
 		},
 		{
 			name:              "coordinate is long way out of upper-bound in both directions",
 			coordinate_system: CoordinateSystemCdp,
 			coordinates:       [][]float32{{700, 1200}},
-			error:             "is out of boundaries in dimension 0.",
+			error:             "is out of boundaries in dimension Inline.",
 		},
 		{
 			name:              "coordinate 2 is just-out-of-lower-bound in direction 1",
 			coordinate_system: CoordinateSystemAnnotation,
 			coordinates:       [][]float32{{0, 11}, {5.9999, 10}, {0.0001, 9.4999}},
-			error:             "is out of boundaries in dimension 1.",
+			error:             "is out of boundaries in dimension Crossline.",
 		},
 		{
 			name:              "negative coordinate 1 is out-of-lower-bound in direction 0",
 			coordinate_system: CoordinateSystemIndex,
 			coordinates:       [][]float32{{-1, 0}, {-3, 0}},
-			error:             "is out of boundaries in dimension 0.",
+			error:             "is out of boundaries in dimension Inline.",
 		},
 	}
 

@@ -23,6 +23,7 @@
 #include "regularsurface.hpp"
 #include "subvolume.hpp"
 #include "verticalwindow.hpp"
+#include "openvdsvoxelvector.hpp"
 
 void response_delete(struct response* buf) {
     if (!buf)
@@ -213,20 +214,6 @@ void fetch_fence(
     std::unique_ptr< voxel[] > coords(new voxel[npoints]{{0}});
 
     auto coordinate_transformer = metadata.coordinate_transformer();
-    auto transform_coordinate = [&] (const float x, const float y) {
-        switch (coordinate_system) {
-            case INDEX:
-                return OpenVDS::Vector<double, 3> {x, y, 0};
-            case ANNOTATION:
-                return coordinate_transformer.AnnotationToIJKPosition({x, y, 0});
-            case CDP:
-                return coordinate_transformer.WorldToIJKPosition({x, y, 0});
-            default: {
-                throw std::runtime_error("Unhandled coordinate system");
-            }
-        }
-    };
-
     Axis const& inline_axis = metadata.iline();
     Axis const& crossline_axis = metadata.xline();
 
@@ -234,29 +221,20 @@ void fetch_fence(
         const float x = *(coordinates++);
         const float y = *(coordinates++);
 
-        auto coordinate = transform_coordinate(x, y);
+        auto coordinate = coordinate_transformer.ToOpenvdsPosition(
+            {x, y, OpenvdsVoxelVector::NOVALUE}, coordinate_system);
 
-        auto validate_boundary = [&] (const int voxel, Axis const& axis) {
-            const auto min = -0.5;
-            const auto max = axis.nsamples() - 0.5;
-            if(coordinate[voxel] < min || coordinate[voxel] >= max) {
-                const std::string coordinate_str =
-                    "(" +std::to_string(x) + "," + std::to_string(y) + ")";
-                throw std::runtime_error(
-                    "Coordinate " + coordinate_str + " is out of boundaries "+
-                    "in dimension "+ std::to_string(voxel)+ "."
-                );
-            }
-        };
+        if (coordinate_transformer.IsOpenvdsPositionOutOfRange(coordinate)) {
+            const std::string coordinate_str =
+                "(" +std::to_string(x) + "," + std::to_string(y) + ")";
+            throw std::runtime_error(
+                "Coordinate " + coordinate_str + "is out of boundaries in dimension "
+                + coordinate_transformer.WhereOpenvdsPositionOutOfRange(coordinate).name()+"."
+            );
+        }
 
-        validate_boundary(0, inline_axis);
-        validate_boundary(1, crossline_axis);
-
-        coordinate[0] += 0.5;
-        coordinate[1] += 0.5;
-
-        coords[i][   inline_axis.dimension()] = coordinate[0];
-        coords[i][crossline_axis.dimension()] = coordinate[1];
+        coords[i][   inline_axis.dimension()] = coordinate.InlineValue();
+        coords[i][crossline_axis.dimension()] = coordinate.CrosslineValue();
     }
 
     std::int64_t const size = handle.traces_buffer_size(npoints);
@@ -361,10 +339,6 @@ void fetch_horizon(
 
     float const fillvalue = surface.fillvalue();
 
-    auto inrange = [](Axis const& axis, double const voxel) {
-        return (0 <= voxel) and (voxel < axis.nsamples());
-    };
-
     /** Missing input samples (marked by fillvalue) and out of bounds samples
      *
      * To not overcomplicate things for ourselfs (and the caller) we guarantee
@@ -406,22 +380,28 @@ void fetch_horizon(
 
             auto const cdp = surface.coordinate(row, col);
 
-            auto ij = transform.WorldToIJKPosition({cdp.x, cdp.y, 0});
-            auto k  = transform.AnnotationToIJKPosition({0, 0, depth});
+            auto ij = transform.WorldToOpenvdsPosition(
+                {cdp.x, cdp.y, OpenvdsVoxelVector::NOVALUE}
+            );
+            auto k  = transform.AnnotationToOpenvdsPosition(
+                {OpenvdsVoxelVector::NOVALUE, OpenvdsVoxelVector::NOVALUE, depth}
+            );
 
-            ij[0] += 0.5;
-            ij[1] += 0.5;
-             k[2] += 0.5;
+            auto coordinate = OpenvdsVoxelVector(k[0], ij[1], ij[2]);
 
-            if (not inrange(iline, ij[0]) or not inrange(xline, ij[1])) {
+            if (transform.IsOpenvdsPositionOutOfRangeIline(coordinate.InlineValue()) or
+                transform.IsOpenvdsPositionOutOfRangeXline(coordinate.CrosslineValue()))
+            {
                 noval_indicies.push_back(i);
                 i += window.size();
                 continue;
             }
 
-            double top    = k[2] - window.nsamples_above();
-            double bottom = k[2] + window.nsamples_below();
-            if (not inrange(sample, top) or not inrange(sample, bottom)) {
+            double top    = coordinate.SampleValue() - window.nsamples_above();
+            double bottom = coordinate.SampleValue() + window.nsamples_below();
+            if (transform.IsOpenvdsPositionOutOfRangeSample(top) or
+                transform.IsOpenvdsPositionOutOfRangeSample(bottom))
+            {
                 throw std::runtime_error(
                     "Vertical window is out of vertical bounds at"
                     " row: " + std::to_string(row) +
@@ -433,8 +413,8 @@ void fetch_horizon(
                 );
             }
             for (double cur_depth = top; cur_depth <= bottom; cur_depth++) {
-                samples[i][  iline.dimension() ] = ij[0];
-                samples[i][  xline.dimension() ] = ij[1];
+                samples[i][  iline.dimension() ] = coordinate.InlineValue();
+                samples[i][  xline.dimension() ] = coordinate.CrosslineValue();
                 samples[i][ sample.dimension() ] = cur_depth;
                 ++i;
             }
