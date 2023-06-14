@@ -15,7 +15,7 @@ type RequestedResource struct {
 	Sas string `json:"sas,omitempty" binding:"required" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
 }
 
-type Request interface {
+type Stringable interface {
 	toString() (string, error)
 }
 

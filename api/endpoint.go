@@ -55,7 +55,7 @@ type Endpoint struct {
 	Cache             cache.Cache
 }
 
-func prepareRequestLogging(ctx *gin.Context, request Request) {
+func prepareRequestLogging(ctx *gin.Context, request Stringable) {
 	// ignore possible errors as they should not change outcome for the user
 	requestString, _ := request.toString()
 	ctx.Set("request", requestString)
