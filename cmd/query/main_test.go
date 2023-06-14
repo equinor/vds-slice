@@ -251,7 +251,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 				jsonRequest: "{\"vds\":\"" + well_known +
 					"\", \"coordinateSystem\":\"ilxl\", \"coordinates\":[[0, 0]]}",
 				expectedStatus: http.StatusBadRequest,
-				expectedError:  "Error:Field validation for 'Sas'",
+				expectedError:  "No valid Sas token is found",
 			},
 			testFenceRequest{},
 		},
@@ -389,7 +389,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 				method:         http.MethodGet,
 				jsonRequest:    "{\"vds\":\"" + well_known + "\"}",
 				expectedStatus: http.StatusBadRequest,
-				expectedError:  "Error:Field validation for 'Sas'",
+				expectedError:  "No valid Sas token is found",
 			}, testMetadataRequest{},
 		},
 		metadataTest{

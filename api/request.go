@@ -3,20 +3,56 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/equinor/vds-slice/internal/cache"
+	"github.com/equinor/vds-slice/internal/vds"
 )
 
 type RequestedResource struct {
-	// The blob url to a vds in form
-	// https://account.blob.core.windows.net/container/blob
+	// The blob URL can be sent in either format:
+	// - https://account.blob.core.windows.net/container/blob
+	//    In the above case the user must provide a sas-token as a separate key.
+	//
+	// - https://account.blob.core.windows.net/container/blob?sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=...
+	//	  Instead of passing the sas-token explicitly in the sas field, you can
+	//	  pass an sign url. If the sas-token is provided in both fields, the
+	//	  sas-token in the sas field is prioritized.
+	//
+	// Note that your whole query string will be passed further down to
+	// openvds. We expect query parameters to contain sas-token and sas-token
+	// only and give no guarantee that Openvds/Azure returns you if you provide
+	// any additional arguments.
+	//
+	// Warning: We do not expect storage accounts to have snapshots. If your
+	// storage account has any, please contact System Admin, as due to caching
+	// you might end up with incorrect data.
 	Vds string `json:"vds" binding:"required" example:"https://account.blob.core.windows.net/container/blob"`
+
 	// A valid sas-token with read access to the container specified in Vds
-	Sas string `json:"sas,omitempty" binding:"required" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
+	Sas string `json:"sas,omitempty" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
 }
 
 type Stringable interface {
 	toString() (string, error)
+}
+type Normalizable interface {
+	NormalizeConnection() error
+}
+
+
+func (r *RequestedResource) NormalizeConnection() error {
+	blob := strings.Split(strings.TrimSpace(r.Vds), "?")
+	r.Vds = blob[0]
+	if strings.TrimSpace(r.Sas) != "" {
+		return nil
+	}
+
+	if len(blob) < 2 {
+		return vds.NewInvalidArgument("No valid Sas token is found in the request")
+	}
+	r.Sas = blob[1]
+	return nil
 }
 
 type MetadataRequest struct {

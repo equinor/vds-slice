@@ -22,6 +22,10 @@ VDSURL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
 
 SAMPLES10_URL = f"{STORAGE_ACCOUNT}/{CONTAINER}/10_samples/10_samples_default"
 
+def gen_default_sas():
+    return generate_container_signature(STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
+
+
 def surface():
     return {
         "xinc": 7.2111,
@@ -376,3 +380,24 @@ def request_attributes(method, horizon):
 
     data = np.ndarray(metadata['shape'], metadata['format'], data)
     return metadata, data
+
+
+@pytest.mark.parametrize("path, payload", [
+    ("slice"    ,   make_slice_request()      ),
+    ("fence"    ,   make_fence_request()      ),
+    ("metadata" ,   make_metadata_request()   ),
+    ("horizon"  ,   make_attribute_request()  ),
+])
+@pytest.mark.parametrize("vds, sas, expected", [
+    ( f'{SAMPLES10_URL}?{gen_default_sas()}' , ''                , http.HTTPStatus.OK            ),
+    ( f'{SAMPLES10_URL}?invalid_sas'         , gen_default_sas() , http.HTTPStatus.OK            ),
+    ( SAMPLES10_URL                          , ''                , http.HTTPStatus.BAD_REQUEST   )
+])
+def test_sas_token_in_url(path, payload, vds, sas, expected):
+    payload.update({
+        "vds": vds,
+        "sas": sas
+    })
+    res = send_request(path, "post", payload)
+    assert res.status_code == expected
+    gen_default_sas()
