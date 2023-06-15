@@ -278,7 +278,7 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 	for _, testcase := range testcases {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		buf, err := handle.GetSliceMetadata(testcase.direction)
+		buf, err := handle.GetSliceMetadata(testcase.lineno, testcase.direction)
 		require.NoErrorf(t, err,
 			"[case: %v] Failed to get slice metadata, err: %v",
 			testcase.name,
@@ -296,6 +296,79 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 		axis := []string{ meta.X.Annotation, meta.Y.Annotation }
 
 		require.Equalf(t, testcase.expectedAxis, axis, "[case: %v]", testcase.name)
+	}
+}
+
+func TestSliceGeospatial(t *testing.T) {
+	testcases := []struct{
+			name      string
+			direction int
+			lineno    int
+			expected  [][]float64
+	} {
+		{
+			name: "Inline",
+			direction: AxisInline,
+			lineno: 3,
+			expected: [][]float64{{8.0, 4.0}, {6.0, 7.0}},
+		},
+		{
+			name: "I",
+			direction: AxisI,
+			lineno: 1,
+			expected: [][]float64{{8.0, 4.0}, {6.0, 7.0}},
+		},
+		{
+			name: "Crossline",
+			direction: AxisCrossline,
+			lineno: 10,
+			expected: [][]float64{{2.0, 0.0}, {14.0, 8.0}},
+		},
+		{
+			name: "J",
+			direction: AxisJ,
+			lineno: 0,
+			expected: [][]float64{{2.0, 0.0}, {14.0, 8.0}},
+		},
+		{
+			name: "Time",
+			direction: AxisTime,
+			lineno: 4,
+			expected: [][]float64{{2.0, 0.0}, {14.0, 8.0}, {12.0, 11.0}, {0.0, 3.0}},
+		},
+		{
+			name: "K",
+			direction: AxisK,
+			lineno: 3,
+			expected: [][]float64{{2.0, 0.0}, {14.0, 8.0}, {12.0, 11.0}, {0.0, 3.0}},
+		},
+	}
+
+	for _, testcase := range testcases {
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		buf, err := handle.GetSliceMetadata(testcase.lineno, testcase.direction)
+		require.NoError(t, err,
+			"[case: %v] Failed to get slice metadata, err: %v",
+			testcase.name,
+			err,
+		)
+
+		var meta SliceMetadata
+		err = json.Unmarshal(buf, &meta)
+		require.NoError(t, err,
+			"[case: %v] Failed to unmarshall response, err: %v",
+			testcase.name,
+			err,
+		)
+	
+		require.Equalf(
+			t,
+			testcase.expected,
+			meta.Geospatial,
+			"[case %v] Incorrect geospatial information",
+			testcase.name,
+		)
 	}
 }
 

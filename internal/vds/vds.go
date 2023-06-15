@@ -61,7 +61,6 @@ type BoundingBox struct {
 	Ij   [][]float64 `json:"ij"`
 } //@name BoundingBox
 
-
 // @Description Slice metadata
 type SliceMetadata struct {
 	// Data format is represented by a numpy-style formatcodes. E.g. f4 is 4
@@ -74,6 +73,11 @@ type SliceMetadata struct {
 
 	// Y-axis information
 	Y Axis `json:"y"`
+
+	// Horizontal bounding box of the slice. For inline/crossline slices this
+	// is a linestring, while for time/depth slices this is essentially the
+	// bounding box of the volume.
+	Geospatial [][]float64 `json:"geospatial"`
 } // @name SliceMetadata
 
 // @Description Metadata
@@ -340,11 +344,12 @@ func (v VDSHandle) GetSlice(lineno, direction int) ([]byte, error) {
 	return buf, nil
 }
 
-func (v VDSHandle) GetSliceMetadata(direction int) ([]byte, error) {
+func (v VDSHandle) GetSliceMetadata(lineno, direction int) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.slice_metadata(
 		v.context(),
 		v.Handle(),
+		C.int(lineno),
 		C.enum_axis_name(direction),
 		&result,
 	)

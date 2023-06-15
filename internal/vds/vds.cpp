@@ -152,6 +152,78 @@ nlohmann::json json_axis(
     return doc;
 }
 
+nlohmann::json json_slice_geospatial(
+    MetadataHandle const& metadata,
+    Direction const direction,
+    Axis const& axis,
+    int lineno
+) {
+    auto const& transformer = metadata.coordinate_transformer();
+
+    SubVolume bounds(metadata);
+    bounds.set_slice(axis, lineno, direction.coordinate_system());
+
+    auto const lower = transformer.VoxelIndexToIJKIndex({
+        bounds.bounds.lower[0],
+        bounds.bounds.lower[1],
+        bounds.bounds.lower[2]
+    });
+
+    // The upper bound is exclusive, while we need it to be inclusive
+    auto const upper = transformer.VoxelIndexToIJKIndex({
+        bounds.bounds.upper[0] - 1,
+        bounds.bounds.upper[1] - 1,
+        bounds.bounds.upper[2] - 1
+    });
+    
+    /** The slice bounds are given by the lower- and upper-coordinates only:
+     *
+     *
+     *       Depth / Time slice   Inline slice   Crossline slice
+     *       ------------------   -------------  ---------------
+     *
+     *         3         upper       upper
+     *         +-----------+           +
+     *         |           |           |
+     *         |           |           |        lower       upper
+     *         |           |           |          +-----------+
+     *         |           |           |
+     *         |           |           |
+     *   J     +-----------+           +
+     *   ^   lower         1         lower
+     *   |
+     *   +--> I
+     *
+     * For inline- and crossline-slices the horizontal bounding box is given by
+     * a linestring from (lower.I, lower.J) to (upper.I, upper.J). However, for
+     * time- and depth-slices we need to construct 4 corners. The first corner
+     * is lower, then go in a counter-clockwise direction around the box.
+     * Corner 1 is given by (upper.I, lower.J) and corner 3 is 
+     * (lower.I, upper.J).
+     */
+    const std::array< OpenVDS::DoubleVector3, 4 > corners {{
+        transformer.IJKIndexToWorld({ lower[0], lower[1], 0 }),
+        transformer.IJKIndexToWorld({ upper[0], lower[1], 0 }),
+        transformer.IJKIndexToWorld({ upper[0], upper[1], 0 }),
+        transformer.IJKIndexToWorld({ lower[0], upper[1], 0 }),
+    }};
+
+
+    if (direction.is_sample()) {
+        return {
+            { corners[0][0], corners[0][1] },
+            { corners[1][0], corners[1][1] },
+            { corners[2][0], corners[2][1] },
+            { corners[3][0], corners[3][1] },
+        };
+    } else {
+        return {
+            { corners[0][0], corners[0][1] },
+            { corners[2][0], corners[2][1] }
+        };
+    }
+}
+
 void fetch_slice(
     DataHandle& handle,
     Direction const direction,
@@ -179,9 +251,11 @@ void fetch_slice(
 void fetch_slice_metadata(
     DataHandle& handle,
     Direction const direction,
+    int lineno,
     response* out
 ) {
     MetadataHandle const& metadata = handle.get_metadata();
+    auto const& axis = metadata.get_axis(direction);
 
     nlohmann::json meta;
     meta["format"] = fmtstr(DataHandle::format());
@@ -215,7 +289,8 @@ void fetch_slice_metadata(
     } else {
         throw std::runtime_error("Unhandled direction");
     }
-
+    
+    meta["geospatial"] = json_slice_geospatial(metadata, direction,axis, lineno);
     return to_response(meta, out);
 }
 
@@ -697,6 +772,7 @@ int slice(
 int slice_metadata(
     Context* ctx,
     DataHandle* handle,
+    int lineno,
     axis_name ax,
     response* out
 ) {
@@ -705,7 +781,7 @@ int slice_metadata(
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
         Direction const direction(ax);
-        fetch_slice_metadata(*handle, direction, out);
+        fetch_slice_metadata(*handle, direction, lineno, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());

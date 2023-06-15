@@ -99,7 +99,8 @@ def test_slice(method):
     {
         "x": {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"},
         "y": {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
-        "format": "<f4"
+        "format": "<f4",
+        "geospatial": [[14.0, 8.0], [12.0, 11.0]]
     }
     """)
     assert meta == expected_meta
