@@ -387,7 +387,9 @@ void fetch_horizon(
                 {OpenvdsVoxelVector::NOVALUE, OpenvdsVoxelVector::NOVALUE, depth}
             );
 
-            auto coordinate = OpenvdsVoxelVector(k[0], ij[1], ij[2]);
+            auto coordinate = OpenvdsVoxelVector(
+                ij.InlineValue(), ij.CrosslineValue(), k.SampleValue()
+            );
 
             if (transform.IsOpenvdsPositionOutOfRangeIline(coordinate.InlineValue()) or
                 transform.IsOpenvdsPositionOutOfRangeXline(coordinate.CrosslineValue()))

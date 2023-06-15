@@ -11,19 +11,19 @@
 OpenvdsVoxelVector MetadataHandle::CoordinateTransformer::IndexToOpenvdsPosition(
     const OpenVDS::DoubleVector3& position
 ) const {
-    return OpenvdsVoxelVector(position, this->IJKPositionToVoxelPosition(position));
+    return OpenvdsVoxelVector(this->m_metadata, position, this->IJKPositionToVoxelPosition(position));
 }
 
 OpenvdsVoxelVector MetadataHandle::CoordinateTransformer::AnnotationToOpenvdsPosition(
     const OpenVDS::DoubleVector3& position
 ) const {
-    return OpenvdsVoxelVector(position, this->AnnotationToVoxelPosition(position));
+    return OpenvdsVoxelVector(this->m_metadata, position, this->AnnotationToVoxelPosition(position));
 }
 
 OpenvdsVoxelVector MetadataHandle::CoordinateTransformer::WorldToOpenvdsPosition(
     const OpenVDS::DoubleVector3& position
 ) const {
-    return OpenvdsVoxelVector(position, this->WorldToVoxelPosition(position));
+    return OpenvdsVoxelVector(this->m_metadata, position, this->WorldToVoxelPosition(position));
 }
 
 OpenvdsVoxelVector MetadataHandle::CoordinateTransformer::ToOpenvdsPosition(

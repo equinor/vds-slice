@@ -10,7 +10,8 @@
 #include "axis.hpp"
 #include "boundingbox.hpp"
 #include "direction.hpp"
-#include "openvdsvoxelvector.hpp"
+
+class OpenvdsVoxelVector;
 
 class MetadataHandle {
 public:
