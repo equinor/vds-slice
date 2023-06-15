@@ -671,13 +671,14 @@ func TestInvalidFence(t *testing.T) {
 //
 // But we can check that we use openvds correctly by checking interpolated data
 // at known datapoints. Openvds claims that data would still be the same for all
-// interpolation algorithms*.
+// interpolation algorithms [1].
 //
 // We had a bug that caused cubic and linear return incorrect values. So this is
 // the best feasible test that would help us guard against that bug.
 //
-// * we for the moment skip angular as for angular something doesn't add up
-// (issue 171 in openvds repo)
+// [1] angular is skipped on purpose as it anyway will hold only for files where
+// ValueRange is defined correctly
+// https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds/-/issues/171.  
 func TestFenceInterpolationSameAtDataPoints(t *testing.T) {
 	// use non-linear data
 	coordinates := [][]float32{{2, 0}}
