@@ -65,9 +65,7 @@ func TestSasIsOmmitedFromSliceHash(t *testing.T) {
 		"Failed to compute hash, err: %v", err,
 	)
 
-	if hash1 != hash2 {
-		t.Fatalf("Expected hashes to be equal, was %v and %v", hash1, hash2)
-	}
+	require.Equalf(t, hash1, hash2, "Expected hashes to be equal")
 }
 
 func TestSasIsOmmitedFromFenceHash(t *testing.T) {
@@ -96,9 +94,7 @@ func TestSasIsOmmitedFromFenceHash(t *testing.T) {
 		"Failed to compute hash, err: %v", err,
 	)
 
-	if hash1 != hash2 {
-		t.Fatalf("Expected hashes to be equal, was %v and %v", hash1, hash2)
-	}
+	require.Equalf(t, hash1, hash2, "Expected hashes to be equal")
 }
 
 func TestSliceGivesUniqueHash(t *testing.T) {

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"reflect"
 	"testing"
 "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -88,9 +87,7 @@ func TestMetadata(t *testing.T) {
 	err = json.Unmarshal(buf, &meta)
 	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
 
-	if !reflect.DeepEqual(meta, expected) {
-		t.Fatalf("Expected %v, got  %v", expected, meta)
-	}
+	require.Equal(t, meta, expected)
 }
 
 func TestSliceData(t *testing.T) {
@@ -137,20 +134,8 @@ func TestSliceData(t *testing.T) {
 
 		slice, err := toFloat32(buf)
 		require.NoErrorf(t, err, "[case: %v] Err: %v", testcase.name, err)
-
-		if len(*slice) != len(testcase.expected) {
-			msg := "[case: %v] Expected slice of len: %v, got: %v"
-			t.Errorf(msg, testcase.name, len(testcase.expected), len(*slice))
-		}
-
-		for i, x := range(*slice) {
-			if (x == testcase.expected[i]) {
-				continue
-			}
-
-			msg := "[case: %v] Expected %v in pos %v, got: %v"
-			t.Errorf(msg, testcase.name, testcase.expected[i], i, x)
-		}
+	
+		require.Equalf(t, testcase.expected, *slice, "[case: %v]", testcase.name)
 	}
 }
 
@@ -309,16 +294,8 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 		)
 
 		axis := []string{ meta.X.Annotation, meta.Y.Annotation }
-		for i, ax := range(testcase.expectedAxis) {
-			if ax != axis[i] {
-				t.Fatalf(
-					"[case: %v] Expected axis to be %v, got %v",
-					testcase.name,
-					testcase.expectedAxis,
-					axis,
-				)
-			}
-		}
+
+		require.Equalf(t, testcase.expectedAxis, axis, "[case: %v]", testcase.name)
 	}
 }
 
@@ -372,30 +349,7 @@ func TestFence(t *testing.T) {
 			"[coordinate_system: %v] Err: %v", testcase.coordinate_system, err,
 		)
 
-		if len(*fence) != len(expected) {
-			msg := "[coordinate_system: %v] Expected fence of len: %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.coordinate_system,
-				len(expected),
-				len(*fence),
-			)
-		}
-
-		for i, x := range(*fence) {
-			if (x == expected[i]) {
-				continue
-			}
-
-			msg := "[coordinate_system: %v] Expected %v in pos %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.coordinate_system,
-				expected[i],
-				i,
-				x,
-			)
-		}
+		require.Equalf(t, expected, *fence, "Incorrect fence")
 	}
 }
 
@@ -527,31 +481,8 @@ func TestFenceNearestInterpolationSnap(t *testing.T) {
 		require.NoErrorf(t, err,
 			"[coordinate_system: %v] Err: %v", testcase.coordinate_system, err,
 		)
-
-		if len(*fence) != len(testcase.expected) {
-			msg := "[coordinate_system: %v] Expected fence of len: %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.coordinate_system,
-				len(testcase.expected),
-				len(*fence),
-			)
-		}
-
-		for i, x := range *fence {
-			if x == testcase.expected[i] {
-				continue
-			}
-
-			msg := "[coordinate_system: %v] Expected %v in pos %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.coordinate_system,
-				testcase.expected[i],
-				i,
-				x,
-			)
-		}
+		
+		require.Equalf(t, testcase.expected, *fence, "Incorrect fence")
 	}
 }
 
@@ -604,35 +535,28 @@ func TestFenceInterpolation(t *testing.T) {
 func TestFenceInterpolationDefaultIsNearest(t *testing.T) {
 	defaultInterpolation, _ := GetInterpolationMethod("")
 	nearestInterpolation, _ := GetInterpolationMethod("nearest")
-	if defaultInterpolation != nearestInterpolation {
-		msg := "[fence_interpolation]Default interpolation is not nearest"
-		t.Error(msg)
-	}
+
+	require.Equalf(t, defaultInterpolation, nearestInterpolation, "Default interpolation is not nearest")
 }
 
 func TestInvalidInterpolationMethod(t *testing.T) {
+	options := "nearest, linear, cubic, angular or triangular"
+	expected := NewInvalidArgument(fmt.Sprintf(
+		"invalid interpolation method 'sand', valid options are: %s",
+		options,
+	))
+
 	interpolation := "sand"
 	_, err := GetInterpolationMethod(interpolation)
-	if err == nil {
-		msg := "[fence_interpolation]Expected fail given invalid interpolation method: %v"
-		t.Errorf(msg, interpolation)
-	} else {
-		options := "nearest, linear, cubic, angular or triangular"
-		expected := fmt.Sprintf("invalid interpolation method 'sand', valid options are: %s", options)
-		if err.Error() != expected {
-			msg := "Unexpected error message, expected \"%s\", was \"%s\""
-			t.Errorf(msg, expected, err.Error())
-		}
-	}
+
+	require.Equal(t, err, expected)
 }
 
 func TestFenceInterpolationCaseInsensitive(t *testing.T) {
 	expectedInterpolation, _ := GetInterpolationMethod("cubic")
 	interpolation, _ := GetInterpolationMethod("CuBiC")
-	if interpolation != expectedInterpolation {
-		msg := "[fence_interpolation]Fence interpolation is not case insensitive"
-		t.Error(msg)
-	}
+
+	require.Equal(t, interpolation, expectedInterpolation)
 }
 
 func TestOnly3DSupported(t *testing.T) {
@@ -899,7 +823,7 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 		result, err := toFloat32(buf[0])
 		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.Equalf(
+		require.Equalf(
 			t,
 			testcase.expected,
 			*result,
