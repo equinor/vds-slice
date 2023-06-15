@@ -183,6 +183,7 @@ func toError(status C.int, ctx *C.Context) error {
 	switch status {
 	case C.STATUS_NULLPTR_ERROR: fallthrough
 	case C.STATUS_RUNTIME_ERROR: return NewInternalError(msg)
+	case C.STATUS_BAD_REQUEST:   return NewInvalidArgument(msg)
 	default:
 		return errors.New(msg)
 	}

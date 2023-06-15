@@ -10,7 +10,8 @@ extern "C" {
 enum status_code {
     STATUS_OK = 0,
     STATUS_NULLPTR_ERROR,
-    STATUS_RUNTIME_ERROR
+    STATUS_RUNTIME_ERROR,
+    STATUS_BAD_REQUEST
 };
 
 /** Carry additional context between caller and functions

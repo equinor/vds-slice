@@ -103,10 +103,11 @@ type SliceRequest struct {
 	// - Annotation. Valid options: Inline, Crossline and Depth/Time/Sample
 	// - Index. Valid options: i, j and k.
 	//
-	// Only one of Depth, Time and Sample is valid for a given VDS. Which one
-	// depends on the depth units. E.g. Depth is a valid option for a VDS with
-	// depth unit "m" or "ft", but not if the units are "ms", "s".
-	// Sample is valid when the depth is unitless.
+	// When requesting z-slices using annotation it's recommended to use Depth
+	// or Time as they include validation against the VDS itself. I.e. the
+	// server returns an error if you request a time-slice from a depth cube
+	// and visa-versa. Use Sample if you don't care for such guarantees or as a
+	// fallback if the VDS file is wonky.
 	//
 	// i, j, k are zero-indexed and correspond to Inline, Crossline,
 	// Depth/Time/Sample, respectively.
