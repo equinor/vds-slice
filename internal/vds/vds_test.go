@@ -83,15 +83,11 @@ func TestMetadata(t *testing.T) {
 	handle, _ := NewVDSHandle(well_known)
 	defer handle.Close()
 	buf, err := handle.GetMetadata()
-	if err != nil {
-		t.Fatalf("Failed to retrive metadata, err %v", err)
-	}
+	require.NoErrorf(t, err, "Failed to retrive metadata, err %v", err)
 
 	var meta Metadata
 	err = json.Unmarshal(buf, &meta)
-	if err != nil {
-		t.Fatalf("Failed to unmarshall response, err: %v", err)
-	}
+	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
 
 	if !reflect.DeepEqual(meta, expected) {
 		t.Fatalf("Expected %v, got  %v", expected, meta)
@@ -134,18 +130,14 @@ func TestSliceData(t *testing.T) {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetSlice(testcase.lineno, testcase.direction)
-		if err != nil {
-			t.Errorf(
-				"[case: %v] Failed to fetch slice, err: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[case: %v] Failed to fetch slice, err: %v",
+			testcase.name,
+			err,
+		)
 
 		slice, err := toFloat32(buf)
-		if err != nil {
-			t.Errorf("[case: %v] Err: %v", testcase.name, err)
-		}
+		require.NoErrorf(t, err, "[case: %v] Err: %v", testcase.name, err)
 
 		if len(*slice) != len(testcase.expected) {
 			msg := "[case: %v] Expected slice of len: %v, got: %v"
@@ -340,23 +332,19 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetSliceMetadata(testcase.direction)
-		if err != nil {
-			t.Fatalf(
-				"[case: %v] Failed to get slice metadata, err: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[case: %v] Failed to get slice metadata, err: %v",
+			testcase.name,
+			err,
+		)
 
 		var meta SliceMetadata
 		err = json.Unmarshal(buf, &meta)
-		if err != nil {
-			t.Fatalf(
-				"[case: %v] Failed to unmarshall response, err: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[case: %v] Failed to unmarshall response, err: %v",
+			testcase.name,
+			err,
+		)
 
 		axis := []string{ meta.X.Annotation, meta.Y.Annotation }
 		for i, ax := range(testcase.expectedAxis) {
@@ -412,22 +400,15 @@ func TestFence(t *testing.T) {
 			testcase.coordinates,
 			interpolationMethod,
 		)
-		if err != nil {
-			t.Errorf(
-				"[coordinate_system: %v] Failed to fetch fence, err: %v",
-				testcase.coordinate_system,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[coordinate_system: %v] Failed to fetch fence, err: %v",
+			testcase.coordinate_system, err,
+		)
 
 		fence, err := toFloat32(buf)
-		if err != nil {
-			t.Errorf(
-				"[coordinate_system: %v] Err: %v",
-				testcase.coordinate_system,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[coordinate_system: %v] Err: %v", testcase.coordinate_system, err,
+		)
 
 		if len(*fence) != len(expected) {
 			msg := "[coordinate_system: %v] Expected fence of len: %v, got: %v"
@@ -582,22 +563,16 @@ func TestFenceNearestInterpolationSnap(t *testing.T) {
 			testcase.coordinates,
 			interpolationMethod,
 		)
-		if err != nil {
-			t.Errorf(
-				"[coordinate_system: %v] Failed to fetch fence, err: %v",
-				testcase.coordinate_system,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[coordinate_system: %v] Failed to fetch fence, err: %v",
+			testcase.coordinate_system,
+			err,
+		)
 
 		fence, err := toFloat32(buf)
-		if err != nil {
-			t.Errorf(
-				"[coordinate_system: %v] Err: %v",
-				testcase.coordinate_system,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[coordinate_system: %v] Err: %v", testcase.coordinate_system, err,
+		)
 
 		if len(*fence) != len(testcase.expected) {
 			msg := "[coordinate_system: %v] Expected fence of len: %v, got: %v"
@@ -767,9 +742,9 @@ func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 		interpolationMethod,
 	)
 	require.Len(t, buf, len(targetAttributes), "Wrong number of attributes")
-	require.NoError(t, err, "Failed to fetch horizon")
+	require.NoErrorf(t, err, "Failed to fetch horizon")
 	result, err := toFloat32(buf[0])
-	require.NoError(t, err, "Failed to covert to float32 buffer")
+	require.NoErrorf(t, err, "Failed to covert to float32 buffer")
 	require.Equalf(t, expected, *result, "Horizon not as expected")
 }
 
@@ -832,8 +807,8 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 			interpolationMethod,
 		)
 
-		if boundsErr != nil && testcase.inbounds {
-			t.Errorf(
+		if testcase.inbounds {
+			require.NoErrorf(t, boundsErr,
 				"[%s] Expected horizon value %f to be in bounds",
 				testcase.name,
 				testcase.horizon[0][0],
@@ -973,14 +948,16 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 			targetAttributes,
 			interpolationMethod,
 		)
-		if err != nil {
-			t.Errorf("[%s] Failed to fetch horizon, err: %v", testcase.name, err)
-		}
+		require.NoErrorf(t, err,
+			"[%s] Failed to fetch horizon, err: %v",
+			testcase.name,
+			err,
+		)
 
 		require.Len(t, buf, len(targetAttributes), "Wrong number of attributes")
 
 		result, err := toFloat32(buf[0])
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
 		assert.Equalf(
 			t,
@@ -1033,14 +1010,14 @@ func TestAttribute(t *testing.T) {
 		targetAttributes,
 		interpolationMethod,
 	)
-	require.NoError(t, err, "Failed to fetch horizon, err %v", err)
+	require.NoErrorf(t, err, "Failed to fetch horizon, err %v", err)
 	require.Len(t, buf, len(targetAttributes),
 		"Incorrect number of attributes returned",
 	)
 
 	for i, attr := range buf {
 		result, err := toFloat32(attr)
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
 		assert.InDeltaSlice(
 			t,
@@ -1112,7 +1089,7 @@ func TestAttributesAboveBelowStepSizeIgnoredForSampleValue(t *testing.T) {
 			targetAttributes,
 			interpolationMethod,
 		)
-		require.NoError(t, err,
+		require.NoErrorf(t, err,
 			"[%s] Failed to fetch horizon, err: %v", testCase.name, err,
 		)
 		require.Len(t, buf, len(targetAttributes),
@@ -1121,7 +1098,7 @@ func TestAttributesAboveBelowStepSizeIgnoredForSampleValue(t *testing.T) {
 
 		for i, attr := range buf {
 			result, err := toFloat32(attr)
-			require.NoError(t, err, "Couldn't convert to float32")
+			require.NoErrorf(t, err, "Couldn't convert to float32")
 
 			assert.InDeltaSlice(
 				t,
@@ -1230,7 +1207,7 @@ func TestAttributesUnaligned(t *testing.T) {
 			targetAttributes,
 			interpolationMethod,
 		)
-		require.NoError(t, err,
+		require.NoErrorf(t, err,
 			"[%s] Failed to fetch horizon, err: %v", testCase.name, err,
 		)
 		require.Len(t, buf, len(targetAttributes),
@@ -1239,7 +1216,7 @@ func TestAttributesUnaligned(t *testing.T) {
 
 		for i, attr := range buf {
 			result, err := toFloat32(attr)
-			require.NoError(t, err, "Couldn't convert to float32")
+			require.NoErrorf(t, err, "Couldn't convert to float32")
 
 			assert.InDeltaSlice(
 				t,
@@ -1356,7 +1333,7 @@ func TestAttributeSubsamplingAligned(t *testing.T) {
 			targetAttributes,
 			interpolationMethod,
 		)
-		require.NoError(t, err,
+		require.NoErrorf(t, err,
 			"[%s] Failed to fetch horizon, err: %v", testCase.name, err,
 		)
 		require.Len(t, buf, len(targetAttributes),
@@ -1365,7 +1342,7 @@ func TestAttributeSubsamplingAligned(t *testing.T) {
 
 		for i, attr := range buf {
 			result, err := toFloat32(attr)
-			require.NoError(t, err, "[%v] Couldn't convert to float32", testCase.name)
+			require.NoErrorf(t, err, "[%v] Couldn't convert to float32", testCase.name)
 
 			assert.InDeltaSlicef(
 				t,
@@ -1447,14 +1424,14 @@ func TestAttributesUnalignedAndSubsampled(t *testing.T) {
 		targetAttributes,
 		interpolationMethod,
 	)
-	require.NoError(t, err, "Failed to fetch horizon, err: %v", err)
+	require.NoErrorf(t, err, "Failed to fetch horizon, err: %v", err)
 	require.Len(t, buf, len(targetAttributes),
 		"Incorrect number of attributes returned",
 	)
 	
 	for i, attr := range buf {
 		result, err := toFloat32(attr)
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
 		assert.InDeltaSlice(
 			t,
@@ -1501,14 +1478,14 @@ func TestAttributesEverythingUnaligned(t *testing.T) {
 		targetAttributes,
 		interpolationMethod,
 	)
-	require.NoError(t, err, "Failed to fetch horizon, err: %v", err)
+	require.NoErrorf(t, err, "Failed to fetch horizon, err: %v", err)
 	require.Len(t, buf, len(targetAttributes),
 		"Incorrect number of attributes returned",
 	)
 	
 	for i, attr := range buf {
 		result, err := toFloat32(attr)
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
 		assert.InDeltaSlice(
 			t,
@@ -1555,14 +1532,14 @@ func TestAttributesSupersampling(t *testing.T) {
 		targetAttributes,
 		interpolationMethod,
 	)
-	require.NoError(t, err, "Failed to fetch horizon, err: %v", err)
+	require.NoErrorf(t, err, "Failed to fetch horizon, err: %v", err)
 	require.Len(t, buf, len(targetAttributes),
 		"Incorrect number of attributes returned",
 	)
 	
 	for i, attr := range buf {
 		result, err := toFloat32(attr)
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
 		assert.InDeltaSlice(
 			t,

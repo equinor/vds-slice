@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func newSliceRequest(
@@ -55,14 +56,14 @@ func TestSasIsOmmitedFromSliceHash(t *testing.T) {
 	request2 := newSliceRequest("some-path", "different-sas", "inline", 9961)
 
 	hash1, err := request1.Hash()
-	if err != nil {
-		t.Fatalf("Failed to compute hash, err: %v", err)
-	}
+	require.NoErrorf(t, err,
+		"Failed to compute hash, err: %v", err,
+	)
 
 	hash2, err := request2.Hash()
-	if err != nil {
-		t.Fatalf("Failed to compute hash, err: %v", err)
-	}
+	require.NoErrorf(t, err,
+		"Failed to compute hash, err: %v", err,
+	)
 
 	if hash1 != hash2 {
 		t.Fatalf("Expected hashes to be equal, was %v and %v", hash1, hash2)
@@ -86,14 +87,14 @@ func TestSasIsOmmitedFromFenceHash(t *testing.T) {
 	)
 
 	hash1, err := request1.Hash()
-	if err != nil {
-		t.Fatalf("Failed to compute hash, err: %v", err)
-	}
+	require.NoErrorf(t, err,
+		"Failed to compute hash, err: %v", err,
+	)
 	
 	hash2, err := request2.Hash()
-	if err != nil {
-		t.Fatalf("Failed to compute hash, err: %v", err)
-	}
+	require.NoErrorf(t, err,
+		"Failed to compute hash, err: %v", err,
+	)
 
 	if hash1 != hash2 {
 		t.Fatalf("Expected hashes to be equal, was %v and %v", hash1, hash2)
@@ -125,14 +126,14 @@ func TestSliceGivesUniqueHash(t *testing.T) {
 
 	for _, testCase := range testCases {
 		hash1, err := testCase.request1.Hash()
-		if err != nil {
-			t.Fatalf("[%s] Failed to compute hash, err: %v", testCase.name, err)
-		}
+		require.NoErrorf(t, err,
+			"[%s] Failed to compute hash, err: %v", testCase.name, err,
+		)
 		
 		hash2, err := testCase.request2.Hash()
-		if err != nil {
-			t.Fatalf("[%s] Failed to compute hash, err: %v", testCase.name, err)
-		}
+		require.NoErrorf(t, err,
+			"[%s] Failed to compute hash, err: %v", testCase.name, err,
+		)
 
 		if hash1 == hash2 {
 			t.Fatalf(
@@ -178,14 +179,14 @@ func TestFenceGivesUniqueHash(t *testing.T) {
 
 	for _, testCase := range testCases {
 		hash1, err := testCase.request1.Hash()
-		if err != nil {
-			t.Fatalf("[%s] Failed to compute hash, err: %v", testCase.name, err)
-		}
+		require.NoErrorf(t, err,
+			"[%s] Failed to compute hash, err: %v", testCase.name, err,
+		)
 		
 		hash2, err := testCase.request2.Hash()
-		if err != nil {
-			t.Fatalf("[%s] Failed to compute hash, err: %v", testCase.name, err)
-		}
+		require.NoErrorf(t, err,
+			"[%s] Failed to compute hash, err: %v", testCase.name, err,
+		)
 
 		if hash1 == hash2 {
 			t.Fatalf(
