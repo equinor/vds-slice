@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-	"strings"
 	"testing"
 "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -179,20 +178,8 @@ func TestSliceOutOfBounds(t *testing.T) {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
 		_, err := handle.GetSlice(testcase.lineno, testcase.direction)
-		if err == nil {
-			t.Errorf(
-				"[case: %v] Expected slice to fail",
-				testcase.name,
-			)
-		}
 
-		if !strings.Contains(err.Error(), "Invalid lineno") {
-			t.Errorf(
-				"[case: %v] Expected error to contain 'Invalid lineno', was: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.ErrorContains(t, err, "Invalid lineno")
 	}
 
 }
@@ -211,20 +198,8 @@ func TestSliceStridedLineno(t *testing.T) {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
 		_, err := handle.GetSlice(testcase.lineno, testcase.direction)
-		if err == nil {
-			t.Errorf(
-				"[case: %v] Expected slice to fail",
-				testcase.name,
-			)
-		}
-
-		if !strings.Contains(err.Error(), "Invalid lineno") {
-			t.Errorf(
-				"[case: %v] Expected error to contain 'Invalid lineno', was: %v",
-				testcase.name,
-				err,
-			)
-		}
+		
+		require.ErrorContains(t, err, "Invalid lineno")
 	}
 }
 
@@ -242,20 +217,7 @@ func TestSliceInvalidAxis(t *testing.T) {
 		defer handle.Close()
 		_, err := handle.GetSlice(0, testcase.direction)
 
-		if err == nil {
-			t.Errorf(
-				"[case: %v] Expected slice to fail",
-				testcase.name,
-			)
-		}
-
-		if !strings.Contains(err.Error(), "Unhandled axis") {
-			t.Errorf(
-				"[case: %s] Expected error to contain 'Unhandled axis', was: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.ErrorContains(t, err, "Unhandled axis")
 	}
 }
 
@@ -483,15 +445,7 @@ func TestFenceBorders(t *testing.T) {
 		defer handle.Close()
 		_, err := handle.GetFence(testcase.coordinate_system, testcase.coordinates, interpolationMethod)
 
-		if err == nil {
-			msg := "in testcase \"%s\" expected to fail given fence is out of bounds %v"
-			t.Errorf(msg, testcase.name, testcase.coordinates)
-		} else {
-			if !strings.Contains(err.Error(), testcase.err) {
-				msg := "Unexpected error message in testcase \"%s\", expected \"%s\", was \"%s\""
-				t.Errorf(msg, testcase.name, testcase.err, err.Error())
-			}
-		}
+		require.ErrorContainsf(t, err, testcase.err, "[case: %v]", testcase.name)
 	}
 }
 
@@ -610,16 +564,9 @@ func TestInvalidFence(t *testing.T) {
 	defer handle.Close()
 	_, err := handle.GetFence(CoordinateSystemIndex, fence, interpolationMethod)
 
-	if err == nil {
-		msg := "Expected to fail given invalid fence %v"
-		t.Errorf(msg, fence)
-	} else {
-		expected := "invalid coordinate [1 1 0] at position 1, expected [x y] pair"
-		if err.Error() != expected {
-			msg := "Unexpected error message, expected \"%s\", was \"%s\""
-			t.Errorf(msg, expected, err.Error())
-		}
-	}
+	require.ErrorContains(t, err,
+		"invalid coordinate [1 1 0] at position 1, expected [x y] pair",
+	)
 }
 
 /*
@@ -690,18 +637,11 @@ func TestFenceInterpolationCaseInsensitive(t *testing.T) {
 
 func TestOnly3DSupported(t *testing.T) {
 	handle, err := NewVDSHandle(prestack)
-	if err == nil {
-		t.Error("Expected open to fail")
+	if err != nil {
+		handle.Close()
 	}
 
-	defer handle.Close()
-
-	if !strings.Contains(err.Error(), "3 dimensions, got 4") {
-		t.Errorf(
-			"Expected error to contain '3 dimensions, got 4', was: %v",
-			err,
-		)
-	}
+	require.ErrorContains(t, err, "3 dimensions, got 4")
 }
 
 func TestSurfaceUnalignedWithSeismic(t *testing.T) {
