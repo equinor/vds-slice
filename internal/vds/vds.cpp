@@ -222,7 +222,8 @@ void fetch_fence(
         const float y = *(coordinates++);
 
         auto coordinate = coordinate_transformer.ToOpenvdsPosition(
-            {x, y, OpenvdsVoxelVector::NOVALUE}, coordinate_system);
+            {x, y, OpenvdsVoxelVector::NOVALUE}, coordinate_system
+        );
 
         if (coordinate_transformer.IsOpenvdsPositionOutOfRange(coordinate)) {
             const std::string coordinate_str =
