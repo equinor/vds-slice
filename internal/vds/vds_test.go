@@ -271,12 +271,14 @@ func TestDepthAxis(t *testing.T) {
 	testcases := []struct{
 			name      string
 			direction int
-			err       string
+			err       error
 	} {
 		{
 			name: "Depth",
 			direction: AxisDepth,
-			err: "Cannot fetch depth slice for VDS file with vertical axis unit: ms",
+			err: NewInvalidArgument(
+				"Cannot fetch depth slice for VDS file with vertical axis unit: ms",
+			),
 		},
 	}
 
@@ -285,21 +287,7 @@ func TestDepthAxis(t *testing.T) {
 		defer handle.Close()
 		_, err := handle.GetSlice(0, testcase.direction)
 
-		if err == nil {
-			t.Errorf(
-				"[case: %v] Expected slice to fail",
-				testcase.name,
-			)
-		}
-
-		if !strings.Contains(err.Error(), testcase.err) {
-			t.Errorf(
-				"[case: %s] Expected error to contain '%s', was: %v",
-				testcase.name,
-				testcase.err,
-				err,
-			)
-		}
+		require.Equal(t, err, testcase.err)
 	}
 }
 
