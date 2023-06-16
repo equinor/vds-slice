@@ -130,14 +130,10 @@ func TestSliceGivesUniqueHash(t *testing.T) {
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
 
-		if hash1 == hash2 {
-			t.Fatalf(
-				"[%s] Expected unique hashes, got: %v == %v",
-				testCase.name,
-				hash1,
-				hash2,
-			)
-		}
+		require.NotEqualf(t, hash1, hash2,
+			"[%s] Expected unique hashes",
+			testCase.name,
+		)
 	}
 }
 
@@ -183,14 +179,10 @@ func TestFenceGivesUniqueHash(t *testing.T) {
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
 
-		if hash1 == hash2 {
-			t.Fatalf(
-				"[%s] Expected unique hashes, got: %v == %v",
-				testCase.name,
-				hash1,
-				hash2,
-			)
-		}
+		require.NotEqualf(t, hash1, hash2,
+			"[%s] Expected unique hashes",
+			testCase.name,
+		)
 	}
 }
 

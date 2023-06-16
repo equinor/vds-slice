@@ -517,17 +517,8 @@ func TestFenceInterpolation(t *testing.T) {
 		for _, v2 := range interpolationMethods[i+1:] {
 			interpolationMethod, _ := GetInterpolationMethod(v2)
 			buf2, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod)
-			different := false
-			for k := range buf1 {
-				if buf1[k] != buf2[k] {
-					different = true
-					break
-				}
-			}
-			if !different {
-				msg := "[fence_interpolation]Expected %v interpolation and %v interpolation to be different"
-				t.Errorf(msg, v1, v2)
-			}
+
+			require.NotEqual(t, buf1, buf2)
 		}
 	}
 }
