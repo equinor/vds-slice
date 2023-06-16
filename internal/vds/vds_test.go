@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"math"
 	"testing"
-"github.com/stretchr/testify/assert"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -883,7 +883,7 @@ func TestAttribute(t *testing.T) {
 		result, err := toFloat32(attr)
 		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.InDeltaSlice(
+		require.InDeltaSlice(
 			t,
 			expected[i],
 			*result,
@@ -964,7 +964,7 @@ func TestAttributesAboveBelowStepSizeIgnoredForSampleValue(t *testing.T) {
 			result, err := toFloat32(attr)
 			require.NoErrorf(t, err, "Couldn't convert to float32")
 
-			assert.InDeltaSlice(
+			require.InDeltaSlice(
 				t,
 				expected[i],
 				*result,
@@ -1082,7 +1082,7 @@ func TestAttributesUnaligned(t *testing.T) {
 			result, err := toFloat32(attr)
 			require.NoErrorf(t, err, "Couldn't convert to float32")
 
-			assert.InDeltaSlice(
+			require.InDeltaSlice(
 				t,
 				testCase.expected[i],
 				*result,
@@ -1208,7 +1208,7 @@ func TestAttributeSubsamplingAligned(t *testing.T) {
 			result, err := toFloat32(attr)
 			require.NoErrorf(t, err, "[%v] Couldn't convert to float32", testCase.name)
 
-			assert.InDeltaSlicef(
+			require.InDeltaSlicef(
 				t,
 				expected[i],
 				*result,
@@ -1297,7 +1297,7 @@ func TestAttributesUnalignedAndSubsampled(t *testing.T) {
 		result, err := toFloat32(attr)
 		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.InDeltaSlice(
+		require.InDeltaSlice(
 			t,
 			expected[i],
 			*result,
@@ -1351,7 +1351,7 @@ func TestAttributesEverythingUnaligned(t *testing.T) {
 		result, err := toFloat32(attr)
 		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.InDeltaSlice(
+		require.InDeltaSlice(
 			t,
 			expected[i],
 			*result,
@@ -1405,7 +1405,7 @@ func TestAttributesSupersampling(t *testing.T) {
 		result, err := toFloat32(attr)
 		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.InDeltaSlice(
+		require.InDeltaSlice(
 			t,
 			expected[i],
 			*result,

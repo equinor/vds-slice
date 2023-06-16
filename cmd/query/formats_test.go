@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -70,7 +69,7 @@ func TestSupportedFormats(t *testing.T) {
 		require.NoError(t, json.Unmarshal(parts[0], &metadata))
 		format := metadata["format"]
 
-		assert.Equalf(t, "<f4", format,
+		require.Equalf(t, "<f4", format,
 			"Test '%v'. Expected format to be <f4, was %v",
 			testcase.base().name, format)
 
@@ -86,7 +85,7 @@ func TestSupportedFormats(t *testing.T) {
 		expected := []float32{108, 109, 110, 111, 112, 113, 114, 115}
 		actual := toLittleEndianFloat32(parts[1], len(expected))
 
-		assert.Equalf(t, expected, actual,
+		require.Equalf(t, expected, actual,
 			"Test '%v'. Expected %v, was %v",
 			testcase.base().name, expected, actual)
 	}

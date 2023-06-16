@@ -3,7 +3,6 @@ package api
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -239,10 +238,10 @@ func TestExtractSasFromUrl(t *testing.T) {
 	for _, testCase := range testCases {
 		err := testCase.request.NormalizeConnection()
 		if testCase.shouldError {
-			assert.ErrorContains(t, err, testCase.expected)
+			require.ErrorContains(t, err, testCase.expected)
 		} else {
-			assert.NoError(t, err)
-			assert.Equal(t, testCase.expected, testCase.request.Sas)
+			require.NoError(t, err)
+			require.Equal(t, testCase.expected, testCase.request.Sas)
 		}
 	}
 }
