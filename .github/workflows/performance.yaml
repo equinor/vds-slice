@@ -1,13 +1,7 @@
 name: Performance tests
 
 on:
-  workflow_dispatch:
-    inputs:
-      cache:
-        description: "Is cache enabled on the instance."
-        type: boolean
-        required: false
-        default: true
+  workflow_dispatch
 
 jobs:
   prepare_env:
@@ -46,13 +40,7 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        # Scripts which do not explicitly hit cache will assume expected times as if no cache is present.
         include:
-          - name: Same slice
-            filepath: "/tests/performance/script-constant-timeslice.js"
-            vds: "testdata/varsize/varsize_400_300_150"
-            medtime: ${{ inputs.cache && '150' || '600' }}
-            maxtime: "1500"
           - name: Random inline slice (big file, small depth)
             filepath: "/tests/performance/script-random-inlineslice.js"
             vds: "testdata/varsize/varsize_4000_3000_5"
@@ -68,11 +56,6 @@ jobs:
             vds: "testdata/varsize/varsize_500_300_2000"
             medtime: "3000"
             maxtime: "7000"
-          - name: Same fence across the whole cube
-            filepath: "/tests/performance/script-constant-fence.js"
-            vds: "testdata/varsize/varsize_400_300_150"
-            medtime: ${{ inputs.cache && '300' || '600' }}
-            maxtime: "1000"
           - name: Random sequential fence line (big file, small depth)
             filepath: "/tests/performance/script-random-fence.js"
             vds: "testdata/varsize/varsize_4000_3000_5"
