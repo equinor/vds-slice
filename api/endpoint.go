@@ -55,7 +55,7 @@ type Endpoint struct {
 	Cache             cache.Cache
 }
 
-func prepareRequestLogging(ctx *gin.Context, request Request) {
+func prepareRequestLogging(ctx *gin.Context, request Stringable) {
 	// ignore possible errors as they should not change outcome for the user
 	requestString, _ := request.toString()
 	ctx.Set("request", requestString)
@@ -234,7 +234,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	writeResponse(ctx, metadata, data)
 }
 
-func parseGetRequest(ctx *gin.Context, v interface{}) error {
+func parseGetRequest(ctx *gin.Context, v Normalizable) error {
 	if err := json.Unmarshal([]byte(ctx.Query("query")), v); err != nil {
 		return vds.NewInvalidArgument(err.Error())
 	}
@@ -243,14 +243,14 @@ func parseGetRequest(ctx *gin.Context, v interface{}) error {
 		return vds.NewInvalidArgument(err.Error())
 	}
 
-	return nil
+	return v.NormalizeConnection()
 }
 
-func parsePostRequest(ctx *gin.Context, request interface{}) error {
-	if err := ctx.ShouldBind(&request); err != nil {
+func parsePostRequest(ctx *gin.Context, v Normalizable) error {
+	if err := ctx.ShouldBind(v); err != nil {
 		return vds.NewInvalidArgument(err.Error())
 	}
-	return nil
+	return v.NormalizeConnection()
 }
 
 func (e *Endpoint) Health(ctx *gin.Context) {

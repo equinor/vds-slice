@@ -2,6 +2,8 @@ package api
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func newSliceRequest(
@@ -35,6 +37,16 @@ func newFenceRequest(
 		CoordinateSystem: coordinateSystem,
 		Coordinates:      coordinates,
 		Interpolation:    interpolation,
+	}
+}
+
+func newRequestedResource(
+	vds string,
+	sas string,
+) RequestedResource {
+	return RequestedResource{
+		Vds: vds,
+		Sas: sas,
 	}
 }
 
@@ -182,6 +194,58 @@ func TestFenceGivesUniqueHash(t *testing.T) {
 				hash1,
 				hash2,
 			)
+		}
+	}
+}
+
+func TestExtractSasFromUrl(t *testing.T) {
+
+	testCases := []struct {
+		request     RequestedResource
+		expected    string
+		shouldError bool
+	}{
+		{
+			request: newRequestedResource(
+				"../../testdata/well_known/well_known_default.vds",
+				"sastoken1",
+			),
+			expected:    "sastoken1",
+			shouldError: false,
+		},
+		{
+			request: newRequestedResource(
+				"../../testdata/well_known/well_known_default.vds?sastoken2",
+				"",
+			),
+			expected:    "sastoken2",
+			shouldError: false,
+		},
+		{
+			request: newRequestedResource(
+				"../../testdata/well_known/well_known_default.vds?sastoken2",
+				"sastoken1",
+			),
+			expected:    "sastoken1",
+			shouldError: false,
+		},
+		{
+			request: newRequestedResource(
+				"../../testdata/well_known/well_known_default.vds",
+				"",
+			),
+			expected:    "No valid Sas token is found in the request",
+			shouldError: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		err := testCase.request.NormalizeConnection()
+		if testCase.shouldError {
+			assert.ErrorContains(t, err, testCase.expected)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expected, testCase.request.Sas)
 		}
 	}
 }
