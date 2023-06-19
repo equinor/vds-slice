@@ -670,8 +670,8 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 			)
 		}
 	
-		if boundsErr == nil && !testcase.inbounds {
-			t.Errorf(
+		if !testcase.inbounds {
+			require.Errorf(t, boundsErr,
 				"[%s] Expected horizon value %f to throw out of bound",
 				testcase.name,
 				testcase.horizon[0][0],
