@@ -217,9 +217,7 @@ func setupTest(t *testing.T, testcase endpointTest) *httptest.ResponseRecorder {
 
 func readMultipartData(t *testing.T, w *httptest.ResponseRecorder) [][]byte {
 	_, params, err := mime.ParseMediaType(w.Result().Header.Get("Content-Type"))
-	if err != nil {
-		t.Fatalf("Cannot parse Content Type")
-	}
+	require.NoErrorf(t, err, "Cannot parse Content Type")
 	mr := multipart.NewReader(w.Body, params["boundary"])
 
 	parts := [][]byte{}
@@ -228,13 +226,9 @@ func readMultipartData(t *testing.T, w *httptest.ResponseRecorder) [][]byte {
 		if err == io.EOF {
 			return parts
 		}
-		if err != nil {
-			t.Fatalf("Couldn't process part")
-		}
+		require.NoErrorf(t, err, "Couldn't process part")
 		data, err := io.ReadAll(p)
-		if err != nil {
-			t.Fatalf("Couldn't read part")
-		}
+		require.NoErrorf(t, err, "Couldn't read part")
 		parts = append(parts, data)
 	}
 }
@@ -244,9 +238,7 @@ func prepareRequest(ctx *gin.Context, t *testing.T, testcase endpointTest) {
 	if jsonRequest == "" {
 		var err error
 		jsonRequest, err = testcase.requestAsJSON()
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 	}
 
 	switch method := testcase.base().method; method {

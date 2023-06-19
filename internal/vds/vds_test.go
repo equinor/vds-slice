@@ -6,10 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"reflect"
-	"strings"
 	"testing"
-"github.com/stretchr/testify/assert"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -83,19 +81,13 @@ func TestMetadata(t *testing.T) {
 	handle, _ := NewVDSHandle(well_known)
 	defer handle.Close()
 	buf, err := handle.GetMetadata()
-	if err != nil {
-		t.Fatalf("Failed to retrive metadata, err %v", err)
-	}
+	require.NoErrorf(t, err, "Failed to retrive metadata, err %v", err)
 
 	var meta Metadata
 	err = json.Unmarshal(buf, &meta)
-	if err != nil {
-		t.Fatalf("Failed to unmarshall response, err: %v", err)
-	}
+	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
 
-	if !reflect.DeepEqual(meta, expected) {
-		t.Fatalf("Expected %v, got  %v", expected, meta)
-	}
+	require.Equal(t, meta, expected)
 }
 
 func TestSliceData(t *testing.T) {
@@ -134,32 +126,16 @@ func TestSliceData(t *testing.T) {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetSlice(testcase.lineno, testcase.direction)
-		if err != nil {
-			t.Errorf(
-				"[case: %v] Failed to fetch slice, err: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[case: %v] Failed to fetch slice, err: %v",
+			testcase.name,
+			err,
+		)
 
 		slice, err := toFloat32(buf)
-		if err != nil {
-			t.Errorf("[case: %v] Err: %v", testcase.name, err)
-		}
-
-		if len(*slice) != len(testcase.expected) {
-			msg := "[case: %v] Expected slice of len: %v, got: %v"
-			t.Errorf(msg, testcase.name, len(testcase.expected), len(*slice))
-		}
-
-		for i, x := range(*slice) {
-			if (x == testcase.expected[i]) {
-				continue
-			}
-
-			msg := "[case: %v] Expected %v in pos %v, got: %v"
-			t.Errorf(msg, testcase.name, testcase.expected[i], i, x)
-		}
+		require.NoErrorf(t, err, "[case: %v] Err: %v", testcase.name, err)
+	
+		require.Equalf(t, testcase.expected, *slice, "[case: %v]", testcase.name)
 	}
 }
 
@@ -187,20 +163,8 @@ func TestSliceOutOfBounds(t *testing.T) {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
 		_, err := handle.GetSlice(testcase.lineno, testcase.direction)
-		if err == nil {
-			t.Errorf(
-				"[case: %v] Expected slice to fail",
-				testcase.name,
-			)
-		}
 
-		if !strings.Contains(err.Error(), "Invalid lineno") {
-			t.Errorf(
-				"[case: %v] Expected error to contain 'Invalid lineno', was: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.ErrorContains(t, err, "Invalid lineno")
 	}
 
 }
@@ -219,20 +183,8 @@ func TestSliceStridedLineno(t *testing.T) {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
 		_, err := handle.GetSlice(testcase.lineno, testcase.direction)
-		if err == nil {
-			t.Errorf(
-				"[case: %v] Expected slice to fail",
-				testcase.name,
-			)
-		}
-
-		if !strings.Contains(err.Error(), "Invalid lineno") {
-			t.Errorf(
-				"[case: %v] Expected error to contain 'Invalid lineno', was: %v",
-				testcase.name,
-				err,
-			)
-		}
+		
+		require.ErrorContains(t, err, "Invalid lineno")
 	}
 }
 
@@ -250,20 +202,7 @@ func TestSliceInvalidAxis(t *testing.T) {
 		defer handle.Close()
 		_, err := handle.GetSlice(0, testcase.direction)
 
-		if err == nil {
-			t.Errorf(
-				"[case: %v] Expected slice to fail",
-				testcase.name,
-			)
-		}
-
-		if !strings.Contains(err.Error(), "Unhandled axis") {
-			t.Errorf(
-				"[case: %s] Expected error to contain 'Unhandled axis', was: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.ErrorContains(t, err, "Unhandled axis")
 	}
 }
 
@@ -340,35 +279,23 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetSliceMetadata(testcase.direction)
-		if err != nil {
-			t.Fatalf(
-				"[case: %v] Failed to get slice metadata, err: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[case: %v] Failed to get slice metadata, err: %v",
+			testcase.name,
+			err,
+		)
 
 		var meta SliceMetadata
 		err = json.Unmarshal(buf, &meta)
-		if err != nil {
-			t.Fatalf(
-				"[case: %v] Failed to unmarshall response, err: %v",
-				testcase.name,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[case: %v] Failed to unmarshall response, err: %v",
+			testcase.name,
+			err,
+		)
 
 		axis := []string{ meta.X.Annotation, meta.Y.Annotation }
-		for i, ax := range(testcase.expectedAxis) {
-			if ax != axis[i] {
-				t.Fatalf(
-					"[case: %v] Expected axis to be %v, got %v",
-					testcase.name,
-					testcase.expectedAxis,
-					axis,
-				)
-			}
-		}
+
+		require.Equalf(t, testcase.expectedAxis, axis, "[case: %v]", testcase.name)
 	}
 }
 
@@ -412,47 +339,17 @@ func TestFence(t *testing.T) {
 			testcase.coordinates,
 			interpolationMethod,
 		)
-		if err != nil {
-			t.Errorf(
-				"[coordinate_system: %v] Failed to fetch fence, err: %v",
-				testcase.coordinate_system,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[coordinate_system: %v] Failed to fetch fence, err: %v",
+			testcase.coordinate_system, err,
+		)
 
 		fence, err := toFloat32(buf)
-		if err != nil {
-			t.Errorf(
-				"[coordinate_system: %v] Err: %v",
-				testcase.coordinate_system,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[coordinate_system: %v] Err: %v", testcase.coordinate_system, err,
+		)
 
-		if len(*fence) != len(expected) {
-			msg := "[coordinate_system: %v] Expected fence of len: %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.coordinate_system,
-				len(expected),
-				len(*fence),
-			)
-		}
-
-		for i, x := range(*fence) {
-			if (x == expected[i]) {
-				continue
-			}
-
-			msg := "[coordinate_system: %v] Expected %v in pos %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.coordinate_system,
-				expected[i],
-				i,
-				x,
-			)
-		}
+		require.Equalf(t, expected, *fence, "Incorrect fence")
 	}
 }
 
@@ -462,37 +359,37 @@ func TestFenceBorders(t *testing.T) {
 		coordinate_system int
 		coordinates       [][]float32
 		interpolation     string
-		error             string
+		err               string
 	}{
 		{
 			name:              "coordinate 2 is just-out-of-upper-bound in direction 0",
 			coordinate_system: CoordinateSystemAnnotation,
 			coordinates:       [][]float32{{5, 9.5}, {6, 11.25}},
-			error:             "is out of boundaries in dimension 0.",
+			err:               "is out of boundaries in dimension 0.",
 		},
 		{
 			name:              "coordinate 1 is just-out-of-upper-bound in direction 1",
 			coordinate_system: CoordinateSystemAnnotation,
 			coordinates:       [][]float32{{5.5, 11.5}, {3, 10}},
-			error:             "is out of boundaries in dimension 1.",
+			err:               "is out of boundaries in dimension 1.",
 		},
 		{
 			name:              "coordinate is long way out of upper-bound in both directions",
 			coordinate_system: CoordinateSystemCdp,
 			coordinates:       [][]float32{{700, 1200}},
-			error:             "is out of boundaries in dimension 0.",
+			err:               "is out of boundaries in dimension 0.",
 		},
 		{
 			name:              "coordinate 2 is just-out-of-lower-bound in direction 1",
 			coordinate_system: CoordinateSystemAnnotation,
 			coordinates:       [][]float32{{0, 11}, {5.9999, 10}, {0.0001, 9.4999}},
-			error:             "is out of boundaries in dimension 1.",
+			err:               "is out of boundaries in dimension 1.",
 		},
 		{
 			name:              "negative coordinate 1 is out-of-lower-bound in direction 0",
 			coordinate_system: CoordinateSystemIndex,
 			coordinates:       [][]float32{{-1, 0}, {-3, 0}},
-			error:             "is out of boundaries in dimension 0.",
+			err:               "is out of boundaries in dimension 0.",
 		},
 	}
 
@@ -502,15 +399,7 @@ func TestFenceBorders(t *testing.T) {
 		defer handle.Close()
 		_, err := handle.GetFence(testcase.coordinate_system, testcase.coordinates, interpolationMethod)
 
-		if err == nil {
-			msg := "in testcase \"%s\" expected to fail given fence is out of bounds %v"
-			t.Errorf(msg, testcase.name, testcase.coordinates)
-		} else {
-			if !strings.Contains(err.Error(), testcase.error) {
-				msg := "Unexpected error message in testcase \"%s\", expected \"%s\", was \"%s\""
-				t.Errorf(msg, testcase.name, testcase.error, err.Error())
-			}
-		}
+		require.ErrorContainsf(t, err, testcase.err, "[case: %v]", testcase.name)
 	}
 }
 
@@ -582,47 +471,18 @@ func TestFenceNearestInterpolationSnap(t *testing.T) {
 			testcase.coordinates,
 			interpolationMethod,
 		)
-		if err != nil {
-			t.Errorf(
-				"[coordinate_system: %v] Failed to fetch fence, err: %v",
-				testcase.coordinate_system,
-				err,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[coordinate_system: %v] Failed to fetch fence, err: %v",
+			testcase.coordinate_system,
+			err,
+		)
 
 		fence, err := toFloat32(buf)
-		if err != nil {
-			t.Errorf(
-				"[coordinate_system: %v] Err: %v",
-				testcase.coordinate_system,
-				err,
-			)
-		}
-
-		if len(*fence) != len(testcase.expected) {
-			msg := "[coordinate_system: %v] Expected fence of len: %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.coordinate_system,
-				len(testcase.expected),
-				len(*fence),
-			)
-		}
-
-		for i, x := range *fence {
-			if x == testcase.expected[i] {
-				continue
-			}
-
-			msg := "[coordinate_system: %v] Expected %v in pos %v, got: %v"
-			t.Errorf(
-				msg,
-				testcase.coordinate_system,
-				testcase.expected[i],
-				i,
-				x,
-			)
-		}
+		require.NoErrorf(t, err,
+			"[coordinate_system: %v] Err: %v", testcase.coordinate_system, err,
+		)
+		
+		require.Equalf(t, testcase.expected, *fence, "Incorrect fence")
 	}
 }
 
@@ -635,16 +495,9 @@ func TestInvalidFence(t *testing.T) {
 	defer handle.Close()
 	_, err := handle.GetFence(CoordinateSystemIndex, fence, interpolationMethod)
 
-	if err == nil {
-		msg := "Expected to fail given invalid fence %v"
-		t.Errorf(msg, fence)
-	} else {
-		expected := "invalid coordinate [1 1 0] at position 1, expected [x y] pair"
-		if err.Error() != expected {
-			msg := "Unexpected error message, expected \"%s\", was \"%s\""
-			t.Errorf(msg, expected, err.Error())
-		}
-	}
+	require.ErrorContains(t, err,
+		"invalid coordinate [1 1 0] at position 1, expected [x y] pair",
+	)
 }
 
 /*
@@ -664,17 +517,8 @@ func TestFenceInterpolation(t *testing.T) {
 		for _, v2 := range interpolationMethods[i+1:] {
 			interpolationMethod, _ := GetInterpolationMethod(v2)
 			buf2, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod)
-			different := false
-			for k := range buf1 {
-				if buf1[k] != buf2[k] {
-					different = true
-					break
-				}
-			}
-			if !different {
-				msg := "[fence_interpolation]Expected %v interpolation and %v interpolation to be different"
-				t.Errorf(msg, v1, v2)
-			}
+
+			require.NotEqual(t, buf1, buf2)
 		}
 	}
 }
@@ -682,51 +526,37 @@ func TestFenceInterpolation(t *testing.T) {
 func TestFenceInterpolationDefaultIsNearest(t *testing.T) {
 	defaultInterpolation, _ := GetInterpolationMethod("")
 	nearestInterpolation, _ := GetInterpolationMethod("nearest")
-	if defaultInterpolation != nearestInterpolation {
-		msg := "[fence_interpolation]Default interpolation is not nearest"
-		t.Error(msg)
-	}
+
+	require.Equalf(t, defaultInterpolation, nearestInterpolation, "Default interpolation is not nearest")
 }
 
 func TestInvalidInterpolationMethod(t *testing.T) {
+	options := "nearest, linear, cubic, angular or triangular"
+	expected := NewInvalidArgument(fmt.Sprintf(
+		"invalid interpolation method 'sand', valid options are: %s",
+		options,
+	))
+
 	interpolation := "sand"
 	_, err := GetInterpolationMethod(interpolation)
-	if err == nil {
-		msg := "[fence_interpolation]Expected fail given invalid interpolation method: %v"
-		t.Errorf(msg, interpolation)
-	} else {
-		options := "nearest, linear, cubic, angular or triangular"
-		expected := fmt.Sprintf("invalid interpolation method 'sand', valid options are: %s", options)
-		if err.Error() != expected {
-			msg := "Unexpected error message, expected \"%s\", was \"%s\""
-			t.Errorf(msg, expected, err.Error())
-		}
-	}
+
+	require.Equal(t, err, expected)
 }
 
 func TestFenceInterpolationCaseInsensitive(t *testing.T) {
 	expectedInterpolation, _ := GetInterpolationMethod("cubic")
 	interpolation, _ := GetInterpolationMethod("CuBiC")
-	if interpolation != expectedInterpolation {
-		msg := "[fence_interpolation]Fence interpolation is not case insensitive"
-		t.Error(msg)
-	}
+
+	require.Equal(t, interpolation, expectedInterpolation)
 }
 
 func TestOnly3DSupported(t *testing.T) {
 	handle, err := NewVDSHandle(prestack)
-	if err == nil {
-		t.Error("Expected open to fail")
+	if err != nil {
+		handle.Close()
 	}
 
-	defer handle.Close()
-
-	if !strings.Contains(err.Error(), "3 dimensions, got 4") {
-		t.Errorf(
-			"Expected error to contain '3 dimensions, got 4', was: %v",
-			err,
-		)
-	}
+	require.ErrorContains(t, err, "3 dimensions, got 4")
 }
 
 func TestSurfaceUnalignedWithSeismic(t *testing.T) {
@@ -767,9 +597,9 @@ func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 		interpolationMethod,
 	)
 	require.Len(t, buf, len(targetAttributes), "Wrong number of attributes")
-	require.NoError(t, err, "Failed to fetch horizon")
+	require.NoErrorf(t, err, "Failed to fetch horizon")
 	result, err := toFloat32(buf[0])
-	require.NoError(t, err, "Failed to covert to float32 buffer")
+	require.NoErrorf(t, err, "Failed to covert to float32 buffer")
 	require.Equalf(t, expected, *result, "Horizon not as expected")
 }
 
@@ -832,16 +662,16 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 			interpolationMethod,
 		)
 
-		if boundsErr != nil && testcase.inbounds {
-			t.Errorf(
+		if testcase.inbounds {
+			require.NoErrorf(t, boundsErr,
 				"[%s] Expected horizon value %f to be in bounds",
 				testcase.name,
 				testcase.horizon[0][0],
 			)
 		}
 	
-		if boundsErr == nil && !testcase.inbounds {
-			t.Errorf(
+		if !testcase.inbounds {
+			require.Errorf(t, boundsErr,
 				"[%s] Expected horizon value %f to throw out of bound",
 				testcase.name,
 				testcase.horizon[0][0],
@@ -973,16 +803,18 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 			targetAttributes,
 			interpolationMethod,
 		)
-		if err != nil {
-			t.Errorf("[%s] Failed to fetch horizon, err: %v", testcase.name, err)
-		}
+		require.NoErrorf(t, err,
+			"[%s] Failed to fetch horizon, err: %v",
+			testcase.name,
+			err,
+		)
 
 		require.Len(t, buf, len(targetAttributes), "Wrong number of attributes")
 
 		result, err := toFloat32(buf[0])
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.Equalf(
+		require.Equalf(
 			t,
 			testcase.expected,
 			*result,
@@ -1033,16 +865,16 @@ func TestAttribute(t *testing.T) {
 		targetAttributes,
 		interpolationMethod,
 	)
-	require.NoError(t, err, "Failed to fetch horizon, err %v", err)
+	require.NoErrorf(t, err, "Failed to fetch horizon, err %v", err)
 	require.Len(t, buf, len(targetAttributes),
 		"Incorrect number of attributes returned",
 	)
 
 	for i, attr := range buf {
 		result, err := toFloat32(attr)
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.InDeltaSlice(
+		require.InDeltaSlicef(
 			t,
 			expected[i],
 			*result,
@@ -1112,7 +944,7 @@ func TestAttributesAboveBelowStepSizeIgnoredForSampleValue(t *testing.T) {
 			targetAttributes,
 			interpolationMethod,
 		)
-		require.NoError(t, err,
+		require.NoErrorf(t, err,
 			"[%s] Failed to fetch horizon, err: %v", testCase.name, err,
 		)
 		require.Len(t, buf, len(targetAttributes),
@@ -1121,9 +953,9 @@ func TestAttributesAboveBelowStepSizeIgnoredForSampleValue(t *testing.T) {
 
 		for i, attr := range buf {
 			result, err := toFloat32(attr)
-			require.NoError(t, err, "Couldn't convert to float32")
+			require.NoErrorf(t, err, "Couldn't convert to float32")
 
-			assert.InDeltaSlice(
+			require.InDeltaSlicef(
 				t,
 				expected[i],
 				*result,
@@ -1230,7 +1062,7 @@ func TestAttributesUnaligned(t *testing.T) {
 			targetAttributes,
 			interpolationMethod,
 		)
-		require.NoError(t, err,
+		require.NoErrorf(t, err,
 			"[%s] Failed to fetch horizon, err: %v", testCase.name, err,
 		)
 		require.Len(t, buf, len(targetAttributes),
@@ -1239,9 +1071,9 @@ func TestAttributesUnaligned(t *testing.T) {
 
 		for i, attr := range buf {
 			result, err := toFloat32(attr)
-			require.NoError(t, err, "Couldn't convert to float32")
+			require.NoErrorf(t, err, "Couldn't convert to float32")
 
-			assert.InDeltaSlice(
+			require.InDeltaSlicef(
 				t,
 				testCase.expected[i],
 				*result,
@@ -1356,7 +1188,7 @@ func TestAttributeSubsamplingAligned(t *testing.T) {
 			targetAttributes,
 			interpolationMethod,
 		)
-		require.NoError(t, err,
+		require.NoErrorf(t, err,
 			"[%s] Failed to fetch horizon, err: %v", testCase.name, err,
 		)
 		require.Len(t, buf, len(targetAttributes),
@@ -1365,9 +1197,9 @@ func TestAttributeSubsamplingAligned(t *testing.T) {
 
 		for i, attr := range buf {
 			result, err := toFloat32(attr)
-			require.NoError(t, err, "[%v] Couldn't convert to float32", testCase.name)
+			require.NoErrorf(t, err, "[%v] Couldn't convert to float32", testCase.name)
 
-			assert.InDeltaSlicef(
+			require.InDeltaSlicef(
 				t,
 				expected[i],
 				*result,
@@ -1447,16 +1279,16 @@ func TestAttributesUnalignedAndSubsampled(t *testing.T) {
 		targetAttributes,
 		interpolationMethod,
 	)
-	require.NoError(t, err, "Failed to fetch horizon, err: %v", err)
+	require.NoErrorf(t, err, "Failed to fetch horizon, err: %v", err)
 	require.Len(t, buf, len(targetAttributes),
 		"Incorrect number of attributes returned",
 	)
 	
 	for i, attr := range buf {
 		result, err := toFloat32(attr)
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.InDeltaSlice(
+		require.InDeltaSlicef(
 			t,
 			expected[i],
 			*result,
@@ -1501,16 +1333,16 @@ func TestAttributesEverythingUnaligned(t *testing.T) {
 		targetAttributes,
 		interpolationMethod,
 	)
-	require.NoError(t, err, "Failed to fetch horizon, err: %v", err)
+	require.NoErrorf(t, err, "Failed to fetch horizon, err: %v", err)
 	require.Len(t, buf, len(targetAttributes),
 		"Incorrect number of attributes returned",
 	)
 	
 	for i, attr := range buf {
 		result, err := toFloat32(attr)
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.InDeltaSlice(
+		require.InDeltaSlicef(
 			t,
 			expected[i],
 			*result,
@@ -1555,16 +1387,16 @@ func TestAttributesSupersampling(t *testing.T) {
 		targetAttributes,
 		interpolationMethod,
 	)
-	require.NoError(t, err, "Failed to fetch horizon, err: %v", err)
+	require.NoErrorf(t, err, "Failed to fetch horizon, err: %v", err)
 	require.Len(t, buf, len(targetAttributes),
 		"Incorrect number of attributes returned",
 	)
 	
 	for i, attr := range buf {
 		result, err := toFloat32(attr)
-		require.NoError(t, err, "Couldn't convert to float32")
+		require.NoErrorf(t, err, "Couldn't convert to float32")
 
-		assert.InDeltaSlice(
+		require.InDeltaSlicef(
 			t,
 			expected[i],
 			*result,

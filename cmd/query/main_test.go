@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -619,12 +618,12 @@ func TestLogHasNoSas(t *testing.T) {
 
 		requireStatus(t, testcase, w)
 
-		assert.NotContainsf(t, buffer.String(), "sas",
+		require.NotContainsf(t, buffer.String(), "sas",
 			"Test '%v'. Log should not contain SAS (sas)", testcase.base().name)
 		// just in case also check for presence of parts of the token
-		assert.NotContainsf(t, buffer.String(), "se=",
+		require.NotContainsf(t, buffer.String(), "se=",
 			"Test '%v'. Log should not contain SAS (se=)", testcase.base().name)
-		assert.NotContainsf(t, buffer.String(), "se%3D",
+		require.NotContainsf(t, buffer.String(), "se%3D",
 			"Test '%v'. Log should not contain SAS (encoded se=)", testcase.base().name)
 	}
 }
@@ -639,7 +638,7 @@ func testErrorHTTPResponse(t *testing.T, testcases []endpointTest) {
 		err := json.Unmarshal(w.Body.Bytes(), testErrorInfo)
 		require.NoError(t, err, "Test '%v'. Couldn't unmarshal data.", testcase.base().name)
 
-		assert.Containsf(t, testErrorInfo.Error, testcase.base().expectedError,
+		require.Containsf(t, testErrorInfo.Error, testcase.base().expectedError,
 			"Test '%v'. Error string does not contain expected message.", testcase.base().name)
 	}
 }

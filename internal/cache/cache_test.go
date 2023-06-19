@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 /** Makes sure that our cache is not growing indefinitely.
@@ -60,12 +61,10 @@ func TestRistrettoCacheMaxSize(t *testing.T) {
 		}
 	}
 
-	if hits != maxEntries {
-		t.Fatalf(
-			"Expected to find %d entries in cache, found %d. Note that this test might " +
-			"be flaky due to internal concurrency in ristretto",
-			maxEntries,
-			hits,
-		)
-	}
+	require.Equalf(t, hits, maxEntries,
+		"Expected to find %d entries in cache, found %d. Note that this test might " +
+		"be flaky due to internal concurrency in ristretto",
+		maxEntries,
+		hits,
+	)
 }
