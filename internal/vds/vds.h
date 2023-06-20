@@ -137,6 +137,7 @@ int slice(
 int slice_metadata(
     Context* ctx,
     DataHandle* handle,
+    int lineno,
     enum axis_name direction,
     response* out
 );

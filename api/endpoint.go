@@ -98,7 +98,7 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 	axis, err := vds.GetAxis(strings.ToLower(request.Direction))
 	if abortOnError(ctx, err) { return }
 
-	metadata, err := handle.GetSliceMetadata(axis)
+	metadata, err := handle.GetSliceMetadata(*request.Lineno, axis)
 	if abortOnError(ctx, err) { return }
 
 	data, err := handle.GetSlice(*request.Lineno, axis)
