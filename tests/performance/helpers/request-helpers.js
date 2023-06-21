@@ -2,22 +2,44 @@ import http from "k6/http";
 import { check, fail, sleep } from "k6";
 import * as metrics from "./metrics-helper.js";
 
-export function getRandomInt(max) {
-  return Math.floor(Math.random() * max);
-}
-
-/**
- * Return max (exclusive) dimension index aka number of samples
- */
-export function getMaxIndexInDimension(metadata, annotationDimension) {
+export function getAxisInDimension(metadata, annotationDimension) {
   const axis = metadata.axis.find((ax) => {
     return ax.annotation == annotationDimension;
   });
-  return axis.samples;
+  return axis;
 }
 
+/**
+ * Return number of samples in dimension
+ */
+export function getSampleSizeInDimension(metadata, annotationDimension) {
+  return getAxisInDimension(metadata, annotationDimension).samples;
+}
+
+/**
+ * Return max (inclusive) dimension index aka number of samples - 1.
+ * Function does not return maximum value of annotated dimension,
+ * only corresponding index dimension.
+ */
+export function getMaxIndexInDimension(metadata, annotationDimension) {
+  return getSampleSizeInDimension(metadata, annotationDimension) - 1;
+}
+
+/**
+ * Return random value in range [min : max : step].
+ * Min and max are inclusive. (max - min) is expected to be divisible by step.
+ */
+export function getRandom(min, max, step) {
+  const samples = (max + step - min) / step;
+  const random = Math.floor(Math.random() * samples);
+  return min + random * step;
+}
+
+/**
+ * Return random index in dimension (int in range [0, number_or_samples])
+ */
 export function getRandomIndexInDimension(metadata, annotationDimension) {
-  return getRandomInt(getMaxIndexInDimension(metadata, annotationDimension));
+  return getRandom(0, getMaxIndexInDimension(metadata, annotationDimension), 1);
 }
 
 export function convertDimension(dimension) {

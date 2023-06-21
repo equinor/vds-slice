@@ -1,6 +1,6 @@
 import {
   getRandomIndexInDimension,
-  getMaxIndexInDimension,
+  getSampleSizeInDimension,
   convertDimension,
 } from "./helpers/request-helpers.js";
 import { sendSetupMetadataRequest } from "./helpers/metadata-helpers.js";
@@ -26,13 +26,13 @@ export function setup() {
   const metadata = sendSetupMetadataRequest();
   const startIndex = getRandomIndexInDimension(metadata, annotatedDimension);
   const indexDimension = convertDimension(annotatedDimension);
-  const maxIndex = getMaxIndexInDimension(metadata, annotatedDimension);
-  return [startIndex, maxIndex, indexDimension];
+  const samples = getSampleSizeInDimension(metadata, annotatedDimension);
+  return [startIndex, samples, indexDimension];
 }
 
 export default function (params) {
-  const [startIndex, maxIndex, indexDimension] = params;
-  const index = (startIndex + exec.scenario.iterationInInstance) % maxIndex;
+  const [startIndex, samples, indexDimension] = params;
+  const index = (startIndex + exec.scenario.iterationInInstance) % samples;
   sendSliceRequest(indexDimension, index);
 }
 
