@@ -116,6 +116,7 @@ enum attribute {
     MIN,
     MAX,
     MEAN,
+    MEDIAN,
     RMS,
     SD
 };

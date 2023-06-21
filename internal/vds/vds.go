@@ -162,15 +162,17 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 
 func GetAttributeType(attribute string) (int, error) {
 	switch strings.ToLower(attribute) {
-	case "samplevalue": return C.VALUE, nil
-	case "min":         return C.MIN,   nil
-	case "max":         return C.MAX,   nil
-	case "mean":        return C.MEAN,  nil
-	case "rms":         return C.RMS,   nil
-	case "sd":          return C.SD,    nil
+	case "samplevalue":	return C.VALUE, 	nil
+	case "min":      	return C.MIN,   	nil
+	case "max":         return C.MAX,   	nil
+	case "maxabs":      return C.MAXABS,   	nil
+	case "mean":        return C.MEAN,  	nil
+	case "median":      return C.MEDIAN,  	nil
+	case "rms":         return C.RMS,   	nil
+	case "sd":          return C.SD,    	nil
 	case "":            fallthrough
 	default:
-		options := "samplevalue, min, max, mean, rms, sd"
+		options := "samplevalue, min, max, mean, median, rms, sd"
 		msg := "invalid attribute '%s', valid options are: %s"
 		return -1, NewInvalidArgument(fmt.Sprintf(msg, attribute, options))
 	}

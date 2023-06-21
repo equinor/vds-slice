@@ -900,12 +900,13 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 func TestAttribute(t *testing.T) {
 	fill := float32(-999.25)
 
-	targetAttributes := []string{"samplevalue", "min", "max", "mean", "rms", "sd"}
+	targetAttributes := []string{"samplevalue", "min", "max", "mean", "median", "rms", "sd"}
 	expected := [][]float32{
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // samplevalue
 		{ -2.5,      -1.5,      -12.5,       2.5,      fill, -24.5,      fill, fill }, // min
 		{  1.5,       2.5,       -4.5,      10.5,      fill,  -8.5,      fill, fill }, // max
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // mean
+		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // median
 		{  1.5,       1.5,        8.958237,  7.0887237,fill,  17.442764, fill, fill }, // rms
 		{  1.4142135, 1.4142135,  2.828427,  2.828427, fill,   5.656854, fill, fill }, // sd
 	}
@@ -921,6 +922,64 @@ func TestAttribute(t *testing.T) {
 	const above = float32(8.0)
 	const below = float32(8.0)
 	const stepsize = float32(4.0)
+
+	handle, _ := NewVDSHandle(samples10)
+	defer handle.Close()
+	buf, err := handle.GetAttributes(
+		horizon,
+		samples10_grid.xori,
+		samples10_grid.yori,
+		samples10_grid.xinc,
+		samples10_grid.yinc,
+		samples10_grid.rotation,
+		fill,
+		above,
+		below,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.NoErrorf(t, err, "Failed to fetch horizon, err %v", err)
+	require.Len(t, buf, len(targetAttributes),
+		"Incorrect number of attributes returned",
+	)
+
+	for i, attr := range buf {
+		result, err := toFloat32(attr)
+		require.NoErrorf(t, err, "Couldn't convert to float32")
+
+		require.InDeltaSlicef(
+			t,
+			expected[i],
+			*result,
+			0.000001,
+			"[%s]\nExpected: %v\nActual:   %v",
+			targetAttributes[i],
+			expected[i],
+			*result,
+		)
+	}
+}
+
+func TestAttributeMedianForEvenSampleValue(t *testing.T) {
+	fill := float32(-999.25)
+
+	targetAttributes := []string{"median"}
+	expected := [][]float32{
+		{-1, 1, -9.5, 5.5, fill, -14.5, fill, fill}, // median
+	}
+
+	horizon := [][]float32{
+		{20, 	20},
+		{20, 	20},
+		{fill, 	20},
+		{20, 	20}, // Out-of-bounds, should return fill
+	}
+
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+	const above 	= float32(8.0)
+	const below 	= float32(4.0)
+	const stepsize	= float32(4.0)
 
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()

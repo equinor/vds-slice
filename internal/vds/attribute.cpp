@@ -51,6 +51,32 @@ float Mean::compute(Mean::InputIt begin, Mean::InputIt end) noexcept (false) {
     return sum / this->vsize;
 }
 
+
+float Median::compute(
+    const Median::InputIt begin,
+    const Median::InputIt end
+) noexcept (false) {
+    /*
+    The std::nth_element function sets the middle element of a vector in such a
+    manner that all values on the right side of the middle element are greater
+    than or equal to it, and all elements preceding the middle are less than or
+    equal to the middle. With this approach, we don't need to sort the entire
+    vector. In the case of even number of elements in the vector, we use
+    std::max_element to obtain the largest element before the middle element to
+    compute the average.
+    */
+    auto temp = std::vector<double>(begin, end);
+    const auto middle_right = temp.begin() + vsize / 2;
+    std::nth_element(temp.begin(), middle_right, temp.end());
+    if (vsize % 2 == 0) {
+        const auto max_left = std::max_element(temp.begin(), middle_right);
+        return (*max_left + *middle_right) / 2;
+    }
+    else {
+        return *middle_right;
+    }
+}
+
 float Rms::compute(Rms::InputIt begin, Rms::InputIt end) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0f,
         [](float a, float b) {
