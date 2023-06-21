@@ -46,6 +46,18 @@ float Max::compute(Max::InputIt begin, Max::InputIt end) noexcept (false) {
     return *std::max_element(begin, end);
 }
 
+float MaxAbs::compute(
+    const MaxAbs::InputIt begin,
+    const MaxAbs::InputIt end
+) noexcept (false) {
+    auto max = *std::max_element(begin, end,
+    [](const double& a, const double& b) { 
+            return std::abs(a) < std::abs(b); 
+        }
+    );
+    return std::abs(max);
+}
+
 float Mean::compute(Mean::InputIt begin, Mean::InputIt end) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0f);
     return sum / this->vsize;

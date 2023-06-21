@@ -187,6 +187,13 @@ public:
     float compute(InputIt begin, InputIt end) noexcept (false) override;
 };
 
+class MaxAbs final : public AttributeMap {
+public:
+    MaxAbs(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+};
+
 class Mean final : public AttributeMap {
 public:
     Mean(void* dst, std::size_t size, std::size_t vsize)

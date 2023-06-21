@@ -601,6 +601,7 @@ void calculate_attribute(
             case VALUE:     { append(attrs,     Value(dst, size, index) );       break; }
             case MIN:       { append(attrs,     Min(dst, size)          );       break; }
             case MAX:       { append(attrs,     Max(dst, size)          );       break; }
+            case MAXABS:    { append(attrs,     MaxAbs(dst, size)       );       break; }
             case MEAN:      { append(attrs,     Mean(dst, size, vsize)  );       break; }
             case MEDIAN:    { append(attrs,     Median(dst, size, vsize));       break; }
             case RMS:       { append(attrs,     Rms(dst, size, vsize)   );       break; }
