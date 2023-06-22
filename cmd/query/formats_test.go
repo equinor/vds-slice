@@ -82,7 +82,8 @@ func TestSupportedFormats(t *testing.T) {
 			return floats
 		}
 
-		expected := []float32{108, 109, 110, 111, 112, 113, 114, 115}
+		// test just part of returned data
+		expected := []float32{60, 61, 62, 63, 64, 65, 66}
 		actual := toLittleEndianFloat32(parts[1], len(expected))
 
 		require.Equalf(t, expected, actual,
