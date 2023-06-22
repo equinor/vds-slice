@@ -31,30 +31,30 @@ Horizon::Window Horizon::at(std::size_t i) const noexcept (false) {
 }
 
 float Value::compute(
-    Value::InputIt begin,
-    Value::InputIt end
+    AttributeMap::InputIt begin,
+    AttributeMap::InputIt end
 ) noexcept (false) {
     std::advance(begin, this->idx);
     return *begin;
 }
 
 float Min::compute(
-    const Min::InputIt begin,
-    const Min::InputIt end
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
 ) noexcept (false) {
     return *std::min_element(begin, end);
 }
 
 float Max::compute(
-    const Max::InputIt begin,
-    const Max::InputIt end
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
 ) noexcept (false) {
     return *std::max_element(begin, end);
 }
 
 float MaxAbs::compute(
-    const MaxAbs::InputIt begin,
-    const MaxAbs::InputIt end
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
 ) noexcept (false) {
     auto max = *std::max_element(begin, end,
     [](const double& a, const double& b) { 
@@ -65,8 +65,8 @@ float MaxAbs::compute(
 }
 
 float Mean::compute(
-    const Mean::InputIt begin,
-    const Mean::InputIt end
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
 ) noexcept (false) {
     double sum = std::accumulate(begin, end, 0.0);
     return sum / this->vsize;
@@ -74,8 +74,8 @@ float Mean::compute(
 
 
 float Median::compute(
-    const Median::InputIt begin,
-    const Median::InputIt end
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
 ) noexcept (false) {
     /*
     The std::nth_element function sets the middle element of a vector in such a
@@ -99,8 +99,8 @@ float Median::compute(
 }
 
 float Rms::compute(
-    const Rms::InputIt begin,
-    const Rms::InputIt end
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
 ) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0,
         [](double a, double b) {
@@ -111,8 +111,8 @@ float Rms::compute(
 }
 
 float Sd::compute(
-    const Sd::InputIt begin,
-    const Sd::InputIt end
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
 ) noexcept (false) {
     double sum = std::accumulate(begin, end, 0.0);
     double mean = sum / vsize;
