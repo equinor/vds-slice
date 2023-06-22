@@ -91,3 +91,67 @@ func TestSupportedFormats(t *testing.T) {
 			testcase.base().name)
 	}
 }
+
+func TestSupportedFormatsHorizon(t *testing.T) {
+	var testcases []endpointTest
+	addTests := func(format int) {
+		attributeTest := attributeTest{
+			baseTest{
+				name:           fmt.Sprintf("horizon request, format %d", format),
+				method:         http.MethodPost,
+				expectedStatus: http.StatusOK,
+			},
+
+			testAttributeRequest{
+				Vds:        fmt.Sprintf(formatFile, format),
+				Horizon:    [][]float32{{20}},
+				Sas:        "n/a",
+				Above:      8.0,
+				Below:      8.0,
+				Attributes: []string{"samplevalue", "min", "max"},
+			},
+		}
+		testcases = append(testcases, attributeTest)
+	}
+
+	supportedFormats := [8]int{1, 2, 3, 5, 8, 10, 11, 16}
+	for _, format := range supportedFormats {
+		addTests(format)
+	}
+
+	for _, testcase := range testcases {
+		w := setupTest(t, testcase)
+		requireStatus(t, testcase, w)
+
+		parts := readMultipartData(t, w)
+
+		metadata := make(map[string]interface{})
+		require.NoError(t, json.Unmarshal(parts[0], &metadata))
+		format := metadata["format"]
+
+		require.Equalf(t, "<f4", format,
+			"Test '%v'. Wrong returned data format.",
+			testcase.base().name)
+
+		expectedAttributes := [][]float32{{44}, {42}, {46}}
+		require.Len(t, parts, len(expectedAttributes)+1)
+
+		toLittleEndianFloat32 := func(data []byte, floatsNumber int) []float32 {
+			var floats []float32 = make([]float32, floatsNumber)
+			for i := 0; i < floatsNumber; i++ {
+				value := binary.LittleEndian.Uint32(data[i*4 : (i+1)*4])
+				floats[i] = math.Float32frombits(value)
+			}
+			return floats
+		}
+
+		for i, expected := range expectedAttributes {
+
+			actual := toLittleEndianFloat32(parts[i+1], 1)
+
+			require.Equalf(t, expected, actual,
+				"Test '%v'. Wrong attribute values returned.",
+				testcase.base().name)
+		}
+	}
+}
