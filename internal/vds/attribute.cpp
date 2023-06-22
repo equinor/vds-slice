@@ -59,7 +59,8 @@ float MaxAbs::compute(
 }
 
 float Mean::compute(Mean::InputIt begin, Mean::InputIt end) noexcept (false) {
-    float sum = std::accumulate(begin, end, 0.0f);
+    double sum = std::accumulate(begin, end, 0.0);
+
     return sum / this->vsize;
 }
 
@@ -90,8 +91,9 @@ float Median::compute(
 }
 
 float Rms::compute(Rms::InputIt begin, Rms::InputIt end) noexcept (false) {
-    float sum = std::accumulate(begin, end, 0.0f,
-        [](float a, float b) {
+    float sum = std::accumulate(begin, end, 0.0,
+
+        [](double a, double b) {
             return a + std::pow(b, 2);
         }
     );
@@ -99,10 +101,11 @@ float Rms::compute(Rms::InputIt begin, Rms::InputIt end) noexcept (false) {
 }
 
 float Sd::compute(Sd::InputIt begin, Sd::InputIt end) noexcept (false) {
-    float sum = std::accumulate(begin, end, 0.0f);
-    float mean = sum / vsize;
-    float stdSum = std::accumulate(begin, end, 0.0f,
-        [&](float a, float b){ return a + std::pow(b - mean, 2); }
+    double sum = std::accumulate(begin, end, 0.0);
+
+    double mean = sum / vsize;
+    double stdSum = std::accumulate(begin, end, 0.0,
+        [&](double a, double b){ return a + std::pow(b - mean, 2); }
     );
     return std::sqrt(stdSum / vsize);
 }
