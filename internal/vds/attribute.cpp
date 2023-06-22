@@ -38,11 +38,17 @@ float Value::compute(
     return *begin;
 }
 
-float Min::compute(Min::InputIt begin, Min::InputIt end) noexcept (false) {
+float Min::compute(
+    const Min::InputIt begin,
+    const Min::InputIt end
+) noexcept (false) {
     return *std::min_element(begin, end);
 }
 
-float Max::compute(Max::InputIt begin, Max::InputIt end) noexcept (false) {
+float Max::compute(
+    const Max::InputIt begin,
+    const Max::InputIt end
+) noexcept (false) {
     return *std::max_element(begin, end);
 }
 
@@ -58,9 +64,11 @@ float MaxAbs::compute(
     return std::abs(max);
 }
 
-float Mean::compute(Mean::InputIt begin, Mean::InputIt end) noexcept (false) {
+float Mean::compute(
+    const Mean::InputIt begin,
+    const Mean::InputIt end
+) noexcept (false) {
     double sum = std::accumulate(begin, end, 0.0);
-
     return sum / this->vsize;
 }
 
@@ -90,9 +98,11 @@ float Median::compute(
     }
 }
 
-float Rms::compute(Rms::InputIt begin, Rms::InputIt end) noexcept (false) {
+float Rms::compute(
+    const Rms::InputIt begin,
+    const Rms::InputIt end
+) noexcept (false) {
     float sum = std::accumulate(begin, end, 0.0,
-
         [](double a, double b) {
             return a + std::pow(b, 2);
         }
@@ -100,9 +110,11 @@ float Rms::compute(Rms::InputIt begin, Rms::InputIt end) noexcept (false) {
     return std::sqrt(sum / this->vsize);
 }
 
-float Sd::compute(Sd::InputIt begin, Sd::InputIt end) noexcept (false) {
+float Sd::compute(
+    const Sd::InputIt begin,
+    const Sd::InputIt end
+) noexcept (false) {
     double sum = std::accumulate(begin, end, 0.0);
-
     double mean = sum / vsize;
     double stdSum = std::accumulate(begin, end, 0.0,
         [&](double a, double b){ return a + std::pow(b - mean, 2); }
