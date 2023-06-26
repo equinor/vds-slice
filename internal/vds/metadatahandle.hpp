@@ -45,14 +45,20 @@ public:
         CoordinateTransformer(const MetadataHandle& metadata ) :
             OpenVDS::IJKCoordinateTransformer(metadata.m_layout), m_metadata(metadata) {};
 
-        OpenvdsVoxelVector IndexToOpenvdsPosition     (const OpenVDS::DoubleVector3& position) const;
-        OpenvdsVoxelVector AnnotationToOpenvdsPosition(const OpenVDS::DoubleVector3& position) const;
-        OpenvdsVoxelVector WorldToOpenvdsPosition     (const OpenVDS::DoubleVector3& position) const;
+        OpenvdsVoxelVector IndexToOpenvdsPosition(
+            const OpenVDS::DoubleVector3& position
+        ) const noexcept (false);
+        OpenvdsVoxelVector AnnotationToOpenvdsPosition(
+            const OpenVDS::DoubleVector3& position
+        ) const noexcept (false);
+        OpenvdsVoxelVector WorldToOpenvdsPosition(
+            const OpenVDS::DoubleVector3& position
+        ) const noexcept (false);
 
         OpenvdsVoxelVector ToOpenvdsPosition(
             const OpenVDS::DoubleVector3& coordinate,
             enum coordinate_system coordinate_system
-        ) const;
+        ) const noexcept (false);
 
         bool IsOpenvdsPositionOutOfRangeIline (double value) const noexcept(true);
         bool IsOpenvdsPositionOutOfRangeXline (double value) const noexcept(true);

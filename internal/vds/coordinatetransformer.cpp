@@ -10,26 +10,26 @@
 
 OpenvdsVoxelVector MetadataHandle::CoordinateTransformer::IndexToOpenvdsPosition(
     const OpenVDS::DoubleVector3& position
-) const {
+) const noexcept (false){
     return OpenvdsVoxelVector(this->m_metadata, position, this->IJKPositionToVoxelPosition(position));
 }
 
 OpenvdsVoxelVector MetadataHandle::CoordinateTransformer::AnnotationToOpenvdsPosition(
     const OpenVDS::DoubleVector3& position
-) const {
+) const noexcept (false){
     return OpenvdsVoxelVector(this->m_metadata, position, this->AnnotationToVoxelPosition(position));
 }
 
 OpenvdsVoxelVector MetadataHandle::CoordinateTransformer::WorldToOpenvdsPosition(
     const OpenVDS::DoubleVector3& position
-) const {
+) const noexcept (false){
     return OpenvdsVoxelVector(this->m_metadata, position, this->WorldToVoxelPosition(position));
 }
 
 OpenvdsVoxelVector MetadataHandle::CoordinateTransformer::ToOpenvdsPosition(
     const OpenVDS::DoubleVector3& coordinate,
     enum coordinate_system coordinate_system
-) const {
+) const noexcept (false){
     switch (coordinate_system) {
         case INDEX:
             return this->IndexToOpenvdsPosition(coordinate);
