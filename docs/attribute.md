@@ -23,7 +23,9 @@ Name        | Description
 samplevalue | Seismic sample value at the exact surface position
 min         | Minimum value
 max         | Maximum value
+maxabs      | Absolute maximum value
 mean        | Mean value
+median      | Median value
 rms         | Root mean square
 sd          | Standard deviation
 

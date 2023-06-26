@@ -187,6 +187,13 @@ public:
     float compute(InputIt begin, InputIt end) noexcept (false) override;
 };
 
+class MaxAbs final : public AttributeMap {
+public:
+    MaxAbs(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+};
+
 class Mean final : public AttributeMap {
 public:
     Mean(void* dst, std::size_t size, std::size_t vsize)
@@ -201,6 +208,18 @@ private:
      * invocation. Hence it's much more efficient to store the value
      * explicitly.
      */
+    std::size_t vsize;
+};
+
+class Median final : public AttributeMap {
+public:
+    Median(void* dst, std::size_t size, std::size_t vsize)
+        : AttributeMap(dst, size), vsize(vsize)
+    {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+
+private:
     std::size_t vsize;
 };
 
