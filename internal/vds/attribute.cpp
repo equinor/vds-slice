@@ -152,6 +152,17 @@ float SumPos::compute(
     return sum; 
 }
 
+float SumNeg::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    double sum = 0.0;
+    std::for_each(begin, end, [&](double x) {
+         if (x < 0) { sum += x; }
+    });
+    return sum;
+}
+
 void fill_all(
     std::vector< std::unique_ptr< AttributeMap > >& attributes,
     float value,

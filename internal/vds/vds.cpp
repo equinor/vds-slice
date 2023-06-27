@@ -580,6 +580,8 @@ void calculate_attribute(
             case VAR:     { append(attrs,   Var(dst, size, vsize)   );   break; }
             case SD:      { append(attrs,   Sd(dst, size, vsize)    );   break; }
             case SUMPOS:  { append(attrs,   SumPos(dst, size)       );   break; }
+            case SUMNEG:  { append(attrs,   SumNeg(dst, size)       );   break; }
+
             default:
                 throw std::runtime_error("Attribute not implemented");
         }

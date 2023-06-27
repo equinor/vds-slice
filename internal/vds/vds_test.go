@@ -935,7 +935,17 @@ func TestAttribute(t *testing.T) {
 	fill := float32(-999.25)
 
 	targetAttributes := []string{
-		"samplevalue", "min", "max", "maxabs", "mean", "median", "rms", "var", "sd", "sumpos",
+		"samplevalue",
+		"min",
+		"max",
+		"maxabs",
+		"mean",
+		"median",
+		"rms",
+		"var",
+		"sd",
+		"sumpos",
+		"sumneg",
 	}
 	expected := [][]float32{
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // samplevalue
@@ -948,6 +958,8 @@ func TestAttribute(t *testing.T) {
 		{  2,           2,        8,         8,        fill,  32,        fill, fill }, // var
 		{  1.4142135, 1.4142135,  2.828427,  2.828427, fill,   5.656854, fill, fill }, // sd
 		{  2,         4.5,        0,         32.5,     fill,   0,        fill, fill }, // sumpos
+		{ -4.5,      -2,        -42.5,       0,        fill, -82.5,      fill, fill }, // sumneg
+
 
 	}
 	

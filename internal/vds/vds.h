@@ -121,7 +121,8 @@ enum attribute {
     RMS,
     VAR,
     SD,
-    SUMPOS
+    SUMPOS,
+    SUMNEG
 };
 
 int metadata(

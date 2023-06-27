@@ -272,6 +272,13 @@ public:
     float compute(InputIt begin, InputIt end) noexcept (false) override;
 };
 
+class SumNeg final : public AttributeMap {
+public:
+    SumNeg(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+};
+
 void calc_attributes(
     Horizon const& horizon,
     RegularSurface const& surface,
