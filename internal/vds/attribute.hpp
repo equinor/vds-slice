@@ -235,6 +235,21 @@ private:
     std::size_t vsize;
 };
 
+/* Calculated the population variance as we are interested in variance strictly
+ * for the data defined by each window.
+ */
+class Var final : public AttributeMap {
+public:
+    Var(void* dst, std::size_t size, std::size_t vsize)
+        : AttributeMap(dst, size), vsize(vsize)
+    {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+
+private:
+    std::size_t vsize;
+};
+
 /* Calculated the population standard deviation as we are interested in
  * standard deviation strictly for the data defined by each window.
  */

@@ -27,6 +27,7 @@ maxabs      | Absolute maximum value
 mean        | Mean value
 median      | Median value
 rms         | Root mean square
+var         | Variance
 sd          | Standard deviation
 
 ## Response

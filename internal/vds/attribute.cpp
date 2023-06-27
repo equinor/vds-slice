@@ -110,16 +110,35 @@ float Rms::compute(
     return std::sqrt(sum / this->vsize);
 }
 
-float Sd::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
-) noexcept (false) {
+namespace {
+
+double variance(
+    const  AttributeMap::InputIt begin,
+    const  AttributeMap::InputIt end,
+    std::size_t vsize
+){
     double sum = std::accumulate(begin, end, 0.0);
     double mean = sum / vsize;
     double stdSum = std::accumulate(begin, end, 0.0,
         [&](double a, double b){ return a + std::pow(b - mean, 2); }
     );
-    return std::sqrt(stdSum / vsize);
+    return stdSum / vsize;
+}
+
+} // namespace
+
+float Var::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    return variance(begin, end, vsize);
+}
+
+float Sd::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    return std::sqrt(variance(begin, end, vsize));
 }
 
 void fill_all(

@@ -169,12 +169,20 @@ func GetAttributeType(attribute string) (int, error) {
 	case "mean":        return C.MEAN,   nil
 	case "median":      return C.MEDIAN, nil
 	case "rms":         return C.RMS,    nil
+	case "var":         return C.VAR,    nil
 	case "sd":          return C.SD,     nil
 	case "":            fallthrough
 	default:
-		options := "samplevalue, min, max, maxabs, mean, median, rms, sd"
+		options := []string{
+			"samplevalue", "min", "max", "maxabs", "mean", "median", "rms",
+			"var", "sd",
+		}
 		msg := "invalid attribute '%s', valid options are: %s"
-		return -1, NewInvalidArgument(fmt.Sprintf(msg, attribute, options))
+		return -1, NewInvalidArgument(fmt.Sprintf(
+			msg,
+			attribute,
+			strings.Join(options, ", "),
+		))
 	}
 }
 

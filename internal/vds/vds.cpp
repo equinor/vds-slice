@@ -577,6 +577,7 @@ void calculate_attribute(
             case MEAN:      { append(attrs,     Mean(dst, size, vsize)  );       break; }
             case MEDIAN:    { append(attrs,     Median(dst, size, vsize));       break; }
             case RMS:       { append(attrs,     Rms(dst, size, vsize)   );       break; }
+            case VAR:       { append(attrs,     Var(dst, size, vsize)   );       break; }
             case SD:        { append(attrs,     Sd(dst, size, vsize)    );       break; }
             default:
                 throw std::runtime_error("Attribute not implemented");

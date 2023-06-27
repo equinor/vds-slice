@@ -119,6 +119,7 @@ enum attribute {
     MEAN,
     MEDIAN,
     RMS,
+    VAR,
     SD
 };
 
