@@ -29,6 +29,7 @@ median      | Median value
 rms         | Root mean square
 var         | Variance
 sd          | Standard deviation
+sumpos      | Sum of positive samples
 
 ## Response
 On success (200) the multipart/mixed response consists of n parts. The first

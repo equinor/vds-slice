@@ -120,7 +120,8 @@ enum attribute {
     MEDIAN,
     RMS,
     VAR,
-    SD
+    SD,
+    SUMPOS
 };
 
 int metadata(

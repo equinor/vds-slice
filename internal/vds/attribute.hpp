@@ -265,6 +265,12 @@ private:
     std::size_t vsize;
 };
 
+class SumPos final : public AttributeMap {
+public:
+    SumPos(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+};
 
 void calc_attributes(
     Horizon const& horizon,
