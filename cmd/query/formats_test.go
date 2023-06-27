@@ -70,8 +70,8 @@ func TestSupportedFormats(t *testing.T) {
 		format := metadata["format"]
 
 		require.Equalf(t, "<f4", format,
-			"Test '%v'. Expected format to be <f4, was %v",
-			testcase.base().name, format)
+			"Test '%v'. Wrong returned data format.",
+			testcase.base().name)
 
 		toLittleEndianFloat32 := func(data []byte, floatsNumber int) []float32 {
 			var floats []float32 = make([]float32, floatsNumber)
@@ -87,7 +87,7 @@ func TestSupportedFormats(t *testing.T) {
 		actual := toLittleEndianFloat32(parts[1], len(expected))
 
 		require.Equalf(t, expected, actual,
-			"Test '%v'. Expected %v, was %v",
-			testcase.base().name, expected, actual)
+			"Test '%v'. Wrong data returned.",
+			testcase.base().name)
 	}
 }
