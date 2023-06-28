@@ -13,8 +13,6 @@ spec:
   components:
     - name: server
       dockerfileName: Dockerfile
-      secrets:
-        - VDSSLICE_STORAGE_ACCOUNTS
       ports:
         - name: http
           port: 8080
@@ -23,6 +21,9 @@ spec:
       publicPort: http
       monitoringConfig:
         portName: metrics
+      identity:
+        azure:
+          clientId: fd162526-89a0-448a-979f-655c0717db52
       environmentConfig:
         - environment: dev
           variables:
@@ -30,6 +31,13 @@ spec:
             VDSSLICE_CACHE_SIZE: 512 # MB
             VDSSLICE_METRICS: true
             VDSSLICE_METRICS_PORT: 8081
+          secretRefs:
+            azureKeyVaults:
+              - name: S067-RadixKeyvault
+                useAzureIdentity: true
+                items:
+                  - name: playground-dev-allowlist
+                    envVar: VDSSLICE_STORAGE_ACCOUNTS
           monitoring: true
           resources:
             requests:
@@ -44,6 +52,13 @@ spec:
             VDSSLICE_CACHE_SIZE: 256 # MB
             VDSSLICE_METRICS: true
             VDSSLICE_METRICS_PORT: 8081
+          secretRefs:
+            azureKeyVaults:
+              - name: S067-RadixKeyvault
+                useAzureIdentity: true
+                items:
+                  - name: playground-test-allowlist
+                    envVar: VDSSLICE_STORAGE_ACCOUNTS
           monitoring: true
           resources:
             requests:
