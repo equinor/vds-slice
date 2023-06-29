@@ -941,6 +941,7 @@ func TestAttribute(t *testing.T) {
 		"maxabs",
 		"mean",
 		"meanabs",
+		"meanpos",
 		"median",
 		"rms",
 		"var",
@@ -955,6 +956,7 @@ func TestAttribute(t *testing.T) {
 		{  2.5,       2.5,       12.5,      10.5,      fill,  24.5,      fill, fill }, // maxabs
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // mean
 		{  1.3,       1.3,        8.5,       6.5,      fill,  16.5,      fill, fill }, // meanabs
+		{  1,         1.5,        0,         6.5,      fill,  0,         fill, fill }, // meanpos
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // median
 		{  1.5,       1.5,        8.958237,  7.0887237,fill,  17.442764, fill, fill }, // rms
 		{  2,           2,        8,         8,        fill,  32,        fill, fill }, // var
