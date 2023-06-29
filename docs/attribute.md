@@ -25,6 +25,7 @@ min         | Minimum value
 max         | Maximum value
 maxabs      | Absolute maximum value
 mean        | Mean value
+meanabs     | Mean of absolute values
 median      | Median value
 rms         | Root mean square
 var         | Variance

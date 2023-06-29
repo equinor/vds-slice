@@ -72,6 +72,14 @@ float Mean::compute(
     return sum / this->vsize;
 }
 
+float MeanAbs::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    double sum = std::accumulate(begin, end, 0.0,
+        [](double acc, double x) { return acc + std::abs(x); });
+    return sum / this->vsize;
+}
 
 float Median::compute(
     const AttributeMap::InputIt begin,

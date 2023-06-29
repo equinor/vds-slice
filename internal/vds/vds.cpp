@@ -570,17 +570,18 @@ void calculate_attribute(
     for (int i = 0; i < nattributes; ++i) {
         void* dst = out[i];
         switch (*attributes) {
-            case VALUE:   { append(attrs,   Value(dst, size, index) );   break; }
-            case MIN:     { append(attrs,   Min(dst, size)          );   break; }
-            case MAX:     { append(attrs,   Max(dst, size)          );   break; }
-            case MAXABS:  { append(attrs,   MaxAbs(dst, size)       );   break; }
-            case MEAN:    { append(attrs,   Mean(dst, size, vsize)  );   break; }
-            case MEDIAN:  { append(attrs,   Median(dst, size, vsize));   break; }
-            case RMS:     { append(attrs,   Rms(dst, size, vsize)   );   break; }
-            case VAR:     { append(attrs,   Var(dst, size, vsize)   );   break; }
-            case SD:      { append(attrs,   Sd(dst, size, vsize)    );   break; }
-            case SUMPOS:  { append(attrs,   SumPos(dst, size)       );   break; }
-            case SUMNEG:  { append(attrs,   SumNeg(dst, size)       );   break; }
+            case VALUE:   { append(attrs,   Value(dst, size, index)   );   break; }
+            case MIN:     { append(attrs,   Min(dst, size)            );   break; }
+            case MAX:     { append(attrs,   Max(dst, size)            );   break; }
+            case MAXABS:  { append(attrs,   MaxAbs(dst, size)         );   break; }
+            case MEAN:    { append(attrs,   Mean(dst, size, vsize)    );   break; }
+            case MEANABS: { append(attrs,   MeanAbs(dst, size, vsize) );   break; }
+            case MEDIAN:  { append(attrs,   Median(dst, size, vsize)  );   break; }
+            case RMS:     { append(attrs,   Rms(dst, size, vsize)     );   break; }
+            case VAR:     { append(attrs,   Var(dst, size, vsize)     );   break; }
+            case SD:      { append(attrs,   Sd(dst, size, vsize)      );   break; }
+            case SUMPOS:  { append(attrs,   SumPos(dst, size)         );   break; }
+            case SUMNEG:  { append(attrs,   SumNeg(dst, size)         );   break; }
 
             default:
                 throw std::runtime_error("Attribute not implemented");

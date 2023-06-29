@@ -117,6 +117,7 @@ enum attribute {
     MAX,
     MAXABS,
     MEAN,
+    MEANABS,
     MEDIAN,
     RMS,
     VAR,

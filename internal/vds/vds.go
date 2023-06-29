@@ -162,22 +162,23 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 
 func GetAttributeType(attribute string) (int, error) {
 	switch strings.ToLower(attribute) {
-	case "samplevalue": return C.VALUE,  nil
-	case "min":         return C.MIN,    nil
-	case "max":         return C.MAX,    nil
-	case "maxabs":      return C.MAXABS, nil
-	case "mean":        return C.MEAN,   nil
-	case "median":      return C.MEDIAN, nil
-	case "rms":         return C.RMS,    nil
-	case "var":         return C.VAR,    nil
-	case "sd":          return C.SD,     nil
-	case "sumpos":      return C.SUMPOS, nil
-	case "sumneg":      return C.SUMNEG, nil
+	case "samplevalue": return C.VALUE,   nil
+	case "min":         return C.MIN,     nil
+	case "max":         return C.MAX,     nil
+	case "maxabs":      return C.MAXABS,  nil
+	case "mean":        return C.MEAN,    nil
+	case "meanabs":     return C.MEANABS, nil
+	case "median":      return C.MEDIAN,  nil
+	case "rms":         return C.RMS,     nil
+	case "var":         return C.VAR,     nil
+	case "sd":          return C.SD,      nil
+	case "sumpos":      return C.SUMPOS,  nil
+	case "sumneg":      return C.SUMNEG,  nil
 	case "":            fallthrough
 	default:
 		options := []string{
-			"samplevalue", "min", "max", "maxabs", "mean", "median", "rms",
-			"var", "sd", "sumpos", "sumneg",
+			"samplevalue", "min", "max", "maxabs", "mean","meanabs", "median",
+			"rms", "var", "sd", "sumpos", "sumneg",
 		}
 		msg := "invalid attribute '%s', valid options are: %s"
 		return -1, NewInvalidArgument(fmt.Sprintf(

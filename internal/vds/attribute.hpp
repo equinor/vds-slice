@@ -211,6 +211,18 @@ private:
     std::size_t vsize;
 };
 
+class MeanAbs final : public AttributeMap {
+public:
+    MeanAbs(void* dst, std::size_t size, std::size_t vsize)
+        : AttributeMap(dst, size), vsize(vsize)
+    {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+
+private:
+    std::size_t vsize;
+};
+
 class Median final : public AttributeMap {
 public:
     Median(void* dst, std::size_t size, std::size_t vsize)
