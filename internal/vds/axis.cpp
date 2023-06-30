@@ -40,3 +40,12 @@ float Axis::stride() const noexcept (true) {
 std::string Axis::name() const noexcept(true) {
     return this->m_axis_descriptor.GetName();
 }
+
+bool Axis::inrange(float coordinate) const noexcept(true) {
+    return (this->min() - 0.5 * this->stride()) <= coordinate && 
+           (this->max() + 0.5 * this->stride()) >  coordinate;
+}
+
+float Axis::to_sample_position(float coordinate) noexcept(false) {
+    return this->m_axis_descriptor.CoordinateToSamplePosition(coordinate);
+}

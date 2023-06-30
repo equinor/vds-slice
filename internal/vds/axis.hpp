@@ -26,6 +26,9 @@ public:
     int dimension() const noexcept(true);
 
     std::string name() const noexcept (true);
+
+    bool inrange(float coordinate) const noexcept(true);
+    float to_sample_position(float coordinate) noexcept(false);
 private:
     int const m_dimension;
     OpenVDS::VolumeDataAxisDescriptor m_axis_descriptor;

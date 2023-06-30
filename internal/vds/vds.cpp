@@ -310,11 +310,11 @@ void fetch_fence(
     auto transform_coordinate = [&] (const float x, const float y) {
         switch (coordinate_system) {
             case INDEX:
-                return OpenVDS::Vector<double, 3> {x, y, 0};
+                return coordinate_transformer.IJKPositionToAnnotation({x, y, 0});
             case ANNOTATION:
-                return coordinate_transformer.AnnotationToIJKPosition({x, y, 0});
+                return OpenVDS::Vector<double, 3> {x, y, 0};
             case CDP:
-                return coordinate_transformer.WorldToIJKPosition({x, y, 0});
+                return coordinate_transformer.WorldToAnnotation({x, y, 0});
             default: {
                 throw std::runtime_error("Unhandled coordinate system");
             }
@@ -331,9 +331,7 @@ void fetch_fence(
         auto coordinate = transform_coordinate(x, y);
 
         auto validate_boundary = [&] (const int voxel, Axis const& axis) {
-            const auto min = -0.5;
-            const auto max = axis.nsamples() - 0.5;
-            if(coordinate[voxel] < min || coordinate[voxel] >= max) {
+            if(!axis.inrange(coordinate[voxel])){
                 const std::string coordinate_str =
                     "(" +std::to_string(x) + "," + std::to_string(y) + ")";
                 throw std::runtime_error(
@@ -346,21 +344,8 @@ void fetch_fence(
         validate_boundary(0, inline_axis);
         validate_boundary(1, crossline_axis);
 
-        /* OpenVDS' transformers and OpenVDS data request functions have
-         * different definition of where a datapoint is. E.g. A transformer
-         * (To voxel or ijK) will return (0,0,0) for the first sample in
-         * the cube. The request functions on the other hand assumes the
-         * data is located in the center of a voxel. I.e. that the first
-         * sample is at (0.5, 0.5, 0.5). This is a *VERY* sharp edge in the
-         * OpenVDS API and borders on a bug. It means we cannot directly
-         * use the output from the transformers as input to the request
-         * functions.
-         */
-        coordinate[0] += 0.5;
-        coordinate[1] += 0.5;
-
-        coords[i][   inline_axis.dimension()] = coordinate[0];
-        coords[i][crossline_axis.dimension()] = coordinate[1];
+        coords[i][   inline_axis.dimension()] = inline_axis.to_sample_position(coordinate[0]);
+        coords[i][crossline_axis.dimension()] = crossline_axis.to_sample_position(coordinate[1]);
     }
 
     std::int64_t const size = handle.traces_buffer_size(npoints);
@@ -465,10 +450,6 @@ void fetch_horizon(
 
     float const fillvalue = surface.fillvalue();
 
-    auto inrange = [](Axis const& axis, double const voxel) {
-        return (0 <= voxel) and (voxel < axis.nsamples());
-    };
-
     /** Missing input samples (marked by fillvalue) and out of bounds samples
      *
      * To not overcomplicate things for ourselfs (and the caller) we guarantee
@@ -510,32 +491,17 @@ void fetch_horizon(
 
             auto const cdp = surface.coordinate(row, col);
 
-            auto ij = transform.WorldToIJKPosition({cdp.x, cdp.y, 0});
-            auto k  = transform.AnnotationToIJKPosition({0, 0, depth});
+            auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 
-            /* OpenVDS' transformers and OpenVDS data request functions have
-             * different definition of where a datapoint is. E.g. A transformer
-             * (To voxel or ijK) will return (0,0,0) for the first sample in
-             * the cube. The request functions on the other hand assumes the
-             * data is located in the center of a voxel. I.e. that the first
-             * sample is at (0.5, 0.5, 0.5). This is a *VERY* sharp edge in the
-             * OpenVDS API and borders on a bug. It means we cannot directly
-             * use the output from the transformers as input to the request
-             * functions.
-             */
-            ij[0] += 0.5;
-            ij[1] += 0.5;
-             k[2] += 0.5;
-
-            if (not inrange(iline, ij[0]) or not inrange(xline, ij[1])) {
+            if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
                 noval_indicies.push_back(i);
                 i += window.size();
                 continue;
             }
 
-            double top    = k[2] - window.nsamples_above();
-            double bottom = k[2] + window.nsamples_below();
-            if (not inrange(sample, top) or not inrange(sample, bottom)) {
+            double top    = depth - window.nsamples_above() * window.stepsize();
+            double bottom = depth + window.nsamples_below() * window.stepsize();
+            if (not sample.inrange(top) or not sample.inrange(bottom)) {
                 throw std::runtime_error(
                     "Vertical window is out of vertical bounds at"
                     " row: " + std::to_string(row) +
@@ -546,6 +512,12 @@ void fetch_horizon(
                     + ", " +std::to_string(sample.max()) + "]"
                 );
             }
+
+            ij[0]  = iline.to_sample_position(ij[0]);
+            ij[1]  = xline.to_sample_position(ij[1]);
+            top    = sample.to_sample_position(top);
+            bottom = sample.to_sample_position(bottom);
+
             for (double cur_depth = top; cur_depth <= bottom; cur_depth++) {
                 samples[i][  iline.dimension() ] = ij[0];
                 samples[i][  xline.dimension() ] = ij[1];
