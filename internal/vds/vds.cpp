@@ -321,8 +321,8 @@ void fetch_fence(
         }
     };
 
-    Axis const& inline_axis = metadata.iline();
-    Axis const& crossline_axis = metadata.xline();
+    Axis inline_axis = metadata.iline();
+    Axis crossline_axis = metadata.xline();
 
     for (size_t i = 0; i < npoints; i++) {
         const float x = *(coordinates++);
@@ -453,9 +453,9 @@ void fetch_horizon(
     MetadataHandle const& metadata = handle.get_metadata();
     auto transform = metadata.coordinate_transformer();
 
-    auto const& iline  = metadata.iline ();
-    auto const& xline  = metadata.xline();
-    auto const& sample = metadata.sample();
+    auto iline  = metadata.iline ();
+    auto xline  = metadata.xline();
+    auto sample = metadata.sample();
     
     VerticalWindow window(above, below, sample.stride(), 2, sample.min());
 

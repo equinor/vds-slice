@@ -13,23 +13,23 @@ class MetadataHandle {
 public:
     MetadataHandle(OpenVDS::VolumeDataLayout const * const layout);
 
-    Axis const& iline()  const noexcept (true);
-    Axis const& xline()  const noexcept (true);
-    Axis const& sample() const noexcept (true);
+    Axis iline()  const noexcept (true);
+    Axis xline()  const noexcept (true);
+    Axis sample() const noexcept (true);
 
     BoundingBox bounding_box() const noexcept (true);
     std::string crs()          const noexcept (true);
     std::string input_filename() const noexcept (true);
 
-    Axis const& get_axis(Direction const direction) const noexcept (false);
+    Axis get_axis(Direction const direction) const noexcept (false);
 
     OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept (true);
 private:
     OpenVDS::VolumeDataLayout const * const m_layout;
 
-    Axis const m_iline;
-    Axis const m_xline;
-    Axis const m_sample;
+    Axis m_iline;
+    Axis m_xline;
+    Axis m_sample;
 
     void dimension_validation() const;
     void axis_order_validation() const;

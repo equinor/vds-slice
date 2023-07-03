@@ -61,15 +61,15 @@ void MetadataHandle::axis_order_validation() const {
     }
 }
 
-Axis const& MetadataHandle::iline() const noexcept (true) {
+Axis MetadataHandle::iline() const noexcept (true) {
     return this->m_iline;
 }
 
-Axis const& MetadataHandle::xline() const noexcept (true) {
+Axis MetadataHandle::xline() const noexcept (true) {
     return this->m_xline;
 }
 
-Axis const& MetadataHandle::sample() const noexcept (true) {
+Axis MetadataHandle::sample() const noexcept (true) {
     return this->m_sample;
 }
 
@@ -91,7 +91,7 @@ std::string MetadataHandle::input_filename() const noexcept (true) {
     return this->m_layout->GetMetadataString(disp_name.GetCategory(), disp_name.GetName());
 }
 
-Axis const& MetadataHandle::get_axis(
+Axis MetadataHandle::get_axis(
     Direction const direction
 ) const noexcept (false) {
     if      (direction.is_iline())  return this->iline();
