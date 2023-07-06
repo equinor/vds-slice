@@ -573,13 +573,47 @@ func TestInvalidFence(t *testing.T) {
 	)
 }
 
-/*
-We don't know the specifics of how OpenVDS implements the different
-interpolation algorithms, so we don't know what values to expect in
-return. As a substitute we pass in different interpolation values
-and check they yield different results.
-*/
-func TestFenceInterpolation(t *testing.T) {
+
+// As interpolation algorithms are complicated and allow some variety, it would
+// not be feasible to manually try to figure out expected value for each
+// interpolation method. So we have to trust openvds on this.
+//
+// But we can check that we use openvds correctly by checking interpolated data
+// at known datapoints. Openvds claims that data would still be the same for all
+// interpolation algorithms [1].
+//
+// We had a bug that caused cubic and linear return incorrect values. So this is
+// the best feasible test that would help us guard against that bug.
+//
+// [1] angular is skipped on purpose as it anyway will hold only for files where
+// ValueRange is defined correctly
+// https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds/-/issues/171.  
+func TestFenceInterpolationSameAtDataPoints(t *testing.T) {
+	// use non-linear data
+	coordinates := [][]float32{{2, 0}}
+	expected := []float32{25.5, 4.5, 8.5, 12.5, 16.5, 20.5, 24.5, 20.5, 16.5, 8.5}
+	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular"}
+
+	handle, _ := NewVDSHandle(samples10)
+	defer handle.Close()
+
+	for _, interpolation := range interpolationMethods {
+		interpolationMethod, _ := GetInterpolationMethod(interpolation)
+		buf, err := handle.GetFence(
+			CoordinateSystemIndex,
+			coordinates,
+			interpolationMethod,
+		)
+		require.NoErrorf(t, err, "Failed to fetch fence in [interpolation: %v]", interpolation)
+		result, err := toFloat32(buf)
+		require.NoErrorf(t, err, "Failed to covert to float32 buffer [interpolation: %v]", interpolation)
+		require.Equalf(t, expected, *result, "Fence not as expected [interpolation: %v]", interpolation)
+	}
+}
+
+// Also, as we can't check interpolation properly, check that beyond datapoints
+// different values are returned by each algorithm
+func TestFenceInterpolationDifferentBeyondDatapoints(t *testing.T) {
 	fence := [][]float32{{3.2, 3}, {3.2, 6.3}, {1, 3}, {3.2, 3}, {5.4, 3}}
 	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular", "angular"}
 	for i, v1 := range interpolationMethods {
