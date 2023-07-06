@@ -663,12 +663,8 @@ int datahandle_new(
 
         *out = new DataHandle(std::move(handle));
         return STATUS_OK;
-    } catch (const detail::nullptr_error& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_NULLPTR_ERROR;
-    } catch (const std::exception& e) {
-        if (ctx) ctx->errmsg = e.what();
-        return STATUS_RUNTIME_ERROR;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
     }
 }
 
