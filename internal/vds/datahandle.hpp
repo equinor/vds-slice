@@ -12,8 +12,9 @@
 using voxel = float[OpenVDS::Dimensionality_Max];
 
 class DataHandle {
-public:
     DataHandle(OpenVDS::VDSHandle handle);
+    friend DataHandle* make_datahandle(const char* url,const char* credentials);
+public:
 
     MetadataHandle const& get_metadata() const noexcept (true);
 
@@ -56,5 +57,11 @@ private:
     static int constexpr lod_level = 0;
     static int constexpr channel = 0;
 };
+
+DataHandle* make_datahandle(
+    const char* url,
+    const char* credentials
+) noexcept (false);
+
 
 #endif /* VDS_SLICE_DATAHANDLE_HPP */

@@ -655,13 +655,7 @@ int datahandle_new(
     try {
         if (not out) throw detail::nullptr_error("Invalid out pointer");
 
-        OpenVDS::Error error;
-        auto handle = OpenVDS::Open(url, credentials, error);
-        if(error.code != 0) {
-            throw std::runtime_error("Could not open VDS: " + error.string);
-        }
-
-        *out = new DataHandle(std::move(handle));
+        *out = make_datahandle(url, credentials);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
