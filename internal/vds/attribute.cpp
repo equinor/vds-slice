@@ -72,6 +72,44 @@ float Mean::compute(
     return sum / this->vsize;
 }
 
+float MeanAbs::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    double sum = std::accumulate(begin, end, 0.0,
+        [](double acc, double x) { return acc + std::abs(x); });
+    return sum / this->vsize;
+}
+
+float MeanPos::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    int count = 0;
+    double sum = std::accumulate(begin, end, 0.0, [&](double acc, double x) {
+        if (x > 0) {
+            count ++;
+            return acc + x;
+        }
+        return acc;
+    });
+    return count > 0 ? sum / count : 0;
+}
+
+float MeanNeg::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    int count = 0;
+    double sum = std::accumulate(begin, end, 0.0, [&](double acc, double x) {
+        if (x < 0) {
+            count ++;
+            return acc + x;
+        }
+        return acc;
+    });
+    return count > 0 ? sum / count : 0;
+}
 
 float Median::compute(
     const AttributeMap::InputIt begin,
@@ -110,16 +148,57 @@ float Rms::compute(
     return std::sqrt(sum / this->vsize);
 }
 
-float Sd::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
-) noexcept (false) {
+namespace {
+
+double variance(
+    const  AttributeMap::InputIt begin,
+    const  AttributeMap::InputIt end,
+    std::size_t vsize
+){
     double sum = std::accumulate(begin, end, 0.0);
     double mean = sum / vsize;
     double stdSum = std::accumulate(begin, end, 0.0,
         [&](double a, double b){ return a + std::pow(b - mean, 2); }
     );
-    return std::sqrt(stdSum / vsize);
+    return stdSum / vsize;
+}
+
+} // namespace
+
+float Var::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    return variance(begin, end, vsize);
+}
+
+float Sd::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    return std::sqrt(variance(begin, end, vsize));
+}
+
+float SumPos::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    double sum = 0.0;
+    std::for_each(begin, end, [&](double x) {
+         if (x > 0) { sum += x; }
+    });
+    return sum; 
+}
+
+float SumNeg::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    double sum = 0.0;
+    std::for_each(begin, end, [&](double x) {
+         if (x < 0) { sum += x; }
+    });
+    return sum;
 }
 
 void fill_all(

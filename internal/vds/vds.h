@@ -117,9 +117,15 @@ enum attribute {
     MAX,
     MAXABS,
     MEAN,
+    MEANABS,
+    MEANPOS,
+    MEANNEG,
     MEDIAN,
     RMS,
-    SD
+    VAR,
+    SD,
+    SUMPOS,
+    SUMNEG
 };
 
 int metadata(

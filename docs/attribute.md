@@ -25,9 +25,16 @@ min         | Minimum value
 max         | Maximum value
 maxabs      | Absolute maximum value
 mean        | Mean value
+meanabs     | Mean of absolute values
+meanpos     | Mean of positive values
+meanneg     | Mean of negative values
 median      | Median value
 rms         | Root mean square
+var         | Variance
 sd          | Standard deviation
+sumpos      | Sum of positive samples
+sumneg      | Sum of negative samples
+
 
 ## Response
 On success (200) the multipart/mixed response consists of n parts. The first

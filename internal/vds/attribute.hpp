@@ -211,6 +211,32 @@ private:
     std::size_t vsize;
 };
 
+class MeanAbs final : public AttributeMap {
+public:
+    MeanAbs(void* dst, std::size_t size, std::size_t vsize)
+        : AttributeMap(dst, size), vsize(vsize)
+    {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+
+private:
+    std::size_t vsize;
+};
+
+class MeanPos final : public AttributeMap {
+public:
+    MeanPos(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+};
+
+class MeanNeg final : public AttributeMap {
+public:
+    MeanNeg(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+};
+
 class Median final : public AttributeMap {
 public:
     Median(void* dst, std::size_t size, std::size_t vsize)
@@ -235,6 +261,21 @@ private:
     std::size_t vsize;
 };
 
+/* Calculated the population variance as we are interested in variance strictly
+ * for the data defined by each window.
+ */
+class Var final : public AttributeMap {
+public:
+    Var(void* dst, std::size_t size, std::size_t vsize)
+        : AttributeMap(dst, size), vsize(vsize)
+    {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+
+private:
+    std::size_t vsize;
+};
+
 /* Calculated the population standard deviation as we are interested in
  * standard deviation strictly for the data defined by each window.
  */
@@ -250,6 +291,19 @@ private:
     std::size_t vsize;
 };
 
+class SumPos final : public AttributeMap {
+public:
+    SumPos(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+};
+
+class SumNeg final : public AttributeMap {
+public:
+    SumNeg(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+};
 
 void calc_attributes(
     Horizon const& horizon,
