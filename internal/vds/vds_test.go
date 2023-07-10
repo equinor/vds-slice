@@ -942,6 +942,7 @@ func TestAttribute(t *testing.T) {
 		"mean",
 		"meanabs",
 		"meanpos",
+		"meanneg",
 		"median",
 		"rms",
 		"var",
@@ -957,14 +958,13 @@ func TestAttribute(t *testing.T) {
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // mean
 		{  1.3,       1.3,        8.5,       6.5,      fill,  16.5,      fill, fill }, // meanabs
 		{  1,         1.5,        0,         6.5,      fill,  0,         fill, fill }, // meanpos
+		{ -1.5,      -1,         -8.5,       0,        fill, -16.5,      fill, fill }, // meanneg
 		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // median
 		{  1.5,       1.5,        8.958237,  7.0887237,fill,  17.442764, fill, fill }, // rms
 		{  2,           2,        8,         8,        fill,  32,        fill, fill }, // var
 		{  1.4142135, 1.4142135,  2.828427,  2.828427, fill,   5.656854, fill, fill }, // sd
 		{  2,         4.5,        0,         32.5,     fill,   0,        fill, fill }, // sumpos
 		{ -4.5,      -2,        -42.5,       0,        fill, -82.5,      fill, fill }, // sumneg
-
-
 	}
 	
 	horizon := [][]float32{

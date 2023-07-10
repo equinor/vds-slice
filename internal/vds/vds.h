@@ -119,6 +119,7 @@ enum attribute {
     MEAN,
     MEANABS,
     MEANPOS,
+    MEANNEG,
     MEDIAN,
     RMS,
     VAR,

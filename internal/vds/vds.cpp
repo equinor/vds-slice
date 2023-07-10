@@ -577,6 +577,7 @@ void calculate_attribute(
             case MEAN:    { append(attrs,   Mean(dst, size, vsize)    );   break; }
             case MEANABS: { append(attrs,   MeanAbs(dst, size, vsize) );   break; }
             case MEANPOS: { append(attrs,   MeanPos(dst, size)        );   break; }
+            case MEANNEG: { append(attrs,   MeanNeg(dst, size)        );   break; }
             case MEDIAN:  { append(attrs,   Median(dst, size, vsize)  );   break; }
             case RMS:     { append(attrs,   Rms(dst, size, vsize)     );   break; }
             case VAR:     { append(attrs,   Var(dst, size, vsize)     );   break; }

@@ -230,6 +230,13 @@ public:
     float compute(InputIt begin, InputIt end) noexcept (false) override;
 };
 
+class MeanNeg final : public AttributeMap {
+public:
+    MeanNeg(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(InputIt begin, InputIt end) noexcept (false) override;
+};
+
 class Median final : public AttributeMap {
 public:
     Median(void* dst, std::size_t size, std::size_t vsize)

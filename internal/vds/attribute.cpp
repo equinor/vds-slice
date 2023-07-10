@@ -96,6 +96,21 @@ float MeanPos::compute(
     return count > 0 ? sum / count : 0;
 }
 
+float MeanNeg::compute(
+    const AttributeMap::InputIt begin,
+    const AttributeMap::InputIt end
+) noexcept (false) {
+    int count = 0;
+    double sum = std::accumulate(begin, end, 0.0, [&](double acc, double x) {
+        if (x < 0) {
+            count ++;
+            return acc + x;
+        }
+        return acc;
+    });
+    return count > 0 ? sum / count : 0;
+}
+
 float Median::compute(
     const AttributeMap::InputIt begin,
     const AttributeMap::InputIt end

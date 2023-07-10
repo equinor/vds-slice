@@ -169,6 +169,7 @@ func GetAttributeType(attribute string) (int, error) {
 	case "mean":        return C.MEAN,    nil
 	case "meanabs":     return C.MEANABS, nil
 	case "meanpos":     return C.MEANPOS, nil
+	case "meanneg":     return C.MEANNEG, nil
 	case "median":      return C.MEDIAN,  nil
 	case "rms":         return C.RMS,     nil
 	case "var":         return C.VAR,     nil
@@ -179,7 +180,7 @@ func GetAttributeType(attribute string) (int, error) {
 	default:
 		options := []string{
 			"samplevalue", "min", "max", "maxabs", "mean", "meanabs", "meanpos",
-			"median", "rms", "var", "sd", "sumpos", "sumneg",
+			"meanneg", "median", "rms", "var", "sd", "sumpos", "sumneg",
 		}
 		msg := "invalid attribute '%s', valid options are: %s"
 		return -1, NewInvalidArgument(fmt.Sprintf(
