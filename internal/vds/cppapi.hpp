@@ -8,6 +8,8 @@
 #include "direction.hpp"
 #include "regularsurface.hpp"
 
+namespace cppapi {
+
 void fetch_slice(
     DataHandle& handle,
     Direction const direction,
@@ -71,5 +73,7 @@ void fetch_attribute_metadata(
     std::size_t ncols,
     response* out
 ) noexcept (false);
+
+} // namespace cppapi
 
 #endif // VDS_SLICE_CPPAPI_HPP

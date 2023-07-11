@@ -18,6 +18,8 @@
 #include "subvolume.hpp"
 #include "verticalwindow.hpp"
 
+namespace {
+
 void to_response(
     std::unique_ptr< char[] > data,
     std::int64_t const size,
@@ -97,6 +99,34 @@ void validate_vertical_axis(
     }
 }
 
+/**
+ * For every index in 'novals', write n successive floats with value
+ * 'fillvalue' to dst. Where n is 'vertical_size'.
+ */
+void write_fillvalue(
+    char * dst,
+    std::vector< std::size_t > const& novals,
+    std::size_t vertical_size,
+    float fillvalue
+) {
+    std::vector< float > fill(vertical_size, fillvalue);
+    std::for_each(novals.begin(), novals.end(), [&](std::size_t i) {
+        std::memcpy(
+            dst + i * sizeof(float),
+            fill.data(),
+            fill.size() * sizeof(float)
+        );
+    });
+}
+
+template< typename T >
+void append(std::vector< std::unique_ptr< AttributeMap > >& vec, T obj) {
+    vec.push_back( std::unique_ptr< T >( new T( std::move(obj) ) ) );
+}
+
+} // namespace
+
+namespace cppapi {
 
 void fetch_slice(
     DataHandle& handle,
@@ -189,26 +219,6 @@ void fetch_fence(
     );
 
     return to_response(std::move(data), size, out);
-}
-
-/**
- * For every index in 'novals', write n successive floats with value
- * 'fillvalue' to dst. Where n is 'vertical_size'.
- */
-void write_fillvalue(
-    char * dst,
-    std::vector< std::size_t > const& novals,
-    std::size_t vertical_size,
-    float fillvalue
-) {
-    std::vector< float > fill(vertical_size, fillvalue);
-    std::for_each(novals.begin(), novals.end(), [&](std::size_t i) {
-        std::memcpy(
-            dst + i * sizeof(float),
-            fill.data(),
-            fill.size() * sizeof(float)
-        );
-    });
 }
 
 void fetch_horizon(
@@ -330,10 +340,6 @@ void fetch_horizon(
     return to_response(std::move(buffer), size, out);
 }
 
-template< typename T >
-void append(std::vector< std::unique_ptr< AttributeMap > >& vec, T obj) {
-    vec.push_back( std::unique_ptr< T >( new T( std::move(obj) ) ) );
-}
 
 void calculate_attribute(
     DataHandle& handle,
@@ -380,3 +386,5 @@ void calculate_attribute(
 
     calc_attributes(horizon, surface, src_window, dst_window, attrs, from, to);
 }
+
+} // namespace cppapi

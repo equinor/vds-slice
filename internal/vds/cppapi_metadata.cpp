@@ -13,6 +13,8 @@
 #include "exceptions.hpp"
 #include "metadatahandle.hpp"
 
+namespace {
+
 std::string fmtstr(OpenVDS::VolumeDataFormat format) {
     /*
      * We always request data in OpenVDS::VolumeDataFormat::Format_R32 format
@@ -126,6 +128,9 @@ nlohmann::json json_slice_geospatial(
     }
 }
 
+} // namespace
+
+namespace cppapi {
 
 void fetch_slice_metadata(
     DataHandle& handle,
@@ -228,3 +233,5 @@ void fetch_attribute_metadata(
 
     return to_response(meta, out);
 }
+
+} // namespace cppapi
