@@ -6,8 +6,6 @@
 
 #include <OpenVDS/OpenVDS.h>
 
-#include "vds.h"
-
 class Axis {
 public:
     Axis(

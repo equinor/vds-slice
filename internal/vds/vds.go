@@ -3,7 +3,8 @@ package vds
 /*
 #cgo LDFLAGS: -lopenvds
 #cgo CXXFLAGS: -std=c++17
-#include <vds.h>
+#include <capi.h>
+#include <ctypes.h>
 #include <stdlib.h>
 */
 import "C"

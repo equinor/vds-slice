@@ -4,7 +4,7 @@
 
 #include <OpenVDS/KnownMetadata.h>
 
-#include "vds.h"
+#include "ctypes.h"
 
 enum coordinate_system Direction::coordinate_system() const noexcept(false) {
     switch (this->name()) {

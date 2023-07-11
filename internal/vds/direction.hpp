@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "vds.h"
+#include "ctypes.h"
 
 class Direction {
 public:

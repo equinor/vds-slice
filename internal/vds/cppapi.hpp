@@ -1,7 +1,7 @@
 #ifndef VDS_SLICE_CPPAPI_HPP
 #define VDS_SLICE_CPPAPI_HPP
 
-#include "vds.h"
+#include "ctypes.h"
 
 #include "attribute.hpp"
 #include "datahandle.hpp"

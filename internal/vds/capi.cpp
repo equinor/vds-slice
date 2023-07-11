@@ -1,6 +1,8 @@
-#include "vds.h"
+#include "ctypes.h"
+#include "capi.h"
 
 #include "cppapi.hpp"
+
 #include "exceptions.hpp"
 
 void response_delete(struct response* buf) {
