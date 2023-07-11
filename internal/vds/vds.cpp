@@ -135,7 +135,7 @@ int slice(
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
         Direction const direction(ax);
-        cppapi::fetch_slice(*handle, direction, lineno, out);
+        cppapi::slice(*handle, direction, lineno, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -154,7 +154,7 @@ int slice_metadata(
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
         Direction const direction(ax);
-        cppapi::fetch_slice_metadata(*handle, direction, lineno, out);
+        cppapi::slice_metadata(*handle, direction, lineno, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -174,7 +174,7 @@ int fence(
         if (not out)    throw detail::nullptr_error("Invalid out pointer");
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        cppapi::fetch_fence(
+        cppapi::fence(
             *handle,
             coordinate_system,
             coordinates,
@@ -198,7 +198,7 @@ int fence_metadata(
         if (not out)    throw detail::nullptr_error("Invalid out pointer");
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        cppapi::fetch_fence_metadata(*handle, npoints, out);
+        cppapi::fence_metadata(*handle, npoints, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -235,7 +235,7 @@ int horizon(
         if (not handle)  throw detail::nullptr_error("Invalid handle");
         if (not surface) throw detail::nullptr_error("Invalid surface");
 
-        cppapi::fetch_horizon(
+        cppapi::horizon(
             *handle,
             *surface,
             above,
@@ -260,7 +260,7 @@ int attribute_metadata(
         if (not out)    throw detail::nullptr_error("Invalid out pointer");
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
-        cppapi::fetch_attribute_metadata(*handle, nrows, ncols, out);
+        cppapi::attributes_metadata(*handle, nrows, ncols, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -308,7 +308,7 @@ int attribute(
             outs[i] = static_cast< char* >(out) + horizon.mapsize() * i;
         }
 
-        cppapi::calculate_attribute(
+        cppapi::attributes(
             *handle,
             horizon,
             *surface,

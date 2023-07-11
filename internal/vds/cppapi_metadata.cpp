@@ -132,7 +132,7 @@ nlohmann::json json_slice_geospatial(
 
 namespace cppapi {
 
-void fetch_slice_metadata(
+void slice_metadata(
     DataHandle& handle,
     Direction const direction,
     int lineno,
@@ -178,7 +178,7 @@ void fetch_slice_metadata(
     return to_response(meta, out);
 }
 
-void fetch_fence_metadata(
+void fence_metadata(
     DataHandle& handle,
     size_t npoints,
     response* out
@@ -219,7 +219,7 @@ void metadata(DataHandle& handle, response* out) {
     return to_response(meta, out);
 }
 
-void fetch_attribute_metadata(
+void attributes_metadata(
     DataHandle& handle,
     std::size_t nrows,
     std::size_t ncols,

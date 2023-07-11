@@ -10,14 +10,14 @@
 
 namespace cppapi {
 
-void fetch_slice(
+void slice(
     DataHandle& handle,
     Direction const direction,
     int lineno,
     response* out
 ) noexcept (false);
 
-void fetch_fence(
+void fence(
     DataHandle& handle,
     enum coordinate_system coordinate_system,
     const float* coordinates,
@@ -26,7 +26,7 @@ void fetch_fence(
     response* out
 ) noexcept (false);
 
-void fetch_horizon(
+void horizon(
     DataHandle& handle,
     RegularSurface const& surface,
     float above,
@@ -35,7 +35,7 @@ void fetch_horizon(
     response* out
 ) noexcept (false);
 
-void calculate_attribute(
+void attributes(
     DataHandle& handle,
     Horizon const& horizon,
     RegularSurface const& surface,
@@ -48,7 +48,7 @@ void calculate_attribute(
     void** out
 ) noexcept (false);
 
-void fetch_slice_metadata(
+void slice_metadata(
     DataHandle& handle,
     Direction const direction,
     int lineno,
@@ -56,7 +56,7 @@ void fetch_slice_metadata(
 ) noexcept (false);
 
 
-void fetch_fence_metadata(
+void fence_metadata(
     DataHandle& handle,
     size_t npoints,
     response* out
@@ -67,7 +67,7 @@ void metadata(
     response* out
 ) noexcept (false);
 
-void fetch_attribute_metadata(
+void attributes_metadata(
     DataHandle& handle,
     std::size_t nrows,
     std::size_t ncols,

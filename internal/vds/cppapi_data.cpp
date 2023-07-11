@@ -128,7 +128,7 @@ void append(std::vector< std::unique_ptr< AttributeMap > >& vec, T obj) {
 
 namespace cppapi {
 
-void fetch_slice(
+void slice(
     DataHandle& handle,
     Direction const direction,
     int lineno,
@@ -152,7 +152,7 @@ void fetch_slice(
     return to_response(std::move(data), size, out);
 }
 
-void fetch_fence(
+void fence(
     DataHandle& handle,
     enum coordinate_system coordinate_system,
     const float* coordinates,
@@ -221,7 +221,7 @@ void fetch_fence(
     return to_response(std::move(data), size, out);
 }
 
-void fetch_horizon(
+void horizon(
     DataHandle& handle,
     RegularSurface const& surface,
     float above,
@@ -341,7 +341,7 @@ void fetch_horizon(
 }
 
 
-void calculate_attribute(
+void attributes(
     DataHandle& handle,
     Horizon const& horizon,
     RegularSurface const& surface,
