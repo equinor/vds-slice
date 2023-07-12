@@ -1,4 +1,4 @@
-package vds
+package core
 
 type InvalidArgument struct {
 	message string

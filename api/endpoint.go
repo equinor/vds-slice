@@ -10,14 +10,14 @@ import (
 	"github.com/gin-gonic/gin/binding"
 
 	"github.com/equinor/vds-slice/internal/cache"
-	"github.com/equinor/vds-slice/internal/vds"
+	"github.com/equinor/vds-slice/internal/core"
 )
 
 func httpStatusCode(err error) int {
 	switch err.(type) {
-	case *vds.InvalidArgument:
+	case *core.InvalidArgument:
 		return http.StatusBadRequest
-	case *vds.InternalError:
+	case *core.InternalError:
 		return http.StatusInternalServerError
 	default:
 		return http.StatusInternalServerError
@@ -53,7 +53,7 @@ func abortOnError(ctx *gin.Context, err error) bool {
 }
 
 type Endpoint struct {
-	MakeVdsConnection vds.ConnectionMaker
+	MakeVdsConnection core.ConnectionMaker
 	Cache             cache.Cache
 }
 
@@ -70,7 +70,7 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 		return
 	}
 
-	handle, err := vds.NewVDSHandle(conn)
+	handle, err := core.NewVDSHandle(conn)
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -103,13 +103,13 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		return
 	}
 
-	handle, err := vds.NewVDSHandle(conn)
+	handle, err := core.NewVDSHandle(conn)
 	if abortOnError(ctx, err) {
 		return
 	}
 	defer handle.Close()
 
-	axis, err := vds.GetAxis(strings.ToLower(request.Direction))
+	axis, err := core.GetAxis(strings.ToLower(request.Direction))
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -148,20 +148,20 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 		return
 	}
 
-	handle, err := vds.NewVDSHandle(conn)
+	handle, err := core.NewVDSHandle(conn)
 	if abortOnError(ctx, err) {
 		return
 	}
 	defer handle.Close()
 
-	coordinateSystem, err := vds.GetCoordinateSystem(
+	coordinateSystem, err := core.GetCoordinateSystem(
 		strings.ToLower(request.CoordinateSystem),
 	)
 	if abortOnError(ctx, err) {
 		return
 	}
 
-	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
+	interpolation, err := core.GetInterpolationMethod(request.Interpolation)
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -190,7 +190,7 @@ func validateVerticalWindow(above float32, below float32, stepSize float32) erro
 	const upperBound = 250
 
 	if above < lowerBound || above >= upperBound {
-		return vds.NewInvalidArgument(fmt.Sprintf(
+		return core.NewInvalidArgument(fmt.Sprintf(
 			"'above' out of range! Must be within [%d, %d], was %f",
 			lowerBound,
 			upperBound,
@@ -199,7 +199,7 @@ func validateVerticalWindow(above float32, below float32, stepSize float32) erro
 	}
 
 	if below < lowerBound || below >= upperBound {
-		return vds.NewInvalidArgument(fmt.Sprintf(
+		return core.NewInvalidArgument(fmt.Sprintf(
 			"'below' out of range! Must be within [%d, %d], was %f",
 			lowerBound,
 			upperBound,
@@ -208,7 +208,7 @@ func validateVerticalWindow(above float32, below float32, stepSize float32) erro
 	}
 
 	if stepSize < lowerBound {
-		return vds.NewInvalidArgument(fmt.Sprintf(
+		return core.NewInvalidArgument(fmt.Sprintf(
 			"'stepsize' out of range! Must be bigger than %d, was %f",
 			lowerBound,
 			stepSize,
@@ -236,7 +236,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		return
 	}
 
-	handle, err := vds.NewVDSHandle(conn)
+	handle, err := core.NewVDSHandle(conn)
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -249,7 +249,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		return
 	}
 
-	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
+	interpolation, err := core.GetInterpolationMethod(request.Interpolation)
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -284,11 +284,11 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 
 func parseGetRequest(ctx *gin.Context, v Normalizable) error {
 	if err := json.Unmarshal([]byte(ctx.Query("query")), v); err != nil {
-		return vds.NewInvalidArgument(err.Error())
+		return core.NewInvalidArgument(err.Error())
 	}
 
 	if err := binding.Validator.ValidateStruct(v); err != nil {
-		return vds.NewInvalidArgument(err.Error())
+		return core.NewInvalidArgument(err.Error())
 	}
 
 	return v.NormalizeConnection()
@@ -296,7 +296,7 @@ func parseGetRequest(ctx *gin.Context, v Normalizable) error {
 
 func parsePostRequest(ctx *gin.Context, v Normalizable) error {
 	if err := ctx.ShouldBind(v); err != nil {
-		return vds.NewInvalidArgument(err.Error())
+		return core.NewInvalidArgument(err.Error())
 	}
 	return v.NormalizeConnection()
 }
@@ -310,7 +310,7 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 // @Tags     metadata
 // @Param    query  query  string  True  "Urlencoded/escaped MetadataRequest"
 // @Produce  json
-// @Success  200 {object} vds.Metadata
+// @Success  200 {object} core.Metadata
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /metadata  [get]
@@ -329,7 +329,7 @@ func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 // @Tags     metadata
 // @Param    body  body  MetadataRequest  True  "Request parameters"
 // @Produce  json
-// @Success  200 {object} vds.Metadata
+// @Success  200 {object} core.Metadata
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /metadata  [post]
@@ -349,7 +349,7 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 // @Tags     slice
 // @Param    query  query  string  True  "Urlencoded/escaped SliceRequest"
 // @Produce  multipart/mixed
-// @Success  200 {object} vds.SliceMetadata "(Example below only for metadata part)"
+// @Success  200 {object} core.SliceMetadata "(Example below only for metadata part)"
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [get]
@@ -370,7 +370,7 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 // @Param    body  body  SliceRequest  True  "Query Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
-// @Success  200 {object} vds.SliceMetadata "(Example below only for metadata part)"
+// @Success  200 {object} core.SliceMetadata "(Example below only for metadata part)"
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /slice  [post]
@@ -391,7 +391,7 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 // @Param    query  query  string  True  "Urlencoded/escaped FenceResponse"
 // @Accept   application/json
 // @Produce  multipart/mixed
-// @Success  200 {object} vds.FenceMetadata "(Example below only for metadata part)"
+// @Success  200 {object} core.FenceMetadata "(Example below only for metadata part)"
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /fence  [get]
@@ -412,7 +412,7 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 // @Param    body  body  FenceRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
-// @Success  200 {object} vds.FenceMetadata "(Example below only for metadata part)"
+// @Success  200 {object} core.FenceMetadata "(Example below only for metadata part)"
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /fence  [post]

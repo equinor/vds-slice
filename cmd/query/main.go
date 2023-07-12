@@ -9,15 +9,15 @@ import (
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/pborman/getopt/v2"
-	"github.com/swaggo/files"
-	"github.com/swaggo/gin-swagger"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/equinor/vds-slice/api"
 	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/internal/cache"
+	"github.com/equinor/vds-slice/internal/core"
 	"github.com/equinor/vds-slice/internal/logging"
 	"github.com/equinor/vds-slice/internal/metrics"
-	"github.com/equinor/vds-slice/internal/vds"
 )
 
 type opts struct {
@@ -168,7 +168,7 @@ func main() {
 	storageAccounts := strings.Split(opts.storageAccounts, ",")
 
 	endpoint := api.Endpoint{
-		MakeVdsConnection: vds.MakeAzureConnection(storageAccounts),
+		MakeVdsConnection: core.MakeAzureConnection(storageAccounts),
 		Cache:             cache.NewCache(opts.cacheSize),
 	}
 

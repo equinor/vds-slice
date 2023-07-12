@@ -17,7 +17,7 @@ import (
 
 	"github.com/equinor/vds-slice/api"
 	"github.com/equinor/vds-slice/internal/cache"
-	"github.com/equinor/vds-slice/internal/vds"
+	"github.com/equinor/vds-slice/internal/core"
 )
 
 const well_known = "../../testdata/well_known/well_known_default.vds"
@@ -191,10 +191,10 @@ type testSliceMetadata struct {
 	Format string        `json:"format" binding:"required"`
 }
 
-func MakeFileConnection() vds.ConnectionMaker {
-	return func(path, sas string) (vds.Connection, error) {
+func MakeFileConnection() core.ConnectionMaker {
+	return func(path, sas string) (core.Connection, error) {
 		path = fmt.Sprintf("file://%s", path)
-		return vds.NewFileConnection(path), nil
+		return core.NewFileConnection(path), nil
 	}
 }
 

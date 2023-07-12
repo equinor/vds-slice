@@ -1,4 +1,4 @@
-package vds
+package core
 
 /*
 #cgo LDFLAGS: -lopenvds

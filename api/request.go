@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/equinor/vds-slice/internal/cache"
-	"github.com/equinor/vds-slice/internal/vds"
+	"github.com/equinor/vds-slice/internal/core"
 )
 
 type RequestedResource struct {
@@ -48,7 +48,7 @@ func (r *RequestedResource) NormalizeConnection() error {
 	}
 
 	if len(blob) < 2 {
-		return vds.NewInvalidArgument("No valid Sas token is found in the request")
+		return core.NewInvalidArgument("No valid Sas token is found in the request")
 	}
 	r.Sas = blob[1]
 	return nil
