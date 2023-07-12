@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -655,6 +656,27 @@ func TestFenceInterpolationCaseInsensitive(t *testing.T) {
 	interpolation, _ := GetInterpolationMethod("CuBiC")
 
 	require.Equal(t, interpolation, expectedInterpolation)
+}
+
+func TestFenceMetadata(t *testing.T) {
+	coordinates := [][]float32{{5, 10}, {5, 10}, {1, 11}, {2, 11}, {4, 11}}
+	expected := FenceMetadata{
+		Format: "<f4",
+		Shape:  []int{5, 4},
+	}
+
+	handle, _ := NewVDSHandle(well_known)
+	defer handle.Close()
+	buf, err := handle.GetFenceMetadata(coordinates)
+	require.NoErrorf(t, err, "Failed to retrieve fence metadata, err %v", err)
+
+	var meta FenceMetadata
+	dec := json.NewDecoder(bytes.NewReader(buf))
+	dec.DisallowUnknownFields()
+	err = dec.Decode(&meta)
+	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
+
+	require.Equal(t, expected, meta)
 }
 
 func TestOnly3DSupported(t *testing.T) {
@@ -1595,4 +1617,28 @@ func TestAttributesSupersampling(t *testing.T) {
 			*result,
 		)
 	}
+}
+
+func TestAttributeMetadata(t *testing.T) {
+	horizon := [][]float32{
+		{10, 10, 10, 10, 10, 10},
+		{10, 10, 10, 10, 10, 10},
+	}
+	expected := AttributeMetadata{
+		Format: "<f4",
+		Shape:  []int{2, 6},
+	}
+
+	handle, _ := NewVDSHandle(well_known)
+	defer handle.Close()
+	buf, err := handle.GetAttributeMetadata(horizon)
+	require.NoErrorf(t, err, "Failed to retrieve attribute metadata, err %v", err)
+
+	var meta AttributeMetadata
+	dec := json.NewDecoder(bytes.NewReader(buf))
+	dec.DisallowUnknownFields()
+	err = dec.Decode(&meta)
+	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
+
+	require.Equal(t, expected, meta)
 }
