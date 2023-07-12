@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cmath>
+#include <stdexcept>
 
 struct Point {
     double x;

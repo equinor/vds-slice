@@ -4,7 +4,9 @@
 #include "regularsurface.hpp"
 #include "verticalwindow.hpp"
 #include <cstddef>
+#include <cstring>
 #include <iterator>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 

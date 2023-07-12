@@ -5,7 +5,7 @@
 
 #include "axis.hpp"
 #include "metadatahandle.hpp"
-#include "vds.h"
+#include "ctypes.h"
 
 struct SubVolume {
     struct {

@@ -26,6 +26,18 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
 
 } /* namespace */
 
+DataHandle* make_datahandle(
+    const char* url,
+    const char* credentials
+) {
+    OpenVDS::Error error;
+    auto handle = OpenVDS::Open(url, credentials, error);
+    if(error.code != 0) {
+        throw std::runtime_error("Could not open VDS: " + error.string);
+    }
+    return new DataHandle(std::move(handle));
+}
+
 DataHandle::DataHandle(OpenVDS::VDSHandle handle)
     : m_file_handle(handle)
     , m_access_manager(OpenVDS::GetAccessManager(handle))
