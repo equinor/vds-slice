@@ -433,6 +433,9 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 // @Param    body  body  AttributeRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
+// @Success  200 {object} core.AttributeMetadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /horizon  [post]
 func (e *Endpoint) AttributesPost(ctx *gin.Context) {
 	var request AttributeRequest

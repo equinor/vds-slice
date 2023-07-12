@@ -50,10 +50,9 @@ MetadataHandle const& DataHandle::get_metadata() const noexcept (true) {
 
 OpenVDS::VolumeDataFormat DataHandle::format() noexcept (true) {
     /*
-     * We always want to request data in
-     * OpenVDS::VolumeDataFormat::Format_R32 format for slice.
-     * For fence documentation says: "The traces are always in 32-bit floating
-     * point format."
+     * We always want to request data in OpenVDS::VolumeDataFormat::Format_R32
+     * format for slice. For fence documentation says: "The traces/samples are
+     * always in 32-bit floating point format."
      */
     return OpenVDS::VolumeDataFormat::Format_R32;
 }

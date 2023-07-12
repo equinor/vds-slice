@@ -38,14 +38,14 @@ sumneg      | Sum of negative samples
 
 ## Response
 On success (200) the multipart/mixed response consists of n parts. The first
-part is json document with metadata about the attributes.Each of the next n - 1
-parts contains one attribute. The ordering of the attributes from the request
+part is a json document with metadata about the attributes. Each of the next n -
+1 parts contains one attribute. The ordering of the attributes from the request
 is preserved.
 
 ### Metadata part
 *Content-Type: application/json*
 Metadata related to the returned horizon, such as data shape. See the
-Horizon data model.
+AttributeMetadata data model.
 
 ### Data part(s)
 *Content-Type: application/octet-stream*

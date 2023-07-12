@@ -108,6 +108,16 @@ type FenceMetadata struct {
 	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
 } // @name FenceMetadata
 
+// @Description Attribute metadata
+type AttributeMetadata struct {
+	// Data format is represented by numpy-style formatcodes. The format is
+	// always 4-byte floats, little endian (<f4).
+	Format string `json:"format" example:"<f4"`
+
+	// Shape of the returned attribute map.
+	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
+} // @name AttributeMetadata
+
 func GetAxis(direction string) (int, error) {
 	switch direction {
 	case "i":         return AxisI,         nil
