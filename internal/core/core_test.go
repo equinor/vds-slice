@@ -231,6 +231,31 @@ func TestDepthAxis(t *testing.T) {
 	}
 }
 
+func TestSliceMetadata(t *testing.T) {
+	lineno := 1
+	direction := AxisJ
+	expected := SliceMetadata{
+		Format:     "<f4",
+		X:          Axis{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, Unit: "ms"},
+		Y:          Axis{Annotation: "Inline", Min: 1, Max: 5, Samples: 3, Unit: "unitless"},
+		Geospatial: [][]float64{{0, 3}, {12, 11}},
+		Shape:      []int{3, 4},
+	}
+	handle, _ := NewVDSHandle(well_known)
+	defer handle.Close()
+	buf, err := handle.GetSliceMetadata(lineno, direction)
+	require.NoErrorf(t, err, "Failed to retrieve slice metadata, err %v", err)
+
+	var meta SliceMetadata
+
+	dec := json.NewDecoder(bytes.NewReader(buf))
+	dec.DisallowUnknownFields()
+	err = dec.Decode(&meta)
+	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
+
+	require.Equal(t, expected, meta)
+}
+
 func TestSliceMetadataAxisOrdering(t *testing.T) {
 	testcases := []struct {
 		name         string

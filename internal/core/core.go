@@ -75,6 +75,9 @@ type SliceMetadata struct {
 	// Y-axis information
 	Y Axis `json:"y"`
 
+	// Shape of the returned slice. Equals to {Y.Samples, X.Samples}
+	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
+
 	// Horizontal bounding box of the slice. For inline/crossline slices this
 	// is a linestring, while for time/depth slices this is essentially the
 	// bounding box of the volume.
