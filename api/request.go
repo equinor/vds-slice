@@ -40,7 +40,6 @@ type Normalizable interface {
 	NormalizeConnection() error
 }
 
-
 func (r *RequestedResource) NormalizeConnection() error {
 	blob := strings.Split(strings.TrimSpace(r.Vds), "?")
 	r.Vds = blob[0]

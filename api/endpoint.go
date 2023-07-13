@@ -14,9 +14,11 @@ import (
 )
 
 func httpStatusCode(err error) int {
-	switch err.(type){
-	case *vds.InvalidArgument: return http.StatusBadRequest
-	case *vds.InternalError:   return http.StatusInternalServerError
+	switch err.(type) {
+	case *vds.InvalidArgument:
+		return http.StatusBadRequest
+	case *vds.InternalError:
+		return http.StatusInternalServerError
 	default:
 		return http.StatusInternalServerError
 	}
@@ -64,14 +66,20 @@ func prepareRequestLogging(ctx *gin.Context, request Stringable) {
 func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	handle, err := vds.NewVDSHandle(conn)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 	defer handle.Close()
 
 	buffer, err := handle.GetMetadata()
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	ctx.Data(http.StatusOK, "application/json", buffer)
 }
@@ -79,10 +87,14 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	cacheKey, err := request.Hash()
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -92,19 +104,27 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 	}
 
 	handle, err := vds.NewVDSHandle(conn)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 	defer handle.Close()
 
 	axis, err := vds.GetAxis(strings.ToLower(request.Direction))
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	metadata, err := handle.GetSliceMetadata(*request.Lineno, axis)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	data, err := handle.GetSlice(*request.Lineno, axis)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
+	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata))
 
 	writeResponse(ctx, metadata, [][]byte{data})
 }
@@ -112,10 +132,14 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	cacheKey, err := request.Hash()
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
 	if hit && conn.IsAuthorizedToRead() {
@@ -125,28 +149,38 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 	}
 
 	handle, err := vds.NewVDSHandle(conn)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 	defer handle.Close()
 
 	coordinateSystem, err := vds.GetCoordinateSystem(
 		strings.ToLower(request.CoordinateSystem),
 	)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	metadata, err := handle.GetFenceMetadata(request.Coordinates)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	data, err := handle.GetFence(
 		coordinateSystem,
 		request.Coordinates,
 		interpolation,
 	)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata));
+	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata))
 
 	writeResponse(ctx, metadata, [][]byte{data})
 }
@@ -163,7 +197,7 @@ func validateVerticalWindow(above float32, below float32, stepSize float32) erro
 			above,
 		))
 	}
-	
+
 	if below < lowerBound || below >= upperBound {
 		return vds.NewInvalidArgument(fmt.Sprintf(
 			"'below' out of range! Must be within [%d, %d], was %f",
@@ -172,7 +206,7 @@ func validateVerticalWindow(above float32, below float32, stepSize float32) erro
 			below,
 		))
 	}
-	
+
 	if stepSize < lowerBound {
 		return vds.NewInvalidArgument(fmt.Sprintf(
 			"'stepsize' out of range! Must be bigger than %d, was %f",
@@ -188,16 +222,24 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	prepareRequestLogging(ctx, request)
 
 	err := validateVerticalWindow(request.Above, request.Below, request.Stepsize)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	cacheKey, err := request.Hash()
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	handle, err := vds.NewVDSHandle(conn)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 	defer handle.Close()
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
@@ -208,10 +250,14 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 	}
 
 	interpolation, err := vds.GetInterpolationMethod(request.Interpolation)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	metadata, err := handle.GetAttributeMetadata(request.Horizon)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	data, err := handle.GetAttributes(
 		request.Horizon,
@@ -227,9 +273,11 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		request.Attributes,
 		interpolation,
 	)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata));
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata))
 
 	writeResponse(ctx, metadata, data)
 }
@@ -269,7 +317,9 @@ func (e *Endpoint) Health(ctx *gin.Context) {
 func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 	var request MetadataRequest
 	err := parseGetRequest(ctx, &request)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	e.metadata(ctx, request)
 }
@@ -286,7 +336,9 @@ func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 	var request MetadataRequest
 	err := parsePostRequest(ctx, &request)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	e.metadata(ctx, request)
 }
@@ -304,7 +356,9 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 func (e *Endpoint) SliceGet(ctx *gin.Context) {
 	var request SliceRequest
 	err := parseGetRequest(ctx, &request)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	e.slice(ctx, request)
 }
@@ -323,7 +377,9 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 func (e *Endpoint) SlicePost(ctx *gin.Context) {
 	var request SliceRequest
 	err := parsePostRequest(ctx, &request)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	e.slice(ctx, request)
 }
@@ -342,7 +398,9 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 func (e *Endpoint) FenceGet(ctx *gin.Context) {
 	var request FenceRequest
 	err := parseGetRequest(ctx, &request)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	e.fence(ctx, request)
 }
@@ -361,7 +419,9 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 func (e *Endpoint) FencePost(ctx *gin.Context) {
 	var request FenceRequest
 	err := parsePostRequest(ctx, &request)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	e.fence(ctx, request)
 }
@@ -377,7 +437,9 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 func (e *Endpoint) AttributesPost(ctx *gin.Context) {
 	var request AttributeRequest
 	err := parsePostRequest(ctx, &request)
-	if abortOnError(ctx, err) { return }
+	if abortOnError(ctx, err) {
+		return
+	}
 
 	e.attributes(ctx, request)
 }
