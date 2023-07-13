@@ -235,7 +235,9 @@ func TestSliceMetadata(t *testing.T) {
 	lineno := 1
 	direction := AxisJ
 	expected := SliceMetadata{
-		Format:     "<f4",
+		Array: Array{
+			Format: "<f4",
+		},
 		X:          Axis{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, Unit: "ms"},
 		Y:          Axis{Annotation: "Inline", Min: 1, Max: 5, Samples: 3, Unit: "unitless"},
 		Geospatial: [][]float64{{0, 3}, {12, 11}},
@@ -682,8 +684,10 @@ func TestFenceInterpolationCaseInsensitive(t *testing.T) {
 func TestFenceMetadata(t *testing.T) {
 	coordinates := [][]float32{{5, 10}, {5, 10}, {1, 11}, {2, 11}, {4, 11}}
 	expected := FenceMetadata{
-		Format: "<f4",
-		Shape:  []int{5, 4},
+		Array{
+			Format: "<f4",
+			Shape:  []int{5, 4},
+		},
 	}
 
 	handle, _ := NewVDSHandle(well_known)
@@ -1644,8 +1648,10 @@ func TestAttributeMetadata(t *testing.T) {
 		{10, 10, 10, 10, 10, 10},
 	}
 	expected := AttributeMetadata{
-		Format: "<f4",
-		Shape:  []int{2, 6},
+		Array{
+			Format: "<f4",
+			Shape:  []int{2, 6},
+		},
 	}
 
 	handle, _ := NewVDSHandle(well_known)
