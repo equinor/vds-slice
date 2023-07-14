@@ -1,4 +1,4 @@
-package vds
+package core
 
 /*
 #cgo LDFLAGS: -lopenvds
@@ -62,18 +62,29 @@ type BoundingBox struct {
 	Ij   [][]float64 `json:"ij"`
 } //@name BoundingBox
 
+type Array struct {
+	// Data format is represented by numpy-style formatcodes. Currently the
+	// format is always 4-byte floats, little endian (<f4).
+	Format string `json:"format" example:"<f4"`
+
+	// Shape of the returned data
+	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
+}
+
 // @Description Slice metadata
 type SliceMetadata struct {
-	// Data format is represented by a numpy-style formatcodes. E.g. f4 is 4
-	// byte float, u1 is 1 byte unsinged int and u2 is 2 byte usigned int.
-	// Currently format is always 4-byte floats, little endian (<f4).
-	Format string `json:"format" example:"<f4"`
+	Array
 
 	// X-axis information
 	X Axis `json:"x"`
 
 	// Y-axis information
 	Y Axis `json:"y"`
+
+	/* Override shape for docs */
+
+	// Shape of the returned slice. Equals to [Y.Samples, X.Samples]
+	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
 
 	// Horizontal bounding box of the slice. For inline/crossline slices this
 	// is a linestring, while for time/depth slices this is essentially the
@@ -100,13 +111,13 @@ type Metadata struct {
 
 // @Description Fence metadata
 type FenceMetadata struct {
-	// Data format is represented by numpy-style formatcodes. For fence the
-	// format is always 4-byte floats, little endian (<f4).
-	Format string `json:"format" example:"<f4"`
-
-	// Shape of the returned data fence.
-	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
+	Array
 } // @name FenceMetadata
+
+// @Description Attribute metadata
+type AttributeMetadata struct {
+	Array
+} // @name AttributeMetadata
 
 func GetAxis(direction string) (int, error) {
 	switch direction {

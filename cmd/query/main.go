@@ -3,19 +3,19 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/pborman/getopt/v2"
-	"github.com/swaggo/gin-swagger"
-	"github.com/swaggo/files"
-	"github.com/gin-contrib/gzip"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/api"
-	"github.com/equinor/vds-slice/internal/vds"
+	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/internal/cache"
+	"github.com/equinor/vds-slice/internal/core"
 	"github.com/equinor/vds-slice/internal/logging"
 	"github.com/equinor/vds-slice/internal/metrics"
 )
@@ -58,12 +58,12 @@ func parseAsBool(fallback bool, value string) bool {
 
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
-	
+
 	opts := opts{
-		storageAccounts: parseAsString("",   os.Getenv("VDSSLICE_STORAGE_ACCOUNTS")),
+		storageAccounts: parseAsString("", os.Getenv("VDSSLICE_STORAGE_ACCOUNTS")),
 		port:            parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
-		cacheSize:       parseAsUint32(0,    os.Getenv("VDSSLICE_CACHE_SIZE")),
-		metrics:         parseAsBool(false,  os.Getenv("VDSSLICE_METRICS")),
+		cacheSize:       parseAsUint32(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
+		metrics:         parseAsBool(false, os.Getenv("VDSSLICE_METRICS")),
 		metricsPort:     parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
 	}
 
@@ -71,9 +71,9 @@ func parseopts() opts {
 		&opts.storageAccounts,
 		"storage-accounts",
 		0,
-		"Comma-separated list of storage accounts that should be accepted by the API.\n" +
-		"Example: 'https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net'\n" +
-		"Can also be set by environment variable 'VDSSLICE_STORAGE_ACCOUNTS'",
+		"Comma-separated list of storage accounts that should be accepted by the API.\n"+
+			"Example: 'https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net'\n"+
+			"Can also be set by environment variable 'VDSSLICE_STORAGE_ACCOUNTS'",
 		"string",
 	)
 
@@ -81,8 +81,8 @@ func parseopts() opts {
 		&opts.port,
 		"port",
 		0,
-		"Port to start server on. Defaults to 8080.\n" +
-		"Can also be set by environment variable 'VDSSLICE_PORT'",
+		"Port to start server on. Defaults to 8080.\n"+
+			"Can also be set by environment variable 'VDSSLICE_PORT'",
 		"int",
 	)
 
@@ -90,9 +90,9 @@ func parseopts() opts {
 		&opts.cacheSize,
 		"cache-size",
 		0,
-		"Max size of the response cache. In megabytes. A value of zero effectively\n" +
-		"disables caching. Defaults to 0.\n" +
-		"Can also be set by environment variable 'VDSSLICE_CACHE_SIZE'",
+		"Max size of the response cache. In megabytes. A value of zero effectively\n"+
+			"disables caching. Defaults to 0.\n"+
+			"Can also be set by environment variable 'VDSSLICE_CACHE_SIZE'",
 		"int",
 	)
 
@@ -100,20 +100,20 @@ func parseopts() opts {
 		&opts.metrics,
 		"metrics",
 		0,
-		"Turn on server metrics. Metrics are posted to /metrics using the\n" +
-		"prometheus data model. Off by default.\n" +
-		"Can also be set by environment variable 'VDSSLICE_METRICS'",
+		"Turn on server metrics. Metrics are posted to /metrics using the\n"+
+			"prometheus data model. Off by default.\n"+
+			"Can also be set by environment variable 'VDSSLICE_METRICS'",
 	)
 
 	getopt.FlagLong(
 		&opts.metricsPort,
 		"metrics-port",
 		0,
-		"Port to host the /metrics endpoint on. Metrics are always hosted on a\n" +
-		"different port than the server itself. This allows for them to be kept\n" +
-		"private, if desirable. Defaults to 8081.\n" +
-		"Ignored if metrics are not turned on. (see --metrics)\n" +
-		"Can also be set by enviroment variable 'VDSSLICE_METRICS_PORT'",
+		"Port to host the /metrics endpoint on. Metrics are always hosted on a\n"+
+			"different port than the server itself. This allows for them to be kept\n"+
+			"private, if desirable. Defaults to 8081.\n"+
+			"Ignored if metrics are not turned on. (see --metrics)\n"+
+			"Can also be set by enviroment variable 'VDSSLICE_METRICS_PORT'",
 		"int",
 	)
 
@@ -126,7 +126,7 @@ func parseopts() opts {
 	return opts
 }
 
-func setupApp(app *gin.Engine, endpoint *api.Endpoint, metric * metrics.Metrics) {
+func setupApp(app *gin.Engine, endpoint *api.Endpoint, metric *metrics.Metrics) {
 	app.Use(logging.FormattedLogger())
 	app.Use(gin.Recovery())
 	app.Use(gzip.Gzip(gzip.BestSpeed))
@@ -168,7 +168,7 @@ func main() {
 	storageAccounts := strings.Split(opts.storageAccounts, ",")
 
 	endpoint := api.Endpoint{
-		MakeVdsConnection: vds.MakeAzureConnection(storageAccounts),
+		MakeVdsConnection: core.MakeAzureConnection(storageAccounts),
 		Cache:             cache.NewCache(opts.cacheSize),
 	}
 

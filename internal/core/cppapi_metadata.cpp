@@ -161,19 +161,22 @@ void slice_metadata(
     Axis const& crossline_axis = metadata.xline();
     Axis const& sample_axis = metadata.sample();
 
+    auto json_shape = [&](Axis const &x, Axis const &y) {
+        meta["x"] = json_axis(x);
+        meta["y"] = json_axis(y);
+        meta["shape"] = nlohmann::json::array({y.nsamples(), x.nsamples()});
+    };
+
     if (direction.is_iline()) {
-        meta["x"] = json_axis(sample_axis);
-        meta["y"] = json_axis(crossline_axis);
+        json_shape(sample_axis, crossline_axis);
     } else if (direction.is_xline()) {
-        meta["x"] = json_axis(sample_axis);
-        meta["y"] = json_axis(inline_axis);
+        json_shape(sample_axis, inline_axis);
     } else if (direction.is_sample()) {
-        meta["x"] = json_axis(crossline_axis);
-        meta["y"] = json_axis(inline_axis);
+        json_shape(crossline_axis, inline_axis);
     } else {
         throw std::runtime_error("Unhandled direction");
     }
-    
+
     meta["geospatial"] = json_slice_geospatial(metadata, direction,axis, lineno);
     return to_response(meta, out);
 }
