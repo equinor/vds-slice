@@ -237,3 +237,32 @@ func TestExtractSasFromUrl(t *testing.T) {
 		}
 	}
 }
+
+func TestPortPresenceInURL(t *testing.T) {
+
+	testCases := []struct {
+		request     RequestedResource
+		expected    string
+	}{
+		{
+			request: newRequestedResource(
+				"https://account.blob.core.windows.net:443/container/blob",
+				"sastoken1",
+			),
+			expected: "https://account.blob.core.windows.net/container/blob",
+		},
+		{
+			request: newRequestedResource(
+				"https://account.blob.core.windows.net:443/container/blob?sastoken1",
+				"",
+			),
+			expected: "https://account.blob.core.windows.net/container/blob",
+		},
+	}
+
+	for _, testCase := range testCases {
+		err := testCase.request.NormalizeConnection()
+		require.NoError(t, err)
+		require.Equal(t, testCase.expected, testCase.request.Vds)
+	}
+}

@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/equinor/vds-slice/internal/cache"
@@ -41,16 +42,20 @@ type Normalizable interface {
 }
 
 func (r *RequestedResource) NormalizeConnection() error {
-	blob := strings.Split(strings.TrimSpace(r.Vds), "?")
-	r.Vds = blob[0]
-	if strings.TrimSpace(r.Sas) != "" {
-		return nil
+	url, err := url.Parse(r.Vds)
+	if  err  != nil {
+		return core.NewInvalidArgument(err.Error())
+	}
+	if strings.TrimSpace(r.Sas) == "" {
+		if url.RawQuery == "" {
+		    return core.NewInvalidArgument("No valid Sas token is found in the request")
+		}
+		r.Sas = url.RawQuery
 	}
 
-	if len(blob) < 2 {
-		return core.NewInvalidArgument("No valid Sas token is found in the request")
-	}
-	r.Sas = blob[1]
+	url.RawQuery = ""
+	url.Host = url.Hostname()
+	r.Vds = url.String()
 	return nil
 }
 
