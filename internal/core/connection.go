@@ -176,7 +176,7 @@ func makeUrl(path string) (*url.URL, error) {
 
 func isAllowed(allowlist []*url.URL, requested *url.URL) error {
 	for _, candidate := range allowlist {
-		if strings.EqualFold(requested.Host, candidate.Host) {
+		if strings.EqualFold(requested.Hostname(), candidate.Hostname()) {
 			return nil
 		}
 	}
