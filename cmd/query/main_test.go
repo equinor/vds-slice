@@ -354,11 +354,27 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 				"ilxl": [[1, 10], [5, 10], [5, 11], [1, 11]],
 				"ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
 			},
-			"crs": "utmXX",
-			"inputFileName": "well_known.segy"
+			"crs"            : "utmXX",
+			"inputFileName"  : "well_known.segy",
+			"importTimeStamp": "^\\d{4}-\\d{2}-\\d{2}[A-Z]\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[A-Z]$"
 		}`
 
-		require.JSONEqf(t, expectedMetadata, metadata, "Metadata not equal in case '%s'", testcase.name)
+		var expectedMap map[string]any
+		var actualMap map[string]any
+
+		json.Unmarshal([]byte(expectedMetadata), &expectedMap)
+		json.Unmarshal([]byte(metadata), &actualMap)
+
+		if _, ok := actualMap["importTimeStamp"]; !ok {
+			t.Errorf("importTimeStampt is not found in case '%s'", testcase.name)
+		}
+
+		require.Regexp(t, expectedMap["importTimeStamp"], actualMap["importTimeStamp"])
+
+		expectedMap["importTimeStamp"] = "dummy"
+		actualMap["importTimeStamp"]   = "dummy"
+
+		require.Equal(t, expectedMap, actualMap, "Metadata not equal in case '%s'", testcase.name)
 	}
 }
 

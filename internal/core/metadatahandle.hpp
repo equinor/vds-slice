@@ -17,9 +17,10 @@ public:
     Axis xline()  const noexcept (true);
     Axis sample() const noexcept (true);
 
-    BoundingBox bounding_box() const noexcept (true);
-    std::string crs()          const noexcept (true);
-    std::string input_filename() const noexcept (true);
+    BoundingBox bounding_box()      const noexcept (true);
+    std::string crs()               const noexcept (true);
+    std::string input_filename()    const noexcept (true);
+    std::string import_time_stamp() const noexcept (true);
 
     Axis get_axis(Direction const direction) const noexcept (false);
 
