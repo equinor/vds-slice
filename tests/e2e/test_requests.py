@@ -4,6 +4,7 @@ import numpy as np
 import os
 import pytest
 import json
+import re
 import urllib.parse
 from utils.cloud import *
 
@@ -132,24 +133,29 @@ def test_fence(method):
     ("post")
 ])
 def test_metadata(method):
-    metadata = request_metadata(method)
-    expected_metadata = json.loads("""
-    {
+    metadata = dict(request_metadata(method))
+    expected_metadata = {
         "axis": [
-            {"annotation": "Inline", "max": 5.0, "min": 1.0, "samples" : 3, "unit": "unitless"},
-            {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
-            {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
+            {"annotation": "Inline",    "max": 5.0,  "min": 1.0,  "samples": 3, "unit": "unitless"},
+            {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples": 2, "unit": "unitless"},
+            {"annotation": "Sample",    "max": 16.0, "min": 4.0,  "samples": 4, "unit": "ms"}
         ],
         "boundingBox": {
-            "cdp": [[2.0, 0.0], [14.0, 8.0], [12.0, 11.0], [0.0, 3.0]],
-            "ilxl": [[1, 10], [5, 10], [5, 11], [1, 11]],
-            "ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
+            "cdp" : [[2,0]  , [14,8] , [12,11] , [0,3] ],
+            "ilxl": [[1,10] , [5,10] , [5,11]  , [1,11]],
+            "ij"  : [[0,0]  , [2,0]  , [2,1]   , [0,1] ]
         },
-        "crs": "utmXX",
-        "inputFileName": "well_known.segy"
+        "crs"            : "utmXX",
+        "inputFileName"  : "well_known.segy",
+        "importTimeStamp": "^\\d{4}-\\d{2}-\\d{2}[A-Z]\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[A-Z]$"
     }
-    """)
-    assert metadata == expected_metadata
+
+    expected_import_ts = expected_metadata.get("importTimeStamp")
+    actual_import_ts   = metadata.get("importTimeStamp")
+    assert re.compile(expected_import_ts).match(actual_import_ts), f"Not a valid import Time Stamp {actual_import_ts} in metadata"
+    expected_metadata["importTimeStamp"] = "dummy"
+    metadata["importTimeStamp"]          = "dummy"
+    assert expected_metadata == metadata
 
 
 def test_attributes():

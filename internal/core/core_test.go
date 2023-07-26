@@ -75,8 +75,9 @@ func TestMetadata(t *testing.T) {
 			Ilxl: [][]float64{ {1, 10}, {5, 10}, {5, 11}, {1, 11}},
 			Ij:   [][]float64{ {0, 0}, {2, 0}, {2, 1}, {0, 1}},
 		},
-		Crs:           "utmXX",
-		InputFileName: "well_known.segy",
+		Crs            : "utmXX",
+		InputFileName  : "well_known.segy",
+		ImportTimeStamp: `^\d{4}-\d{2}-\d{2}[A-Z]\d{2}:\d{2}:\d{2}\.\d{3}[A-Z]$`,
 	}
 
 	handle, _ := NewVDSHandle(well_known)
@@ -87,6 +88,11 @@ func TestMetadata(t *testing.T) {
 	var meta Metadata
 	err = json.Unmarshal(buf, &meta)
 	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
+
+	require.Regexp(t, expected.ImportTimeStamp, meta.ImportTimeStamp)
+
+	expected.ImportTimeStamp = "dummy"
+	meta.ImportTimeStamp     = "dummy"
 
 	require.Equal(t, meta, expected)
 }

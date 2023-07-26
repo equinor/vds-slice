@@ -100,6 +100,9 @@ type Metadata struct {
 	// The original input file name
 	InputFileName string `json:"inputFileName" example:"file.segy"`
 
+	// Import time stamp in ISO8601 format
+	ImportTimeStamp string `json:"importTimeStamp" example:"2021-02-18T21:54:42.123Z"`
+
 	// Bounding box
 	BoundingBox BoundingBox `json:"boundingBox"`
 

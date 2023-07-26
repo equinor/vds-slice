@@ -201,8 +201,9 @@ void metadata(DataHandle& handle, response* out) {
 
     nlohmann::json meta;
 
-    meta["crs"] = metadata.crs();
-    meta["inputFileName"] = metadata.input_filename();
+    meta["crs"]             = metadata.crs();
+    meta["inputFileName"]   = metadata.input_filename();
+    meta["importTimeStamp"] = metadata.import_time_stamp();
 
     auto bbox = metadata.bounding_box();
     meta["boundingBox"]["ij"]   = bbox.index();

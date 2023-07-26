@@ -91,6 +91,11 @@ std::string MetadataHandle::input_filename() const noexcept (true) {
     return this->m_layout->GetMetadataString(disp_name.GetCategory(), disp_name.GetName());
 }
 
+std::string MetadataHandle::import_time_stamp() const noexcept (true) {
+    auto const time_stamp = OpenVDS::KnownMetadata::ImportInformationImportTimeStamp();
+    return this->m_layout->GetMetadataString(time_stamp.GetCategory(), time_stamp.GetName());
+}
+
 Axis MetadataHandle::get_axis(
     Direction const direction
 ) const noexcept (false) {
