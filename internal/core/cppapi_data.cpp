@@ -286,7 +286,7 @@ void horizon(
             
             depth = window.nearest(depth);
 
-            auto const cdp = surface.coordinate(row, col);
+            auto const cdp = surface.to_cdp(row, col);
 
             auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 

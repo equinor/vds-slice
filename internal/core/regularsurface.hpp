@@ -62,7 +62,7 @@ public:
     {}
 
     /* Grid position (row, col) -> world coordinates */
-    Point coordinate(
+    Point to_cdp(
         std::size_t const row,
         std::size_t const col
     ) const noexcept (false);

@@ -39,7 +39,7 @@ AffineTransformation AffineTransformation::from_rotation(
 }
 
 
-Point RegularSurface::coordinate(
+Point RegularSurface::to_cdp(
     std::size_t const row,
     std::size_t const col
 ) const noexcept (false) {
