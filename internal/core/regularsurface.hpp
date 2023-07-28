@@ -10,6 +10,46 @@ struct Point {
     double y;
 };
 
+struct AffineTransformation : private std::array< std::array< double, 3>, 2 > {
+    using base_type = std::array< std::array< double, 3 >, 2 >;
+
+    explicit AffineTransformation(base_type x) : base_type(std::move(x)) {}
+
+    Point operator*(Point p) const noexcept (true) {
+        return {
+            this->at(0)[0] * p.x + this->at(0)[1] * p.y + this->at(0)[2],
+            this->at(1)[0] * p.x + this->at(1)[1] * p.y + this->at(1)[2],
+        };
+    };
+
+    static AffineTransformation from_rotation(
+        float xori,
+        float yori,
+        float xinc,
+        float yinc,
+        float rot
+    ) noexcept (true) {
+        double rad = rot * (M_PI / 180);
+        /**
+        * Matrix is composed by applying affine transformations [1] in the
+        * following order:
+        * - scaling by xinc, yinc
+        * - counterclockwise rotation by angle rad around the center
+        * - translation by the offset (xori, yori)
+        *
+        * By scaling unit vectors, rotating coordinate system axes and moving
+        * coordinate system center to new position we transform index-based
+        * rows-and-columns cartesian coordinate system into CDP-surface one.
+        *
+        * [1] https://en.wikipedia.org/wiki/Affine_transformation
+        */
+        return AffineTransformation(base_type({{
+            xinc * std::cos(rad),  -yinc * std::sin(rad), xori,
+            xinc * std::sin(rad),   yinc * std::cos(rad), yori
+        }}));
+    }
+};
+
 
 /** Regular Surface - a set of data points over the finite part of 2D plane.
  * It is represented as 2D array with geospacial information. Each array value
@@ -27,46 +67,6 @@ struct Point {
  * [1] https://en.wikipedia.org/wiki/Affine_transformation
  */
 class RegularSurface{
-
-    struct AffineTransformation : private std::array< std::array< double, 3>, 2 > {
-        using base_type = std::array< std::array< double, 3 >, 2 >;
-
-        explicit AffineTransformation(base_type x) : base_type(std::move(x)) {}
-
-        Point operator*(Point p) const noexcept (true) {
-            return {
-                this->at(0)[0] * p.x + this->at(0)[1] * p.y + this->at(0)[2],
-                this->at(1)[0] * p.x + this->at(1)[1] * p.y + this->at(1)[2],
-            };
-        };
-
-        static AffineTransformation from_rotation(
-            float xori,
-            float yori,
-            float xinc,
-            float yinc,
-            float rot
-        ) noexcept (true) {
-            double rad = rot * (M_PI / 180);
-            /**
-            * Matrix is composed by applying affine transformations [1] in the
-            * following order:
-            * - scaling by xinc, yinc
-            * - counterclockwise rotation by angle rad around the center
-            * - translation by the offset (xori, yori)
-            *
-            * By scaling unit vectors, rotating coordinate system axes and moving
-            * coordinate system center to new position we transform index-based
-            * rows-and-columns cartesian coordinate system into CDP-surface one.
-            *
-            * [1] https://en.wikipedia.org/wiki/Affine_transformation
-            */
-            return AffineTransformation(base_type({{
-                xinc * std::cos(rad),  -yinc * std::sin(rad), xori,
-                xinc * std::sin(rad),   yinc * std::cos(rad), yori
-            }}));
-        }
-    };
 
 public:
     RegularSurface(
