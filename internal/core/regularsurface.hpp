@@ -73,7 +73,7 @@ public:
         std::size_t const col
     ) const noexcept (false);
 
-    float at(std::size_t i) const noexcept (false);
+    float value(std::size_t i) const noexcept (false);
     
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 

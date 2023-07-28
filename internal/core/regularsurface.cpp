@@ -61,7 +61,7 @@ float RegularSurface::value(
     return this->m_data[row * this->ncols() + col];
 };
 
-float RegularSurface::at(std::size_t i) const noexcept (false) {
+float RegularSurface::value(std::size_t i) const noexcept (false) {
     if (i >= this->size()) throw std::runtime_error("index out of range");
 
     return this->m_data[i];
