@@ -236,7 +236,7 @@ void calc_attributes(
     auto fill = horizon.fillvalue();
 
     for (std::size_t i = from; i < to; ++i) {
-        auto depth = surface.at(i);
+        auto depth = surface.value(i);
         auto data  = horizon.at(i);
 
         if (*data.begin() == fill) {
