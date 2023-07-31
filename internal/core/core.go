@@ -592,11 +592,17 @@ func (v VDSHandle) GetAttributes(
 		remaining -= size
 	}
 
+	// Wait for all gorutines to finish and collect any errors
+	var computeErrors []error
 	for i := 0; i < nRoutines; i++ {
 		err := <- errs
 		if err != nil {
-			return nil, err
+			computeErrors = append(computeErrors, err)
 		}
+	}
+	
+	if len(computeErrors) > 0 {
+		return nil, computeErrors[0]
 	}
 
 	out := make([][]byte, len(targetAttributes))
