@@ -225,6 +225,7 @@ func toError(status C.int, ctx *C.Context) error {
 
 type RegularSurface struct {
 	cSurface *C.struct_RegularSurface
+	cData []C.float
 }
 
 func (r *RegularSurface) get() *C.struct_RegularSurface {
@@ -294,7 +295,7 @@ func NewRegularSurface(
 		return RegularSurface{}, err
 	}
 
-	return RegularSurface{ cSurface: cSurface }, nil
+	return RegularSurface{ cSurface: cSurface, cData: cdata }, nil
 }
 
 type VDSHandle struct {
