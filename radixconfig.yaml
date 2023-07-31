@@ -41,8 +41,8 @@ spec:
           monitoring: true
           resources:
             requests:
-              memory: "4096Mi"
-              cpu: "2000m"
+              memory: "6144Mi"
+              cpu: "4000m"
           horizontalScaling:
             minReplicas: 1
             maxReplicas: 3
@@ -62,8 +62,8 @@ spec:
           monitoring: true
           resources:
             requests:
-              memory: "2048Mi"
-              cpu: "500m"
+              memory: "6144Mi"
+              cpu: "2000m"
           horizontalScaling:
             minReplicas: 1
             maxReplicas: 3
