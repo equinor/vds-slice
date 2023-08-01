@@ -33,7 +33,7 @@ func TestRistrettoCacheMaxSize(t *testing.T) {
 	cacheSize := 1 * 1024 * 1024 // 1 MB
 	maxEntries := cacheSize / 1024
 
-	cache := NewRistrettoCache(uint32(cacheSize))
+	cache := NewRistrettoCache(uint64(cacheSize))
 
 	overflow := 100
 	var keys []string

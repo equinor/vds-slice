@@ -23,7 +23,7 @@ import (
 type opts struct {
 	storageAccounts string
 	port            uint32
-	cacheSize       uint32
+	cacheSize       uint64
 	metrics         bool
 	metricsPort     uint32
 }
@@ -38,6 +38,18 @@ func parseAsUint32(fallback uint32, value string) uint32 {
 	}
 
 	return uint32(out)
+}
+
+func parseAsUint64(fallback uint64, value string) uint64 {
+	if len(value) == 0 {
+		return fallback
+	}
+	out, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	return out
 }
 
 func parseAsString(fallback string, value string) string {
@@ -62,7 +74,7 @@ func parseopts() opts {
 	opts := opts{
 		storageAccounts: parseAsString("", os.Getenv("VDSSLICE_STORAGE_ACCOUNTS")),
 		port:            parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
-		cacheSize:       parseAsUint32(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
+		cacheSize:       parseAsUint64(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
 		metrics:         parseAsBool(false, os.Getenv("VDSSLICE_METRICS")),
 		metricsPort:     parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
 	}
