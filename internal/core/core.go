@@ -536,7 +536,6 @@ func (v VDSHandle) GetAttributes(
 	var nrows = len(data)
 	var ncols = len(data[0])
 	var hsize = nrows * ncols
-	var mapsize = hsize * 4
 
 	cattributes := make([]C.enum_attribute, len(targetAttributes))
 	for i := range targetAttributes {
@@ -574,7 +573,34 @@ func (v VDSHandle) GetAttributes(
 
 	defer C.response_delete(&horizon)
 
-	buffer := make([]byte, mapsize*len(targetAttributes))
+	out, err := v.calculateAttributes(
+		surface,
+		hsize,
+		&horizon,
+		cattributes,
+		above,
+		below,
+		stepsize,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func (v VDSHandle) calculateAttributes(
+	surface RegularSurface,
+	hsize int,
+	horizon *C.struct_response,
+	cattributes []uint32,
+	above float32,
+	below float32,
+	stepsize float32,
+) ([][]byte, error) {
+	nAttributes := len(cattributes)
+	var mapsize = hsize * 4
+	buffer := make([]byte, mapsize*nAttributes)
 
 	maxConcurrency := 32
 	windowsPerRoutine := int(math.Ceil(float64(hsize) / float64(maxConcurrency)))
@@ -601,7 +627,7 @@ func (v VDSHandle) GetAttributes(
 				horizon.data,
 				horizon.size,
 				&cattributes[0],
-				C.size_t(len(targetAttributes)),
+				C.size_t(nAttributes),
 				C.float(above),
 				C.float(below),
 				C.float(stepsize),
@@ -630,8 +656,8 @@ func (v VDSHandle) GetAttributes(
 		return nil, computeErrors[0]
 	}
 
-	out := make([][]byte, len(targetAttributes))
-	for i := range targetAttributes {
+	out := make([][]byte, nAttributes)
+	for i := 0; i < nAttributes; i++ {
 		out[i] = buffer[i*mapsize : (i+1)*mapsize]
 	}
 
