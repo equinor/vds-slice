@@ -120,6 +120,15 @@ int fence_metadata(
     response* out
 );
 
+int horizon_size(
+    Context* ctx,
+    DataHandle* handle,
+    RegularSurface* surface,
+    float above,
+    float below,
+    size_t* out
+);
+
 int horizon(
     Context* ctx,
     DataHandle* handle,
@@ -127,7 +136,9 @@ int horizon(
     float above,
     float below,
     enum interpolation_method interpolation_method,
-    response* out
+    size_t from,
+    size_t to,
+    void* out
 );
 
 int attribute_metadata(
@@ -160,7 +171,7 @@ int attribute(
     Context* ctx,
     DataHandle* handle,
     RegularSurface* surface,
-    const char* data,
+    const void* data,
     size_t size,
     enum attribute* attributes,
     size_t nattributes,

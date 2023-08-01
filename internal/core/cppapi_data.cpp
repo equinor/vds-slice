@@ -221,16 +221,42 @@ void fence(
     return to_response(std::move(data), size, out);
 }
 
+void horizon_size(
+    DataHandle& handle,
+    RegularSurface const& surface,
+    float above,
+    float below,
+    std::size_t* out
+) {
+    if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
+    if (below < 0) throw std::invalid_argument("'below' must be >= 0");
+
+    MetadataHandle const& metadata = handle.get_metadata();
+    auto sample = metadata.sample();
+
+    VerticalWindow window(above, below, sample.stride(), 2, sample.min());
+
+    std::size_t const nsamples = surface.size() * window.size();
+    *out = handle.samples_buffer_size(nsamples);
+}
+
+
 void horizon(
     DataHandle& handle,
     RegularSurface const& surface,
     float above,
     float below,
     enum interpolation_method interpolation,
-    response* out
+    std::size_t from,
+    std::size_t to,
+    void* out
 ) {
     if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
     if (below < 0) throw std::invalid_argument("'below' must be >= 0");
+
+    if (to > surface.size()){
+        throw std::invalid_argument("'to' must be less than surface size");
+    }
 
     MetadataHandle const& metadata = handle.get_metadata();
     auto transform = metadata.coordinate_transformer();
@@ -238,12 +264,8 @@ void horizon(
     auto iline  = metadata.iline ();
     auto xline  = metadata.xline();
     auto sample = metadata.sample();
-    
+
     VerticalWindow window(above, below, sample.stride(), 2, sample.min());
-
-    std::size_t const nsamples = surface.size() * window.size();
-
-    std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
     float const fillvalue = surface.fillvalue();
 
@@ -274,53 +296,60 @@ void horizon(
      */
     std::vector< std::size_t > noval_indicies;
 
+    std::size_t const nsamples = (to - from) * window.size();
+    if (nsamples == 0){
+        return;
+    }
+    std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
+
     std::size_t i = 0;
-    for (int row = 0; row < surface.nrows(); row++) {
-        for (int col = 0; col < surface.ncols(); col++) {
-            float depth = surface.value(row, col);
-            if (depth == fillvalue) {
-                noval_indicies.push_back(i);
-                i += window.size();
-                continue;
-            }
-            
-            depth = window.nearest(depth);
+    for (int cell = from; cell < to; cell++) {
+        auto row = cell / surface.ncols();
+        auto col = cell % surface.ncols();
 
-            auto const cdp = surface.to_cdp(row, col);
+        float depth = surface.value(row, col);
+        if (depth == fillvalue) {
+            noval_indicies.push_back(i);
+            i += window.size();
+            continue;
+        }
+        
+        depth = window.nearest(depth);
 
-            auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
+        auto const cdp = surface.to_cdp(row, col);
 
-            if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
-                noval_indicies.push_back(i);
-                i += window.size();
-                continue;
-            }
+        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 
-            double top    = depth - window.nsamples_above() * window.stepsize();
-            double bottom = depth + window.nsamples_below() * window.stepsize();
-            if (not sample.inrange(top) or not sample.inrange(bottom)) {
-                throw std::runtime_error(
-                    "Vertical window is out of vertical bounds at"
-                    " row: " + std::to_string(row) +
-                    " col:" + std::to_string(col) +
-                    ". Request: [" + std::to_string(bottom) +
-                    ", " + std::to_string(top) +
-                    "]. Seismic bounds: [" + std::to_string(sample.min())
-                    + ", " +std::to_string(sample.max()) + "]"
-                );
-            }
+        if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
+            noval_indicies.push_back(i);
+            i += window.size();
+            continue;
+        }
 
-            ij[0]  = iline.to_sample_position(ij[0]);
-            ij[1]  = xline.to_sample_position(ij[1]);
-            top    = sample.to_sample_position(top);
-            bottom = sample.to_sample_position(bottom);
+        double top    = depth - window.nsamples_above() * window.stepsize();
+        double bottom = depth + window.nsamples_below() * window.stepsize();
+        if (not sample.inrange(top) or not sample.inrange(bottom)) {
+            throw std::runtime_error(
+                "Vertical window is out of vertical bounds at"
+                " row: " + std::to_string(row) +
+                " col:" + std::to_string(col) +
+                ". Request: [" + std::to_string(bottom) +
+                ", " + std::to_string(top) +
+                "]. Seismic bounds: [" + std::to_string(sample.min())
+                + ", " +std::to_string(sample.max()) + "]"
+            );
+        }
 
-            for (double cur_depth = top; cur_depth <= bottom; cur_depth++) {
-                samples[i][  iline.dimension() ] = ij[0];
-                samples[i][  xline.dimension() ] = ij[1];
-                samples[i][ sample.dimension() ] = cur_depth;
-                ++i;
-            }
+        ij[0]  = iline.to_sample_position(ij[0]);
+        ij[1]  = xline.to_sample_position(ij[1]);
+        top    = sample.to_sample_position(top);
+        bottom = sample.to_sample_position(bottom);
+
+        for (double cur_depth = top; cur_depth <= bottom; cur_depth++) {
+            samples[i][  iline.dimension() ] = ij[0];
+            samples[i][  xline.dimension() ] = ij[1];
+            samples[i][ sample.dimension() ] = cur_depth;
+            ++i;
         }
     }
 
@@ -337,7 +366,8 @@ void horizon(
 
     write_fillvalue(buffer.get(), noval_indicies, window.size(), fillvalue);
 
-    return to_response(std::move(buffer), size, out);
+    auto offset = from * window.size() * sizeof(float);
+    std::memcpy((char*)out + offset, buffer.get(), size);
 }
 
 
