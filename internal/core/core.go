@@ -248,16 +248,16 @@ func toError(status C.int, ctx *C.Context) error {
 	}
 }
 
-type RegularSurface struct {
+type CRegularSurface struct {
 	cSurface *C.struct_RegularSurface
 	cData    []C.float
 }
 
-func (r *RegularSurface) get() *C.struct_RegularSurface {
+func (r *CRegularSurface) get() *C.struct_RegularSurface {
 	return r.cSurface
 }
 
-func (r *RegularSurface) Close() error {
+func (r *CRegularSurface) Close() error {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
 
@@ -269,7 +269,7 @@ func (r *RegularSurface) Close() error {
 	return nil
 }
 
-func NewRegularSurface(
+func NewCRegularSurface(
 	data [][]float32,
 	originX float32,
 	originY float32,
@@ -277,7 +277,7 @@ func NewRegularSurface(
 	increaseY float32,
 	rotation float32,
 	fillValue float32,
-) (RegularSurface, error) {
+) (CRegularSurface, error) {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
 
@@ -292,7 +292,7 @@ func NewRegularSurface(
 					"Row 0 has %d elements. Row %d has %d elements",
 				ncols, i, len(data[i]),
 			)
-			return RegularSurface{}, NewInvalidArgument(msg)
+			return CRegularSurface{}, NewInvalidArgument(msg)
 		}
 
 		for j := range data[i] {
@@ -317,10 +317,10 @@ func NewRegularSurface(
 
 	if err := toError(cErr, cCtx); err != nil {
 		C.regular_surface_free(cCtx, cSurface)
-		return RegularSurface{}, err
+		return CRegularSurface{}, err
 	}
 
-	return RegularSurface{cSurface: cSurface, cData: cdata}, nil
+	return CRegularSurface{cSurface: cSurface, cData: cdata}, nil
 }
 
 type VDSHandle struct {
@@ -549,7 +549,7 @@ func (v VDSHandle) GetAttributes(
 		cAttributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
-	surface, err := NewRegularSurface(
+	surface, err := NewCRegularSurface(
 		data,
 		originX,
 		originY,
@@ -603,7 +603,7 @@ func (v VDSHandle) GetAttributes(
 }
 
 func (v VDSHandle) fetchHorizon(
-	surface RegularSurface,
+	cSurface CRegularSurface,
 	nrows int,
 	ncols int,
 	above float32,
@@ -642,7 +642,7 @@ func (v VDSHandle) fetchHorizon(
 			cerr := C.horizon(
 				cCtx,
 				v.Handle(),
-				surface.get(),
+				cSurface.get(),
 				C.float(above),
 				C.float(below),
 				C.enum_interpolation_method(interpolation),
@@ -676,7 +676,7 @@ func (v VDSHandle) fetchHorizon(
 }
 
 func (v VDSHandle) calculateAttributes(
-	surface RegularSurface,
+	cSurface CRegularSurface,
 	hsize int,
 	horizon []byte,
 	horizonSize C.size_t,
@@ -710,7 +710,7 @@ func (v VDSHandle) calculateAttributes(
 			cErr := C.attribute(
 				cCtx,
 				v.Handle(),
-				surface.get(),
+				cSurface.get(),
 				unsafe.Pointer(&horizon[0]),
 				horizonSize,
 				&cAttributes[0],
