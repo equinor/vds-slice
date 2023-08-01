@@ -298,9 +298,7 @@ func (r *CRegularSurface) Close() error {
 	return nil
 }
 
-func NewCRegularSurface(
-	surface RegularSurface,
-) (CRegularSurface, error) {
+func (surface *RegularSurface) ToCRegularSurface() (CRegularSurface, error) {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
 
@@ -566,9 +564,7 @@ func (v VDSHandle) GetAttributes(
 		cAttributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
-	cSurface, err := NewCRegularSurface(
-		surface,
-	)
+	cSurface, err := surface.ToCRegularSurface()
 	if err != nil {
 		return nil, err
 	}
