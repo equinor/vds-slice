@@ -556,18 +556,8 @@ func (v VDSHandle) GetAttributes(
 	}
 	defer surface.Close()
 
-	var horizon C.struct_response
-	cerr := C.horizon(
-		v.context(),
-		v.Handle(),
-		surface.get(),
-		C.float(above),
-		C.float(below),
-		C.enum_interpolation_method(interpolation),
-		&horizon,
-	)
-
-	if err := v.Error(cerr); err != nil {
+	horizon, err := v.fetchHorizon(surface, above, below, interpolation)
+	if err != nil {
 		return nil, err
 	}
 
@@ -587,6 +577,29 @@ func (v VDSHandle) GetAttributes(
 	}
 
 	return out, nil
+}
+
+func (v VDSHandle) fetchHorizon(
+	surface RegularSurface,
+	above float32,
+	below float32,
+	interpolation int,
+) (C.struct_response, error) {
+	var horizon C.struct_response
+	cerr := C.horizon(
+		v.context(),
+		v.Handle(),
+		surface.get(),
+		C.float(above),
+		C.float(below),
+		C.enum_interpolation_method(interpolation),
+		&horizon,
+	)
+
+	if err := v.Error(cerr); err != nil {
+		return C.struct_response{}, err
+	}
+	return horizon, nil
 }
 
 func (v VDSHandle) calculateAttributes(
