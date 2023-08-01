@@ -118,13 +118,15 @@ func (h attributeTest) requestAsJSON() (string, error) {
 
 	out["vds"] = h.attribute.Vds
 	out["sas"] = h.attribute.Sas
-	out["horizon"] = h.attribute.Horizon
-	out["rotation"] = 33.69
-	out["xinc"] = 7.2111
-	out["yinc"] = 3.6056
-	out["xori"] = 2
-	out["yori"] = 0
-	out["fillValue"] = 666.66
+	surface := map[string]interface{}{}
+	surface["horizon"] = h.attribute.Horizon
+	surface["rotation"] = 33.69
+	surface["xinc"] = 7.2111
+	surface["yinc"] = 3.6056
+	surface["xori"] = 2
+	surface["yori"] = 0
+	surface["fillValue"] = 666.66
+	out["surface"] = surface
 	out["above"] = h.attribute.Above
 	out["below"] = h.attribute.Below
 	out["stepsize"] = h.attribute.Stepsize

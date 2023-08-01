@@ -47,6 +47,18 @@ var well_known_grid gridDefinition = gridDefinition{
 
 var samples10_grid = well_known_grid
 
+func samples10Surface(data [][]float32) RegularSurface{
+	return RegularSurface{
+		Horizon: data,
+		Rotation: &samples10_grid.rotation,
+		Xori: &samples10_grid.xori,
+		Yori: &samples10_grid.yori,
+		Xinc: samples10_grid.xinc,
+		Yinc: samples10_grid.yinc,
+		FillValue: &fillValue,
+	}
+}
+
 func toFloat32(buf []byte) (*[]float32, error) {
 	fsize := 4 // sizeof(float32)
 	if len(buf)%fsize != 0 {
@@ -739,18 +751,28 @@ func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 		{fillValue, fillValue, 16, fillValue, 16, fillValue, 16},
 	}
 
+	rotation := samples10_grid.rotation+270
+	xinc := samples10_grid.xinc/2.0
+	yinc := -samples10_grid.yinc
+	xori := float32(16)
+	yori := float32(18)
+
+	surface := RegularSurface{
+		Horizon: horizon,
+		Rotation: &rotation,
+		Xori: &xori,
+		Yori: &yori,
+		Xinc: xinc,
+		Yinc: yinc,
+		FillValue: &fillValue,
+	}
+
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		16,
-		18,
-		samples10_grid.xinc/2.0,
-		-samples10_grid.yinc,
-		samples10_grid.rotation+270,
-		fillValue,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -809,17 +831,12 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 	const stepsize = float32(4.0)
 
 	for _, testcase := range testcases {
+		surface := samples10Surface(testcase.horizon)
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		_, boundsErr := handle.GetAttributes(
-			testcase.horizon,
-			samples10_grid.xori,
-			samples10_grid.yori,
-			samples10_grid.xinc,
-			samples10_grid.yinc,
-			samples10_grid.rotation,
-			fillValue,
+			surface,
 			above,
 			below,
 			stepsize,
@@ -951,16 +968,22 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
+		rot32 := float32(rot)
+		xori32 := float32(testcase.xori)
+		yori32 := float32(testcase.yori)
+		surface := RegularSurface{
+			Horizon: horizon,
+			Rotation: &rot32,
+			Xori: &xori32,
+			Yori: &yori32,
+			Xinc: float32(xinc),
+			Yinc: float32(yinc),
+			FillValue: &fillValue,
+		}
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributes(
-			horizon,
-			float32(testcase.xori),
-			float32(testcase.yori),
-			float32(xinc),
-			float32(yinc),
-			float32(rot),
-			fillValue,
+			surface,
 			above,
 			below,
 			stepsize,
@@ -1029,6 +1052,8 @@ func TestAttribute(t *testing.T) {
 		{ 20,    20 }, // Out-of-bounds, should return fillValue
 	}
 
+	surface := samples10Surface(horizon)
+
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 	const above = float32(8.0)
 	const below = float32(8.0)
@@ -1037,13 +1062,7 @@ func TestAttribute(t *testing.T) {
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fillValue,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -1085,6 +1104,8 @@ func TestAttributeMedianForEvenSampleValue(t *testing.T) {
 		{20, 	20}, // Out-of-bounds, should return fillValue
 	}
 
+	surface := samples10Surface(horizon)
+
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 	const above 	= float32(8.0)
 	const below 	= float32(4.0)
@@ -1093,13 +1114,7 @@ func TestAttributeMedianForEvenSampleValue(t *testing.T) {
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fillValue,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -1167,17 +1182,13 @@ func TestAttributesAboveBelowStepSizeIgnoredForSampleValue(t *testing.T) {
 	targetAttributes := []string{"samplevalue"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
+	surface := samples10Surface(horizon)
+
 	for _, testCase := range testCases {
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributes(
-			horizon,
-			samples10_grid.xori,
-			samples10_grid.yori,
-			samples10_grid.xinc,
-			samples10_grid.yinc,
-			samples10_grid.rotation,
-			fillValue,
+			surface,
 			testCase.above,
 			testCase.below,
 			testCase.stepsize,
@@ -1285,16 +1296,12 @@ func TestAttributesUnaligned(t *testing.T) {
 	for _, testCase := range testCases {
 		horizon := [][]float32{{20 + testCase.offset}}
 
+		surface := samples10Surface(horizon)
+
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributes(
-			horizon,
-			samples10_grid.xori,
-			samples10_grid.yori,
-			samples10_grid.xinc,
-			samples10_grid.yinc,
-			samples10_grid.rotation,
-			fillValue,
+			surface,
 			above,
 			below,
 			stepsize,
@@ -1408,17 +1415,14 @@ func TestAttributeSubsamplingAligned(t *testing.T) {
 		{ -2.5,  -0.5, -12.5, 2.5, fillValue, -20.5, fillValue, fillValue }, // min
 		{  0.5,   2.5,  -6.5, 8.5, fillValue,  -8.5, fillValue, fillValue }, // max
 	}
+
+	surface := samples10Surface(horizon)
+
 	for _, testCase := range testCases {
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributes(
-			horizon,
-			samples10_grid.xori,
-			samples10_grid.yori,
-			samples10_grid.xinc,
-			samples10_grid.yinc,
-			samples10_grid.rotation,
-			fillValue,
+			surface,
 			above,
 			below,
 			testCase.stepsize,
@@ -1499,16 +1503,12 @@ func TestAttributesUnalignedAndSubsampled(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 	horizon := [][]float32{{21}}
 
+	surface := samples10Surface(horizon)
+
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fillValue,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -1552,16 +1552,12 @@ func TestAttributesEverythingUnaligned(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 	horizon := [][]float32{{26}}
 
+	surface := samples10Surface(horizon)
+
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fillValue,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -1605,16 +1601,12 @@ func TestAttributesSupersampling(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 	horizon := [][]float32{{26}}
 
+	surface := samples10Surface(horizon)
+
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fillValue,
+		surface,
 		above,
 		below,
 		stepsize,

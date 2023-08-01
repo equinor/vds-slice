@@ -185,31 +185,8 @@ func (s SliceRequest) toString() (string, error) {
 type AttributeRequest struct {
 	RequestedResource
 
-	// Horizon / height-map
-	Horizon [][]float32 `json:"horizon" binding:"required"`
-
-	// Rotation of the X-axis (East), counter-clockwise, in degrees
-	Rotation *float32 `json:"rotation" binding:"required"`
-
-	// X-coordinate of the origin
-	Xori *float32 `json:"xori" binding:"required"`
-
-	// Y-coordinate of the origin
-	Yori *float32 `json:"yori" binding:"required"`
-
-	// X-increment - The physical distance between columns in horizon
-	Xinc float32 `json:"xinc" binding:"required"`
-
-	// Y-increment - The physical distance between rows in horizon
-	Yinc float32 `json:"yinc" binding:"required"`
-
-	// Any sample in the input horizon with value == fillValue will be ignored
-	// and the fillValue will be used in the amplitude map.
-	// I.e. for any [i, j] where horizon[i][j] == fillValue then
-	// output[i][j] == fillValue.
-	// Additionally, the fillValue is used for any point in the horizon that
-	// falls outside the bounds of the seismic volume.
-	FillValue *float32 `json:"fillValue" binding:"required"`
+	// Surface along which data must be retrieved
+	Surface core.RegularSurface `json:"surface" binding:"required"`
 
 	// Horizontal interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
@@ -279,14 +256,14 @@ func (h AttributeRequest) toString() (string, error) {
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
-		len(h.Horizon[0]),
-		len(h.Horizon),
-		*h.Rotation,
-		*h.Xori,
-		*h.Yori,
-		h.Xinc,
-		h.Yinc,
-		*h.FillValue,
+		len(h.Surface.Horizon[0]),
+		len(h.Surface.Horizon),
+		*h.Surface.Rotation,
+		*h.Surface.Xori,
+		*h.Surface.Yori,
+		h.Surface.Xinc,
+		h.Surface.Yinc,
+		*h.Surface.FillValue,
 		h.Interpolation,
 		h.Above,
 		h.Below,

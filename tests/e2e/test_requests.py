@@ -71,9 +71,14 @@ def make_attribute_request(
     attributes=["samplevalue"],
     sas="sas"
 ):
-    request = {
-        "fillValue": -999.25,
+    regular_surface = {
         "horizon": horizon,
+        "fillValue": -999.25,
+    }
+    regular_surface.update(surface)
+
+    request = {
+        "surface": regular_surface,
         "interpolation": "nearest",
         "vds": vds,
         "sas": sas,
@@ -81,7 +86,6 @@ def make_attribute_request(
         "below": below,
         "attributes": attributes
     }
-    request.update(surface)
     return request
 
 

@@ -254,19 +254,13 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		return
 	}
 
-	metadata, err := handle.GetAttributeMetadata(request.Horizon)
+	metadata, err := handle.GetAttributeMetadata(request.Surface.Horizon)
 	if abortOnError(ctx, err) {
 		return
 	}
 
 	data, err := handle.GetAttributes(
-		request.Horizon,
-		*request.Xori,
-		*request.Yori,
-		request.Xinc,
-		request.Yinc,
-		*request.Rotation,
-		*request.FillValue,
+		request.Surface,
 		request.Above,
 		request.Below,
 		request.Stepsize,

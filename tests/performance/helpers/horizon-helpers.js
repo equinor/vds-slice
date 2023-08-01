@@ -9,9 +9,16 @@ export function sendHorizonRequest(
 ) {
   const vds = __ENV.VDS;
   const sas = __ENV.SAS;
-  let properties = {
+
+  const surfaceProperties = {
     fillValue: -999.25,
     horizon: horizon,
+  }
+
+  const regularSurface = Object.assign({}, surfaceProperties, surface);
+
+  let properties = {
+    surface : regularSurface,
     interpolation: "linear",
     vds: vds,
     sas: sas,
