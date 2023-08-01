@@ -51,7 +51,6 @@ type Axis struct {
 	Unit string `json:"unit" example:"ms"`
 } // @name Axis
 
-
 // @Description The bounding box of the survey, defined by its 4 corner
 // @Description coordinates. The bounding box is given in 3 different
 // @Description coordinate systems. The points are sorted in the same order for
@@ -124,14 +123,22 @@ type AttributeMetadata struct {
 
 func GetAxis(direction string) (int, error) {
 	switch direction {
-	case "i":         return AxisI,         nil
-	case "j":         return AxisJ,         nil
-	case "k":         return AxisK,         nil
-	case "inline":    return AxisInline,    nil
-	case "crossline": return AxisCrossline, nil
-	case "depth":     return AxisDepth,     nil
-	case "time":      return AxisTime,      nil
-	case "sample":    return AxisSample,    nil
+	case "i":
+		return AxisI, nil
+	case "j":
+		return AxisJ, nil
+	case "k":
+		return AxisK, nil
+	case "inline":
+		return AxisInline, nil
+	case "crossline":
+		return AxisCrossline, nil
+	case "depth":
+		return AxisDepth, nil
+	case "time":
+		return AxisTime, nil
+	case "sample":
+		return AxisSample, nil
 	default:
 		options := "i, j, k, inline, crossline or depth/time/sample"
 		msg := "invalid direction '%s', valid options are: %s"
@@ -177,21 +184,36 @@ func GetInterpolationMethod(interpolation string) (int, error) {
 
 func GetAttributeType(attribute string) (int, error) {
 	switch strings.ToLower(attribute) {
-	case "samplevalue": return C.VALUE,   nil
-	case "min":         return C.MIN,     nil
-	case "max":         return C.MAX,     nil
-	case "maxabs":      return C.MAXABS,  nil
-	case "mean":        return C.MEAN,    nil
-	case "meanabs":     return C.MEANABS, nil
-	case "meanpos":     return C.MEANPOS, nil
-	case "meanneg":     return C.MEANNEG, nil
-	case "median":      return C.MEDIAN,  nil
-	case "rms":         return C.RMS,     nil
-	case "var":         return C.VAR,     nil
-	case "sd":          return C.SD,      nil
-	case "sumpos":      return C.SUMPOS,  nil
-	case "sumneg":      return C.SUMNEG,  nil
-	case "":            fallthrough
+	case "samplevalue":
+		return C.VALUE, nil
+	case "min":
+		return C.MIN, nil
+	case "max":
+		return C.MAX, nil
+	case "maxabs":
+		return C.MAXABS, nil
+	case "mean":
+		return C.MEAN, nil
+	case "meanabs":
+		return C.MEANABS, nil
+	case "meanpos":
+		return C.MEANPOS, nil
+	case "meanneg":
+		return C.MEANNEG, nil
+	case "median":
+		return C.MEDIAN, nil
+	case "rms":
+		return C.RMS, nil
+	case "var":
+		return C.VAR, nil
+	case "sd":
+		return C.SD, nil
+	case "sumpos":
+		return C.SUMPOS, nil
+	case "sumneg":
+		return C.SUMNEG, nil
+	case "":
+		fallthrough
 	default:
 		options := []string{
 			"samplevalue", "min", "max", "maxabs", "mean", "meanabs", "meanpos",
@@ -215,9 +237,12 @@ func toError(status C.int, ctx *C.Context) error {
 	msg := C.GoString(C.errmsg(ctx))
 
 	switch status {
-	case C.STATUS_NULLPTR_ERROR: fallthrough
-	case C.STATUS_RUNTIME_ERROR: return NewInternalError(msg)
-	case C.STATUS_BAD_REQUEST:   return NewInvalidArgument(msg)
+	case C.STATUS_NULLPTR_ERROR:
+		fallthrough
+	case C.STATUS_RUNTIME_ERROR:
+		return NewInternalError(msg)
+	case C.STATUS_BAD_REQUEST:
+		return NewInvalidArgument(msg)
 	default:
 		return errors.New(msg)
 	}
@@ -225,7 +250,7 @@ func toError(status C.int, ctx *C.Context) error {
 
 type RegularSurface struct {
 	cSurface *C.struct_RegularSurface
-	cData []C.float
+	cData    []C.float
 }
 
 func (r *RegularSurface) get() *C.struct_RegularSurface {
@@ -236,7 +261,7 @@ func (r *RegularSurface) Close() error {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
 
-	cErr :=	C.regular_surface_free(cCtx, r.cSurface)
+	cErr := C.regular_surface_free(cCtx, r.cSurface)
 	if err := toError(cErr, cCtx); err != nil {
 		return err
 	}
@@ -245,13 +270,13 @@ func (r *RegularSurface) Close() error {
 }
 
 func NewRegularSurface(
-	data          [][]float32,
-	originX       float32,
-	originY       float32,
-	increaseX     float32,
-	increaseY     float32,
-	rotation      float32,
-	fillValue     float32,
+	data [][]float32,
+	originX float32,
+	originY float32,
+	increaseX float32,
+	increaseY float32,
+	rotation float32,
+	fillValue float32,
 ) (RegularSurface, error) {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
@@ -259,9 +284,9 @@ func NewRegularSurface(
 	nrows := len(data)
 	ncols := len(data[0])
 
-	cdata := make([]C.float, nrows * ncols)
+	cdata := make([]C.float, nrows*ncols)
 	for i := range data {
-		if len(data[i]) != ncols  {
+		if len(data[i]) != ncols {
 			msg := fmt.Sprintf(
 				"Surface rows are not of the same length. "+
 					"Row 0 has %d elements. Row %d has %d elements",
@@ -271,7 +296,7 @@ func NewRegularSurface(
 		}
 
 		for j := range data[i] {
-			cdata[i * ncols  + j] = C.float(data[i][j])
+			cdata[i*ncols+j] = C.float(data[i][j])
 		}
 	}
 
@@ -295,7 +320,7 @@ func NewRegularSurface(
 		return RegularSurface{}, err
 	}
 
-	return RegularSurface{ cSurface: cSurface, cData: cdata }, nil
+	return RegularSurface{cSurface: cSurface, cData: cdata}, nil
 }
 
 type VDSHandle struct {
@@ -307,7 +332,7 @@ func (v VDSHandle) Handle() *C.struct_DataHandle {
 	return v.handle
 }
 
-func (v VDSHandle) context() *C.struct_Context{
+func (v VDSHandle) context() *C.struct_Context {
 	return v.ctx
 }
 
@@ -332,14 +357,14 @@ func NewVDSHandle(conn Connection) (VDSHandle, error) {
 	var cctx = C.context_new()
 	var handle *C.struct_DataHandle
 
-	cerr := C.datahandle_new(cctx, curl, ccred, &handle);
+	cerr := C.datahandle_new(cctx, curl, ccred, &handle)
 
 	if err := toError(cerr, cctx); err != nil {
 		defer C.context_free(cctx)
 		return VDSHandle{}, err
 	}
 
-	return VDSHandle{ handle: handle, ctx: cctx }, nil
+	return VDSHandle{handle: handle, ctx: cctx}, nil
 }
 
 func (v VDSHandle) GetMetadata() ([]byte, error) {
@@ -401,10 +426,10 @@ func (v VDSHandle) GetFence(
 	interpolation int,
 ) ([]byte, error) {
 	coordinate_len := 2
-	ccoordinates := make([]C.float, len(coordinates) * coordinate_len)
+	ccoordinates := make([]C.float, len(coordinates)*coordinate_len)
 	for i := range coordinates {
 
-		if len(coordinates[i]) != coordinate_len  {
+		if len(coordinates[i]) != coordinate_len {
 			msg := fmt.Sprintf(
 				"invalid coordinate %v at position %d, expected [x y] pair",
 				coordinates[i],
@@ -414,7 +439,7 @@ func (v VDSHandle) GetFence(
 		}
 
 		for j := range coordinates[i] {
-			ccoordinates[i * coordinate_len  + j] = C.float(coordinates[i][j])
+			ccoordinates[i*coordinate_len+j] = C.float(coordinates[i][j])
 		}
 	}
 
@@ -465,7 +490,6 @@ func min(a, b int) int {
 	return b
 }
 
-
 func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.attribute_metadata(
@@ -487,17 +511,17 @@ func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 }
 
 func (v VDSHandle) GetAttributes(
-	data          [][]float32,
-	originX       float32,
-	originY       float32,
-	increaseX     float32,
-	increaseY     float32,
-	rotation      float32,
-	fillValue     float32,
-	above         float32,
-	below         float32,
-	stepsize      float32,
-	attributes    []string,
+	data [][]float32,
+	originX float32,
+	originY float32,
+	increaseX float32,
+	increaseY float32,
+	rotation float32,
+	fillValue float32,
+	above float32,
+	below float32,
+	stepsize float32,
+	attributes []string,
 	interpolation int,
 ) ([][]byte, error) {
 	var targetAttributes []int
@@ -506,12 +530,12 @@ func (v VDSHandle) GetAttributes(
 		if err != nil {
 			return nil, err
 		}
-		targetAttributes = append(targetAttributes, id);
+		targetAttributes = append(targetAttributes, id)
 	}
 
-	var nrows   = len(data)
-	var ncols   = len(data[0])
-	var hsize   = nrows * ncols
+	var nrows = len(data)
+	var ncols = len(data[0])
+	var hsize = nrows * ncols
 	var mapsize = hsize * 4
 
 	cattributes := make([]C.enum_attribute, len(targetAttributes))
@@ -550,16 +574,16 @@ func (v VDSHandle) GetAttributes(
 
 	defer C.response_delete(&horizon)
 
-	buffer := make([]byte, mapsize * len(targetAttributes))
+	buffer := make([]byte, mapsize*len(targetAttributes))
 
 	maxConcurrency := 32
 	windowsPerRoutine := int(math.Ceil(float64(hsize) / float64(maxConcurrency)))
-	
-	errs := make(chan error, maxConcurrency)	
+
+	errs := make(chan error, maxConcurrency)
 
 	from := 0
-	remaining := hsize;
-	nRoutines := 0;
+	remaining := hsize
+	nRoutines := 0
 	for remaining > 0 {
 		nRoutines++
 
@@ -596,19 +620,19 @@ func (v VDSHandle) GetAttributes(
 	// Wait for all gorutines to finish and collect any errors
 	var computeErrors []error
 	for i := 0; i < nRoutines; i++ {
-		err := <- errs
+		err := <-errs
 		if err != nil {
 			computeErrors = append(computeErrors, err)
 		}
 	}
-	
+
 	if len(computeErrors) > 0 {
 		return nil, computeErrors[0]
 	}
 
 	out := make([][]byte, len(targetAttributes))
 	for i := range targetAttributes {
-		out[i] = buffer[i * mapsize: (i + 1) * mapsize]
+		out[i] = buffer[i*mapsize : (i+1)*mapsize]
 	}
 
 	return out, nil
