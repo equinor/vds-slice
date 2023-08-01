@@ -544,9 +544,9 @@ func (v VDSHandle) GetAttributes(
 	var ncols = len(data[0])
 	var hsize = nrows * ncols
 
-	cattributes := make([]C.enum_attribute, len(targetAttributes))
+	cAttributes := make([]C.enum_attribute, len(targetAttributes))
 	for i := range targetAttributes {
-		cattributes[i] = C.enum_attribute(targetAttributes[i])
+		cAttributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
 	surface, err := NewRegularSurface(
@@ -595,7 +595,7 @@ func (v VDSHandle) GetAttributes(
 		hsize,
 		horizon,
 		horizonSize,
-		cattributes,
+		cAttributes,
 		above,
 		below,
 		stepsize,
@@ -680,12 +680,12 @@ func (v VDSHandle) calculateAttributes(
 	hsize int,
 	horizon []byte,
 	horizonSize C.size_t,
-	cattributes []uint32,
+	cAttributes []uint32,
 	above float32,
 	below float32,
 	stepsize float32,
 ) ([][]byte, error) {
-	nAttributes := len(cattributes)
+	nAttributes := len(cAttributes)
 	var mapsize = hsize * 4
 	buffer := make([]byte, mapsize*nAttributes)
 
@@ -713,7 +713,7 @@ func (v VDSHandle) calculateAttributes(
 				surface.get(),
 				unsafe.Pointer(&horizon[0]),
 				horizonSize,
-				&cattributes[0],
+				&cAttributes[0],
 				C.size_t(nAttributes),
 				C.float(above),
 				C.float(below),
