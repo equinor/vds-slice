@@ -24,7 +24,11 @@ func (c *CacheEntry) Metadata() []byte {
 }
 
 func (c *CacheEntry) Size() int {
-	return len(c.data) + len(c.metadata) + int(unsafe.Sizeof(*c))
+	var dataLength int
+	for _, val := range c.data {
+		dataLength += len(val)
+	}
+	return dataLength + len(c.metadata) + int(unsafe.Sizeof(*c))
 }
 
 func NewCacheEntry(data [][]byte, metadata []byte) CacheEntry {
@@ -50,7 +54,7 @@ func (c *RistrettoCache) Get(key string) (val CacheEntry, hit bool) {
 	return val, hit;
 }
 
-func NewRistrettoCache(cacheSize uint32) *RistrettoCache {
+func NewRistrettoCache(cacheSize uint64) *RistrettoCache {
 	/**  Maxcost and NumCounters
 	 *
 	 * This Ristretto cache is configured with a max size in bytes (the
@@ -105,7 +109,7 @@ func NewNoCache() *NoCache {
  *  like a cache, but does not cache anything. I.e. it will always be empty and
  *  will have a 100% cache misses.
  */
-func NewCache(cachesize uint32) Cache {
+func NewCache(cachesize uint64) Cache {
 	if cachesize == 0 {
 		return NewNoCache()
 	}
