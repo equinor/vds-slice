@@ -223,6 +223,32 @@ int metadata(
     }
 }
 
+int horizon_size(
+    Context* ctx,
+    DataHandle* handle,
+    RegularSurface* surface,
+    float above,
+    float below,
+    size_t* out
+) {
+    try {
+        if (not out)     throw detail::nullptr_error("Invalid out pointer");
+        if (not handle)  throw detail::nullptr_error("Invalid handle");
+        if (not surface) throw detail::nullptr_error("Invalid surface");
+
+        cppapi::horizon_size(
+            *handle,
+            *surface,
+            above,
+            below,
+            out
+        );
+        return STATUS_OK;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
+    }
+}
+
 int horizon(
     Context* ctx,
     DataHandle* handle,
@@ -230,7 +256,9 @@ int horizon(
     float above,
     float below,
     enum interpolation_method interpolation,
-    response* out
+    size_t from,
+    size_t to,
+    void* out
 ) {
     try {
         if (not out)     throw detail::nullptr_error("Invalid out pointer");
@@ -243,6 +271,8 @@ int horizon(
             above,
             below,
             interpolation,
+            from,
+            to,
             out
         );
         return STATUS_OK;
@@ -273,7 +303,7 @@ int attribute(
     Context* ctx,
     DataHandle* handle,
     RegularSurface* surface,
-    const char* data,
+    const void* data,
     size_t size,
     enum attribute* attributes,
     size_t nattributes,
@@ -288,6 +318,7 @@ int attribute(
         if (not out)     throw detail::nullptr_error("Invalid out pointer");
         if (not handle)  throw detail::nullptr_error("Invalid handle");
         if (not surface) throw detail::nullptr_error("Invalid surface");
+        if (not data)    throw detail::nullptr_error("Invalid data");
 
         std::size_t nsamples = size / sizeof(float);
         std::size_t hsize = surface->size();

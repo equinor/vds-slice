@@ -490,6 +490,13 @@ func min(a, b int) int {
 	return b
 }
 
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.attribute_metadata(
@@ -556,56 +563,123 @@ func (v VDSHandle) GetAttributes(
 	}
 	defer surface.Close()
 
-	horizon, err := v.fetchHorizon(surface, above, below, interpolation)
-	if err != nil {
-		return nil, err
-	}
+	var horizonSize C.size_t
 
-	defer C.response_delete(&horizon)
-
-	out, err := v.calculateAttributes(
-		surface,
-		hsize,
-		&horizon,
-		cattributes,
-		above,
-		below,
-		stepsize,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-func (v VDSHandle) fetchHorizon(
-	surface RegularSurface,
-	above float32,
-	below float32,
-	interpolation int,
-) (C.struct_response, error) {
-	var horizon C.struct_response
-	cerr := C.horizon(
+	cerr := C.horizon_size(
 		v.context(),
 		v.Handle(),
 		surface.get(),
 		C.float(above),
 		C.float(below),
-		C.enum_interpolation_method(interpolation),
-		&horizon,
+		&horizonSize,
 	)
-
 	if err := v.Error(cerr); err != nil {
-		return C.struct_response{}, err
+		return nil, err
 	}
-	return horizon, nil
+
+	horizon, err := v.fetchHorizon(
+		surface,
+		nrows,
+		ncols,
+		above,
+		below,
+		interpolation,
+		horizonSize,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return v.calculateAttributes(
+		surface,
+		hsize,
+		horizon,
+		horizonSize,
+		cattributes,
+		above,
+		below,
+		stepsize,
+	)
+}
+
+func (v VDSHandle) fetchHorizon(
+	surface RegularSurface,
+	nrows int,
+	ncols int,
+	above float32,
+	below float32,
+	interpolation int,
+	horizonSize C.size_t,
+) ([]byte, error) {
+	buffer := make([]byte, horizonSize)
+	hsize := nrows * ncols
+	// note that it is possible to hit go's own goroutines limit
+	// but we do not deal with it here
+
+	// max number of goroutines running at the same time
+	// too low number doesn't utilize all CPU, too high overuses it
+	// value should be experimented with
+	maxConcurrentGoroutines := max(nrows/2, 1)
+	guard := make(chan struct{}, maxConcurrentGoroutines)
+
+	// the size of the data processed in one goroutine
+	// decides how many parts data is split into
+	// value should be experimented with
+	chunkSize := max(nrows, 1)
+
+	from := 0
+	to := from + chunkSize
+
+	errs := make(chan error, hsize/chunkSize+1)
+	nRoutines := 0
+
+	for from < hsize {
+		guard <- struct{}{} // block if guard channel is filled
+		go func(from, to int) {
+			var cCtx = C.context_new()
+			defer C.context_free(cCtx)
+
+			cerr := C.horizon(
+				cCtx,
+				v.Handle(),
+				surface.get(),
+				C.float(above),
+				C.float(below),
+				C.enum_interpolation_method(interpolation),
+				C.size_t(from),
+				C.size_t(to),
+				unsafe.Pointer(&buffer[0]),
+			)
+			errs <- toError(cerr, cCtx)
+			<-guard
+		}(from, to)
+
+		nRoutines += 1
+
+		from += chunkSize
+		to = min(to+chunkSize, hsize)
+	}
+
+	// Wait for all gorutines to finish and collect any errors
+	var computeErrors []error
+	for i := 0; i < nRoutines; i++ {
+		err := <-errs
+		if err != nil {
+			computeErrors = append(computeErrors, err)
+		}
+	}
+
+	if len(computeErrors) > 0 {
+		return nil, computeErrors[0]
+	}
+	return buffer, nil
 }
 
 func (v VDSHandle) calculateAttributes(
 	surface RegularSurface,
 	hsize int,
-	horizon *C.struct_response,
+	horizon []byte,
+	horizonSize C.size_t,
 	cattributes []uint32,
 	above float32,
 	below float32,
@@ -637,8 +711,8 @@ func (v VDSHandle) calculateAttributes(
 				cCtx,
 				v.Handle(),
 				surface.get(),
-				horizon.data,
-				horizon.size,
+				unsafe.Pointer(&horizon[0]),
+				horizonSize,
 				&cattributes[0],
 				C.size_t(nAttributes),
 				C.float(above),

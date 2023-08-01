@@ -791,6 +791,11 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 			inbounds: false,
 		},
 		{
+			name:     "Some values inbounds, some out of bounds",
+			horizon:  [][]float32{{22.00, 32.00, 12.00}, {18.00, 31.00, 28.00}, {16.00, 15.00, 13.00}},
+			inbounds: false,
+		},
+		{
 			name:     "Fillvalue should not be bounds checked",
 			horizon:  [][]float32{{-999.25}},
 			inbounds: true,
@@ -831,7 +836,8 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 		}
 
 		if !testcase.inbounds {
-			require.Errorf(t, boundsErr,
+			require.ErrorContainsf(t, boundsErr,
+				"out of vertical bound",
 				"[%s] Expected horizon value %f to throw out of bound",
 				testcase.name,
 				testcase.horizon[0][0],

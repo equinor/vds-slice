@@ -26,13 +26,23 @@ void fence(
     response* out
 ) noexcept (false);
 
+void horizon_size(
+    DataHandle& handle,
+    RegularSurface const& surface,
+    float above,
+    float below,
+    std::size_t* out
+) noexcept (false);
+
 void horizon(
     DataHandle& handle,
     RegularSurface const& surface,
     float above,
     float below,
     enum interpolation_method interpolation,
-    response* out
+    std::size_t from,
+    std::size_t to,
+    void* out
 ) noexcept (false);
 
 void attributes(
