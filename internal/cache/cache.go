@@ -24,7 +24,11 @@ func (c *CacheEntry) Metadata() []byte {
 }
 
 func (c *CacheEntry) Size() int {
-	return len(c.data) + len(c.metadata) + int(unsafe.Sizeof(*c))
+	var dataLength int
+	for _, val := range c.data {
+		dataLength += len(val)
+	}
+	return dataLength + len(c.metadata) + int(unsafe.Sizeof(*c))
 }
 
 func NewCacheEntry(data [][]byte, metadata []byte) CacheEntry {

@@ -23,13 +23,15 @@ func TestRistrettoCacheMaxSize(t *testing.T) {
 	 * unsafe.Sizeof(entry) + len(entry.Data) + len(entry.Metadata) =
 	 * 48                   + 512             + 464                 = 1024
 	 */
-	entry := NewCacheEntry(
-		make([][]byte, 512),
-		make([]byte, 464),
-	)
+	data := make([][]byte, 4)
+	for i := range data {
+		data[i] = make([]byte, 128)
+	}
+	metadata := make([]byte, 464)
+	entry := NewCacheEntry(data, metadata)
 
 	cacheSize := 1 * 1024 * 1024 // 1 MB
-	maxEntries := cacheSize / entry.Size();
+	maxEntries := cacheSize / 1024
 
 	cache := NewRistrettoCache(uint32(cacheSize))
 
