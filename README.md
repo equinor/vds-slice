@@ -59,8 +59,9 @@ export LD_LIBRARY_PATH=$PATH_TO_OPENVDS_LIBRARY/lib:$LD_LIBRARY_PATH
 
 Project has following test suits:
 
-### 1. Developer test suite
+### 1. Developer test suites
 
+#### Go
 The `go` test suite is the main test suite of the project. In addition to
 testing low level internal functionality, it spins up a test server and runs on
 it high level setup tests. Note that all the tests run on vds files stored on
@@ -71,6 +72,18 @@ To run the tests switch to the root directory and call
 go test -failfast -race ./...
 ```
 
+#### C++
+The `gtest` test suite is a test suite for `C++` code. When choosing where to
+implement new tests keep in mind that `C++` is deeper internal code and thus its
+interface is more prone to change than `go` one.
+
+To run the tests one has to build `C++` project outside of `go build`. The
+following builds the project in directory `build` and runs the tests:
+```
+cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/openvds
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
 
 ### 2. E2E test suite
 

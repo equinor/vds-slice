@@ -51,6 +51,12 @@ FROM builder as tester
 ARG CGO_CPPFLAGS="-I/open-vds/Dist/OpenVDS/include"
 ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
 ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
+
+ENV CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/open-vds/Dist/OpenVDS
+RUN cmake -S . -B build
+RUN cmake --build build
+RUN ctest --test-dir build
+
 ARG OPENVDS_AZURESDKFORCPP=1
 RUN go test -race ./...
 
