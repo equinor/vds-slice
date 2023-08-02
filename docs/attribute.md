@@ -2,7 +2,7 @@
 
 Calculate attributes such as `maxpos`, `mean` and `rms` around a horizon. The
 number of vertical samples above and below the horizon to include in the
-computation is customizable. See `vertical window` for more details. Multiple
+computation is customizable. See `AttributeRequest` for more details. Multiple
 attributes can be computed by a single request. It's advisable to do so,
 compared to doing one request per attribute, as a single request would be
 *much* faster.
