@@ -53,8 +53,8 @@ type Axis struct {
 
 // @Description Geometrical plane with depth/time datapoints
 type RegularSurface struct {
-	// Horizon / height-map
-	Horizon [][]float32 `json:"horizon" binding:"required"`
+	// Values / height-map
+	Values [][]float32 `json:"values" binding:"required"`
 
 	// Rotation of the X-axis (East), counter-clockwise, in degrees
 	Rotation *float32 `json:"rotation" binding:"required"`
@@ -65,17 +65,17 @@ type RegularSurface struct {
 	// Y-coordinate of the origin
 	Yori *float32 `json:"yori" binding:"required"`
 
-	// X-increment - The physical distance between columns in horizon
+	// X-increment - The physical distance between height-map columns
 	Xinc float32 `json:"xinc" binding:"required"`
 
-	// Y-increment - The physical distance between rows in horizon
+	// Y-increment - The physical distance between height-map rows
 	Yinc float32 `json:"yinc" binding:"required"`
 
-	// Any sample in the input horizon with value == fillValue will be ignored
+	// Any sample in the input values with value == fillValue will be ignored
 	// and the fillValue will be used in the amplitude map.
-	// I.e. for any [i, j] where horizon[i][j] == fillValue then
+	// I.e. for any [i, j] where values[i][j] == fillValue then
 	// output[i][j] == fillValue.
-	// Additionally, the fillValue is used for any point in the horizon that
+	// Additionally, the fillValue is used for any point of the surface that
 	// falls outside the bounds of the seismic volume.
 	FillValue *float32 `json:"fillValue" binding:"required"`
 } // @name RegularSurface
@@ -302,22 +302,22 @@ func (surface *RegularSurface) ToCRegularSurface() (CRegularSurface, error) {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
 
-	nrows := len(surface.Horizon)
-	ncols := len(surface.Horizon[0])
+	nrows := len(surface.Values)
+	ncols := len(surface.Values[0])
 
 	cdata := make([]C.float, nrows*ncols)
-	for i := range surface.Horizon {
-		if len(surface.Horizon[i]) != ncols {
+	for i := range surface.Values {
+		if len(surface.Values[i]) != ncols {
 			msg := fmt.Sprintf(
 				"Surface rows are not of the same length. "+
 					"Row 0 has %d elements. Row %d has %d elements",
-				ncols, i, len(surface.Horizon[i]),
+				ncols, i, len(surface.Values[i]),
 			)
 			return CRegularSurface{}, NewInvalidArgument(msg)
 		}
 
-		for j := range surface.Horizon[i] {
-			cdata[i*ncols+j] = C.float(surface.Horizon[i][j])
+		for j := range surface.Values[i] {
+			cdata[i*ncols+j] = C.float(surface.Values[i][j])
 		}
 	}
 
@@ -555,8 +555,8 @@ func (v VDSHandle) GetAttributes(
 		targetAttributes = append(targetAttributes, id)
 	}
 
-	var nrows = len(surface.Horizon)
-	var ncols = len(surface.Horizon[0])
+	var nrows = len(surface.Values)
+	var ncols = len(surface.Values[0])
 	var hsize = nrows * ncols
 
 	cAttributes := make([]C.enum_attribute, len(targetAttributes))

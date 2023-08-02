@@ -275,13 +275,13 @@ void horizon(
      * that the output amplitude map is exacty the same dimensions as the input
      * height map (horizon). That gives us 2 cases to explicitly handle:
      *
-     * 1) If a sample (region of samples) in the input horizon is marked as
+     * 1) If a sample (region of samples) in the input values is marked as
      * missing by the fillvalue then the fillvalue is used in that position in
      * the output array too:
      *
      *      input[n][m] == fillvalue => output[n][m] == fillvalue
      *
-     * 2) If a sample (or region of samples) in the input horizon is out of
+     * 2) If a sample (or region of samples) in the input values is out of
      * bounds in the horizontal plane, the output sample is populated by the
      * fillvalue.
      *

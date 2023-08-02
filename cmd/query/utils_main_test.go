@@ -119,7 +119,7 @@ func (h attributeTest) requestAsJSON() (string, error) {
 	out["vds"] = h.attribute.Vds
 	out["sas"] = h.attribute.Sas
 	surface := map[string]interface{}{}
-	surface["horizon"] = h.attribute.Horizon
+	surface["values"] = h.attribute.Values
 	surface["rotation"] = 33.69
 	surface["xinc"] = 7.2111
 	surface["yinc"] = 3.6056
@@ -171,7 +171,7 @@ type testMetadataRequest struct {
 type testAttributeRequest struct {
 	Vds           string
 	Sas           string
-	Horizon       [][]float32
+	Values        [][]float32
 	Interpolation string
 	Above         float32
 	Below         float32

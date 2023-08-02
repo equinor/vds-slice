@@ -443,7 +443,7 @@ func TestAttributeOutOfBounds(t *testing.T) {
 			},
 			testAttributeRequest{
 				Vds:        samples10,
-				Horizon:    [][]float32{{20}},
+				Values:     [][]float32{{20}},
 				Sas:        "n/a",
 				Above:      above,
 				Below:      below,
@@ -479,7 +479,7 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 
 			testAttributeRequest{
 				Vds:        samples10,
-				Horizon:    [][]float32{{20, 20}, {20, 20}, {20, 20}},
+				Values:     [][]float32{{20, 20}, {20, 20}, {20, 20}},
 				Sas:        "n/a",
 				Above:      8.0,
 				Below:      4.0,
@@ -498,8 +498,8 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 			"Wrong number of multipart data parts in case '%s'", testcase.name)
 
 		metadata := string(parts[0])
-		xLength := len(testcase.attribute.Horizon)
-		yLength := len(testcase.attribute.Horizon[0])
+		xLength := len(testcase.attribute.Values)
+		yLength := len(testcase.attribute.Values[0])
 		expectedMetadata := `{
 			"shape": [` + fmt.Sprint(xLength) + `,` + fmt.Sprint(yLength) + `],
 			"format": "<f4"
@@ -546,7 +546,7 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 			},
 			testAttributeRequest{
 				Vds:        well_known,
-				Horizon:    [][]float32{{4, 4}, {4, 4, 4}, {4, 4}},
+				Values:     [][]float32{{4, 4}, {4, 4, 4}, {4, 4}},
 				Sas:        "n/a",
 				Attributes: []string{"samplevalue"},
 			},
@@ -560,7 +560,7 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 			},
 			testAttributeRequest{
 				Vds:           well_known,
-				Horizon:       [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Values:        [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:           "n/a",
 				Interpolation: "unsupported",
 				Attributes:    []string{"samplevalue"},
@@ -575,7 +575,7 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 			},
 			testAttributeRequest{
 				Vds:        "unknown",
-				Horizon:    [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Values:     [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:        "n/a",
 				Attributes: []string{"samplevalue"},
 			},

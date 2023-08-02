@@ -104,7 +104,7 @@ func TestSupportedFormatsHorizon(t *testing.T) {
 
 			testAttributeRequest{
 				Vds:        fmt.Sprintf(formatFile, format),
-				Horizon:    [][]float32{{20}},
+				Values:     [][]float32{{20}},
 				Sas:        "n/a",
 				Above:      8.0,
 				Below:      8.0,

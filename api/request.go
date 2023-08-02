@@ -256,8 +256,8 @@ func (h AttributeRequest) toString() (string, error) {
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
-		len(h.Surface.Horizon[0]),
-		len(h.Surface.Horizon),
+		len(h.Surface.Values[0]),
+		len(h.Surface.Values),
 		*h.Surface.Rotation,
 		*h.Surface.Xori,
 		*h.Surface.Yori,
