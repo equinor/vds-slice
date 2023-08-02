@@ -372,7 +372,7 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 		require.Regexp(t, expectedMap["importTimeStamp"], actualMap["importTimeStamp"])
 
 		expectedMap["importTimeStamp"] = "dummy"
-		actualMap["importTimeStamp"]   = "dummy"
+		actualMap["importTimeStamp"] = "dummy"
 
 		require.Equal(t, expectedMap, actualMap, "Metadata not equal in case '%s'", testcase.name)
 	}
@@ -454,12 +454,12 @@ func TestAttributeOutOfBounds(t *testing.T) {
 	}
 
 	testCases := []endpointTest{
-		newCase("Min values",           0,   0,   0, http.StatusOK),
-		newCase("Above is too low",    -1,   1,   1, http.StatusBadRequest),
-		newCase("Above is too high",  250,   1,   1, http.StatusBadRequest),
-		newCase("Below is too low",     1,  -1,   1, http.StatusBadRequest),
-		newCase("Below is too high",    1, 250,   1, http.StatusBadRequest),
-		newCase("Stepsize is too low",  1,   1,  -1, http.StatusBadRequest),
+		newCase("Min values", 0, 0, 0, http.StatusOK),
+		newCase("Above is too low", -1, 1, 1, http.StatusBadRequest),
+		newCase("Above is too high", 250, 1, 1, http.StatusBadRequest),
+		newCase("Below is too low", 1, -1, 1, http.StatusBadRequest),
+		newCase("Below is too high", 1, 250, 1, http.StatusBadRequest),
+		newCase("Stepsize is too low", 1, 1, -1, http.StatusBadRequest),
 	}
 
 	for _, testcase := range testCases {
@@ -478,11 +478,11 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 			},
 
 			testAttributeRequest{
-				Vds:     samples10,
-				Horizon: [][]float32{{20, 20}, {20, 20}, {20, 20}},
-				Sas:     "n/a",
-				Above:   8.0,
-				Below:   4.0,
+				Vds:        samples10,
+				Horizon:    [][]float32{{20, 20}, {20, 20}, {20, 20}},
+				Sas:        "n/a",
+				Above:      8.0,
+				Below:      4.0,
 				Attributes: []string{"samplevalue"},
 			},
 		},
@@ -545,9 +545,9 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 					"Row 0 has 2 elements. Row 1 has 3 elements",
 			},
 			testAttributeRequest{
-				Vds:     well_known,
-				Horizon: [][]float32{{4, 4}, {4, 4, 4}, {4, 4}},
-				Sas:     "n/a",
+				Vds:        well_known,
+				Horizon:    [][]float32{{4, 4}, {4, 4, 4}, {4, 4}},
+				Sas:        "n/a",
 				Attributes: []string{"samplevalue"},
 			},
 		},
@@ -563,7 +563,7 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				Horizon:       [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:           "n/a",
 				Interpolation: "unsupported",
-				Attributes: []string{"samplevalue"},
+				Attributes:    []string{"samplevalue"},
 			},
 		},
 		attributeTest{
@@ -574,9 +574,9 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				expectedError:  "Could not open VDS",
 			},
 			testAttributeRequest{
-				Vds:     "unknown",
-				Horizon: [][]float32{{4, 4}, {4, 4}, {4, 4}},
-				Sas:     "n/a",
+				Vds:        "unknown",
+				Horizon:    [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:        "n/a",
 				Attributes: []string{"samplevalue"},
 			},
 		},

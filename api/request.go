@@ -43,12 +43,12 @@ type Normalizable interface {
 
 func (r *RequestedResource) NormalizeConnection() error {
 	url, err := url.Parse(r.Vds)
-	if  err  != nil {
+	if err != nil {
 		return core.NewInvalidArgument(err.Error())
 	}
 	if strings.TrimSpace(r.Sas) == "" {
 		if url.RawQuery == "" {
-		    return core.NewInvalidArgument("No valid Sas token is found in the request")
+			return core.NewInvalidArgument("No valid Sas token is found in the request")
 		}
 		r.Sas = url.RawQuery
 	}
