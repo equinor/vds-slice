@@ -333,8 +333,8 @@ void horizon(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
                 " col:" + std::to_string(col) +
-                ". Request: [" + std::to_string(bottom) +
-                ", " + std::to_string(top) +
+                ". Request: [" + std::to_string(top) +
+                ", " + std::to_string(bottom) +
                 "]. Seismic bounds: [" + std::to_string(sample.min())
                 + ", " +std::to_string(sample.max()) + "]"
             );
