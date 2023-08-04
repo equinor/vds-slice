@@ -333,8 +333,8 @@ void horizon(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
                 " col:" + std::to_string(col) +
-                ". Request: [" + std::to_string(bottom) +
-                ", " + std::to_string(top) +
+                ". Request: [" + std::to_string(top) +
+                ", " + std::to_string(bottom) +
                 "]. Seismic bounds: [" + std::to_string(sample.min())
                 + ", " +std::to_string(sample.max()) + "]"
             );
@@ -342,13 +342,13 @@ void horizon(
 
         ij[0]  = iline.to_sample_position(ij[0]);
         ij[1]  = xline.to_sample_position(ij[1]);
-        top    = sample.to_sample_position(top);
-        bottom = sample.to_sample_position(bottom);
 
-        for (double cur_depth = top; cur_depth <= bottom; cur_depth++) {
+
+        top    = sample.to_sample_position(top);
+        for (int idx = 0; idx < window.size(); ++idx) {
             samples[i][  iline.dimension() ] = ij[0];
             samples[i][  xline.dimension() ] = ij[1];
-            samples[i][ sample.dimension() ] = cur_depth;
+            samples[i][ sample.dimension() ] = top + idx;
             ++i;
         }
     }
