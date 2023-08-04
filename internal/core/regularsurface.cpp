@@ -38,6 +38,22 @@ AffineTransformation AffineTransformation::from_rotation(
     }}));
 }
 
+AffineTransformation AffineTransformation::inverse_from_rotation(
+    double xori,
+    double yori,
+    double xinc,
+    double yinc,
+    double rot
+) noexcept(true) {
+    double rad = rot * (M_PI / 180);
+    /**
+     * Matrix inverse to the one above.
+     */
+    return AffineTransformation(base_type({{
+        std::cos(rad) / xinc, std::sin(rad) / xinc, -(std::sin(rad) * yori + std::cos(rad) * xori) / xinc,
+       -std::sin(rad) / yinc, std::cos(rad) / yinc,  (std::sin(rad) * xori - std::cos(rad) * yori) / yinc
+    }}));
+}
 
 Point RegularSurface::to_cdp(
     std::size_t const row,
@@ -49,6 +65,12 @@ Point RegularSurface::to_cdp(
     Point point {static_cast<double>(row), static_cast<double>(col)};
 
     return this->m_transformation * point;
+}
+
+Point RegularSurface::from_cdp(
+    Point point
+) const noexcept (false) {
+    return this->m_inverse_transformation * point;
 }
 
 float RegularSurface::value(

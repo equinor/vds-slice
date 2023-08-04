@@ -22,6 +22,15 @@ struct AffineTransformation : private std::array< std::array< double, 3>, 2 > {
         double yinc,
         double rot
     ) noexcept (true);
+
+    /* Make inverse transformation to the one created from rotation */
+    static AffineTransformation inverse_from_rotation(
+        double xori,
+        double yori,
+        double xinc,
+        double yinc,
+        double rot
+    )noexcept (true);
 };
 
 
@@ -58,13 +67,20 @@ public:
         m_ncols(ncols),
         m_fillvalue(fillvalue),
         m_transformation(
-            AffineTransformation::from_rotation(xori, yori, xinc, yinc, rot))
+            AffineTransformation::from_rotation(xori, yori, xinc, yinc, rot)),
+        m_inverse_transformation(
+            AffineTransformation::inverse_from_rotation(xori, yori, xinc, yinc, rot))
     {}
 
     /* Grid position (row, col) -> world coordinates */
     Point to_cdp(
         std::size_t const row,
         std::size_t const col
+    ) const noexcept (false);
+
+    /* World coordinates -> grid position */
+    Point from_cdp(
+        Point point
     ) const noexcept (false);
 
     /* Value at grid position (row, col) */
@@ -86,6 +102,7 @@ private:
     std::size_t  m_ncols;
     float        m_fillvalue;
     AffineTransformation    m_transformation;
+    AffineTransformation    m_inverse_transformation;
 };
 
 // } // namespace surface
