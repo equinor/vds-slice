@@ -80,6 +80,15 @@ Point RegularSurface::to_cdp(
     return this->m_plane.m_transformation * point;
 }
 
+Point RegularSurface::to_cdp(
+    std::size_t i
+) const noexcept(false) {
+    auto row = i / this->ncols();
+    auto col = i % this->ncols();
+
+    return to_cdp(row, col);
+}
+
 Point RegularSurface::from_cdp(
     Point point
 ) const noexcept (false) {

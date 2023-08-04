@@ -105,6 +105,10 @@ public:
         std::size_t const col
     ) const noexcept (false);
 
+    Point to_cdp(
+        std::size_t i
+    ) const noexcept(false);
+
     /* World coordinates -> grid position */
     Point from_cdp(
         Point point
