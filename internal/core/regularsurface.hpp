@@ -16,11 +16,11 @@ struct AffineTransformation : private std::array< std::array< double, 3>, 2 > {
     Point operator*(Point p) const noexcept (true);
 
     static AffineTransformation from_rotation(
-        float xori,
-        float yori,
-        float xinc,
-        float yinc,
-        float rot
+        double xori,
+        double yori,
+        double xinc,
+        double yinc,
+        double rot
     ) noexcept (true);
 };
 
