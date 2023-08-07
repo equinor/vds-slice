@@ -50,6 +50,24 @@ int lineno_index_to_voxel(
     return lineno;
 }
 
+int to_voxel(
+    Axis const& axis,
+    int const lineno,
+    enum coordinate_system const system
+) {
+    switch (system) {
+        case ANNOTATION: {
+            return ::lineno_annotation_to_voxel(lineno, axis);
+        }
+        case INDEX: {
+            return ::lineno_index_to_voxel(lineno, axis);
+        }
+        default: {
+            throw std::runtime_error("Unhandled coordinate system");
+        }
+    }
+}
+
 } /* namespace */
 
 SubVolume::SubVolume(MetadataHandle const& metadata) {
@@ -67,20 +85,7 @@ void SubVolume::set_slice(
     int const                    lineno,
     enum coordinate_system const coordinate_system
 ) {
-    int voxelline;
-    switch (coordinate_system) {
-        case ANNOTATION: {
-            voxelline = ::lineno_annotation_to_voxel(lineno, axis);
-            break;
-        }
-        case INDEX: {
-            voxelline = ::lineno_index_to_voxel(lineno, axis);
-            break;
-        }
-        default: {
-            throw std::runtime_error("Unhandled coordinate system");
-        }
-    }
+    int voxelline = ::to_voxel(axis, lineno, coordinate_system);
 
     this->bounds.lower[axis.dimension()] = voxelline;
     this->bounds.upper[axis.dimension()] = voxelline + 1;
