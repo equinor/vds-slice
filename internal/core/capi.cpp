@@ -81,7 +81,7 @@ int datahandle_free(Context* ctx, DataHandle* f) {
 
 int regular_surface_new(
     Context* ctx,
-    const float* data,
+    float* data,
     size_t nrows,
     size_t ncols,
     float xori,

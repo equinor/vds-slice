@@ -87,7 +87,7 @@ class RegularSurface{
 
 public:
     RegularSurface(
-        const float* data,
+        float* data,
         std::size_t  nrows,
         std::size_t  ncols,
         Plane plane,
@@ -121,6 +121,7 @@ public:
     ) const noexcept (false);
 
     float value(std::size_t i) const noexcept (false);
+    void set_value(std::size_t i, float value) noexcept (false);
     
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
@@ -130,7 +131,7 @@ public:
 
     Plane plane() const noexcept (true) { return this->m_plane; };
 private:
-    const float* m_data;
+    float*       m_data;
     std::size_t  m_nrows;
     std::size_t  m_ncols;
     float        m_fillvalue;

@@ -65,7 +65,7 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
     static constexpr int ncols = 6;
     static constexpr std::size_t size = nrows * ncols;
 
-    const std::array<float, size> surface_data = {
+    std::array<float, size> surface_data = {
         24, 20, 24, 24, 24, 20,
         20, 20, 20, 24, 20, 24,
         20, 24, 20, 20, 24, 20,

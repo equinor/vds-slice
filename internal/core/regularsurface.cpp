@@ -110,3 +110,9 @@ float RegularSurface::value(std::size_t i) const noexcept (false) {
 
     return this->m_data[i];
 }
+
+void RegularSurface::set_value(std::size_t i, float value) noexcept (false) {
+    if (i >= this->size()) throw std::runtime_error("index out of range");
+
+    this->m_data[i] = value;
+}
