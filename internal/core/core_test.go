@@ -446,7 +446,7 @@ func TestFence(t *testing.T) {
 			coordinates:       [][]float32{{8, 4}, {6, 7}, {2, 0}, {8, 4}, {14, 8}},
 		},
 	}
-
+	var fillValue float32 = -999.25
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testcase := range testcases {
@@ -456,6 +456,7 @@ func TestFence(t *testing.T) {
 			testcase.coordinate_system,
 			testcase.coordinates,
 			interpolationMethod,
+			&fillValue,
 		)
 		require.NoErrorf(t, err,
 			"[coordinate_system: %v] Failed to fetch fence, err: %v",
@@ -515,9 +516,70 @@ func TestFenceBorders(t *testing.T) {
 		interpolationMethod, _ := GetInterpolationMethod("linear")
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		_, err := handle.GetFence(testcase.coordinate_system, testcase.coordinates, interpolationMethod)
+		_, err := handle.GetFence(testcase.coordinate_system, testcase.coordinates, interpolationMethod, nil)
 
 		require.ErrorContainsf(t, err, testcase.err, "[case: %v]", testcase.name)
+	}
+}
+
+func TestFenceBordersWithFillValue(t *testing.T) {
+	testcases := []struct {
+		name          string
+		crd_system    int
+		coordinates   [][]float32
+		interpolation string
+		fence         []float32
+	}{
+		{
+			name       : "coordinate 1 is just-out-of-upper-bound in direction 0",
+			crd_system : CoordinateSystemAnnotation,
+			coordinates: [][]float32{{5, 9.5}, {6, 11.25}},
+			fence      : []float32{116, 117, 118, 119, -999.25, -999.25, -999.25, -999.25},
+		},
+		{
+			name       : "coordinate 0 is just-out-of-upper-bound in direction 1",
+			crd_system : CoordinateSystemAnnotation,
+			coordinates: [][]float32{{5.5, 11.5}, {3, 10}},
+			fence      : []float32{-999.25, -999.25, -999.25, -999.25, 108, 109, 110, 111},
+		},
+		{
+			name       : "coordinate is long way out of upper-bound in both directions",
+			crd_system : CoordinateSystemCdp,
+			coordinates: [][]float32{{700, 1200}},
+			fence      : []float32{-999.25, -999.25, -999.25, -999.25},
+		},
+		{
+			name       : "coordinate 1 is just-out-of-lower-bound in direction 1",
+			crd_system : CoordinateSystemAnnotation,
+			coordinates: [][]float32{{0, 11}, {5.9999, 10}, {0.0001, 9.4999}},
+			fence      : []float32{104, 105, 106, 107, 116, 117, 118, 119, -999.25, -999.25, -999.25, -999.25},
+		},
+		{
+			name       : "negative coordinate 0 is out-of-lower-bound in direction 0",
+			crd_system : CoordinateSystemIndex,
+			coordinates: [][]float32{{-1, 0}, {-3, 0}},
+			fence      : []float32{-999.25, -999.25, -999.25, -999.25, -999.25, -999.25, -999.25, -999.25},
+		},
+	}
+
+	var fillValue float32 = -999.25
+	for _, testcase := range testcases {
+		interpolationMethod, _ := GetInterpolationMethod("linear")
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		buf, err := handle.GetFence(
+			testcase.crd_system,
+			testcase.coordinates,
+			interpolationMethod,
+			&fillValue,
+		)
+		require.NoError(t, err)
+
+		fence, err := toFloat32(buf)
+		require.NoErrorf(t, err,
+			"[coordinate_system: %v] Err: %v", testcase.crd_system, err,
+		)
+		require.Equal(t, testcase.fence, *fence, "[case: %v]", testcase.name)
 	}
 }
 
@@ -578,7 +640,7 @@ func TestFenceNearestInterpolationSnap(t *testing.T) {
 			expected:          []float32{120, 121, 122, 123},
 		},
 	}
-
+	var fillValue float32 = -999.25
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testcase := range testcases {
@@ -588,6 +650,7 @@ func TestFenceNearestInterpolationSnap(t *testing.T) {
 			testcase.coordinate_system,
 			testcase.coordinates,
 			interpolationMethod,
+			&fillValue,
 		)
 		require.NoErrorf(t, err,
 			"[coordinate_system: %v] Failed to fetch fence, err: %v",
@@ -607,11 +670,11 @@ func TestFenceNearestInterpolationSnap(t *testing.T) {
 func TestInvalidFence(t *testing.T) {
 	fence := [][]float32{{1, 0}, {1, 1, 0}, {0, 0}, {1, 0}, {2, 0}}
 
+	var fillValue float32 = -999.25
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-
 	handle, _ := NewVDSHandle(well_known)
 	defer handle.Close()
-	_, err := handle.GetFence(CoordinateSystemIndex, fence, interpolationMethod)
+	_, err := handle.GetFence(CoordinateSystemIndex, fence, interpolationMethod, &fillValue,)
 
 	require.ErrorContains(t, err,
 		"invalid coordinate [1 1 0] at position 1, expected [x y] pair",
@@ -640,13 +703,14 @@ func TestFenceInterpolationSameAtDataPoints(t *testing.T) {
 
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
-
+	var fillValue float32 = -999.25
 	for _, interpolation := range interpolationMethods {
 		interpolationMethod, _ := GetInterpolationMethod(interpolation)
 		buf, err := handle.GetFence(
 			CoordinateSystemIndex,
 			coordinates,
 			interpolationMethod,
+			&fillValue,
 		)
 		require.NoErrorf(t, err, "Failed to fetch fence in [interpolation: %v]", interpolation)
 		result, err := toFloat32(buf)
@@ -659,15 +723,16 @@ func TestFenceInterpolationSameAtDataPoints(t *testing.T) {
 // different values are returned by each algorithm
 func TestFenceInterpolationDifferentBeyondDatapoints(t *testing.T) {
 	fence := [][]float32{{3.2, 3}, {3.2, 6.3}, {1, 3}, {3.2, 3}, {5.4, 3}}
+	var fillValue float32 = -999.25
 	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular", "angular"}
 	for i, v1 := range interpolationMethods {
 		interpolationMethod, _ := GetInterpolationMethod(v1)
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		buf1, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod)
+		buf1, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod, &fillValue)
 		for _, v2 := range interpolationMethods[i+1:] {
 			interpolationMethod, _ := GetInterpolationMethod(v2)
-			buf2, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod)
+			buf2, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod, &fillValue,)
 
 			require.NotEqual(t, buf1, buf2)
 		}

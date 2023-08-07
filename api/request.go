@@ -87,8 +87,6 @@ type FenceRequest struct {
 
 	// A list of (x, y) points in the coordinate system specified in
 	// coordinateSystem, for example [[2000.5, 100.5], [2050, 200], [10, 20]].
-	// All coordinates are expected to be inside the bounding box (with outer margin
-	// of half a distance between consecutive lines).
 	Coordinates [][]float32 `json:"coordinates" binding:"required"`
 
 	// Interpolation method
@@ -98,6 +96,12 @@ type FenceRequest struct {
 	// Note: For nearest interpolation result will snap to the nearest point
 	// as per "half up" rounding. This is different from openvds logic.
 	Interpolation string `json:"interpolation" example:"linear"`
+
+	// Providing a FillValue is optional and will be used for the sample points
+	// that lie outside the seismic cube.
+	// Note: In case the FillValue is not set, and any of the provided coordinates
+	// fall outside the seismic cube, the request will be rejected with an error.
+	FillValue *float32 `json:"fillValue"`
 } //@name FenceRequest
 
 func (f FenceRequest) toString() (string, error) {

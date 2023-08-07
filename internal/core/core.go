@@ -445,6 +445,7 @@ func (v VDSHandle) GetFence(
 	coordinateSystem int,
 	coordinates [][]float32,
 	interpolation int,
+	fillValue *float32,
 ) ([]byte, error) {
 	coordinate_len := 2
 	ccoordinates := make([]C.float, len(coordinates)*coordinate_len)
@@ -472,6 +473,7 @@ func (v VDSHandle) GetFence(
 		&ccoordinates[0],
 		C.size_t(len(coordinates)),
 		C.enum_interpolation_method(interpolation),
+		(*C.float)(fillValue),
 		&result,
 	)
 

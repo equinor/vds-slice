@@ -175,6 +175,7 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 		coordinateSystem,
 		request.Coordinates,
 		interpolation,
+		request.FillValue,
 	)
 	if abortOnError(ctx, err) {
 		return
