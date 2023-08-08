@@ -417,4 +417,80 @@ void attributes(
     calc_attributes(horizon, surface, src_window, dst_window, attrs, from, to);
 }
 
+namespace {
+
+struct SurfacesCrossoverValidator {
+    // assuming that samples axis in the file has positive increasing values
+    bool have_crossed(float primary, float secondary) {
+        if (primary > secondary) {
+            this->primary_is_bottom = true;
+        }
+        else if (primary < secondary) {
+            this->primary_is_top = true;
+        }
+        return this->primary_is_top == this->primary_is_bottom;
+    }
+
+    bool is_primary_top() {
+        return this->primary_is_top;
+    }
+
+private:
+    bool primary_is_top = false;
+    bool primary_is_bottom = false;
+};
+
+} //namespace
+
+void align_surfaces(
+    RegularSurface const &primary,
+    RegularSurface const &secondary,
+    RegularSurface &aligned,
+    bool* primary_is_top
+) {
+    if (primary.size() != aligned.size() or !(primary.plane() == aligned.plane())) {
+        throw std::runtime_error(
+            "Expected primary and aligned surfaces to differ in data only.");
+    }
+
+    SurfacesCrossoverValidator surfaces;
+
+    for (std::size_t i = 0; i < primary.size(); ++i) {
+        if (primary.fillvalue() == primary.value(i)) {
+            aligned.set_value(i, aligned.fillvalue());
+            continue;
+        }
+        auto secondary_pos = secondary.from_cdp(primary.to_cdp(i));
+        // calculated value can be out of bounds, also negative
+        auto secondary_row = std::lround(secondary_pos.x);
+        auto secondary_col = std::lround(secondary_pos.y);
+
+        if (secondary_row < 0 || secondary_row >= secondary.nrows() ||
+            (secondary_col < 0 || secondary_col >= secondary.ncols()))
+        {
+            aligned.set_value(i, aligned.fillvalue());
+            continue;
+        }
+
+        auto secondary_value = secondary.value(secondary_row, secondary_col);
+
+        if(secondary.fillvalue() == secondary_value) {
+            aligned.set_value(i, aligned.fillvalue());
+            continue;
+        }
+
+        aligned.set_value(i, secondary_value);
+
+        if (surfaces.have_crossed(primary.value(i), aligned.value(i))) {
+            std::size_t row = i / primary.ncols();
+            std::size_t col = i % primary.ncols();
+            throw detail::bad_request("Surfaces intersect at primary surface point ("
+                                        + std::to_string(row) + ", "
+                                        + std::to_string(col) + ")");
+        }
+
+    }
+    *primary_is_top = surfaces.is_primary_top();
+}
+
 } // namespace cppapi

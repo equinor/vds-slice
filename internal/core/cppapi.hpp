@@ -58,6 +58,33 @@ void attributes(
     void** out
 ) noexcept (false);
 
+/**
+ * Given two input surfaces, primary and secondary, updates third surface,
+ * aligned, which is expected to be shaped as primary surface, with data
+ * belonging to secondary surface.
+ *
+ * For each point on primary surface a nearest point on the secondary surface
+ * will be found and its value will be written to the resulting aligned surface.
+ *
+ * If according to the algorithm described above surfaces appear to intersect,
+ * exception would be thrown.
+ *
+ * If the resulting point appears to be out of secondary surface bounds, aligned
+ * surface fillvalue will be stored at the position. If for the primary or
+ * secondary surface at the point the value of the data is surface's
+ * corresponding fillvalue, aligned surface fillvalue will be stored at the
+ * postion.
+ *
+ * Additionally a parameter primary_is_top would be set determining whether
+ * primary or resulting aligned surface appeared on top of another.
+ */
+void align_surfaces(
+    RegularSurface const& primary,
+    RegularSurface const& secondary,
+    RegularSurface &aligned,
+    bool* primary_is_top
+) noexcept (false);
+
 void slice_metadata(
     DataHandle& handle,
     Direction const direction,
