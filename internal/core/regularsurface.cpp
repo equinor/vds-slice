@@ -10,6 +10,15 @@ Point AffineTransformation::operator*(Point p) const noexcept (true) {
     };
 };
 
+bool operator==(
+    AffineTransformation const& left,
+    AffineTransformation const& right
+) noexcept (true) {
+    const auto& lhs = static_cast< const AffineTransformation::base_type& >(left);
+    const auto& rhs = static_cast< const AffineTransformation::base_type& >(right);
+
+    return lhs == rhs;
+};
 
 AffineTransformation AffineTransformation::from_rotation(
     double xori,
@@ -55,6 +64,10 @@ AffineTransformation AffineTransformation::inverse_from_rotation(
     }}));
 }
 
+bool Plane::operator==(const Plane& other) const {
+    return this->m_transformation == other.m_transformation;
+}
+
 Point RegularSurface::to_cdp(
     std::size_t const row,
     std::size_t const col
@@ -64,13 +77,13 @@ Point RegularSurface::to_cdp(
 
     Point point {static_cast<double>(row), static_cast<double>(col)};
 
-    return this->m_transformation * point;
+    return this->m_plane.m_transformation * point;
 }
 
 Point RegularSurface::from_cdp(
     Point point
 ) const noexcept (false) {
-    return this->m_inverse_transformation * point;
+    return this->m_plane.m_inverse_transformation * point;
 }
 
 float RegularSurface::value(

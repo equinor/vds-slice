@@ -99,11 +99,7 @@ int regular_surface_new(
             data,
             nrows,
             ncols,
-            xori,
-            yori,
-            xinc,
-            yinc,
-            rot,
+            Plane(xori, yori, xinc, yinc, rot),
             fillvalue
         );
         return STATUS_OK;

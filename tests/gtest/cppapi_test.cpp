@@ -11,6 +11,8 @@ namespace
 const std::string SAMPLES_10 = "file://10_samples_default.vds";
 const std::string CREDENTIALS = "";
 
+Plane other_plane = Plane(2, 3, 4.472, 2.236, 333.43);
+
 class HorizonTest : public ::testing::Test
 {
   protected:
@@ -63,12 +65,6 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
     static constexpr int ncols = 6;
     static constexpr std::size_t size = nrows * ncols;
 
-    const float xori = 2;
-    const float yori = 3;
-    const float xinc = 4.472;
-    const float yinc = 2.236;
-    const float rot = 333.43;
-
     const std::array<float, size> surface_data = {
         24, 20, 24, 24, 24, 20,
         20, 20, 20, 24, 20, 24,
@@ -83,17 +79,17 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
         nodata, nodata, nodata, nodata, nodata, nodata
     };
 
-    RegularSurface unaligned_surface =
-        RegularSurface(surface_data.data(), nrows, ncols, xori, yori, xinc, yinc, rot, fill);
+    RegularSurface surface =
+        RegularSurface(surface_data.data(), nrows, ncols, other_plane, fill);
 
     std::size_t horizon_size;
-    cppapi::horizon_size(*handle, unaligned_surface, above, below, &horizon_size);
+    cppapi::horizon_size(*handle, surface, above, below, &horizon_size);
 
     std::vector< float> res(horizon_size);
-    cppapi::horizon(*handle, unaligned_surface, above, below, NEAREST, 0, size, res.data());
+    cppapi::horizon(*handle, surface, above, below, NEAREST, 0, size, res.data());
 
-    std::size_t vsize = horizon_size / (unaligned_surface.size() * sizeof(float));
-    Horizon horizon(res.data(), size, vsize, unaligned_surface.fillvalue());
+    std::size_t vsize = horizon_size / (surface.size() * sizeof(float));
+    Horizon horizon(res.data(), size, vsize, surface.fillvalue());
 
     /* We are checking here points unordered. Meaning that if all points in a
      * row appear somewhere in the horizon, we assume we are good. Alternative
