@@ -51,6 +51,35 @@ type Axis struct {
 	Unit string `json:"unit" example:"ms"`
 } // @name Axis
 
+// @Description Geometrical plane with depth/time datapoints
+type RegularSurface struct {
+	// Values / height-map
+	Values [][]float32 `json:"values" binding:"required"`
+
+	// Rotation of the X-axis (East), counter-clockwise, in degrees
+	Rotation *float32 `json:"rotation" binding:"required"`
+
+	// X-coordinate of the origin
+	Xori *float32 `json:"xori" binding:"required"`
+
+	// Y-coordinate of the origin
+	Yori *float32 `json:"yori" binding:"required"`
+
+	// X-increment - The physical distance between height-map columns
+	Xinc float32 `json:"xinc" binding:"required"`
+
+	// Y-increment - The physical distance between height-map rows
+	Yinc float32 `json:"yinc" binding:"required"`
+
+	// Any sample in the input values with value == fillValue will be ignored
+	// and the fillValue will be used in the amplitude map.
+	// I.e. for any [i, j] where values[i][j] == fillValue then
+	// output[i][j] == fillValue.
+	// Additionally, the fillValue is used for any point of the surface that
+	// falls outside the bounds of the seismic volume.
+	FillValue *float32 `json:"fillValue" binding:"required"`
+} // @name RegularSurface
+
 // @Description The bounding box of the survey, defined by its 4 corner
 // @Description coordinates. The bounding box is given in 3 different
 // @Description coordinate systems. The points are sorted in the same order for
@@ -248,16 +277,16 @@ func toError(status C.int, ctx *C.Context) error {
 	}
 }
 
-type RegularSurface struct {
+type CRegularSurface struct {
 	cSurface *C.struct_RegularSurface
 	cData    []C.float
 }
 
-func (r *RegularSurface) get() *C.struct_RegularSurface {
+func (r *CRegularSurface) get() *C.struct_RegularSurface {
 	return r.cSurface
 }
 
-func (r *RegularSurface) Close() error {
+func (r *CRegularSurface) Close() error {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
 
@@ -269,34 +298,26 @@ func (r *RegularSurface) Close() error {
 	return nil
 }
 
-func NewRegularSurface(
-	data [][]float32,
-	originX float32,
-	originY float32,
-	increaseX float32,
-	increaseY float32,
-	rotation float32,
-	fillValue float32,
-) (RegularSurface, error) {
+func (surface *RegularSurface) ToCRegularSurface() (CRegularSurface, error) {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
 
-	nrows := len(data)
-	ncols := len(data[0])
+	nrows := len(surface.Values)
+	ncols := len(surface.Values[0])
 
 	cdata := make([]C.float, nrows*ncols)
-	for i := range data {
-		if len(data[i]) != ncols {
+	for i := range surface.Values {
+		if len(surface.Values[i]) != ncols {
 			msg := fmt.Sprintf(
 				"Surface rows are not of the same length. "+
 					"Row 0 has %d elements. Row %d has %d elements",
-				ncols, i, len(data[i]),
+				ncols, i, len(surface.Values[i]),
 			)
-			return RegularSurface{}, NewInvalidArgument(msg)
+			return CRegularSurface{}, NewInvalidArgument(msg)
 		}
 
-		for j := range data[i] {
-			cdata[i*ncols+j] = C.float(data[i][j])
+		for j := range surface.Values[i] {
+			cdata[i*ncols+j] = C.float(surface.Values[i][j])
 		}
 	}
 
@@ -306,21 +327,21 @@ func NewRegularSurface(
 		&cdata[0],
 		C.size_t(nrows),
 		C.size_t(ncols),
-		C.float(originX),
-		C.float(originY),
-		C.float(increaseX),
-		C.float(increaseY),
-		C.float(rotation),
-		C.float(fillValue),
+		C.float(*surface.Xori),
+		C.float(*surface.Yori),
+		C.float(surface.Xinc),
+		C.float(surface.Yinc),
+		C.float(*surface.Rotation),
+		C.float(*surface.FillValue),
 		&cSurface,
 	)
 
 	if err := toError(cErr, cCtx); err != nil {
 		C.regular_surface_free(cCtx, cSurface)
-		return RegularSurface{}, err
+		return CRegularSurface{}, err
 	}
 
-	return RegularSurface{cSurface: cSurface, cData: cdata}, nil
+	return CRegularSurface{cSurface: cSurface, cData: cdata}, nil
 }
 
 type VDSHandle struct {
@@ -518,13 +539,7 @@ func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 }
 
 func (v VDSHandle) GetAttributes(
-	data [][]float32,
-	originX float32,
-	originY float32,
-	increaseX float32,
-	increaseY float32,
-	rotation float32,
-	fillValue float32,
+	surface RegularSurface,
 	above float32,
 	below float32,
 	stepsize float32,
@@ -540,8 +555,8 @@ func (v VDSHandle) GetAttributes(
 		targetAttributes = append(targetAttributes, id)
 	}
 
-	var nrows = len(data)
-	var ncols = len(data[0])
+	var nrows = len(surface.Values)
+	var ncols = len(surface.Values[0])
 	var hsize = nrows * ncols
 
 	cAttributes := make([]C.enum_attribute, len(targetAttributes))
@@ -549,26 +564,18 @@ func (v VDSHandle) GetAttributes(
 		cAttributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
-	surface, err := NewRegularSurface(
-		data,
-		originX,
-		originY,
-		increaseX,
-		increaseY,
-		rotation,
-		fillValue,
-	)
+	cSurface, err := surface.ToCRegularSurface()
 	if err != nil {
 		return nil, err
 	}
-	defer surface.Close()
+	defer cSurface.Close()
 
 	var horizonSize C.size_t
 
 	cerr := C.horizon_size(
 		v.context(),
 		v.Handle(),
-		surface.get(),
+		cSurface.get(),
 		C.float(above),
 		C.float(below),
 		&horizonSize,
@@ -578,7 +585,7 @@ func (v VDSHandle) GetAttributes(
 	}
 
 	horizon, err := v.fetchHorizon(
-		surface,
+		cSurface,
 		nrows,
 		ncols,
 		above,
@@ -591,7 +598,7 @@ func (v VDSHandle) GetAttributes(
 	}
 
 	return v.calculateAttributes(
-		surface,
+		cSurface,
 		hsize,
 		horizon,
 		horizonSize,
@@ -603,7 +610,7 @@ func (v VDSHandle) GetAttributes(
 }
 
 func (v VDSHandle) fetchHorizon(
-	surface RegularSurface,
+	cSurface CRegularSurface,
 	nrows int,
 	ncols int,
 	above float32,
@@ -642,7 +649,7 @@ func (v VDSHandle) fetchHorizon(
 			cerr := C.horizon(
 				cCtx,
 				v.Handle(),
-				surface.get(),
+				cSurface.get(),
 				C.float(above),
 				C.float(below),
 				C.enum_interpolation_method(interpolation),
@@ -676,7 +683,7 @@ func (v VDSHandle) fetchHorizon(
 }
 
 func (v VDSHandle) calculateAttributes(
-	surface RegularSurface,
+	cSurface CRegularSurface,
 	hsize int,
 	horizon []byte,
 	horizonSize C.size_t,
@@ -710,7 +717,7 @@ func (v VDSHandle) calculateAttributes(
 			cErr := C.attribute(
 				cCtx,
 				v.Handle(),
-				surface.get(),
+				cSurface.get(),
 				unsafe.Pointer(&horizon[0]),
 				horizonSize,
 				&cAttributes[0],

@@ -2,7 +2,7 @@
 
 Calculate attributes such as `maxpos`, `mean` and `rms` around a horizon. The
 number of vertical samples above and below the horizon to include in the
-computation is customizable. See `vertical window` for more details. Multiple
+computation is customizable. See `AttributeRequest` for more details. Multiple
 attributes can be computed by a single request. It's advisable to do so,
 compared to doing one request per attribute, as a single request would be
 *much* faster.
@@ -51,7 +51,7 @@ AttributeMetadata data model.
 *Content-Type: application/octet-stream*
 One part per requested attribute. Each part contains an attribute as a raw byte
 array. The byte arrays need to be parsed into 2D arrays before use. The shape
-is identical to the shape of the input horizon, but can also be found in the
+is identical to the shape of the input values, but can also be found in the
 returned metadata.
 
 Data is always 4 byte IEEE floating point, little endian.

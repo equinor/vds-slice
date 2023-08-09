@@ -65,15 +65,20 @@ def make_metadata_request(vds=VDSURL, sas="sas"):
 def make_attribute_request(
     vds=SAMPLES10_URL,
     surface=surface(),
-    horizon=[[20]],
+    values=[[20]],
     above=8,
     below=8,
     attributes=["samplevalue"],
     sas="sas"
 ):
-    request = {
+    regular_surface = {
+        "values": values,
         "fillValue": -999.25,
-        "horizon": horizon,
+    }
+    regular_surface.update(surface)
+
+    request = {
+        "surface": regular_surface,
         "interpolation": "nearest",
         "vds": vds,
         "sas": sas,
@@ -81,7 +86,6 @@ def make_attribute_request(
         "below": below,
         "attributes": attributes
     }
-    request.update(surface)
     return request
 
 
@@ -159,12 +163,12 @@ def test_metadata(method):
 
 
 def test_attributes():
-    horizon = [
+    values = [
         [20, 20],
         [20, 20],
         [20, 20]
     ]
-    meta, data = request_attributes("post", horizon)
+    meta, data = request_attributes("post", values)
 
     expected = np.array([[-0.5, 0.5], [-8.5, 6.5], [16.5, -16.5]])
     assert np.array_equal(data, expected)
@@ -368,11 +372,11 @@ def request_metadata(method):
     return rdata.json()
 
 
-def request_attributes(method, horizon):
+def request_attributes(method, values):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = make_attribute_request(horizon=horizon, sas=sas)
+    payload = make_attribute_request(values=values, sas=sas)
     rdata = send_request("horizon", method, payload)
     rdata.raise_for_status()
 

@@ -22,6 +22,8 @@ var well_known = make_connection("well_known")
 var samples10 = make_connection("10_samples")
 var prestack = make_connection("prestack")
 
+var fillValue = float32(-999.25)
+
 type gridDefinition struct {
 	xori     float32
 	yori     float32
@@ -45,6 +47,18 @@ var well_known_grid gridDefinition = gridDefinition{
 
 var samples10_grid = well_known_grid
 
+func samples10Surface(data [][]float32) RegularSurface {
+	return RegularSurface{
+		Values:    data,
+		Rotation:  &samples10_grid.rotation,
+		Xori:      &samples10_grid.xori,
+		Yori:      &samples10_grid.yori,
+		Xinc:      samples10_grid.xinc,
+		Yinc:      samples10_grid.yinc,
+		FillValue: &fillValue,
+	}
+}
+
 func toFloat32(buf []byte) (*[]float32, error) {
 	fsize := 4 // sizeof(float32)
 	if len(buf)%fsize != 0 {
@@ -66,17 +80,17 @@ func toFloat32(buf []byte) (*[]float32, error) {
 func TestMetadata(t *testing.T) {
 	expected := Metadata{
 		Axis: []*Axis{
-			{ Annotation: "Inline",    Min: 1,  Max: 5,  Samples: 3, Unit: "unitless" },
-			{ Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, Unit: "unitless" },
-			{ Annotation: "Sample",    Min: 4,  Max: 16, Samples: 4, Unit: "ms"       },
+			{Annotation: "Inline", Min: 1, Max: 5, Samples: 3, Unit: "unitless"},
+			{Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, Unit: "unitless"},
+			{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, Unit: "ms"},
 		},
 		BoundingBox: BoundingBox{
-			Cdp:  [][]float64{ {2, 0}, {14, 8}, {12, 11}, {0, 3} },
-			Ilxl: [][]float64{ {1, 10}, {5, 10}, {5, 11}, {1, 11}},
-			Ij:   [][]float64{ {0, 0}, {2, 0}, {2, 1}, {0, 1}},
+			Cdp:  [][]float64{{2, 0}, {14, 8}, {12, 11}, {0, 3}},
+			Ilxl: [][]float64{{1, 10}, {5, 10}, {5, 11}, {1, 11}},
+			Ij:   [][]float64{{0, 0}, {2, 0}, {2, 1}, {0, 1}},
 		},
-		Crs            : "utmXX",
-		InputFileName  : "well_known.segy",
+		Crs:             "utmXX",
+		InputFileName:   "well_known.segy",
 		ImportTimeStamp: `^\d{4}-\d{2}-\d{2}[A-Z]\d{2}:\d{2}:\d{2}\.\d{3}[A-Z]$`,
 	}
 
@@ -92,7 +106,7 @@ func TestMetadata(t *testing.T) {
 	require.Regexp(t, expected.ImportTimeStamp, meta.ImportTimeStamp)
 
 	expected.ImportTimeStamp = "dummy"
-	meta.ImportTimeStamp     = "dummy"
+	meta.ImportTimeStamp = "dummy"
 
 	require.Equal(t, meta, expected)
 }
@@ -115,18 +129,18 @@ func TestSliceData(t *testing.T) {
 		117, 121, // il: 5, xl: all, samples: 1
 	}
 
-	testcases := []struct{
-			name      string
-			lineno    int
-			direction int
-			expected  []float32
-	} {
-		{ name: "inline",    lineno: 3,  direction: AxisInline,    expected: il   },
-		{ name: "i",         lineno: 1,  direction: AxisI,         expected: il   },
-		{ name: "crossline", lineno: 10, direction: AxisCrossline, expected: xl   },
-		{ name: "j",         lineno: 0,  direction: AxisJ,         expected: xl   },
-		{ name: "time",      lineno: 8,  direction: AxisTime,      expected: time },
-		{ name: "j",         lineno: 1,  direction: AxisK,         expected: time },
+	testcases := []struct {
+		name      string
+		lineno    int
+		direction int
+		expected  []float32
+	}{
+		{name: "inline", lineno: 3, direction: AxisInline, expected: il},
+		{name: "i", lineno: 1, direction: AxisI, expected: il},
+		{name: "crossline", lineno: 10, direction: AxisCrossline, expected: xl},
+		{name: "j", lineno: 0, direction: AxisJ, expected: xl},
+		{name: "time", lineno: 8, direction: AxisTime, expected: time},
+		{name: "j", lineno: 1, direction: AxisK, expected: time},
 	}
 
 	for _, testcase := range testcases {
@@ -147,23 +161,23 @@ func TestSliceData(t *testing.T) {
 }
 
 func TestSliceOutOfBounds(t *testing.T) {
-	testcases := []struct{
-			name      string
-			lineno    int
-			direction int
-	} {
-		{ name: "Inline too low",     lineno: 0,  direction: AxisInline    },
-		{ name: "Inline too high",    lineno: 6,  direction: AxisInline    },
-		{ name: "Crossline too low",  lineno: 9,  direction: AxisCrossline },
-		{ name: "Crossline too high", lineno: 12, direction: AxisCrossline },
-		{ name: "Time too low",       lineno: 3,  direction: AxisTime      },
-		{ name: "Time too high",      lineno: 17, direction: AxisTime      },
-		{ name: "I too low",          lineno: -1, direction: AxisI         },
-		{ name: "I too high",         lineno: 3,  direction: AxisI         },
-		{ name: "J too low",          lineno: -1, direction: AxisJ         },
-		{ name: "J too high",         lineno: 2,  direction: AxisJ         },
-		{ name: "K too low",          lineno: -1, direction: AxisK         },
-		{ name: "K too high",         lineno: 4,  direction: AxisK         },
+	testcases := []struct {
+		name      string
+		lineno    int
+		direction int
+	}{
+		{name: "Inline too low", lineno: 0, direction: AxisInline},
+		{name: "Inline too high", lineno: 6, direction: AxisInline},
+		{name: "Crossline too low", lineno: 9, direction: AxisCrossline},
+		{name: "Crossline too high", lineno: 12, direction: AxisCrossline},
+		{name: "Time too low", lineno: 3, direction: AxisTime},
+		{name: "Time too high", lineno: 17, direction: AxisTime},
+		{name: "I too low", lineno: -1, direction: AxisI},
+		{name: "I too high", lineno: 3, direction: AxisI},
+		{name: "J too low", lineno: -1, direction: AxisJ},
+		{name: "J too high", lineno: 2, direction: AxisJ},
+		{name: "K too low", lineno: -1, direction: AxisK},
+		{name: "K too high", lineno: 4, direction: AxisK},
 	}
 
 	for _, testcase := range testcases {
@@ -177,13 +191,13 @@ func TestSliceOutOfBounds(t *testing.T) {
 }
 
 func TestSliceStridedLineno(t *testing.T) {
-	testcases := []struct{
-			name      string
-			lineno    int
-			direction int
-	} {
-		{ name: "inline", lineno: 2, direction: AxisInline },
-		{ name: "time",   lineno: 5, direction: AxisTime   },
+	testcases := []struct {
+		name      string
+		lineno    int
+		direction int
+	}{
+		{name: "inline", lineno: 2, direction: AxisInline},
+		{name: "time", lineno: 5, direction: AxisTime},
 	}
 
 	for _, testcase := range testcases {
@@ -196,12 +210,12 @@ func TestSliceStridedLineno(t *testing.T) {
 }
 
 func TestSliceInvalidAxis(t *testing.T) {
-	testcases := []struct{
-			name      string
-			direction int
-	} {
-		{ name: "Too small", direction: -1 },
-		{ name: "Too large", direction: 8  },
+	testcases := []struct {
+		name      string
+		direction int
+	}{
+		{name: "Too small", direction: -1},
+		{name: "Too large", direction: 8},
 	}
 
 	for _, testcase := range testcases {
@@ -720,7 +734,6 @@ func TestOnly3DSupported(t *testing.T) {
 }
 
 func TestSurfaceUnalignedWithSeismic(t *testing.T) {
-	const fillValue = float32(-999.25)
 	const above = float32(4.0)
 	const below = float32(4.0)
 	const stepsize = float32(4.0)
@@ -728,14 +741,30 @@ func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 
 	expected := []float32{
 		fillValue, fillValue, fillValue, fillValue, fillValue, fillValue, fillValue,
-		fillValue, fillValue, -12.5, fillValue,   4.5, fillValue,  1.5,
-		fillValue, fillValue,  12.5, fillValue, -10.5, fillValue, -1.5,
+		fillValue, fillValue, -12.5, fillValue, 4.5, fillValue, 1.5,
+		fillValue, fillValue, 12.5, fillValue, -10.5, fillValue, -1.5,
 	}
 
-	horizon := [][]float32{
+	values := [][]float32{
 		{fillValue, fillValue, fillValue, fillValue, fillValue, fillValue, fillValue},
 		{fillValue, fillValue, 16, fillValue, 16, fillValue, 16},
 		{fillValue, fillValue, 16, fillValue, 16, fillValue, 16},
+	}
+
+	rotation := samples10_grid.rotation + 270
+	xinc := samples10_grid.xinc / 2.0
+	yinc := -samples10_grid.yinc
+	xori := float32(16)
+	yori := float32(18)
+
+	surface := RegularSurface{
+		Values:    values,
+		Rotation:  &rotation,
+		Xori:      &xori,
+		Yori:      &yori,
+		Xinc:      xinc,
+		Yinc:      yinc,
+		FillValue: &fillValue,
 	}
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
@@ -743,13 +772,7 @@ func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		16,
-		18,
-		samples10_grid.xinc/2.0,
-		-samples10_grid.yinc,
-		samples10_grid.rotation+270,
-		fillValue,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -766,60 +789,54 @@ func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 func TestSurfaceWindowVerticalBounds(t *testing.T) {
 	testcases := []struct {
 		name     string
-		horizon  [][]float32
+		values   [][]float32
 		inbounds bool
 	}{
 		// 2 samples is the margin needed for interpolation
 		{
 			name:     "Top of window is 2 samples from first depth recording",
-			horizon:  [][]float32{{16.00}},
+			values:   [][]float32{{16.00}},
 			inbounds: true,
 		},
 		{
 			name:     "Top of window is less than 2 samples from the top",
-			horizon:  [][]float32{{13.00}},
+			values:   [][]float32{{13.00}},
 			inbounds: false,
 		},
 		{
 			name:     "Bottom of window is 2 samples from last depth recording",
-			horizon:  [][]float32{{28.00}},
+			values:   [][]float32{{28.00}},
 			inbounds: true,
 		},
 		{
 			name:     "Bottom of window is less than 2 samples from last depth recording",
-			horizon:  [][]float32{{31.00}},
+			values:   [][]float32{{31.00}},
 			inbounds: false,
 		},
 		{
 			name:     "Some values inbounds, some out of bounds",
-			horizon:  [][]float32{{22.00, 32.00, 12.00}, {18.00, 31.00, 28.00}, {16.00, 15.00, 13.00}},
+			values:   [][]float32{{22.00, 32.00, 12.00}, {18.00, 31.00, 28.00}, {16.00, 15.00, 13.00}},
 			inbounds: false,
 		},
 		{
 			name:     "Fillvalue should not be bounds checked",
-			horizon:  [][]float32{{-999.25}},
+			values:   [][]float32{{-999.25}},
 			inbounds: true,
 		},
 	}
 
-	fillValue := float32(-999.25)
 	targetAttributes := []string{"min", "samplevalue"}
 	const above = float32(4.0)
 	const below = float32(4.0)
 	const stepsize = float32(4.0)
 
 	for _, testcase := range testcases {
+		surface := samples10Surface(testcase.values)
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		_, boundsErr := handle.GetAttributes(
-			testcase.horizon,
-			samples10_grid.xori,
-			samples10_grid.yori,
-			samples10_grid.xinc,
-			samples10_grid.yinc,
-			samples10_grid.rotation,
-			fillValue,
+			surface,
 			above,
 			below,
 			stepsize,
@@ -831,7 +848,7 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 			require.NoErrorf(t, boundsErr,
 				"[%s] Expected horizon value %f to be in bounds",
 				testcase.name,
-				testcase.horizon[0][0],
+				testcase.values[0][0],
 			)
 		}
 
@@ -840,7 +857,7 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 				"out of vertical bound",
 				"[%s] Expected horizon value %f to throw out of bound",
 				testcase.name,
-				testcase.horizon[0][0],
+				testcase.values[0][0],
 			)
 		}
 	}
@@ -881,13 +898,12 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
  *
  */
 func TestSurfaceHorizontalBounds(t *testing.T) {
-	fill   := float32(-999.25)
-	xinc   := float64(samples10_grid.xinc)
-	yinc   := float64(samples10_grid.yinc)
-	rot    := float64(samples10_grid.rotation)
+	xinc := float64(samples10_grid.xinc)
+	yinc := float64(samples10_grid.yinc)
+	rot := float64(samples10_grid.rotation)
 	rotrad := rot * math.Pi / 180
 
-	horizon := [][]float32{{16, 16}, {16, 16}, {16, 16}}
+	values := [][]float32{{16, 16}, {16, 16}, {16, 16}}
 
 	targetAttributes := []string{"samplevalue"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
@@ -911,7 +927,7 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 			name:     "X coordinate is more than half a bingrid too high",
 			xori:     2.0 + 0.51*xinc*math.Cos(rotrad),
 			yori:     0.0 + 0.51*xinc*math.Sin(rotrad),
-			expected: []float32{-10.5, 4.5, 12.5, -12.5, fill, fill},
+			expected: []float32{-10.5, 4.5, 12.5, -12.5, fillValue, fillValue},
 		},
 		{
 			name:     "X coordinate is almost half a bingrid too low",
@@ -923,7 +939,7 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 			name:     "X coordinate is more than half a bingrid too low",
 			xori:     2.0 - 0.51*xinc*math.Cos(rotrad),
 			yori:     0.0 - 0.51*xinc*math.Sin(rotrad),
-			expected: []float32{fill, fill, -1.5, 1.5, -10.5, 4.5},
+			expected: []float32{fillValue, fillValue, -1.5, 1.5, -10.5, 4.5},
 		},
 		{
 			name:     "Y coordinate is almost half a bingrid too high",
@@ -935,7 +951,7 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 			name:     "Y coordinate is more than half a bingrid too high",
 			xori:     2.0 + 0.51*yinc*-math.Sin(rotrad),
 			yori:     0.0 + 0.51*yinc*math.Cos(rotrad),
-			expected: []float32{1.5, fill, 4.5, fill, -12.5, fill},
+			expected: []float32{1.5, fillValue, 4.5, fillValue, -12.5, fillValue},
 		},
 		{
 			name:     "Y coordinate is almost half a bingrid too low",
@@ -947,21 +963,27 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 			name:     "Y coordinate is more than half a bingrid too low",
 			xori:     2.0 - 0.51*yinc*-math.Sin(rotrad),
 			yori:     0.0 - 0.51*yinc*math.Cos(rotrad),
-			expected: []float32{fill, -1.5, fill, -10.5, fill, 12.5},
+			expected: []float32{fillValue, -1.5, fillValue, -10.5, fillValue, 12.5},
 		},
 	}
 
 	for _, testcase := range testcases {
+		rot32 := float32(rot)
+		xori32 := float32(testcase.xori)
+		yori32 := float32(testcase.yori)
+		surface := RegularSurface{
+			Values:    values,
+			Rotation:  &rot32,
+			Xori:      &xori32,
+			Yori:      &yori32,
+			Xinc:      float32(xinc),
+			Yinc:      float32(yinc),
+			FillValue: &fillValue,
+		}
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributes(
-			horizon,
-			float32(testcase.xori),
-			float32(testcase.yori),
-			float32(xinc),
-			float32(yinc),
-			float32(rot),
-			fill,
+			surface,
 			above,
 			below,
 			stepsize,
@@ -990,8 +1012,6 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 }
 
 func TestAttribute(t *testing.T) {
-	fill := float32(-999.25)
-
 	targetAttributes := []string{
 		"samplevalue",
 		"min",
@@ -1009,28 +1029,30 @@ func TestAttribute(t *testing.T) {
 		"sumneg",
 	}
 	expected := [][]float32{
-		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // samplevalue
-		{ -2.5,      -1.5,      -12.5,       2.5,      fill, -24.5,      fill, fill }, // min
-		{  1.5,       2.5,       -4.5,      10.5,      fill,  -8.5,      fill, fill }, // max
-		{  2.5,       2.5,       12.5,      10.5,      fill,  24.5,      fill, fill }, // maxabs
-		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // mean
-		{  1.3,       1.3,        8.5,       6.5,      fill,  16.5,      fill, fill }, // meanabs
-		{  1,         1.5,        0,         6.5,      fill,  0,         fill, fill }, // meanpos
-		{ -1.5,      -1,         -8.5,       0,        fill, -16.5,      fill, fill }, // meanneg
-		{ -0.5,       0.5,       -8.5,       6.5,      fill, -16.5,      fill, fill }, // median
-		{  1.5,       1.5,        8.958237,  7.0887237,fill,  17.442764, fill, fill }, // rms
-		{  2,           2,        8,         8,        fill,  32,        fill, fill }, // var
-		{  1.4142135, 1.4142135,  2.828427,  2.828427, fill,   5.656854, fill, fill }, // sd
-		{  2,         4.5,        0,         32.5,     fill,   0,        fill, fill }, // sumpos
-		{ -4.5,      -2,        -42.5,       0,        fill, -82.5,      fill, fill }, // sumneg
+		{-0.5, 0.5, -8.5, 6.5, fillValue, -16.5, fillValue, fillValue},                        // samplevalue
+		{-2.5, -1.5, -12.5, 2.5, fillValue, -24.5, fillValue, fillValue},                      // min
+		{1.5, 2.5, -4.5, 10.5, fillValue, -8.5, fillValue, fillValue},                         // max
+		{2.5, 2.5, 12.5, 10.5, fillValue, 24.5, fillValue, fillValue},                         // maxabs
+		{-0.5, 0.5, -8.5, 6.5, fillValue, -16.5, fillValue, fillValue},                        // mean
+		{1.3, 1.3, 8.5, 6.5, fillValue, 16.5, fillValue, fillValue},                           // meanabs
+		{1, 1.5, 0, 6.5, fillValue, 0, fillValue, fillValue},                                  // meanpos
+		{-1.5, -1, -8.5, 0, fillValue, -16.5, fillValue, fillValue},                           // meanneg
+		{-0.5, 0.5, -8.5, 6.5, fillValue, -16.5, fillValue, fillValue},                        // median
+		{1.5, 1.5, 8.958237, 7.0887237, fillValue, 17.442764, fillValue, fillValue},           // rms
+		{2, 2, 8, 8, fillValue, 32, fillValue, fillValue},                                     // var
+		{1.4142135, 1.4142135, 2.828427, 2.828427, fillValue, 5.656854, fillValue, fillValue}, // sd
+		{2, 4.5, 0, 32.5, fillValue, 0, fillValue, fillValue},                                 // sumpos
+		{-4.5, -2, -42.5, 0, fillValue, -82.5, fillValue, fillValue},                          // sumneg
 	}
 
-	horizon := [][]float32{
-		{ 20,    20 },
-		{ 20,    20 },
-		{ fill,  20 },
-		{ 20,    20 }, // Out-of-bounds, should return fill
+	values := [][]float32{
+		{20, 20},
+		{20, 20},
+		{fillValue, 20},
+		{20, 20}, // Out-of-bounds, should return fillValue
 	}
+
+	surface := samples10Surface(values)
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 	const above = float32(8.0)
@@ -1040,13 +1062,7 @@ func TestAttribute(t *testing.T) {
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fill,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -1076,35 +1092,29 @@ func TestAttribute(t *testing.T) {
 }
 
 func TestAttributeMedianForEvenSampleValue(t *testing.T) {
-	fill := float32(-999.25)
-
 	targetAttributes := []string{"median"}
 	expected := [][]float32{
-		{-1, 1, -9.5, 5.5, fill, -14.5, fill, fill}, // median
+		{-1, 1, -9.5, 5.5, fillValue, -14.5, fillValue, fillValue}, // median
 	}
 
-	horizon := [][]float32{
-		{20, 	20},
-		{20, 	20},
-		{fill, 	20},
-		{20, 	20}, // Out-of-bounds, should return fill
+	values := [][]float32{
+		{20, 20},
+		{20, 20},
+		{fillValue, 20},
+		{20, 20}, // Out-of-bounds, should return fillValue
 	}
+
+	surface := samples10Surface(values)
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	const above 	= float32(8.0)
-	const below 	= float32(4.0)
-	const stepsize	= float32(4.0)
+	const above = float32(8.0)
+	const below = float32(4.0)
+	const stepsize = float32(4.0)
 
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fill,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -1166,24 +1176,19 @@ func TestAttributesAboveBelowStepSizeIgnoredForSampleValue(t *testing.T) {
 		},
 	}
 
-	const fill     = float32(-999.25)
-	horizon  := [][]float32{{ 26.0 }}
-	expected := [][]float32{{  1.0 }}
+	values := [][]float32{{26.0}}
+	expected := [][]float32{{1.0}}
 
 	targetAttributes := []string{"samplevalue"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	surface := samples10Surface(values)
 
 	for _, testCase := range testCases {
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributes(
-			horizon,
-			samples10_grid.xori,
-			samples10_grid.yori,
-			samples10_grid.xinc,
-			samples10_grid.yinc,
-			samples10_grid.rotation,
-			fill,
+			surface,
 			testCase.above,
 			testCase.below,
 			testCase.stepsize,
@@ -1281,27 +1286,22 @@ func TestAttributesUnaligned(t *testing.T) {
 		},
 	}
 
-	const fill     = float32(-999.25)
-	const above    = float32(8)
-	const below    = float32(4)
+	const above = float32(8)
+	const below = float32(4)
 	const stepsize = float32(4)
 
 	targetAttributes := []string{"min", "max", "mean"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testCase := range testCases {
-		horizon := [][]float32{{20 + testCase.offset}}
+		values := [][]float32{{20 + testCase.offset}}
+
+		surface := samples10Surface(values)
 
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributes(
-			horizon,
-			samples10_grid.xori,
-			samples10_grid.yori,
-			samples10_grid.xinc,
-			samples10_grid.yinc,
-			samples10_grid.rotation,
-			fill,
+			surface,
 			above,
 			below,
 			stepsize,
@@ -1399,34 +1399,30 @@ func TestAttributeSubsamplingAligned(t *testing.T) {
 		},
 	}
 
-	const fill = float32(-999.25)
 	const above = float32(8)
 	const below = float32(4)
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 	targetAttributes := []string{"min", "max"}
 
-	horizon := [][]float32{
-		{ 20,    20 },
-		{ 20,    20 },
-		{ fill,  20 },
-		{ 20,    20 }, // Out-of-bounds, should return fill
+	values := [][]float32{
+		{20, 20},
+		{20, 20},
+		{fillValue, 20},
+		{20, 20}, // Out-of-bounds, should return fillValue
 	}
 
 	expected := [][]float32{
-		{ -2.5,  -0.5, -12.5, 2.5, fill, -20.5, fill, fill }, // min
-		{  0.5,   2.5,  -6.5, 8.5, fill,  -8.5, fill, fill }, // max
+		{-2.5, -0.5, -12.5, 2.5, fillValue, -20.5, fillValue, fillValue}, // min
+		{0.5, 2.5, -6.5, 8.5, fillValue, -8.5, fillValue, fillValue},     // max
 	}
+
+	surface := samples10Surface(values)
+
 	for _, testCase := range testCases {
 		handle, _ := NewVDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributes(
-			horizon,
-			samples10_grid.xori,
-			samples10_grid.yori,
-			samples10_grid.xinc,
-			samples10_grid.yinc,
-			samples10_grid.rotation,
-			fill,
+			surface,
 			above,
 			below,
 			testCase.stepsize,
@@ -1495,29 +1491,24 @@ func TestAttributeSubsamplingAligned(t *testing.T) {
  */
 func TestAttributesUnalignedAndSubsampled(t *testing.T) {
 	expected := [][]float32{
-		{ -2.25 }, // min
-		{  0.75 }, // max
-		{ -0.75 }, // mean
+		{-2.25}, // min
+		{0.75},  // max
+		{-0.75}, // mean
 	}
-	const fill     = float32(-999.25)
-	const above    = float32(8)
-	const below    = float32(4)
+	const above = float32(8)
+	const below = float32(4)
 	const stepsize = float32(2)
 
 	targetAttributes := []string{"min", "max", "mean"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	horizon := [][]float32{{21}}
+	values := [][]float32{{21}}
+
+	surface := samples10Surface(values)
 
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fill,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -1548,30 +1539,25 @@ func TestAttributesUnalignedAndSubsampled(t *testing.T) {
 
 func TestAttributesEverythingUnaligned(t *testing.T) {
 	expected := [][]float32{
-		{ 1.000 }, //samplevalue
-		{ 0.250 }, // min
-		{ 2.500 }, // max
-		{ 1.375 }, // mean
+		{1.000}, //samplevalue
+		{0.250}, // min
+		{2.500}, // max
+		{1.375}, // mean
 	}
-	const fill     = float32(-999.25)
-	const above    = float32(5)
-	const below    = float32(7)
+	const above = float32(5)
+	const below = float32(7)
 	const stepsize = float32(3)
 
 	targetAttributes := []string{"samplevalue", "min", "max", "mean"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	horizon := [][]float32{{26}}
+	values := [][]float32{{26}}
+
+	surface := samples10Surface(values)
 
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fill,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -1602,30 +1588,25 @@ func TestAttributesEverythingUnaligned(t *testing.T) {
 
 func TestAttributesSupersampling(t *testing.T) {
 	expected := [][]float32{
-		{  1.000 }, //samplevalue
-		{ -0.250 }, // min
-		{  2.250 }, // max
-		{  1.000 }, // mean
+		{1.000},  //samplevalue
+		{-0.250}, // min
+		{2.250},  // max
+		{1.000},  // mean
 	}
-	const fill     = float32(-999.25)
-	const above    = float32(8)
-	const below    = float32(8)
+	const above = float32(8)
+	const below = float32(8)
 	const stepsize = float32(5) // VDS is sampled at 4ms
 
 	targetAttributes := []string{"samplevalue", "min", "max", "mean"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	horizon := [][]float32{{26}}
+	values := [][]float32{{26}}
+
+	surface := samples10Surface(values)
 
 	handle, _ := NewVDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributes(
-		horizon,
-		samples10_grid.xori,
-		samples10_grid.yori,
-		samples10_grid.xinc,
-		samples10_grid.yinc,
-		samples10_grid.rotation,
-		fill,
+		surface,
 		above,
 		below,
 		stepsize,
@@ -1655,7 +1636,7 @@ func TestAttributesSupersampling(t *testing.T) {
 }
 
 func TestAttributeMetadata(t *testing.T) {
-	horizon := [][]float32{
+	values := [][]float32{
 		{10, 10, 10, 10, 10, 10},
 		{10, 10, 10, 10, 10, 10},
 	}
@@ -1668,7 +1649,7 @@ func TestAttributeMetadata(t *testing.T) {
 
 	handle, _ := NewVDSHandle(well_known)
 	defer handle.Close()
-	buf, err := handle.GetAttributeMetadata(horizon)
+	buf, err := handle.GetAttributeMetadata(values)
 	require.NoErrorf(t, err, "Failed to retrieve attribute metadata, err %v", err)
 
 	var meta AttributeMetadata

@@ -5,13 +5,20 @@ import {
 } from "./request-helpers.js";
 
 export function sendHorizonRequest(
-  horizon, surface, above, below, stepsize, attributes
+  values, surface, above, below, stepsize, attributes
 ) {
   const vds = __ENV.VDS;
   const sas = __ENV.SAS;
-  let properties = {
+
+  const surfaceProperties = {
     fillValue: -999.25,
-    horizon: horizon,
+    values: values,
+  }
+
+  const regularSurface = Object.assign({}, surfaceProperties, surface);
+
+  let properties = {
+    surface : regularSurface,
     interpolation: "linear",
     vds: vds,
     sas: sas,
@@ -57,9 +64,9 @@ export function sendConstantHorizonRequest(
   rows, columns, depth, surface, above, below, stepsize, attributes
 ){
   let rowArray = new Array(columns).fill(depth);
-  let horizon = new Array(rows).fill(rowArray);
+  let values = new Array(rows).fill(rowArray);
   console.log(`Requesting horizon of size ${columns * rows}`);
-  return sendHorizonRequest(horizon, surface, above, below, stepsize, attributes);
+  return sendHorizonRequest(values, surface, above, below, stepsize, attributes);
 }
 
 /**
@@ -71,11 +78,11 @@ export function sendRandomHorizonRequest(
 ) {
   const [depthMin, depthMax, depthStep] = depth;
   const margin = 3; //margin to avoid hitting the borders and getting the error message
-  let horizon = Array.from({ length: rows }, () =>
+  let values = Array.from({ length: rows }, () =>
     Array.from({ length: columns }, () =>
       getRandom(depthMin + margin*depthStep+above, depthMax - margin*depthStep-below, depthStep)
     )
   );
   console.log(`Requesting horizon of size ${columns * rows}`);
-  return sendHorizonRequest(horizon, surface, above, below, stepsize, attributes);
+  return sendHorizonRequest(values, surface, above, below, stepsize, attributes);
 }
