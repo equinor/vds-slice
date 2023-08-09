@@ -119,7 +119,7 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		return
 	}
 
-	data, err := handle.GetSlice(*request.Lineno, axis)
+	data, err := handle.GetSlice(*request.Lineno, axis, []core.Bound{})
 	if abortOnError(ctx, err) {
 		return
 	}

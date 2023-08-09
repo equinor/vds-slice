@@ -99,6 +99,12 @@ type Array struct {
 	Shape []int `json:"shape" swaggertype:"array,integer" example:"10,50"`
 }
 
+type Bound struct {
+	Direction *string
+	Lower     *int
+	Upper     *int
+}
+
 // @Description Slice metadata
 type SliceMetadata struct {
 	Array
@@ -413,13 +419,52 @@ func (v VDSHandle) GetMetadata() ([]byte, error) {
 	return buf, nil
 }
 
-func (v VDSHandle) GetSlice(lineno, direction int) ([]byte, error) {
+func newCSliceBounds(bounds []Bound) ([]C.struct_Bound, error) {
+	var cBounds []C.struct_Bound
+	for _, bound := range bounds {
+		lower := *bound.Lower
+		upper := *bound.Upper
+		axisID, err := GetAxis(*bound.Direction)
+		if err != nil {
+			return nil, err
+		}
+
+		if upper < lower {
+			msg := "Upper bound must be >= than lower bound"
+			return nil, NewInvalidArgument(msg)
+		}
+
+		cBound := C.struct_Bound{
+			C.int(lower),
+			C.int(upper),
+			C.enum_axis_name(axisID),
+		}
+		cBounds = append(cBounds, cBound)
+	}
+
+	return cBounds, nil
+}
+
+func (v VDSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, error) {
 	var result C.struct_response
+
+	cBounds, err := newCSliceBounds(bounds)
+	if err != nil {
+		return nil, err
+	}
+
+	var bound *C.struct_Bound
+	if len(cBounds) > 0 {
+		bound = &cBounds[0]
+	}
+
 	cerr := C.slice(
 		v.context(),
 		v.Handle(),
 		C.int(lineno),
 		C.enum_axis_name(direction),
+		bound,
+		C.size_t(len(cBounds)),
 		&result,
 	)
 

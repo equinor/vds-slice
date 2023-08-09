@@ -126,6 +126,8 @@ int slice(
     DataHandle* handle,
     int lineno,
     axis_name ax,
+    struct Bound* bounds,
+    size_t nbounds,
     response* out
 ) {
     try {
@@ -133,7 +135,14 @@ int slice(
         if (not handle) throw detail::nullptr_error("Invalid handle");
 
         Direction const direction(ax);
-        cppapi::slice(*handle, direction, lineno, out);
+
+        std::vector< Bound > slice_bounds;
+        for (int i = 0; i < nbounds; ++i) {
+            slice_bounds.push_back(*bounds);
+            bounds++;
+        }
+
+        cppapi::slice(*handle, direction, lineno, slice_bounds, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());

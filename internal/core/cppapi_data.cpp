@@ -132,6 +132,7 @@ void slice(
     DataHandle& handle,
     Direction const direction,
     int lineno,
+    std::vector< Bound > const& slicebounds,
     response* out
 ) {
     MetadataHandle const& metadata = handle.get_metadata();
@@ -141,7 +142,13 @@ void slice(
         validate_vertical_axis(metadata.sample(), direction);
     }
 
+    for (auto const& bound : slicebounds) {
+        auto bound_dir = Direction(bound.name);
+        validate_vertical_axis(metadata.sample(), bound_dir);
+    }
+
     SubVolume bounds(metadata);
+    bounds.constrain(metadata, slicebounds);
     bounds.set_slice(axis, lineno, direction.coordinate_system());
 
     std::int64_t const size = handle.subvolume_buffer_size(bounds);

@@ -146,7 +146,11 @@ func TestSliceData(t *testing.T) {
 	for _, testcase := range testcases {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		buf, err := handle.GetSlice(testcase.lineno, testcase.direction)
+		buf, err := handle.GetSlice(
+			testcase.lineno,
+			testcase.direction,
+			[]Bound{},
+		)
 		require.NoErrorf(t, err,
 			"[case: %v] Failed to fetch slice, err: %v",
 			testcase.name,
@@ -183,7 +187,11 @@ func TestSliceOutOfBounds(t *testing.T) {
 	for _, testcase := range testcases {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		_, err := handle.GetSlice(testcase.lineno, testcase.direction)
+		_, err := handle.GetSlice(
+			testcase.lineno,
+			testcase.direction,
+			[]Bound{},
+		)
 
 		require.ErrorContains(t, err, "Invalid lineno")
 	}
@@ -203,7 +211,11 @@ func TestSliceStridedLineno(t *testing.T) {
 	for _, testcase := range testcases {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		_, err := handle.GetSlice(testcase.lineno, testcase.direction)
+		_, err := handle.GetSlice(
+			testcase.lineno,
+			testcase.direction,
+			[]Bound{},
+		)
 
 		require.ErrorContains(t, err, "Invalid lineno")
 	}
@@ -221,9 +233,195 @@ func TestSliceInvalidAxis(t *testing.T) {
 	for _, testcase := range testcases {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		_, err := handle.GetSlice(0, testcase.direction)
+		_, err := handle.GetSlice(0, testcase.direction, []Bound{})
 
 		require.ErrorContains(t, err, "Unhandled axis")
+	}
+}
+
+func TestSliceBounds(t *testing.T) {
+	newBound := func(direction string, lower, upper int) Bound {
+		return Bound{ Direction: &direction, Lower: &lower, Upper: &upper }
+	}
+	testCases := []struct{
+		name          string
+		direction     string
+		lineno        int
+		bounds        []Bound
+		expectedSlice []float32
+		expectedErr   error
+	} {
+		{
+			name: "Constraint in slice dir is ignored - same coordinate system",
+			direction: "i",
+			lineno: 1,
+			bounds: []Bound{
+				newBound("i", 0, 1),
+			},
+			expectedSlice: []float32{
+				108, 109, 110, 111,
+				112, 113, 114, 115,
+			},
+		},
+		{
+			name: "Constraint in slice dir is ignored - different coordinate system",
+			direction: "crossline",
+			lineno: 10,
+			bounds: []Bound{
+				newBound("j", 0, 1),
+			},
+			expectedSlice: []float32{
+				100, 101, 102, 103,
+				108, 109, 110, 111,
+				116, 117, 118, 119,
+			},
+		},
+		{
+			name: "Multiple constraints in slice dir are all ignored",
+			direction: "time",
+			lineno: 4,
+			bounds: []Bound{
+				newBound("time", 8, 12),
+				newBound("k",    0, 1),
+			},
+			expectedSlice: []float32{
+				100, 104,
+				108, 112,
+				116, 120,
+			},
+		},
+		{
+			name: "Single constraint - same coordinate system",
+			direction: "inline",
+			lineno: 3,
+			bounds: []Bound{
+				newBound("crossline", 10, 10),
+			},
+			expectedSlice: []float32{
+				108, 109, 110, 111,
+			},
+		},
+		{
+			name: "Single constraint - different coordinate system",
+			direction: "sample",
+			lineno: 4,
+			bounds: []Bound{
+				newBound("i", 0, 1),
+			},
+			expectedSlice: []float32{
+				100, 104,
+				108, 112,
+			},
+		},
+		{
+			name: "Two constraints - same coordinate system",
+			direction: "k",
+			lineno: 0,
+			bounds: []Bound{
+				newBound("i", 0, 1),
+				newBound("j", 0, 0),
+			},
+			expectedSlice: []float32{
+				100,
+				108,
+			},
+		},
+		{
+			name: "Two constraints - different coordinate system",
+			direction: "j",
+			lineno: 0,
+			bounds: []Bound{
+				newBound("inline", 1, 3),
+				newBound("k", 1, 2),
+			},
+			expectedSlice: []float32{
+				101, 102,
+				109, 110,
+			},
+		},
+		{
+			name: "Horizonal bounds for full axis range is the same as no bound",
+			direction: "time",
+			lineno: 12,
+			bounds: []Bound{
+				newBound("crossline", 10, 11),
+				newBound("i",         0,  2),
+			},
+			expectedSlice: []float32{
+				102, 106,
+				110, 114,
+				118, 122,
+			},
+		},
+		{
+			name: "Vertical bounds for full axis range is the same as no bound",
+			direction: "inline",
+			lineno: 5,
+			bounds: []Bound{
+				newBound("time", 4, 16),
+			},
+			expectedSlice: []float32{
+				116, 117, 118, 119,
+				120, 121, 122, 123,
+			},
+		},
+		{
+			name: "The last bound takes precedence",
+			direction: "inline",
+			lineno: 5,
+			bounds: []Bound{
+				newBound("time", 4,  8),
+				newBound("time", 12, 16),
+			},
+			expectedSlice: []float32{
+				118, 119,
+				122, 123,
+			},
+		},
+		{
+			name: "Out-Of-Bounds bounds errors",
+			direction: "inline",
+			lineno: 5,
+			bounds: []Bound{
+				newBound("time", 8,  20),
+			},
+			expectedSlice: []float32{},
+			expectedErr: NewInternalError(""),
+		},
+		{
+			name: "Incorrect vertical domain",
+			direction: "inline",
+			lineno: 5,
+			bounds: []Bound{
+				newBound("depth", 8,  20),
+			},
+			expectedSlice: []float32{},
+			expectedErr: NewInvalidArgument(""),
+		},
+	}
+
+	for _, testCase := range testCases {
+		direction, err := GetAxis(testCase.direction)
+		require.NoError(t, err)
+
+		handle, _ := NewVDSHandle(well_known)
+		defer handle.Close()
+		buf, err := handle.GetSlice(
+			testCase.lineno,
+			direction,
+			testCase.bounds,
+		)
+
+		require.IsTypef(t, testCase.expectedErr, err,
+			"[case: %v] Got: %v",
+			testCase.name,
+			err,
+		)
+
+		slice, err := toFloat32(buf)
+		require.NoErrorf(t, err, "[case: %v] Err: %v", testCase.name, err)
+
+		require.Equalf(t, testCase.expectedSlice, *slice, "[case: %v]", testCase.name)
 	}
 }
 
@@ -245,7 +443,7 @@ func TestDepthAxis(t *testing.T) {
 	for _, testcase := range testcases {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		_, err := handle.GetSlice(0, testcase.direction)
+		_, err := handle.GetSlice(0, testcase.direction, []Bound{})
 
 		require.Equal(t, err, testcase.err)
 	}

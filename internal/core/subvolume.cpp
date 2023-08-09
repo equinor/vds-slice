@@ -80,6 +80,24 @@ SubVolume::SubVolume(MetadataHandle const& metadata) {
     this->bounds.upper[sample.dimension()] = sample.nsamples();
 }
 
+
+void SubVolume::constrain(
+    MetadataHandle const& metadata,
+    std::vector< Bound > const& bounds
+) noexcept (false) {
+    for (auto const& bound : bounds) {
+        auto direction = Direction(bound.name);
+        auto system = direction.coordinate_system();
+        auto axis = metadata.get_axis(direction);
+
+        auto lower = ::to_voxel(axis, bound.lower, system);
+        auto upper = ::to_voxel(axis, bound.upper, system);
+
+        this->bounds.lower[ axis.dimension() ] = lower;
+        this->bounds.upper[ axis.dimension() ] = upper + 1; // inclusive
+    }
+}
+
 void SubVolume::set_slice(
     Axis const&                  axis,
     int const                    lineno,
