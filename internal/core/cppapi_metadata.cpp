@@ -144,19 +144,6 @@ void slice_metadata(
     nlohmann::json meta;
     meta["format"] = fmtstr(DataHandle::format());
 
-    /*
-     * SEGYImport always writes annotation 'Sample' for axis K. We, on the
-     * other hand, decided that we base the valid input direction on the units
-     * of said axis. E.g. ms/s -> Time, etc. This leads to an inconsistency
-     * between what we require as input for axis K and what we return as
-     * metadata. In the ms/s case we require the input to be asked for in axis
-     * 'Time', but the return metadata can potentially say 'Sample'.
-     *
-     * TODO: Either revert the 'clever' unit validation, or patch the
-     * K-annotation here. IMO the later is too clever for it's own good and
-     * would be quite suprising for people that use this API in conjunction
-     * with the OpenVDS library.
-     */
     Axis const& inline_axis = metadata.iline();
     Axis const& crossline_axis = metadata.xline();
     Axis const& sample_axis = metadata.sample();
