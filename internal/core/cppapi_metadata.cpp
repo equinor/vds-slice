@@ -229,8 +229,6 @@ void attributes_metadata(
     std::size_t ncols,
     response* out
 ) {
-    MetadataHandle const& metadata = handle.get_metadata();
-
     nlohmann::json meta;
     meta["shape"] = nlohmann::json::array({nrows, ncols});
     meta["format"] = fmtstr(DataHandle::format());
