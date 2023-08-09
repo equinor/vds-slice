@@ -24,6 +24,9 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 				Direction: "i",
 				Lineno:    0, //side-effect assurance that 0 is accepted
 				Sas:       "n/a",
+				Bounds: []testBound{
+					{ Direction: "inline", Lower: 1, Upper: 3 },
+				},
 			},
 		},
 		{
@@ -37,6 +40,9 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 				Direction: "crossline",
 				Lineno:    10,
 				Sas:       "n/a",
+				Bounds: []testBound{
+					{ Direction: "inline", Lower: 1, Upper: 3 },
+				},
 			},
 		},
 	}
@@ -51,7 +57,7 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 			"Wrong number of multipart data parts in case '%s'", testcase.name)
 
 		inlineAxis := testSliceAxis{
-			Annotation: "Inline", Max: 5.0, Min: 1.0, Samples: 3, Unit: "unitless",
+			Annotation: "Inline", Max: 3.0, Min: 1.0, Samples: 2, Unit: "unitless",
 		}
 		crosslineAxis := testSliceAxis{
 			Annotation: "Crossline", Max: 11.0, Min: 10.0, Samples: 2, Unit: "unitless",
@@ -129,6 +135,18 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				method: http.MethodPost,
 				jsonRequest: "{\"vds\":\"" + well_known +
 					"\", \"lineno\":1, \"sas\": \"n/a\"}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for 'Direction'",
+			},
+			testSliceRequest{},
+		},
+		sliceTest{
+			baseTest{
+				name:   "Incomplete bounds parameters POST Request",
+				method: http.MethodPost,
+				jsonRequest: "{\"vds\":\"" + well_known +
+				"\", \"lineno\":1, \"direction\": \"i\", \"sas\": \"n/a\", " +
+				"\"bounds\": [{\"Upper\": 2 }]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for 'Direction'",
 			},
