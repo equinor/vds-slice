@@ -221,23 +221,49 @@ void fence(
     return to_response(std::move(data), size, out);
 }
 
-void horizon_size(
+void horizon_buffer_offsets(
     DataHandle& handle,
     RegularSurface const& surface,
     float above,
     float below,
-    std::size_t* out
+    std::size_t* out,
+    std::size_t out_size
 ) {
     if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
     if (below < 0) throw std::invalid_argument("'below' must be >= 0");
 
+    if (out_size != (surface.size() + 1)) {
+        throw std::runtime_error("out buffer must be the size of surface + 1");
+    }
+
     MetadataHandle const& metadata = handle.get_metadata();
+    auto transform = metadata.coordinate_transformer();
+
+    auto iline  = metadata.iline ();
+    auto xline  = metadata.xline();
     auto sample = metadata.sample();
 
     VerticalWindow window(above, below, sample.stride(), 2, sample.min());
 
-    std::size_t const nsamples = surface.size() * window.size();
-    *out = handle.samples_buffer_size(nsamples);
+    out[0] = 0;
+    for (int i = 0; i < surface.size(); ++i) {
+        float depth = surface.value(i);
+
+        if (depth == surface.fillvalue()) {
+            out[i+1] = out[i];
+            continue;
+        }
+
+        auto const cdp = surface.to_cdp(i);
+        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
+
+        if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
+            out[i+1] = out[i];
+            continue;
+        }
+
+        out[i+1] = out[i] + window.size();
+    }
 }
 
 
@@ -246,14 +272,12 @@ void horizon(
     RegularSurface const& surface,
     float above,
     float below,
+    std::size_t* buffer_offsets,
     enum interpolation_method interpolation,
     std::size_t from,
     std::size_t to,
     void* out
 ) {
-    if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
-    if (below < 0) throw std::invalid_argument("'below' must be >= 0");
-
     if (to > surface.size()){
         throw std::invalid_argument("'to' must be less than surface size");
     }
@@ -267,68 +291,30 @@ void horizon(
 
     VerticalWindow window(above, below, sample.stride(), 2, sample.min());
 
-    float const fillvalue = surface.fillvalue();
-
-    /** Missing input samples (marked by fillvalue) and out of bounds samples
-     *
-     * To not overcomplicate things for ourselfs (and the caller) we guarantee
-     * that the output amplitude map is exacty the same dimensions as the input
-     * height map (horizon). That gives us 2 cases to explicitly handle:
-     *
-     * 1) If a sample (region of samples) in the input values is marked as
-     * missing by the fillvalue then the fillvalue is used in that position in
-     * the output array too:
-     *
-     *      input[n][m] == fillvalue => output[n][m] == fillvalue
-     *
-     * 2) If a sample (or region of samples) in the input values is out of
-     * bounds in the horizontal plane, the output sample is populated by the
-     * fillvalue.
-     *
-     * openvds provides no options to handle these cases and to keep the output
-     * buffer aligned with the input we cannot drop samples that satisfy 1) or
-     * 2). Instead we let openvds read a dummy voxel  ({0, 0, 0, 0, 0, 0}) and
-     * keep track of the indices. After openvds is done we copy in the
-     * fillvalue.
-     *
-     * The overhead of this approach is that we overfetch (at most) one one
-     * chunk and we need an extra loop over output array.
-     */
-    std::vector< std::size_t > noval_indicies;
-
-    std::size_t const nsamples = (to - from) * window.size();
+    std::size_t const nsamples = buffer_offsets[to] - buffer_offsets[from];
     if (nsamples == 0){
         return;
     }
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
-    std::size_t i = 0;
-    for (int cell = from; cell < to; cell++) {
-        auto row = cell / surface.ncols();
-        auto col = cell % surface.ncols();
-
-        float depth = surface.value(row, col);
-        if (depth == fillvalue) {
-            noval_indicies.push_back(i);
-            i += window.size();
+    std::size_t cur = 0;
+    for (int i = from; i < to; ++i) {
+        if(buffer_offsets[i] == buffer_offsets[i+1]) {
             continue;
         }
-        
+
+        float depth = surface.value(i);
         depth = window.nearest(depth);
 
-        auto const cdp = surface.to_cdp(row, col);
+        auto const cdp = surface.to_cdp(i);
 
         auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
-
-        if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
-            noval_indicies.push_back(i);
-            i += window.size();
-            continue;
-        }
 
         double top    = depth - window.nsamples_above() * window.stepsize();
         double bottom = depth + window.nsamples_below() * window.stepsize();
         if (not sample.inrange(top) or not sample.inrange(bottom)) {
+            auto row = i / surface.ncols();
+            auto col = i % surface.ncols();
             throw std::runtime_error(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
@@ -343,14 +329,18 @@ void horizon(
         ij[0]  = iline.to_sample_position(ij[0]);
         ij[1]  = xline.to_sample_position(ij[1]);
 
-
         top    = sample.to_sample_position(top);
         for (int idx = 0; idx < window.size(); ++idx) {
-            samples[i][  iline.dimension() ] = ij[0];
-            samples[i][  xline.dimension() ] = ij[1];
-            samples[i][ sample.dimension() ] = top + idx;
-            ++i;
+            samples[cur][  iline.dimension() ] = ij[0];
+            samples[cur][  xline.dimension() ] = ij[1];
+            samples[cur][ sample.dimension() ] = top + idx;
+            ++cur;
         }
+    }
+
+    if (cur != nsamples){
+        throw std::runtime_error("calculated nsamples " + std::to_string(nsamples) +
+                                 " and actual samples " + std::to_string(cur) + " differ");
     }
 
     auto const size = handle.samples_buffer_size(nsamples);
@@ -364,9 +354,7 @@ void horizon(
         interpolation
     );
 
-    write_fillvalue(buffer.get(), noval_indicies, window.size(), fillvalue);
-
-    auto offset = from * window.size() * sizeof(float);
+    auto offset = buffer_offsets[from] * sizeof(float);
     std::memcpy((char*)out + offset, buffer.get(), size);
 }
 

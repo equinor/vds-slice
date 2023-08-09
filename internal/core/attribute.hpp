@@ -85,10 +85,11 @@ private:
 public:
     Horizon(
         const float* data,
-        std::size_t hsize,
-        std::size_t vsize,
-        float       fillvalue
-    ) : m_ptr(data), m_hsize(hsize), m_vsize(vsize), m_fillvalue(fillvalue)
+        std::size_t  hsize,
+        std::size_t  vsize,
+        std::size_t* buffer_offsets,
+        float        fillvalue
+    ) : m_ptr(data), m_hsize(hsize), m_vsize(vsize), m_buffer_offsets(buffer_offsets), m_fillvalue(fillvalue)
     {}
 
     using HorizontalIt = StridedIterator;
@@ -124,6 +125,7 @@ private:
     const float* m_ptr;
     std::size_t  m_hsize;
     std::size_t  m_vsize;
+    std::size_t* m_buffer_offsets;
     float        m_fillvalue;
 };
 

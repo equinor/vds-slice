@@ -570,18 +570,26 @@ func (v VDSHandle) GetAttributes(
 	}
 	defer cSurface.Close()
 
-	var horizonSize C.size_t
+	dataOffsetSize := hsize + 1
+	dataOffset := make([]C.size_t, dataOffsetSize)
 
-	cerr := C.horizon_size(
+	cerr := C.horizon_buffer_offsets(
 		v.context(),
 		v.Handle(),
 		cSurface.get(),
 		C.float(above),
 		C.float(below),
-		&horizonSize,
+		&dataOffset[0],
+		C.size_t(dataOffsetSize),
 	)
 	if err := v.Error(cerr); err != nil {
 		return nil, err
+	}
+
+	horizonBufferSize := dataOffset[hsize] * 4 //size of float
+	if horizonBufferSize == 0 {
+		//empty array can't be referenced
+		horizonBufferSize = 1
 	}
 
 	horizon, err := v.fetchHorizon(
@@ -590,8 +598,9 @@ func (v VDSHandle) GetAttributes(
 		ncols,
 		above,
 		below,
+		dataOffset,
 		interpolation,
-		horizonSize,
+		C.size_t(horizonBufferSize),
 	)
 	if err != nil {
 		return nil, err
@@ -600,8 +609,9 @@ func (v VDSHandle) GetAttributes(
 	return v.calculateAttributes(
 		cSurface,
 		hsize,
+		dataOffset,
 		horizon,
-		horizonSize,
+		C.size_t(horizonBufferSize),
 		cAttributes,
 		above,
 		below,
@@ -615,11 +625,13 @@ func (v VDSHandle) fetchHorizon(
 	ncols int,
 	above float32,
 	below float32,
+	dataOffset []C.size_t,
 	interpolation int,
-	horizonSize C.size_t,
+	horizonBufferSize C.size_t,
 ) ([]byte, error) {
-	buffer := make([]byte, horizonSize)
 	hsize := nrows * ncols
+	buffer := make([]byte, horizonBufferSize)
+
 	// note that it is possible to hit go's own goroutines limit
 	// but we do not deal with it here
 
@@ -652,6 +664,7 @@ func (v VDSHandle) fetchHorizon(
 				cSurface.get(),
 				C.float(above),
 				C.float(below),
+				&dataOffset[0],
 				C.enum_interpolation_method(interpolation),
 				C.size_t(from),
 				C.size_t(to),
@@ -685,6 +698,7 @@ func (v VDSHandle) fetchHorizon(
 func (v VDSHandle) calculateAttributes(
 	cSurface CRegularSurface,
 	hsize int,
+	dataOffset []C.size_t,
 	horizon []byte,
 	horizonSize C.size_t,
 	cAttributes []uint32,
@@ -718,6 +732,7 @@ func (v VDSHandle) calculateAttributes(
 				cCtx,
 				v.Handle(),
 				cSurface.get(),
+				&dataOffset[0],
 				unsafe.Pointer(&horizon[0]),
 				horizonSize,
 				&cAttributes[0],

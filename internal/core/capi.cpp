@@ -219,25 +219,27 @@ int metadata(
     }
 }
 
-int horizon_size(
+int horizon_buffer_offsets(
     Context* ctx,
     DataHandle* handle,
     RegularSurface* surface,
     float above,
     float below,
-    size_t* out
+    size_t* out,
+    size_t out_size
 ) {
     try {
         if (not out)     throw detail::nullptr_error("Invalid out pointer");
         if (not handle)  throw detail::nullptr_error("Invalid handle");
         if (not surface) throw detail::nullptr_error("Invalid surface");
 
-        cppapi::horizon_size(
+        cppapi::horizon_buffer_offsets(
             *handle,
             *surface,
             above,
             below,
-            out
+            out,
+            out_size
         );
         return STATUS_OK;
     } catch (...) {
@@ -251,21 +253,24 @@ int horizon(
     RegularSurface* surface,
     float above,
     float below,
+    std::size_t* buffer_offsets,
     enum interpolation_method interpolation,
     size_t from,
     size_t to,
     void* out
 ) {
     try {
-        if (not out)     throw detail::nullptr_error("Invalid out pointer");
-        if (not handle)  throw detail::nullptr_error("Invalid handle");
-        if (not surface) throw detail::nullptr_error("Invalid surface");
+        if (not out)            throw detail::nullptr_error("Invalid out pointer");
+        if (not handle)         throw detail::nullptr_error("Invalid handle");
+        if (not surface)        throw detail::nullptr_error("Invalid surface");
+        if (not buffer_offsets) throw detail::nullptr_error("Invalid data offset buffer");
 
         cppapi::horizon(
             *handle,
             *surface,
             above,
             below,
+            buffer_offsets,
             interpolation,
             from,
             to,
@@ -299,6 +304,7 @@ int attribute(
     Context* ctx,
     DataHandle* handle,
     RegularSurface* surface,
+    size_t* data_offsets,
     const void* data,
     size_t size,
     enum attribute* attributes,
@@ -311,16 +317,17 @@ int attribute(
     void*  out
 ) {
     try {
-        if (not out)     throw detail::nullptr_error("Invalid out pointer");
-        if (not handle)  throw detail::nullptr_error("Invalid handle");
-        if (not surface) throw detail::nullptr_error("Invalid surface");
-        if (not data)    throw detail::nullptr_error("Invalid data");
+        if (not out)          throw detail::nullptr_error("Invalid out pointer");
+        if (not handle)       throw detail::nullptr_error("Invalid handle");
+        if (not surface)      throw detail::nullptr_error("Invalid surface");
+        if (not data)         throw detail::nullptr_error("Invalid data");
+        if (not data_offsets) throw detail::nullptr_error("Invalid data offset buffer");
 
         std::size_t nsamples = size / sizeof(float);
         std::size_t hsize = surface->size();
         std::size_t vsize = nsamples / hsize;
 
-        Horizon horizon((float*)data, hsize, vsize, surface->fillvalue());
+        Horizon horizon((float*)data, hsize, vsize, data_offsets, surface->fillvalue());
 
         MetadataHandle const& metadata = handle->get_metadata();
         auto const& sample = metadata.sample();

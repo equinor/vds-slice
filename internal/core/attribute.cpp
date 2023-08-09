@@ -21,8 +21,8 @@ Horizon::HorizontalIt Horizon::end() const noexcept (true) {
 }
 
 Horizon::Window Horizon::at(std::size_t i) const noexcept (false) {
-    std::size_t begin = i * this->vsize();
-    std::size_t end = begin + this->vsize();
+    std::size_t begin = m_buffer_offsets[i];
+    std::size_t end = m_buffer_offsets[i+1];
 
     return {
         Horizon::VerticalIt(this->m_ptr + begin),
@@ -239,7 +239,7 @@ void calc_attributes(
         auto depth = surface.value(i);
         auto data  = horizon.at(i);
 
-        if (*data.begin() == fill) {
+        if (data.begin() == data.end()) {
             fill_all(attrs, fill, i);
             continue;
         }
