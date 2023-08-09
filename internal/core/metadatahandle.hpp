@@ -7,6 +7,7 @@
 
 #include "axis.hpp"
 #include "boundingbox.hpp"
+#include "ctypes.h"
 #include "direction.hpp"
 
 class MetadataHandle {
@@ -34,6 +35,7 @@ private:
 
     void dimension_validation() const;
     void axis_order_validation() const;
+    int get_dimension(std::vector< enum axis_name > names) const;
 };
 
 #endif /* VDS_SLICE_METADATAHANDLE_HPP */
