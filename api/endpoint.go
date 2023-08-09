@@ -114,7 +114,11 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		return
 	}
 
-	metadata, err := handle.GetSliceMetadata(*request.Lineno, axis)
+	metadata, err := handle.GetSliceMetadata(
+		*request.Lineno,
+		axis,
+		[]core.Bound{},
+	)
 	if abortOnError(ctx, err) {
 		return
 	}

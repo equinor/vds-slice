@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -243,6 +244,27 @@ func TestSliceBounds(t *testing.T) {
 	newBound := func(direction string, lower, upper int) Bound {
 		return Bound{ Direction: &direction, Lower: &lower, Upper: &upper }
 	}
+	newAxis := func(
+		annotation string,
+		min        float64,
+		max        float64,
+		samples    int,
+	) Axis {
+		unit := "ms"
+		anno := strings.ToLower(annotation)
+		if anno == "inline" || anno == "crossline" {
+			unit = "unitless"
+		}
+
+		return Axis{
+			Annotation: annotation,
+			Min:        min,
+			Max:        max,
+			Samples:    samples,
+			Unit:       unit,
+		}
+	}
+
 	testCases := []struct{
 		name          string
 		direction     string
@@ -250,6 +272,10 @@ func TestSliceBounds(t *testing.T) {
 		bounds        []Bound
 		expectedSlice []float32
 		expectedErr   error
+		expectedShape  []int
+		expectedXAxis  Axis
+		expectedYAxis  Axis
+		expectedGeo    [][]float64
 	} {
 		{
 			name: "Constraint in slice dir is ignored - same coordinate system",
@@ -262,6 +288,10 @@ func TestSliceBounds(t *testing.T) {
 				108, 109, 110, 111,
 				112, 113, 114, 115,
 			},
+			expectedShape: []int{2, 4},
+			expectedXAxis: newAxis("Sample", 4, 16, 4),
+			expectedYAxis: newAxis("Crossline", 10, 11, 2),
+			expectedGeo:   [][]float64{ {8, 4}, {6, 7} },
 		},
 		{
 			name: "Constraint in slice dir is ignored - different coordinate system",
@@ -275,6 +305,10 @@ func TestSliceBounds(t *testing.T) {
 				108, 109, 110, 111,
 				116, 117, 118, 119,
 			},
+			expectedShape: []int{3, 4},
+			expectedXAxis: newAxis("Sample", 4, 16, 4),
+			expectedYAxis: newAxis("Inline", 1, 5, 3),
+			expectedGeo:   [][]float64{ {2, 0}, {14, 8} },
 		},
 		{
 			name: "Multiple constraints in slice dir are all ignored",
@@ -289,6 +323,10 @@ func TestSliceBounds(t *testing.T) {
 				108, 112,
 				116, 120,
 			},
+			expectedShape: []int{3, 2},
+			expectedXAxis: newAxis("Crossline", 10, 11, 2),
+			expectedYAxis: newAxis("Inline", 1, 5, 3),
+			expectedGeo:   [][]float64{ {2, 0}, {14, 8}, {12, 11}, {0, 3} },
 		},
 		{
 			name: "Single constraint - same coordinate system",
@@ -300,6 +338,10 @@ func TestSliceBounds(t *testing.T) {
 			expectedSlice: []float32{
 				108, 109, 110, 111,
 			},
+			expectedShape: []int{1, 4},
+			expectedXAxis: newAxis("Sample", 4, 16, 4),
+			expectedYAxis: newAxis("Crossline", 10, 10, 1),
+			expectedGeo:   [][]float64{ {8, 4}, {8, 4} },
 		},
 		{
 			name: "Single constraint - different coordinate system",
@@ -312,6 +354,10 @@ func TestSliceBounds(t *testing.T) {
 				100, 104,
 				108, 112,
 			},
+			expectedShape: []int{2, 2},
+			expectedXAxis: newAxis("Crossline", 10, 11, 2),
+			expectedYAxis: newAxis("Inline", 1, 3, 2),
+			expectedGeo:   [][]float64{ {2, 0}, {8, 4}, {6, 7}, {0, 3} },
 		},
 		{
 			name: "Two constraints - same coordinate system",
@@ -325,6 +371,10 @@ func TestSliceBounds(t *testing.T) {
 				100,
 				108,
 			},
+			expectedShape: []int{2, 1},
+			expectedXAxis: newAxis("Crossline", 10, 10, 1),
+			expectedYAxis: newAxis("Inline", 1, 3, 2),
+			expectedGeo:   [][]float64{ {2, 0}, {8, 4}, {8, 4}, {2, 0} },
 		},
 		{
 			name: "Two constraints - different coordinate system",
@@ -338,6 +388,10 @@ func TestSliceBounds(t *testing.T) {
 				101, 102,
 				109, 110,
 			},
+			expectedShape: []int{2, 2},
+			expectedXAxis: newAxis("Sample", 8, 12, 2),
+			expectedYAxis: newAxis("Inline", 1, 3, 2),
+			expectedGeo:   [][]float64{ {2, 0}, {8, 4} },
 		},
 		{
 			name: "Horizonal bounds for full axis range is the same as no bound",
@@ -352,6 +406,10 @@ func TestSliceBounds(t *testing.T) {
 				110, 114,
 				118, 122,
 			},
+			expectedShape: []int{3, 2},
+			expectedXAxis: newAxis("Crossline", 10, 11, 2),
+			expectedYAxis: newAxis("Inline", 1, 5, 3),
+			expectedGeo:   [][]float64{ {2, 0}, {14, 8}, {12, 11}, {0, 3} },
 		},
 		{
 			name: "Vertical bounds for full axis range is the same as no bound",
@@ -364,6 +422,10 @@ func TestSliceBounds(t *testing.T) {
 				116, 117, 118, 119,
 				120, 121, 122, 123,
 			},
+			expectedShape: []int{2, 4},
+			expectedXAxis: newAxis("Sample", 4, 16, 4),
+			expectedYAxis: newAxis("Crossline", 10, 11, 2),
+			expectedGeo:   [][]float64{ {14, 8}, {12, 11} },
 		},
 		{
 			name: "The last bound takes precedence",
@@ -377,6 +439,10 @@ func TestSliceBounds(t *testing.T) {
 				118, 119,
 				122, 123,
 			},
+			expectedShape: []int{2, 2},
+			expectedXAxis: newAxis("Sample", 12, 16, 2),
+			expectedYAxis: newAxis("Crossline", 10, 11, 2),
+			expectedGeo:   [][]float64{ {14, 8}, {12, 11} },
 		},
 		{
 			name: "Out-Of-Bounds bounds errors",
@@ -417,11 +483,53 @@ func TestSliceBounds(t *testing.T) {
 			testCase.name,
 			err,
 		)
+		if testCase.expectedErr != nil {
+			continue
+		}
 
 		slice, err := toFloat32(buf)
 		require.NoErrorf(t, err, "[case: %v] Err: %v", testCase.name, err)
 
 		require.Equalf(t, testCase.expectedSlice, *slice, "[case: %v]", testCase.name)
+
+		buf, err = handle.GetSliceMetadata(
+			testCase.lineno,
+			direction,
+			testCase.bounds,
+		)
+		require.NoError(t, err,
+			"[case: %v] Failed to get slice metadata, err: %v",
+			testCase.name,
+			err,
+		)
+
+		var meta SliceMetadata
+		err = json.Unmarshal(buf, &meta)
+		require.NoErrorf(t, err,
+			"[case: %v] Failed to unmarshall response, err: %v",
+			testCase.name,
+			err,
+		)
+
+		require.Equalf(t, testCase.expectedShape, meta.Shape,
+			"[case: %v] Shape not equal",
+			testCase.name,
+		)
+
+		require.Equalf(t, testCase.expectedXAxis, meta.X,
+			"[case: %v] X axis not equal",
+			testCase.name,
+		)
+
+		require.Equalf(t, testCase.expectedYAxis, meta.Y,
+			"[case: %v] Y axis not equal",
+			testCase.name,
+		)
+
+		require.Equalf(t, testCase.expectedGeo, meta.Geospatial,
+			"[case: %v] Geospatial not equal",
+			testCase.name,
+		)
 	}
 }
 
@@ -463,7 +571,7 @@ func TestSliceMetadata(t *testing.T) {
 	}
 	handle, _ := NewVDSHandle(well_known)
 	defer handle.Close()
-	buf, err := handle.GetSliceMetadata(lineno, direction)
+	buf, err := handle.GetSliceMetadata(lineno, direction, []Bound{})
 	require.NoErrorf(t, err, "Failed to retrieve slice metadata, err %v", err)
 
 	var meta SliceMetadata
@@ -524,7 +632,11 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 	for _, testcase := range testcases {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		buf, err := handle.GetSliceMetadata(testcase.lineno, testcase.direction)
+		buf, err := handle.GetSliceMetadata(
+			testcase.lineno,
+			testcase.direction,
+			[]Bound{},
+		)
 		require.NoErrorf(t, err,
 			"[case: %v] Failed to get slice metadata, err: %v",
 			testcase.name,
@@ -593,7 +705,11 @@ func TestSliceGeospatial(t *testing.T) {
 	for _, testcase := range testcases {
 		handle, _ := NewVDSHandle(well_known)
 		defer handle.Close()
-		buf, err := handle.GetSliceMetadata(testcase.lineno, testcase.direction)
+		buf, err := handle.GetSliceMetadata(
+			testcase.lineno,
+			testcase.direction,
+			[]Bound{},
+		)
 		require.NoError(t, err,
 			"[case: %v] Failed to get slice metadata, err: %v",
 			testcase.name,

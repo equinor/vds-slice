@@ -43,15 +43,25 @@ void to_response(nlohmann::json const& metadata, response* response) {
 }
 
 nlohmann::json json_axis(
-    Axis const& axis
+    Axis const& axis,
+    SubVolume const& subvolume
 ) {
+    auto const& lower = subvolume.bounds.lower;
+    auto const& upper = subvolume.bounds.upper;
+
+    int dim = axis.dimension();
+
+    float min = axis.min() + axis.stride() * lower[dim];
+    float max = axis.min() + axis.stride() * (upper[dim] - 1); // inclusive
+    std::size_t samples = upper[dim] - lower[dim];
+
     nlohmann::json doc;
     doc = {
-        { "annotation", axis.name()     },
-        { "min",        axis.min()      },
-        { "max",        axis.max()      },
-        { "samples",    axis.nsamples() },
-        { "unit",       axis.unit()     },
+        { "annotation", axis.name() },
+        { "min",        min         },
+        { "max",        max         },
+        { "samples",    samples     },
+        { "unit",       axis.unit() },
     };
     return doc;
 }
@@ -60,12 +70,10 @@ nlohmann::json json_slice_geospatial(
     MetadataHandle const& metadata,
     Direction const direction,
     Axis const& axis,
-    int lineno
+    int lineno,
+    SubVolume const& bounds
 ) {
     auto const& transformer = metadata.coordinate_transformer();
-
-    SubVolume bounds(metadata);
-    bounds.set_slice(axis, lineno, direction.coordinate_system());
 
     auto const lower = transformer.VoxelIndexToIJKIndex({
         bounds.bounds.lower[0],
@@ -136,6 +144,7 @@ void slice_metadata(
     DataHandle& handle,
     Direction const direction,
     int lineno,
+    std::vector< Bound > const& slicebounds,
     response* out
 ) {
     MetadataHandle const& metadata = handle.get_metadata();
@@ -148,10 +157,20 @@ void slice_metadata(
     Axis const& crossline_axis = metadata.xline();
     Axis const& sample_axis = metadata.sample();
 
+    SubVolume bounds(metadata);
+    bounds.constrain(metadata, slicebounds);
+    bounds.set_slice(axis, lineno, direction.coordinate_system());
+
+    auto const& lower = bounds.bounds.lower;
+    auto const& upper = bounds.bounds.upper;
+
     auto json_shape = [&](Axis const &x, Axis const &y) {
-        meta["x"] = json_axis(x);
-        meta["y"] = json_axis(y);
-        meta["shape"] = nlohmann::json::array({y.nsamples(), x.nsamples()});
+        meta["x"] = json_axis(x, bounds);
+        meta["y"] = json_axis(y, bounds);
+        meta["shape"] = nlohmann::json::array({
+            upper[y.dimension()] - lower[y.dimension()],
+            upper[x.dimension()] - lower[x.dimension()],
+        });
     };
 
     if (direction.is_iline()) {
@@ -164,7 +183,13 @@ void slice_metadata(
         throw std::runtime_error("Unhandled direction");
     }
 
-    meta["geospatial"] = json_slice_geospatial(metadata, direction,axis, lineno);
+    meta["geospatial"] = json_slice_geospatial(
+        metadata,
+        direction,
+        axis,
+        lineno,
+        bounds
+    );
     return to_response(meta, out);
 }
 
@@ -197,15 +222,16 @@ void metadata(DataHandle& handle, response* out) {
     meta["boundingBox"]["cdp"]  = bbox.world();
     meta["boundingBox"]["ilxl"] = bbox.annotation();
 
+    SubVolume volume(metadata);
 
     Axis const& inline_axis = metadata.iline();
-    meta["axis"].push_back(json_axis(inline_axis));
+    meta["axis"].push_back(json_axis(inline_axis, volume));
 
     Axis const& crossline_axis = metadata.xline();
-    meta["axis"].push_back(json_axis(crossline_axis));
+    meta["axis"].push_back(json_axis(crossline_axis, volume));
 
     Axis const& sample_axis = metadata.sample();
-    meta["axis"].push_back(json_axis(sample_axis));
+    meta["axis"].push_back(json_axis(sample_axis, volume));
 
     return to_response(meta, out);
 }

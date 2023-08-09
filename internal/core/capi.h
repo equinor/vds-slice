@@ -102,6 +102,8 @@ int slice_metadata(
     DataHandle* handle,
     int lineno,
     enum axis_name direction,
+    struct Bound* bounds,
+    size_t nbounds,
     response* out
 );
 

@@ -477,13 +477,30 @@ func (v VDSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, erro
 	return buf, nil
 }
 
-func (v VDSHandle) GetSliceMetadata(lineno, direction int) ([]byte, error) {
+func (v VDSHandle) GetSliceMetadata(
+	lineno    int,
+	direction int,
+	bounds    []Bound,
+) ([]byte, error) {
 	var result C.struct_response
+
+	cBounds, err := newCSliceBounds(bounds)
+	if err != nil {
+		return nil, err
+	}
+
+	var bound *C.struct_Bound
+	if len(cBounds) > 0 {
+		bound = &cBounds[0]
+	}
+
 	cerr := C.slice_metadata(
 		v.context(),
 		v.Handle(),
 		C.int(lineno),
 		C.enum_axis_name(direction),
+		bound,
+		C.size_t(len(cBounds)),
 		&result,
 	)
 
