@@ -10,13 +10,22 @@ Point AffineTransformation::operator*(Point p) const noexcept (true) {
     };
 };
 
+bool operator==(
+    AffineTransformation const& left,
+    AffineTransformation const& right
+) noexcept (true) {
+    const auto& lhs = static_cast< const AffineTransformation::base_type& >(left);
+    const auto& rhs = static_cast< const AffineTransformation::base_type& >(right);
+
+    return lhs == rhs;
+};
 
 AffineTransformation AffineTransformation::from_rotation(
-    float xori,
-    float yori,
-    float xinc,
-    float yinc,
-    float rot
+    double xori,
+    double yori,
+    double xinc,
+    double yinc,
+    double rot
 ) noexcept (true) {
     double rad = rot * (M_PI / 180);
     /**
@@ -38,6 +47,26 @@ AffineTransformation AffineTransformation::from_rotation(
     }}));
 }
 
+AffineTransformation AffineTransformation::inverse_from_rotation(
+    double xori,
+    double yori,
+    double xinc,
+    double yinc,
+    double rot
+) noexcept(true) {
+    double rad = rot * (M_PI / 180);
+    /**
+     * Matrix inverse to the one above.
+     */
+    return AffineTransformation(base_type({{
+        std::cos(rad) / xinc, std::sin(rad) / xinc, -(std::sin(rad) * yori + std::cos(rad) * xori) / xinc,
+       -std::sin(rad) / yinc, std::cos(rad) / yinc,  (std::sin(rad) * xori - std::cos(rad) * yori) / yinc
+    }}));
+}
+
+bool Plane::operator==(const Plane& other) const {
+    return this->m_transformation == other.m_transformation;
+}
 
 Point RegularSurface::to_cdp(
     std::size_t const row,
@@ -48,7 +77,22 @@ Point RegularSurface::to_cdp(
 
     Point point {static_cast<double>(row), static_cast<double>(col)};
 
-    return this->m_transformation * point;
+    return this->m_plane.m_transformation * point;
+}
+
+Point RegularSurface::to_cdp(
+    std::size_t i
+) const noexcept(false) {
+    auto row = i / this->ncols();
+    auto col = i % this->ncols();
+
+    return to_cdp(row, col);
+}
+
+Point RegularSurface::from_cdp(
+    Point point
+) const noexcept (false) {
+    return this->m_plane.m_inverse_transformation * point;
 }
 
 float RegularSurface::value(
@@ -65,4 +109,10 @@ float RegularSurface::value(std::size_t i) const noexcept (false) {
     if (i >= this->size()) throw std::runtime_error("index out of range");
 
     return this->m_data[i];
+}
+
+void RegularSurface::set_value(std::size_t i, float value) noexcept (false) {
+    if (i >= this->size()) throw std::runtime_error("index out of range");
+
+    this->m_data[i] = value;
 }

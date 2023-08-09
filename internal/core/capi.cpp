@@ -81,7 +81,7 @@ int datahandle_free(Context* ctx, DataHandle* f) {
 
 int regular_surface_new(
     Context* ctx,
-    const float* data,
+    float* data,
     size_t nrows,
     size_t ncols,
     float xori,
@@ -99,11 +99,7 @@ int regular_surface_new(
             data,
             nrows,
             ncols,
-            xori,
-            yori,
-            xinc,
-            yinc,
-            rot,
+            Plane(xori, yori, xinc, yinc, rot),
             fillvalue
         );
         return STATUS_OK;

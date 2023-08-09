@@ -11,6 +11,10 @@ namespace
 const std::string SAMPLES_10 = "file://10_samples_default.vds";
 const std::string CREDENTIALS = "";
 
+Plane samples_10_plane = Plane(2, 0, 7.2111, 3.6056, 33.69);
+Plane larger_plane = Plane(-8, -11, 7.2111, 3.6056, 33.69);
+Plane other_plane = Plane(2, 3, 4.472, 2.236, 333.43);
+
 class HorizonTest : public ::testing::Test
 {
   protected:
@@ -63,13 +67,7 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
     static constexpr int ncols = 6;
     static constexpr std::size_t size = nrows * ncols;
 
-    const float xori = 2;
-    const float yori = 3;
-    const float xinc = 4.472;
-    const float yinc = 2.236;
-    const float rot = 333.43;
-
-    const std::array<float, size> surface_data = {
+    std::array<float, size> surface_data = {
         24, 20, 24, 24, 24, 20,
         20, 20, 20, 24, 20, 24,
         20, 24, 20, 20, 24, 20,
@@ -83,17 +81,17 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
         nodata, nodata, nodata, nodata, nodata, nodata
     };
 
-    RegularSurface unaligned_surface =
-        RegularSurface(surface_data.data(), nrows, ncols, xori, yori, xinc, yinc, rot, fill);
+    RegularSurface surface =
+        RegularSurface(surface_data.data(), nrows, ncols, other_plane, fill);
 
     std::size_t horizon_size;
-    cppapi::horizon_size(*handle, unaligned_surface, above, below, &horizon_size);
+    cppapi::horizon_size(*handle, surface, above, below, &horizon_size);
 
     std::vector< float> res(horizon_size);
-    cppapi::horizon(*handle, unaligned_surface, above, below, NEAREST, 0, size, res.data());
+    cppapi::horizon(*handle, surface, above, below, NEAREST, 0, size, res.data());
 
-    std::size_t vsize = horizon_size / (unaligned_surface.size() * sizeof(float));
-    Horizon horizon(res.data(), size, vsize, unaligned_surface.fillvalue());
+    std::size_t vsize = horizon_size / (surface.size() * sizeof(float));
+    Horizon horizon(res.data(), size, vsize, surface.fillvalue());
 
     /* We are checking here points unordered. Meaning that if all points in a
      * row appear somewhere in the horizon, we assume we are good. Alternative
@@ -113,4 +111,355 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
         }
     }
 }
+
+class SurfaceAlignmentTest : public ::testing::Test
+{
+  protected:
+    void SetUp() override
+    {
+        handle = make_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str());
+    }
+
+    void TearDown() override
+    {
+        delete handle;
+    }
+
+    DataHandle *handle;
+
+    static constexpr float fill = -999.25;
+};
+
+void test_successful_align_call(
+    RegularSurface const &primary,
+    RegularSurface const &secondary,
+    RegularSurface &aligned,
+    const float *expected_data,
+    bool expected_primary_is_top
+) {
+    bool primary_is_top;
+    cppapi::align_surfaces(primary, secondary, aligned, &primary_is_top);
+
+    EXPECT_EQ(primary_is_top, expected_primary_is_top) << "Wrong column number";
+
+    for (int i = 0; i < primary.size(); ++i)
+    {
+        EXPECT_EQ(aligned.value(i), expected_data[i]) << "Wrong surface at index " << i;
+    }
+}
+
+void test_successful_align_call(
+    RegularSurface const &primary,
+    RegularSurface const &secondary,
+    const float *expected_data,
+    bool expected_primary_is_top
+) {
+    std::vector< float> data(primary.size());
+    RegularSurface aligned = RegularSurface(
+        data.data(), primary.nrows(), primary.ncols(), primary.plane(), secondary.fillvalue());
+
+    test_successful_align_call(primary, secondary, aligned, expected_data, expected_primary_is_top);
+}
+
+TEST_F(SurfaceAlignmentTest, AlignedSurfaces)
+{
+    static constexpr std::size_t nrows = 3;
+    static constexpr std::size_t ncols = 2;
+    std::array<float, nrows * ncols> primary_surface_data = {
+        20, 20,
+        20, 20,
+        20, 20
+    };
+    std::array<float, nrows * ncols> secondary_surface_data = {
+        24, 25,
+        26, 27,
+        28, 29
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+
+    test_successful_align_call(primary, secondary, secondary_surface_data.data(), true);
+}
+
+TEST_F(SurfaceAlignmentTest, PrimaryIsBottom)
+{
+    static constexpr std::size_t nrows = 3;
+    static constexpr std::size_t ncols = 2;
+    std::array<float, nrows * ncols> primary_surface_data = {
+        30, 30,
+        30, 30,
+        30, 30
+    };
+    std::array<float, nrows * ncols> secondary_surface_data = {
+        24, 25,
+        26, 27,
+        28, 29
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+
+    test_successful_align_call(primary, secondary, secondary_surface_data.data(), false);
+}
+
+TEST_F(SurfaceAlignmentTest, SecondaryLarger)
+{
+    static constexpr std::size_t pnrows = 2;
+    static constexpr std::size_t pncols = 1;
+
+    std::array<float, pnrows * pncols> primary_surface_data = {
+        20,
+        20
+    };
+
+    static constexpr std::size_t snrows = 3;
+    static constexpr std::size_t sncols = 2;
+
+    std::array<float, snrows * sncols> secondary_surface_data = {
+        24, 25,
+        26, 27,
+        28, 29
+    };
+
+    const std::array<float, pnrows * pncols> expected = {
+        24,
+        26
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+
+    test_successful_align_call(primary, secondary, expected.data(), true);
+}
+
+TEST_F(SurfaceAlignmentTest, PrimaryLarger)
+{
+    static constexpr std::size_t pnrows = 3;
+    static constexpr std::size_t pncols = 2;
+
+    std::array<float, pnrows * pncols> primary_surface_data = {
+        20, 20,
+        20, 20,
+        20, 20
+    };
+
+    static constexpr std::size_t snrows = 2;
+    static constexpr std::size_t sncols = 1;
+
+    std::array<float, snrows * sncols> secondary_surface_data = {
+        24,
+        26,
+    };
+
+    const std::array<float, pnrows * pncols> expected = {
+        24, fill,
+        26, fill,
+        fill, fill
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+
+    test_successful_align_call(primary, secondary, expected.data(), true);
+}
+
+TEST_F(SurfaceAlignmentTest, HolesInData)
+{
+    static constexpr std::size_t pnrows = 3;
+    static constexpr std::size_t pncols = 2;
+
+    float fill1 = 111.11;
+    float fill2 = 222.22;
+    float fill3 = 333.33;
+
+    std::array<float, pnrows * pncols> primary_surface_data = {
+        20, 20,
+        fill1, fill1,
+        20, 20
+    };
+
+    static constexpr std::size_t snrows = 3;
+    static constexpr std::size_t sncols = 2;
+
+    std::array<float, snrows * sncols> secondary_surface_data = {
+        fill2, 25,
+        26, fill2,
+        fill2, 29
+    };
+
+    const std::array<float, pnrows * pncols> expected = {
+        fill3, 25,
+        fill3, fill3,
+        fill3, 29
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill1);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill2);
+
+    std::vector< float> data(primary.size());
+    RegularSurface aligned = RegularSurface(
+        data.data(), primary.nrows(), primary.ncols(), primary.plane(), fill3);
+
+    test_successful_align_call(primary, secondary, aligned, expected.data(), true);
+}
+
+TEST_F(SurfaceAlignmentTest, SurfaceDifferentOrigin)
+{
+    static constexpr std::size_t pnrows = 6;
+    static constexpr std::size_t pncols = 4;
+
+    std::array<float, pnrows * pncols> primary_surface_data = {
+        10, 10, 10, 10,
+        10, 10, 10, 10,
+        10, 10, 10, 10,
+        10, 10, 10, 10,
+        10, 10, 10, 10,
+        10, 10, 10, 10
+    };
+
+    static constexpr std::size_t snrows = 3;
+    static constexpr std::size_t sncols = 2;
+
+    std::array<float, snrows * sncols> secondary_surface_data = {
+        24, 25,
+        26, 27,
+        28, 29,
+    };
+
+    const std::array<float, pnrows * pncols> expected = {
+        fill, fill, fill, fill,
+        fill, fill, fill, fill,
+        fill, 24,   25,   fill,
+        fill, 26,   27,   fill,
+        fill, 28,   29,   fill,
+        fill, fill, fill, fill,
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), pnrows, pncols, larger_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+
+    test_successful_align_call(primary, secondary, expected.data(), true);
+}
+
+TEST_F(SurfaceAlignmentTest, UnalignedSurfacesPrimaryAligned)
+{
+    static constexpr std::size_t pnrows = 3;
+    static constexpr std::size_t pncols = 2;
+
+    std::array<float, pnrows * pncols> primary_surface_data = {
+        5, 5,
+        5, 5,
+        5, 5
+    };
+
+    static constexpr std::size_t snrows = 4;
+    static constexpr std::size_t sncols = 6;
+
+    std::array<float, snrows * sncols> secondary_surface_data = {
+        10, 11, 12, 13, 14, 15,
+        16, 17, 18, 19, 20, 21,
+        22, 23, 24, 25, 26, 27,
+        28, 29, 30, 31, 32, 33
+    };
+
+    const std::array<float, pnrows * pncols> expected = {
+        fill, 10,
+        18, 12,
+        26, 21
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), snrows, sncols, other_plane, fill);
+
+    test_successful_align_call(primary, secondary, expected.data(), true);
+}
+
+TEST_F(SurfaceAlignmentTest, UnalignedSurfacesPrimaryUnaligned)
+{
+    static constexpr std::size_t pnrows = 4;
+    static constexpr std::size_t pncols = 6;
+
+    std::array<float, pnrows * pncols> primary_surface_data = {
+        20, 20, 20, 20, 20, 20,
+        20, 20, 20, 20, 20, 20,
+        20, 20, 20, 20, 20, 20,
+        20, 20, 20, 20, 20, 20,
+    };
+
+    static constexpr std::size_t snrows = 3;
+    static constexpr std::size_t sncols = 2;
+
+    std::array<float, snrows * sncols> secondary_surface_data = {
+        24, 25,
+        26, 27,
+        28, 29
+    };
+
+    const std::array<float, pnrows * pncols> expected = {
+        25, 27, 27, fill, fill, fill,
+        26, 26, 26, 27, 29, 29,
+        fill, fill, fill, fill, 28, 28,
+        fill, fill, fill, fill, fill, fill
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), pnrows, pncols, other_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+
+    test_successful_align_call(primary, secondary, expected.data(), true);
+}
+
+TEST_F(SurfaceAlignmentTest, IntersectingSurfaces)
+{
+    static constexpr std::size_t pnrows = 3;
+    static constexpr std::size_t pncols = 2;
+
+    std::array<float, pnrows * pncols> primary_surface_data = {
+        35, 5, // fill, less
+        18, 8, // equals, less
+        27, 20 // greater, less
+    };
+
+    static constexpr std::size_t snrows = 4;
+    static constexpr std::size_t sncols = 6;
+
+    std::array<float, snrows * sncols> secondary_surface_data = {
+        10, 11, 12, 13, 14, 15,
+        16, 17, 18, 19, 20, 21,
+        22, 23, 24, 25, 26, 27,
+        28, 29, 30, 31, 32, 33
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), snrows, sncols, other_plane, fill);
+
+    std::vector< float> data(primary.size());
+    RegularSurface aligned = RegularSurface(
+        data.data(), pnrows, pncols, samples_10_plane, fill);
+    bool primary_is_top;
+
+    EXPECT_THAT(
+        [&]() { cppapi::align_surfaces(primary, secondary, aligned, &primary_is_top); },
+        testing::ThrowsMessage<std::runtime_error>(
+            testing::HasSubstr("Surfaces intersect at primary surface point (2, 0)")));
+}
+
 } // namespace
