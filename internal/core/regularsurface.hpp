@@ -122,7 +122,7 @@ public:
 
     float value(std::size_t i) const noexcept (false);
     void set_value(std::size_t i, float value) noexcept (false);
-    
+
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
     std::size_t nrows() const noexcept (true) { return this->m_nrows; };

@@ -79,7 +79,7 @@ nlohmann::json json_slice_geospatial(
         bounds.bounds.upper[1] - 1,
         bounds.bounds.upper[2] - 1
     });
-    
+
     /** The slice bounds are given by the lower- and upper-coordinates only:
      *
      *
@@ -102,7 +102,7 @@ nlohmann::json json_slice_geospatial(
      * a linestring from (lower.I, lower.J) to (upper.I, upper.J). However, for
      * time- and depth-slices we need to construct 4 corners. The first corner
      * is lower, then go in a counter-clockwise direction around the box.
-     * Corner 1 is given by (upper.I, lower.J) and corner 3 is 
+     * Corner 1 is given by (upper.I, lower.J) and corner 3 is
      * (lower.I, upper.J).
      */
     const std::array< OpenVDS::DoubleVector3, 4 > corners {{

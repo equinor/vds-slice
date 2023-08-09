@@ -35,7 +35,7 @@ bool equal(const char* lhs, const char* rhs) {
 }
 
 /** Validate the request against the vds' vertical axis
- *  
+ *
  * Requests for Time and Depth are checked against the axis name and unit of
  * the actual file, while Sample acts as a fallback option where anything goes
  *
@@ -46,12 +46,12 @@ bool equal(const char* lhs, const char* rhs) {
  *     Depth          | Depth or Sample | "m", "ft", or "usft"
  */
 void validate_vertical_axis(
-    Axis const& vertical_axis, 
+    Axis const& vertical_axis,
     Direction const& request
 ) noexcept (false) {
     const auto& unit = vertical_axis.unit();
     const char* vdsunit = unit.c_str();
-    
+
     const auto& name = vertical_axis.name();
     const char* vdsname = name.c_str();
 
@@ -60,7 +60,7 @@ void validate_vertical_axis(
     using Unit = OpenVDS::KnownUnitNames;
     using Label = OpenVDS::KnownAxisNames;
     if (requested_axis == axis_name::DEPTH) {
-        if (not equal(vdsname, Label::Depth()) and 
+        if (not equal(vdsname, Label::Depth()) and
             not equal(vdsname, Label::Sample())
         ) {
             throw detail::bad_request(
@@ -69,8 +69,8 @@ void validate_vertical_axis(
         }
 
         if (
-            not equal(vdsunit, Unit::Meter()) and 
-            not equal(vdsunit, Unit::Foot())  and 
+            not equal(vdsunit, Unit::Meter()) and
+            not equal(vdsunit, Unit::Foot())  and
             not equal(vdsunit, Unit::USSurveyFoot())
         ) {
             throw detail::bad_request(
@@ -81,7 +81,7 @@ void validate_vertical_axis(
     }
 
     if (requested_axis == axis_name::TIME) {
-        if (not equal(vdsname, Label::Time()) and 
+        if (not equal(vdsname, Label::Time()) and
             not equal(vdsname, Label::Sample())
         ) {
             throw detail::bad_request(
@@ -89,7 +89,7 @@ void validate_vertical_axis(
             );
         }
 
-        if (not equal(vdsunit, Unit::Millisecond()) and 
+        if (not equal(vdsunit, Unit::Millisecond()) and
             not equal(vdsunit, Unit::Second())
         ) {
             throw detail::bad_request(
@@ -139,7 +139,7 @@ void slice(
 
     if (direction.is_sample()) {
         validate_vertical_axis(metadata.sample(), direction);
-    }   
+    }
 
     SubVolume bounds(metadata);
     bounds.set_slice(axis, lineno, direction.coordinate_system());
