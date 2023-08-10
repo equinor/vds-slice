@@ -352,7 +352,6 @@ int attribute(
         }
 
         cppapi::attributes(
-            *handle,
             horizon,
             *reference,
             *top,

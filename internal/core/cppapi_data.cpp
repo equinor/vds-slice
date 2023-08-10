@@ -390,7 +390,6 @@ void horizon(
 
 
 void attributes(
-    DataHandle& handle,
     Horizon const& horizon,
     RegularSurface const& reference,
     RegularSurface const& top,
