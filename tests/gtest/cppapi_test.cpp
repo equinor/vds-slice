@@ -145,6 +145,61 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
     test_successful_horizon_call(primary_surface, top_surface, bottom_surface, expected.data());
 }
 
+TEST_F(HorizonTest, ManyFills)
+{
+    static constexpr int nrows = 6;
+    static constexpr int ncols = 4;
+    static constexpr std::size_t size = nrows * ncols;
+
+    std::array<float, size> primary_surface_data = {
+        fill, 20,   20,   fill,
+        24,   24,   24,   24,
+        fill, 16,   16,   16,
+        fill, fill, fill, fill,
+        16,   20,   24,   28,
+        60,   40,   80,   100
+    };
+
+    std::array<float, size> top_surface_data = {
+        fill, 20,   20,   fill,
+        24,   24,   24,   24,
+        fill, 12,   fill, 16,
+        fill, fill, fill, fill,
+        16,   20,   16,   28,
+        60,   fill, 80,   100
+    };
+
+    std::array<float, size> bottom_surface_data = {
+        fill, 20,   fill, fill,
+        24,   24,   24,   24,
+        fill, 32,   16,   16,
+        fill, fill, fill, fill,
+        16,   fill, 24,   28,
+        60,   40,   80,   100
+    };
+
+    std::array<Samples10Points, size> expected = {
+        nodata, nodata, nodata, nodata,
+        nodata, nodata, nodata, nodata,
+        nodata, i1_x10, nodata, nodata,
+        nodata, nodata, nodata, nodata,
+        nodata, nodata, i5_x11, nodata,
+        nodata, nodata, nodata, nodata
+    };
+
+    RegularSurface primary_surface =
+        RegularSurface(primary_surface_data.data(), nrows, ncols, larger_plane, fill);
+
+    RegularSurface top_surface =
+        RegularSurface(top_surface_data.data(), nrows, ncols, larger_plane, fill);
+
+    RegularSurface bottom_surface =
+        RegularSurface(bottom_surface_data.data(), nrows, ncols, larger_plane, fill);
+
+    test_successful_horizon_call(primary_surface, top_surface, bottom_surface, expected.data());
+}
+
+
 class SurfaceAlignmentTest : public ::testing::Test
 {
   protected:
