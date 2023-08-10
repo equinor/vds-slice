@@ -101,15 +101,15 @@ void validate_vertical_axis(
 
 /**
  * For every index in 'novals', write n successive floats with value
- * 'fillvalue' to dst. Where n is 'vertical_size'.
+ * 'fillvalue' to dst.
  */
 void write_fillvalue(
     char * dst,
     std::vector< std::size_t > const& novals,
-    std::size_t vertical_size,
+    std::size_t nsamples,
     float fillvalue
 ) {
-    std::vector< float > fill(vertical_size, fillvalue);
+    std::vector< float > fill(nsamples, fillvalue);
     std::for_each(novals.begin(), novals.end(), [&](std::size_t i) {
         std::memcpy(
             dst + i * sizeof(float),
