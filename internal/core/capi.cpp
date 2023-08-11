@@ -389,3 +389,30 @@ int attribute(
         return handle_exception(ctx, std::current_exception());
     }
 }
+
+int align_surfaces(
+    Context* ctx,
+    RegularSurface* primary,
+    RegularSurface* secondary,
+    RegularSurface* aligned,
+    int* primary_is_top
+) {
+    try {
+        if (not primary)        throw detail::nullptr_error("Invalid primary surface");
+        if (not secondary)      throw detail::nullptr_error("Invalid secondary surface");
+        if (not aligned)        throw detail::nullptr_error("Invalid aligned surface");
+        if (not primary_is_top) throw detail::nullptr_error("Invalid primary is top pointer");
+
+        bool b_primary_is_top;
+
+        cppapi::align_surfaces(*primary, *secondary, *aligned, &b_primary_is_top);
+        if (b_primary_is_top) {
+            *primary_is_top = 1;
+        } else {
+            *primary_is_top = 0;
+        }
+        return STATUS_OK;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
+    }
+}

@@ -191,6 +191,14 @@ int attribute(
     void* out
 );
 
+int align_surfaces(
+    Context* ctx,
+    RegularSurface* primary,
+    RegularSurface* secondary,
+    RegularSurface* aligned,
+    int* primary_is_top
+);
+
 #ifdef __cplusplus
 }
 #endif
