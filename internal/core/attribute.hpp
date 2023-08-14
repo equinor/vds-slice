@@ -32,7 +32,7 @@
  * Note that the above and below window is just and example of how to think
  * about this data structure. This class, however, doesn't care about the
  * window definition in that much detail. It only needs to know the size of the
- * full vertical window. I.e. how many samples there are at every horizontal
+ * current vertical window. I.e. how many samples there are at each horizontal
  * position.
  *
  * As the illustration show, the windowed horizon is a 3D array. It's assumed
@@ -86,17 +86,12 @@ public:
     Horizon(
         const float* data,
         std::size_t  hsize,
-        std::size_t  vsize,
         std::size_t* buffer_offsets,
         float        fillvalue
-    ) : m_ptr(data), m_hsize(hsize), m_vsize(vsize), m_buffer_offsets(buffer_offsets), m_fillvalue(fillvalue)
+    ) : m_ptr(data), m_hsize(hsize), m_buffer_offsets(buffer_offsets), m_fillvalue(fillvalue)
     {}
 
-    using HorizontalIt = StridedIterator;
     using VerticalIt   = VerticalIterator;
-
-    HorizontalIt begin() const noexcept (true);
-    HorizontalIt end()   const noexcept (true);
 
     struct Window {
         Window(VerticalIt begin, VerticalIt end) : m_begin(begin), m_end(end) {}
@@ -107,9 +102,6 @@ public:
         VerticalIt m_begin;
         VerticalIt m_end;
     };
-
-    /* Vertical size of the horizon*/
-    std::size_t vsize() const noexcept (true) { return this->m_vsize; };
 
     /* Number of points in the horizontal plane */
     std::size_t hsize() const noexcept (true) { return this->m_hsize; };
@@ -124,7 +116,6 @@ public:
 private:
     const float* m_ptr;
     std::size_t  m_hsize;
-    std::size_t  m_vsize;
     std::size_t* m_buffer_offsets;
     float        m_fillvalue;
 };

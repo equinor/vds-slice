@@ -333,9 +333,8 @@ int attribute(
 
         std::size_t nsamples = size / sizeof(float);
         std::size_t hsize = reference->size();
-        std::size_t vsize = nsamples / hsize;
 
-        Horizon horizon((float*)data, hsize, vsize, data_offsets, reference->fillvalue());
+        Horizon horizon((float*)data, hsize, data_offsets, reference->fillvalue());
 
         MetadataHandle const& metadata = handle->get_metadata();
         auto const& sample = metadata.sample();

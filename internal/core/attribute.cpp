@@ -12,14 +12,6 @@
 #include "regularsurface.hpp"
 #include "verticalwindow.hpp"
 
-Horizon::HorizontalIt Horizon::begin() const noexcept (true) {
-    return HorizontalIt(this->m_ptr, this->vsize());
-}
-
-Horizon::HorizontalIt Horizon::end() const noexcept (true) {
-    return HorizontalIt(this->m_ptr + this->hsize() * this->vsize(), this->vsize());
-}
-
 Horizon::Window Horizon::at(std::size_t i) const noexcept (false) {
     std::size_t begin = m_buffer_offsets[i];
     std::size_t end = m_buffer_offsets[i+1];

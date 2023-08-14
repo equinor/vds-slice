@@ -108,8 +108,7 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
     cppapi::horizon(*handle, primary_surface, top_surface, bottom_surface,
                            offsets.data(), NEAREST, 0, size, res.data());
 
-    std::size_t vsize = horizon_size / (primary_surface.size() * sizeof(float));
-    Horizon horizon(res.data(), size, vsize, offsets.data(), primary_surface.fillvalue());
+    Horizon horizon(res.data(), size, offsets.data(), primary_surface.fillvalue());
 
     /* We are checking here points unordered. Meaning that if all points in a
      * row appear somewhere in the horizon, we assume we are good. Alternative
