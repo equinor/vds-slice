@@ -248,6 +248,8 @@ void horizon_buffer_offsets(
     auto xline  = metadata.xline();
     auto sample = metadata.sample();
 
+    VerticalWindow window(sample.stride(), 2, sample.min());
+
     out[0] = 0;
     for (int i = 0; i < reference.size(); ++i) {
         float reference_depth = reference.value(i);
@@ -277,11 +279,7 @@ void horizon_buffer_offsets(
             continue;
         }
 
-        VerticalWindow window(
-            reference_depth - top_depth, bottom_depth - reference_depth,
-            sample.stride(), 2, sample.min()
-        );
-
+        window.move(reference_depth - top_depth, bottom_depth - reference_depth);
         out[i+1] = out[i] + window.size();
     }
 }
@@ -323,16 +321,14 @@ void horizon(
     }
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
+    VerticalWindow window(sample.stride(), 2, sample.min());
     std::size_t cur = 0;
     for (int i = from; i < to; ++i) {
         if(buffer_offsets[i] == buffer_offsets[i+1]) {
             continue;
         }
 
-        VerticalWindow window(
-            reference.value(i) - top.value(i), bottom.value(i) - reference.value(i),
-            sample.stride(), 2, sample.min()
-        );
+        window.move(reference.value(i) - top.value(i), bottom.value(i) - reference.value(i));
 
         double nearest_reference_depth = window.nearest(reference.value(i));
 
@@ -399,8 +395,8 @@ void attributes(
     RegularSurface const& reference,
     RegularSurface const& top,
     RegularSurface const& bottom,
-    VerticalWindow const& src_window,
-    VerticalWindow const& dst_window,
+    VerticalWindow& src_window,
+    VerticalWindow& dst_window,
     enum attribute* attributes,
     std::size_t nattributes,
     std::size_t from,

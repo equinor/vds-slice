@@ -344,19 +344,8 @@ int attribute(
             stepsize = sample.stride();
         }
 
-        /* calculations below are temporary */
-        auto first_nonzero = std::find_if(data_offsets, &data_offsets[hsize + 1],
-                                          [](std::size_t i) { return i!= 0; });
-        auto nonfill_index =  std::distance(data_offsets, first_nonzero - 1);
-        if (nonfill_index >= hsize){
-            nonfill_index = 0;
-        }
-
-        auto above = reference->value(nonfill_index) - top->value(nonfill_index);
-        auto below = bottom->value(nonfill_index) - reference->value(nonfill_index);
-
-        VerticalWindow src_window(above, below, sample.stride(), 2, sample.min());
-        VerticalWindow dst_window(above, below, stepsize);
+        VerticalWindow src_window(sample.stride(), 2, sample.min());
+        VerticalWindow dst_window(stepsize);
 
         void* outs[nattributes];
         for (int i = 0; i < nattributes; ++i) {

@@ -288,8 +288,8 @@ void calc_attributes(
     RegularSurface const& reference,
     RegularSurface const& top,
     RegularSurface const& bottom,
-    VerticalWindow const& src_window,
-    VerticalWindow const& dst_window,
+    VerticalWindow& src_window,
+    VerticalWindow& dst_window,
     std::vector< std::unique_ptr< AttributeMap > >& attrs,
     std::size_t from,
     std::size_t to

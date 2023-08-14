@@ -229,8 +229,8 @@ void calc_attributes(
     RegularSurface const& reference,
     RegularSurface const& top,
     RegularSurface const& bottom,
-    VerticalWindow const& src_window,
-    VerticalWindow const& dst_window,
+    VerticalWindow& src_window,
+    VerticalWindow& dst_window,
     std::vector< std::unique_ptr< AttributeMap > >& attrs,
     std::size_t from,
     std::size_t to
@@ -239,6 +239,12 @@ void calc_attributes(
     AttributeMap::AttributeComputeParams params;
 
     for (std::size_t i = from; i < to; ++i) {
+        auto above = reference.value(i) - top.value(i);
+        auto below = bottom.value(i) - reference.value(i);
+
+        src_window.move(above, below);
+        dst_window.move(above, below);
+
         auto data  = horizon.at(i);
 
         if (data.begin() == data.end()) {

@@ -1,14 +1,10 @@
 #include "verticalwindow.hpp"
 
 VerticalWindow::VerticalWindow(
-    float above,
-    float below,
     float stepsize,
     std::size_t margin,
     float initial_sample_offset
-) : m_above(above)
-  , m_below(below)
-  , m_stepsize(stepsize)
+) : m_stepsize(stepsize)
   , m_margin(margin)
 {
     if (not std::isnan(initial_sample_offset)) {
@@ -71,3 +67,8 @@ float VerticalWindow::at(std::size_t index, float ref_sample) const noexcept (fa
     int distance_from_ref = static_cast< int >(index) - this->nsamples_above();
     return ref_sample + distance_from_ref * this->stepsize();
 }
+
+void VerticalWindow::move(float above, float below) noexcept (true) {
+        this->m_above = above;
+        this->m_below = below;
+    }
