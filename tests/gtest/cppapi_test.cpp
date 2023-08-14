@@ -15,6 +15,30 @@ Plane samples_10_plane = Plane(2, 0, 7.2111, 3.6056, 33.69);
 Plane larger_plane = Plane(-8, -11, 7.2111, 3.6056, 33.69);
 Plane other_plane = Plane(2, 3, 4.472, 2.236, 333.43);
 
+enum Samples10Points
+{
+    i1_x10,
+    i1_x11,
+    i3_x10,
+    i3_x11,
+    i5_x10,
+    i5_x11,
+    nodata
+};
+
+std::map<Samples10Points, std::vector<float>> samples_10_data(float fill)
+{
+    std::map<Samples10Points, std::vector<float>> points;
+    points[i1_x10] = {-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5};
+    points[i1_x11] = {4.5, 3.5, 2.5, 1.5, 0.5, -0.5, -1.5, -2.5, -3.5, -4.5};
+    points[i3_x10] = {25.5, -14.5, -12.5, -10.5, -8.5, -6.5, -4.5, -2.5, -0.5, 25.5};
+    points[i3_x11] = {25.5, 0.5, 2.5, 4.5, 6.5, 8.5, 10.5, 12.5, 14.5, 25.5};
+    points[i5_x10] = {25.5, 4.5, 8.5, 12.5, 16.5, 20.5, 24.5, 20.5, 16.5, 8.5};
+    points[i5_x11] = {25.5, -4.5, -8.5, -12.5, -16.5, -20.5, -24.5, -20.5, -16.5, -8.5};
+    points[nodata] = {fill};
+    return points;
+}
+
 class HorizonTest : public ::testing::Test
 {
   protected:
@@ -32,31 +56,51 @@ class HorizonTest : public ::testing::Test
 
     static constexpr float fill = -999.25;
     std::map<float, std::vector<float>> points;
+
+    void test_successful_horizon_call(
+        RegularSurface const &primary_surface,
+        RegularSurface const &top_surface,
+        RegularSurface const &bottom_surface,
+        const Samples10Points *expected_data
+    ) {
+        auto size = primary_surface.size();
+        std::size_t offset_size = size + 1;
+        std::vector<std::size_t> offsets(offset_size);
+        cppapi::horizon_buffer_offsets(*handle, primary_surface, top_surface, bottom_surface,
+                            offsets.data(), offset_size);
+
+        std::size_t horizon_size = offsets[size];
+        std::vector< float> res(horizon_size);
+        cppapi::horizon(*handle, primary_surface, top_surface, bottom_surface,
+                            offsets.data(), NEAREST, 0, size, res.data());
+
+        Horizon horizon(res.data(), size, offsets.data(), primary_surface.fillvalue());
+
+        /* We are checking here points unordered. Meaning that if all points in a
+        * row appear somewhere in the horizon, we assume we are good. Alternative
+        * is to check all points explicitly, but for this we need to know margin
+        * logic, which is too private to the code. Current solution seems to check
+        * good enough that for unaligned surface data from correct trace is
+        * returned.
+        */
+        auto points = samples_10_data(primary_surface.fillvalue());
+        for (int i = 0; i < size; ++i)
+        {
+            auto expected_position = expected_data[i];
+            if (horizon.at(i).begin() == horizon.at(i).end()) {
+                ASSERT_EQ(expected_position, nodata)
+                    << "Expected no data at position " << i;
+                continue;
+            }
+            for (auto it = horizon.at(i).begin(); it != horizon.at(i).end(); ++it)
+            {
+                ASSERT_THAT(points.at(expected_position), ::testing::Contains(*it))
+                    << "Retrieved value " << *it << " is not expected at position " << i;
+            }
+        }
+    }
 };
 
-enum Samples10Points
-{
-    i1_x10,
-    i1_x11,
-    i3_x10,
-    i3_x11,
-    i5_x10,
-    i5_x11,
-    nodata
-};
-
-std::map<float, std::vector<float>> samples_10_data(float fill)
-{
-    std::map<float, std::vector<float>> points;
-    points[i1_x10] = {-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5};
-    points[i1_x11] = {4.5, 3.5, 2.5, 1.5, 0.5, -0.5, -1.5, -2.5, -3.5, -4.5};
-    points[i3_x10] = {25.5, -14.5, -12.5, -10.5, -8.5, -6.5, -4.5, -2.5, -0.5, 25.5};
-    points[i3_x11] = {25.5, 0.5, 2.5, 4.5, 6.5, 8.5, 10.5, 12.5, 14.5, 25.5};
-    points[i5_x10] = {25.5, 4.5, 8.5, 12.5, 16.5, 20.5, 24.5, 20.5, 16.5, 8.5};
-    points[i5_x11] = {25.5, -4.5, -8.5, -12.5, -16.5, -20.5, -24.5, -20.5, -16.5, -8.5};
-    points[nodata] = {fill};
-    return points;
-}
 
 TEST_F(HorizonTest, DataForUnalignedSurface)
 {
@@ -74,7 +118,7 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
         24, 24, 24, 24, 20, 24
     };
 
-    const std::array<float, size> expected = {
+    const std::array<Samples10Points, size> expected = {
         i1_x11, i3_x11, i3_x11, nodata, nodata, nodata,
         i3_x10, i3_x10, i3_x10, i3_x11, i5_x11, i5_x11,
         nodata, nodata, nodata, nodata, i5_x10, i5_x10,
@@ -98,35 +142,7 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
     RegularSurface bottom_surface =
         RegularSurface(below_data.data(), nrows, ncols, other_plane, fill);
 
-    constexpr std::size_t offset_size = size+1;
-    std::array<std::size_t, offset_size> offsets;
-    cppapi::horizon_buffer_offsets(*handle, primary_surface, top_surface, bottom_surface,
-                           offsets.data(), offset_size);
-
-    std::size_t horizon_size = offsets[size];
-    std::vector< float> res(horizon_size);
-    cppapi::horizon(*handle, primary_surface, top_surface, bottom_surface,
-                           offsets.data(), NEAREST, 0, size, res.data());
-
-    Horizon horizon(res.data(), size, offsets.data(), primary_surface.fillvalue());
-
-    /* We are checking here points unordered. Meaning that if all points in a
-     * row appear somewhere in the horizon, we assume we are good. Alternative
-     * is to check all points explicitly, but for this we need to know margin
-     * logic, which is too private to the code. Current solution seems to check
-     * good enough that for unaligned surface data from correct trace is
-     * returned.
-     */
-    auto points = samples_10_data(fill);
-    for (int i = 0; i < nrows * ncols; ++i)
-    {
-        auto expected_position = expected[i];
-        for (auto it = horizon.at(i).begin(); it != horizon.at(i).end(); ++it)
-        {
-            ASSERT_THAT(points.at(expected_position), ::testing::Contains(*it))
-                << "Retrieved value " << *it << " is not expected at position " << i;
-        }
-    }
+    test_successful_horizon_call(primary_surface, top_surface, bottom_surface, expected.data());
 }
 
 class SurfaceAlignmentTest : public ::testing::Test
