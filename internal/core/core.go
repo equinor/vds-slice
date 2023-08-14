@@ -277,16 +277,16 @@ func toError(status C.int, ctx *C.Context) error {
 	}
 }
 
-type CRegularSurface struct {
+type cRegularSurface struct {
 	cSurface *C.struct_RegularSurface
 	cData    []C.float
 }
 
-func (r *CRegularSurface) get() *C.struct_RegularSurface {
+func (r *cRegularSurface) get() *C.struct_RegularSurface {
 	return r.cSurface
 }
 
-func (r *CRegularSurface) Close() error {
+func (r *cRegularSurface) Close() error {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
 
@@ -325,7 +325,7 @@ func (surface *RegularSurface) toCdata(shift float32) ([]C.float, error){
 	return cdata, nil
 }
 
-func (surface *RegularSurface) toCRegularSurface(cdata []C.float) (CRegularSurface, error) {
+func (surface *RegularSurface) toCRegularSurface(cdata []C.float) (cRegularSurface, error) {
 	nrows := len(surface.Values)
 	ncols := len(surface.Values[0])
 
@@ -349,10 +349,10 @@ func (surface *RegularSurface) toCRegularSurface(cdata []C.float) (CRegularSurfa
 
 	if err := toError(cErr, cCtx); err != nil {
 		C.regular_surface_free(cCtx, cSurface)
-		return CRegularSurface{}, err
+		return cRegularSurface{}, err
 	}
 
-	return CRegularSurface{cSurface: cSurface, cData: cdata}, nil
+	return cRegularSurface{cSurface: cSurface, cData: cdata}, nil
 }
 
 type VDSHandle struct {
@@ -666,9 +666,9 @@ func (v VDSHandle) GetAttributes(
 }
 
 func (v VDSHandle) fetchHorizon(
-	cPrimarySurface CRegularSurface,
-	cTopSurface CRegularSurface,
-	cBottomSurface CRegularSurface,
+	cPrimarySurface cRegularSurface,
+	cTopSurface cRegularSurface,
+	cBottomSurface cRegularSurface,
 	nrows int,
 	ncols int,
 	dataOffset []C.size_t,
@@ -742,9 +742,9 @@ func (v VDSHandle) fetchHorizon(
 }
 
 func (v VDSHandle) calculateAttributes(
-	cPrimarySurface CRegularSurface,
-	cTopSurface CRegularSurface,
-	cBottomSurface CRegularSurface,
+	cPrimarySurface cRegularSurface,
+	cTopSurface cRegularSurface,
+	cBottomSurface cRegularSurface,
 	hsize int,
 	dataOffset []C.size_t,
 	horizon []byte,
