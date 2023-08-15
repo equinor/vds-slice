@@ -264,7 +264,7 @@ func (e *Endpoint) attributes(ctx *gin.Context, request AttributeRequest) {
 		return
 	}
 
-	data, err := handle.GetAttributes(
+	data, err := handle.GetAttributesAlongSurface(
 		request.Surface,
 		request.Above,
 		request.Below,

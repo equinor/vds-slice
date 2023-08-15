@@ -620,7 +620,7 @@ func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	return buf, nil
 }
 
-func (v VDSHandle) GetAttributes(
+func (v VDSHandle) GetAttributesAlongSurface(
 	referenceSurface RegularSurface,
 	above float32,
 	below float32,
