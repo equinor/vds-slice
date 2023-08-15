@@ -1635,6 +1635,52 @@ func TestAttributesSupersampling(t *testing.T) {
 	}
 }
 
+func TestInvalidAboveBelow(t *testing.T) {
+	testcases := []struct {
+		name  string
+		above float32
+		below float32
+	}{
+		{
+			name:  "Bad above",
+			above: -4,
+			below: 1.11,
+		},
+		{
+			name:  "Bad below",
+			above: 0,
+			below: -6.66,
+		},
+	}
+
+	targetAttributes := []string{"min", "samplevalue"}
+	values := [][]float32{{26}}
+	const stepsize = float32(4.0)
+
+	for _, testcase := range testcases {
+		surface := samples10Surface(values)
+		interpolationMethod, _ := GetInterpolationMethod("nearest")
+		handle, _ := NewVDSHandle(samples10)
+		defer handle.Close()
+		_, boundsErr := handle.GetAttributes(
+			surface,
+			testcase.above,
+			testcase.below,
+			stepsize,
+			targetAttributes,
+			interpolationMethod,
+		)
+
+		require.ErrorContainsf(t, boundsErr,
+			"Above and below must be positive",
+			"[%s] Expected above/below %f/%f to throw invalid argument",
+			testcase.name,
+			testcase.above,
+			testcase.below,
+		)
+	}
+}
+
 func TestAttributeMetadata(t *testing.T) {
 	values := [][]float32{
 		{10, 10, 10, 10, 10, 10},

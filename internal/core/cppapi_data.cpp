@@ -221,40 +221,90 @@ void fence(
     return to_response(std::move(data), size, out);
 }
 
-void horizon_size(
+void horizon_buffer_offsets(
     DataHandle& handle,
-    RegularSurface const& surface,
-    float above,
-    float below,
-    std::size_t* out
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
+    std::size_t* out,
+    std::size_t out_size
 ) {
-    if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
-    if (below < 0) throw std::invalid_argument("'below' must be >= 0");
+    if (reference.size() != top.size() or reference.size() != bottom.size()) {
+        throw std::runtime_error("Expected surfaces to be of the same size");
+    }
+
+    if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
+        throw std::runtime_error("Expected surfaces to have the same plane");
+    }
+
+    if (out_size != (reference.size() + 1)) {
+        throw std::runtime_error("out buffer must be the size of surface + 1");
+    }
 
     MetadataHandle const& metadata = handle.get_metadata();
+    auto transform = metadata.coordinate_transformer();
+
+    auto iline  = metadata.iline ();
+    auto xline  = metadata.xline();
     auto sample = metadata.sample();
 
-    VerticalWindow window(above, below, sample.stride(), 2, sample.min());
+    VerticalWindow window(sample.stride(), 2, sample.min());
 
-    std::size_t const nsamples = surface.size() * window.size();
-    *out = handle.samples_buffer_size(nsamples);
+    out[0] = 0;
+    for (int i = 0; i < reference.size(); ++i) {
+        float reference_depth = reference.value(i);
+        float top_depth       = top.value(i);
+        float bottom_depth    = bottom.value(i);
+
+        if (reference_depth == reference.fillvalue() ||
+            top_depth == top.fillvalue() ||
+            bottom_depth == bottom.fillvalue())
+        {
+            out[i+1] = out[i];
+            continue;
+        }
+
+        if (reference_depth < top_depth ||
+            reference_depth > bottom_depth)
+        {
+            throw std::runtime_error(
+                "Planes are not ordered as top <= reference <= bottom");
+        }
+
+        auto const cdp = reference.to_cdp(i);
+        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
+
+        if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
+            out[i+1] = out[i];
+            continue;
+        }
+
+        window.move(reference_depth - top_depth, bottom_depth - reference_depth);
+        out[i+1] = out[i] + window.size();
+    }
 }
 
 
 void horizon(
     DataHandle& handle,
-    RegularSurface const& surface,
-    float above,
-    float below,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
+    std::size_t* buffer_offsets,
     enum interpolation_method interpolation,
     std::size_t from,
     std::size_t to,
     void* out
 ) {
-    if (above < 0) throw std::invalid_argument("'Above' must be >= 0");
-    if (below < 0) throw std::invalid_argument("'below' must be >= 0");
+    if (reference.size() != top.size() or reference.size() != bottom.size()) {
+        throw std::runtime_error("Expected surfaces to be of the same size");
+    }
 
-    if (to > surface.size()){
+    if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
+        throw std::runtime_error("Expected surfaces to have the same plane");
+    }
+
+    if (to > reference.size()){
         throw std::invalid_argument("'to' must be less than surface size");
     }
 
@@ -265,76 +315,42 @@ void horizon(
     auto xline  = metadata.xline();
     auto sample = metadata.sample();
 
-    VerticalWindow window(above, below, sample.stride(), 2, sample.min());
-
-    float const fillvalue = surface.fillvalue();
-
-    /** Missing input samples (marked by fillvalue) and out of bounds samples
-     *
-     * To not overcomplicate things for ourselfs (and the caller) we guarantee
-     * that the output amplitude map is exacty the same dimensions as the input
-     * height map (horizon). That gives us 2 cases to explicitly handle:
-     *
-     * 1) If a sample (region of samples) in the input values is marked as
-     * missing by the fillvalue then the fillvalue is used in that position in
-     * the output array too:
-     *
-     *      input[n][m] == fillvalue => output[n][m] == fillvalue
-     *
-     * 2) If a sample (or region of samples) in the input values is out of
-     * bounds in the horizontal plane, the output sample is populated by the
-     * fillvalue.
-     *
-     * openvds provides no options to handle these cases and to keep the output
-     * buffer aligned with the input we cannot drop samples that satisfy 1) or
-     * 2). Instead we let openvds read a dummy voxel  ({0, 0, 0, 0, 0, 0}) and
-     * keep track of the indices. After openvds is done we copy in the
-     * fillvalue.
-     *
-     * The overhead of this approach is that we overfetch (at most) one one
-     * chunk and we need an extra loop over output array.
-     */
-    std::vector< std::size_t > noval_indicies;
-
-    std::size_t const nsamples = (to - from) * window.size();
+    std::size_t const nsamples = buffer_offsets[to] - buffer_offsets[from];
     if (nsamples == 0){
         return;
     }
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
-    std::size_t i = 0;
-    for (int cell = from; cell < to; cell++) {
-        auto row = cell / surface.ncols();
-        auto col = cell % surface.ncols();
-
-        float depth = surface.value(row, col);
-        if (depth == fillvalue) {
-            noval_indicies.push_back(i);
-            i += window.size();
+    VerticalWindow window(sample.stride(), 2, sample.min());
+    std::size_t cur = 0;
+    for (int i = from; i < to; ++i) {
+        if(buffer_offsets[i] == buffer_offsets[i+1]) {
             continue;
         }
-        
-        depth = window.nearest(depth);
 
-        auto const cdp = surface.to_cdp(row, col);
+        window.move(reference.value(i) - top.value(i), bottom.value(i) - reference.value(i));
 
+        double nearest_reference_depth = window.nearest(reference.value(i));
+
+        auto const cdp = reference.to_cdp(i);
         auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 
-        if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
-            noval_indicies.push_back(i);
-            i += window.size();
-            continue;
-        }
+        double nearest_top_depth    = nearest_reference_depth -
+                                      window.nsamples_above() * window.stepsize();
+        double nearest_bottom_depth = nearest_reference_depth +
+                                      window.nsamples_below() * window.stepsize();
 
-        double top    = depth - window.nsamples_above() * window.stepsize();
-        double bottom = depth + window.nsamples_below() * window.stepsize();
-        if (not sample.inrange(top) or not sample.inrange(bottom)) {
+        if (not sample.inrange(nearest_top_depth) or
+            not sample.inrange(nearest_bottom_depth))
+        {
+            auto row = i / reference.ncols();
+            auto col = i % reference.ncols();
             throw std::runtime_error(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
                 " col:" + std::to_string(col) +
-                ". Request: [" + std::to_string(top) +
-                ", " + std::to_string(bottom) +
+                ". Request: [" + std::to_string(nearest_top_depth) +
+                ", " + std::to_string(nearest_bottom_depth) +
                 "]. Seismic bounds: [" + std::to_string(sample.min())
                 + ", " +std::to_string(sample.max()) + "]"
             );
@@ -343,14 +359,18 @@ void horizon(
         ij[0]  = iline.to_sample_position(ij[0]);
         ij[1]  = xline.to_sample_position(ij[1]);
 
-
-        top    = sample.to_sample_position(top);
+        double top_sample_depth = sample.to_sample_position(nearest_top_depth);
         for (int idx = 0; idx < window.size(); ++idx) {
-            samples[i][  iline.dimension() ] = ij[0];
-            samples[i][  xline.dimension() ] = ij[1];
-            samples[i][ sample.dimension() ] = top + idx;
-            ++i;
+            samples[cur][  iline.dimension() ] = ij[0];
+            samples[cur][  xline.dimension() ] = ij[1];
+            samples[cur][ sample.dimension() ] = top_sample_depth + idx;
+            ++cur;
         }
+    }
+
+    if (cur != nsamples){
+        throw std::runtime_error("calculated nsamples " + std::to_string(nsamples) +
+                                 " and actual samples " + std::to_string(cur) + " differ");
     }
 
     auto const size = handle.samples_buffer_size(nsamples);
@@ -364,49 +384,52 @@ void horizon(
         interpolation
     );
 
-    write_fillvalue(buffer.get(), noval_indicies, window.size(), fillvalue);
-
-    auto offset = from * window.size() * sizeof(float);
+    auto offset = buffer_offsets[from] * sizeof(float);
     std::memcpy((char*)out + offset, buffer.get(), size);
 }
 
 
 void attributes(
-    DataHandle& handle,
     Horizon const& horizon,
-    RegularSurface const& surface,
-    VerticalWindow const& src_window,
-    VerticalWindow const& dst_window,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
+    VerticalWindow& src_window,
+    VerticalWindow& dst_window,
     enum attribute* attributes,
     std::size_t nattributes,
     std::size_t from,
     std::size_t to,
     void** out
 ) {
-    MetadataHandle const& metadata = handle.get_metadata();
-    std::size_t index = dst_window.nsamples_above();
+    if (reference.size() != top.size() or reference.size() != bottom.size()) {
+        throw std::runtime_error("Expected surfaces to be of the same size");
+    }
+
+    if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
+        throw std::runtime_error("Expected surfaces to have the same plane");
+    }
 
     std::size_t size = horizon.mapsize();
-    std::size_t vsize = dst_window.size();
 
     std::vector< std::unique_ptr< AttributeMap > > attrs;
     for (int i = 0; i < nattributes; ++i) {
         void* dst = out[i];
         switch (*attributes) {
-            case VALUE:   { append(attrs,   Value(dst, size, index)   );   break; }
-            case MIN:     { append(attrs,   Min(dst, size)            );   break; }
-            case MAX:     { append(attrs,   Max(dst, size)            );   break; }
-            case MAXABS:  { append(attrs,   MaxAbs(dst, size)         );   break; }
-            case MEAN:    { append(attrs,   Mean(dst, size, vsize)    );   break; }
-            case MEANABS: { append(attrs,   MeanAbs(dst, size, vsize) );   break; }
-            case MEANPOS: { append(attrs,   MeanPos(dst, size)        );   break; }
-            case MEANNEG: { append(attrs,   MeanNeg(dst, size)        );   break; }
-            case MEDIAN:  { append(attrs,   Median(dst, size, vsize)  );   break; }
-            case RMS:     { append(attrs,   Rms(dst, size, vsize)     );   break; }
-            case VAR:     { append(attrs,   Var(dst, size, vsize)     );   break; }
-            case SD:      { append(attrs,   Sd(dst, size, vsize)      );   break; }
-            case SUMPOS:  { append(attrs,   SumPos(dst, size)         );   break; }
-            case SUMNEG:  { append(attrs,   SumNeg(dst, size)         );   break; }
+            case VALUE:   { append(attrs,   Value(dst, size)     );   break; }
+            case MIN:     { append(attrs,   Min(dst, size)       );   break; }
+            case MAX:     { append(attrs,   Max(dst, size)       );   break; }
+            case MAXABS:  { append(attrs,   MaxAbs(dst, size)    );   break; }
+            case MEAN:    { append(attrs,   Mean(dst, size)      );   break; }
+            case MEANABS: { append(attrs,   MeanAbs(dst, size)   );   break; }
+            case MEANPOS: { append(attrs,   MeanPos(dst, size)   );   break; }
+            case MEANNEG: { append(attrs,   MeanNeg(dst, size)   );   break; }
+            case MEDIAN:  { append(attrs,   Median(dst, size)    );   break; }
+            case RMS:     { append(attrs,   Rms(dst, size)       );   break; }
+            case VAR:     { append(attrs,   Var(dst, size)       );   break; }
+            case SD:      { append(attrs,   Sd(dst, size)        );   break; }
+            case SUMPOS:  { append(attrs,   SumPos(dst, size)    );   break; }
+            case SUMNEG:  { append(attrs,   SumNeg(dst, size)    );   break; }
 
             default:
                 throw std::runtime_error("Attribute not implemented");
@@ -414,7 +437,7 @@ void attributes(
         ++attributes;
     }
 
-    calc_attributes(horizon, surface, src_window, dst_window, attrs, from, to);
+    calc_attributes(horizon, reference, top, bottom, src_window, dst_window, attrs, from, to);
 }
 
 namespace {

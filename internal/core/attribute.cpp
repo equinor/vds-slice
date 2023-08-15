@@ -12,17 +12,9 @@
 #include "regularsurface.hpp"
 #include "verticalwindow.hpp"
 
-Horizon::HorizontalIt Horizon::begin() const noexcept (true) {
-    return HorizontalIt(this->m_ptr, this->vsize());
-}
-
-Horizon::HorizontalIt Horizon::end() const noexcept (true) {
-    return HorizontalIt(this->m_ptr + this->hsize() * this->vsize(), this->vsize());
-}
-
 Horizon::Window Horizon::at(std::size_t i) const noexcept (false) {
-    std::size_t begin = i * this->vsize();
-    std::size_t end = begin + this->vsize();
+    std::size_t begin = m_buffer_offsets[i];
+    std::size_t end = m_buffer_offsets[i+1];
 
     return {
         Horizon::VerticalIt(this->m_ptr + begin),
@@ -30,33 +22,42 @@ Horizon::Window Horizon::at(std::size_t i) const noexcept (false) {
     };
 }
 
+void AttributeMap::AttributeComputeParams::update(
+    InputIt begin,
+    InputIt end,
+    std::size_t size,
+    std::size_t reference_index
+) noexcept (true) {
+    this->begin = begin;
+    this->end = end;
+    this->size = size;
+    this->reference_index = reference_index;
+}
+
 float Value::compute(
-    AttributeMap::InputIt begin,
-    AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
-    std::advance(begin, this->idx);
-    return *begin;
+    auto ptr = params.begin;
+    std::advance(ptr, params.reference_index);
+    return *ptr;
 }
 
 float Min::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
-    return *std::min_element(begin, end);
+    return *std::min_element(params.begin, params.end);
 }
 
 float Max::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
-    return *std::max_element(begin, end);
+    return *std::max_element(params.begin, params.end);
 }
 
 float MaxAbs::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
-    auto max = *std::max_element(begin, end,
+    auto max = *std::max_element(params.begin, params.end,
     [](const double& a, const double& b) { 
             return std::abs(a) < std::abs(b); 
         }
@@ -65,55 +66,54 @@ float MaxAbs::compute(
 }
 
 float Mean::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
-    double sum = std::accumulate(begin, end, 0.0);
-    return sum / this->vsize;
+    double sum = std::accumulate(params.begin, params.end, 0.0);
+    return sum / params.size;
 }
 
 float MeanAbs::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
-    double sum = std::accumulate(begin, end, 0.0,
+    double sum = std::accumulate(params.begin, params.end, 0.0,
         [](double acc, double x) { return acc + std::abs(x); });
-    return sum / this->vsize;
+    return sum / params.size;
 }
 
 float MeanPos::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
     int count = 0;
-    double sum = std::accumulate(begin, end, 0.0, [&](double acc, double x) {
-        if (x > 0) {
-            count ++;
-            return acc + x;
+    double sum = std::accumulate(params.begin, params.end, 0.0,
+        [&](double acc, double x) {
+            if (x > 0) {
+                count ++;
+                return acc + x;
+            }
+            return acc;
         }
-        return acc;
-    });
+    );
     return count > 0 ? sum / count : 0;
 }
 
 float MeanNeg::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
     int count = 0;
-    double sum = std::accumulate(begin, end, 0.0, [&](double acc, double x) {
-        if (x < 0) {
-            count ++;
-            return acc + x;
+    double sum = std::accumulate(params.begin, params.end, 0.0,
+        [&](double acc, double x) {
+            if (x < 0) {
+                count ++;
+                return acc + x;
+            }
+            return acc;
         }
-        return acc;
-    });
+    );
     return count > 0 ? sum / count : 0;
 }
 
 float Median::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
     /*
     The std::nth_element function sets the middle element of a vector in such a
@@ -124,10 +124,10 @@ float Median::compute(
     std::max_element to obtain the largest element before the middle element to
     compute the average.
     */
-    auto temp = std::vector<double>(begin, end);
-    const auto middle_right = temp.begin() + vsize / 2;
+    auto temp = std::vector<double>(params.begin, params.end);
+    const auto middle_right = temp.begin() + params.size / 2;
     std::nth_element(temp.begin(), middle_right, temp.end());
-    if (vsize % 2 == 0) {
+    if (params.size % 2 == 0) {
         const auto max_left = std::max_element(temp.begin(), middle_right);
         return (*max_left + *middle_right) / 2;
     }
@@ -137,65 +137,58 @@ float Median::compute(
 }
 
 float Rms::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
-    float sum = std::accumulate(begin, end, 0.0,
+    float sum = std::accumulate(params.begin, params.end, 0.0,
         [](double a, double b) {
             return a + std::pow(b, 2);
         }
     );
-    return std::sqrt(sum / this->vsize);
+    return std::sqrt(sum / params.size);
 }
 
 namespace {
 
 double variance(
-    const  AttributeMap::InputIt begin,
-    const  AttributeMap::InputIt end,
-    std::size_t vsize
+    AttributeMap::AttributeComputeParams const & params
 ){
-    double sum = std::accumulate(begin, end, 0.0);
-    double mean = sum / vsize;
-    double stdSum = std::accumulate(begin, end, 0.0,
+    double sum = std::accumulate(params.begin, params.end, 0.0);
+    double mean = sum / params.size;
+    double stdSum = std::accumulate(params.begin, params.end, 0.0,
         [&](double a, double b){ return a + std::pow(b - mean, 2); }
     );
-    return stdSum / vsize;
+    return stdSum / params.size;
 }
 
 } // namespace
 
 float Var::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
-    return variance(begin, end, vsize);
+    return variance(params);
 }
 
 float Sd::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
-    return std::sqrt(variance(begin, end, vsize));
+    return std::sqrt(variance(params));
 }
 
 float SumPos::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
     double sum = 0.0;
-    std::for_each(begin, end, [&](double x) {
+    std::for_each(params.begin, params.end, [&](double x) {
          if (x > 0) { sum += x; }
     });
     return sum; 
 }
 
 float SumNeg::compute(
-    const AttributeMap::InputIt begin,
-    const AttributeMap::InputIt end
+    AttributeComputeParams const & params
 ) noexcept (false) {
     double sum = 0.0;
-    std::for_each(begin, end, [&](double x) {
+    std::for_each(params.begin, params.end, [&](double x) {
          if (x < 0) { sum += x; }
     });
     return sum;
@@ -215,31 +208,38 @@ template< typename InputIt >
 void compute_all(
     std::vector< std::unique_ptr< AttributeMap > >& attributes,
     std::size_t pos,
-    InputIt begin,
-    InputIt end
+    AttributeMap::AttributeComputeParams & params
 ) {
     for (auto& attr : attributes) {
-        auto value = attr->compute(begin, end);
+        auto value = attr->compute(params);
         attr->write(value, pos);
     }
 }
 
 void calc_attributes(
     Horizon const& horizon,
-    RegularSurface const& surface,
-    VerticalWindow const& src_window,
-    VerticalWindow const& dst_window,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
+    VerticalWindow& src_window,
+    VerticalWindow& dst_window,
     std::vector< std::unique_ptr< AttributeMap > >& attrs,
     std::size_t from,
     std::size_t to
 ) noexcept (false) {
     auto fill = horizon.fillvalue();
+    AttributeMap::AttributeComputeParams params;
 
     for (std::size_t i = from; i < to; ++i) {
-        auto depth = surface.value(i);
+        auto above = reference.value(i) - top.value(i);
+        auto below = bottom.value(i) - reference.value(i);
+
+        src_window.move(above, below);
+        dst_window.move(above, below);
+
         auto data  = horizon.at(i);
 
-        if (*data.begin() == fill) {
+        if (data.begin() == data.end()) {
             fill_all(attrs, fill, i);
             continue;
         }
@@ -256,9 +256,16 @@ void calc_attributes(
             src_window,
             dst_buffer,
             dst_window,
-            depth
+            reference.value(i)
+        );
+
+        params.update(
+            dst_buffer.begin(),
+            dst_buffer.end(),
+            dst_window.size(),
+            dst_window.nsamples_above()
         );
         
-        compute_all(attrs, i, dst_buffer.begin(), dst_buffer.end());
+        compute_all<double>(attrs, i, params);
     }
 }

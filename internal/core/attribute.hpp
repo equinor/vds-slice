@@ -32,7 +32,7 @@
  * Note that the above and below window is just and example of how to think
  * about this data structure. This class, however, doesn't care about the
  * window definition in that much detail. It only needs to know the size of the
- * full vertical window. I.e. how many samples there are at every horizontal
+ * current vertical window. I.e. how many samples there are at each horizontal
  * position.
  *
  * As the illustration show, the windowed horizon is a 3D array. It's assumed
@@ -85,17 +85,13 @@ private:
 public:
     Horizon(
         const float* data,
-        std::size_t hsize,
-        std::size_t vsize,
-        float       fillvalue
-    ) : m_ptr(data), m_hsize(hsize), m_vsize(vsize), m_fillvalue(fillvalue)
+        std::size_t  hsize,
+        std::size_t* buffer_offsets,
+        float        fillvalue
+    ) : m_ptr(data), m_hsize(hsize), m_buffer_offsets(buffer_offsets), m_fillvalue(fillvalue)
     {}
 
-    using HorizontalIt = StridedIterator;
     using VerticalIt   = VerticalIterator;
-
-    HorizontalIt begin() const noexcept (true);
-    HorizontalIt end()   const noexcept (true);
 
     struct Window {
         Window(VerticalIt begin, VerticalIt end) : m_begin(begin), m_end(end) {}
@@ -106,9 +102,6 @@ public:
         VerticalIt m_begin;
         VerticalIt m_end;
     };
-
-    /* Vertical size of the horizon*/
-    std::size_t vsize() const noexcept (true) { return this->m_vsize; };
 
     /* Number of points in the horizontal plane */
     std::size_t hsize() const noexcept (true) { return this->m_hsize; };
@@ -123,7 +116,7 @@ public:
 private:
     const float* m_ptr;
     std::size_t  m_hsize;
-    std::size_t  m_vsize;
+    std::size_t* m_buffer_offsets;
     float        m_fillvalue;
 };
 
@@ -145,7 +138,21 @@ public:
      */
     using InputIt = std::vector< double >::iterator;
 
-    virtual float compute(InputIt begin, InputIt end) noexcept (false) = 0;
+    struct AttributeComputeParams{
+        InputIt begin;
+        InputIt end;
+        std::size_t size;
+        std::size_t reference_index;
+
+        void update(
+            InputIt begin,
+            InputIt end,
+            std::size_t size,
+            std::size_t reference_index
+        ) noexcept (true) ;
+    };
+
+    virtual float compute(AttributeComputeParams const & params) noexcept (false) = 0;
 
     void write(float value, std::size_t index) {
         std::size_t offset = index * sizeof(float);
@@ -164,14 +171,9 @@ private:
 };
 
 struct Value final : public AttributeMap {
-    Value(void* dst, std::size_t size, std::size_t idx)
-        : AttributeMap(dst, size), idx(idx)
-    {}
+    Value(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
-
-private:
-    std::size_t idx;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 
@@ -179,88 +181,63 @@ class Min final : public AttributeMap {
 public:
     Min(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class Max final : public AttributeMap {
 public:
     Max(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class MaxAbs final : public AttributeMap {
 public:
     MaxAbs(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class Mean final : public AttributeMap {
 public:
-    Mean(void* dst, std::size_t size, std::size_t vsize)
-        : AttributeMap(dst, size), vsize(vsize)
-    {}
+    Mean(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
-
-private:
-    /** vsize is essentially std::distance(begin, end), but that has a linear
-     * complexity and would require compute() to find the same vsize for every
-     * invocation. Hence it's much more efficient to store the value
-     * explicitly.
-     */
-    std::size_t vsize;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class MeanAbs final : public AttributeMap {
 public:
-    MeanAbs(void* dst, std::size_t size, std::size_t vsize)
-        : AttributeMap(dst, size), vsize(vsize)
-    {}
+    MeanAbs(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
-
-private:
-    std::size_t vsize;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class MeanPos final : public AttributeMap {
 public:
     MeanPos(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class MeanNeg final : public AttributeMap {
 public:
     MeanNeg(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class Median final : public AttributeMap {
 public:
-    Median(void* dst, std::size_t size, std::size_t vsize)
-        : AttributeMap(dst, size), vsize(vsize)
-    {}
+    Median(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
-
-private:
-    std::size_t vsize;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class Rms final : public AttributeMap {
 public:
-    Rms(void* dst, std::size_t size, std::size_t vsize)
-        : AttributeMap(dst, size), vsize(vsize)
-    {}
+    Rms(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
-
-private:
-    std::size_t vsize;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 /* Calculated the population variance as we are interested in variance strictly
@@ -268,14 +245,9 @@ private:
  */
 class Var final : public AttributeMap {
 public:
-    Var(void* dst, std::size_t size, std::size_t vsize)
-        : AttributeMap(dst, size), vsize(vsize)
-    {}
+    Var(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
-
-private:
-    std::size_t vsize;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 /* Calculated the population standard deviation as we are interested in
@@ -283,35 +255,32 @@ private:
  */
 class Sd final : public AttributeMap {
 public:
-    Sd(void* dst, std::size_t size, std::size_t vsize)
-        : AttributeMap(dst, size), vsize(vsize)
-    {}
+    Sd(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
-
-private:
-    std::size_t vsize;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class SumPos final : public AttributeMap {
 public:
     SumPos(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 class SumNeg final : public AttributeMap {
 public:
     SumNeg(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(InputIt begin, InputIt end) noexcept (false) override;
+    float compute(AttributeComputeParams const & params) noexcept (false) override;
 };
 
 void calc_attributes(
     Horizon const& horizon,
-    RegularSurface const& surface,
-    VerticalWindow const& src_window,
-    VerticalWindow const& dst_window,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
+    VerticalWindow& src_window,
+    VerticalWindow& dst_window,
     std::vector< std::unique_ptr< AttributeMap > >& attrs,
     std::size_t from,
     std::size_t to

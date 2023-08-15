@@ -277,16 +277,16 @@ func toError(status C.int, ctx *C.Context) error {
 	}
 }
 
-type CRegularSurface struct {
+type cRegularSurface struct {
 	cSurface *C.struct_RegularSurface
 	cData    []C.float
 }
 
-func (r *CRegularSurface) get() *C.struct_RegularSurface {
+func (r *cRegularSurface) get() *C.struct_RegularSurface {
 	return r.cSurface
 }
 
-func (r *CRegularSurface) Close() error {
+func (r *cRegularSurface) Close() error {
 	var cCtx = C.context_new()
 	defer C.context_free(cCtx)
 
@@ -298,28 +298,39 @@ func (r *CRegularSurface) Close() error {
 	return nil
 }
 
-func (surface *RegularSurface) ToCRegularSurface() (CRegularSurface, error) {
-	var cCtx = C.context_new()
-	defer C.context_free(cCtx)
-
+func (surface *RegularSurface) toCdata(shift float32) ([]C.float, error){
 	nrows := len(surface.Values)
 	ncols := len(surface.Values[0])
 
 	cdata := make([]C.float, nrows*ncols)
-	for i := range surface.Values {
-		if len(surface.Values[i]) != ncols {
+
+	for i, row := range surface.Values {
+		if len(row) != ncols {
 			msg := fmt.Sprintf(
 				"Surface rows are not of the same length. "+
 					"Row 0 has %d elements. Row %d has %d elements",
-				ncols, i, len(surface.Values[i]),
+				ncols, i, len(row),
 			)
-			return CRegularSurface{}, NewInvalidArgument(msg)
+			return nil, NewInvalidArgument(msg)
 		}
 
-		for j := range surface.Values[i] {
-			cdata[i*ncols+j] = C.float(surface.Values[i][j])
+		for j, value := range row {
+			if value == *surface.FillValue {
+				cdata[i*ncols+j] = C.float(value)
+			} else {
+				cdata[i*ncols+j] = C.float(value + shift)
+			}
 		}
 	}
+	return cdata, nil
+}
+
+func (surface *RegularSurface) toCRegularSurface(cdata []C.float) (cRegularSurface, error) {
+	nrows := len(surface.Values)
+	ncols := len(surface.Values[0])
+
+	var cCtx = C.context_new()
+	defer C.context_free(cCtx)
 
 	var cSurface *C.struct_RegularSurface
 	cErr := C.regular_surface_new(
@@ -338,10 +349,10 @@ func (surface *RegularSurface) ToCRegularSurface() (CRegularSurface, error) {
 
 	if err := toError(cErr, cCtx); err != nil {
 		C.regular_surface_free(cCtx, cSurface)
-		return CRegularSurface{}, err
+		return cRegularSurface{}, err
 	}
 
-	return CRegularSurface{cSurface: cSurface, cData: cdata}, nil
+	return cRegularSurface{cSurface: cSurface, cData: cdata}, nil
 }
 
 type VDSHandle struct {
@@ -539,7 +550,7 @@ func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 }
 
 func (v VDSHandle) GetAttributes(
-	surface RegularSurface,
+	primarySurface RegularSurface,
 	above float32,
 	below float32,
 	stepsize float32,
@@ -555,8 +566,17 @@ func (v VDSHandle) GetAttributes(
 		targetAttributes = append(targetAttributes, id)
 	}
 
-	var nrows = len(surface.Values)
-	var ncols = len(surface.Values[0])
+	if above < 0 || below < 0 {
+		msg := fmt.Sprintf(
+			"Above and below must be positive. "+
+				"Above was %f, below was %f",
+			above, below,
+		)
+		return nil, NewInvalidArgument(msg)
+	}
+
+	var nrows = len(primarySurface.Values)
+	var ncols = len(primarySurface.Values[0])
 	var hsize = nrows * ncols
 
 	cAttributes := make([]C.enum_attribute, len(targetAttributes))
@@ -564,62 +584,100 @@ func (v VDSHandle) GetAttributes(
 		cAttributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
-	cSurface, err := surface.ToCRegularSurface()
+	cPrimarySurfaceData, err := primarySurface.toCdata(0)
 	if err != nil {
 		return nil, err
 	}
-	defer cSurface.Close()
 
-	var horizonSize C.size_t
+	cPrimarySurface, err := primarySurface.toCRegularSurface(cPrimarySurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cPrimarySurface.Close()
 
-	cerr := C.horizon_size(
+	cTopSurfaceData, err := primarySurface.toCdata(-above)
+	if err != nil {
+		return nil, err
+	}
+
+	cTopSurface, err := primarySurface.toCRegularSurface(cTopSurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cTopSurface.Close()
+
+	cBottomSurfaceData, err := primarySurface.toCdata(below)
+	if err != nil {
+		return nil, err
+	}
+	cBottomSurface, err := primarySurface.toCRegularSurface(cBottomSurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cBottomSurface.Close()
+
+	dataOffsetSize := hsize + 1
+	dataOffset := make([]C.size_t, dataOffsetSize)
+
+	cerr := C.horizon_buffer_offsets(
 		v.context(),
 		v.Handle(),
-		cSurface.get(),
-		C.float(above),
-		C.float(below),
-		&horizonSize,
+		cPrimarySurface.get(),
+		cTopSurface.get(),
+		cBottomSurface.get(),
+		&dataOffset[0],
+		C.size_t(dataOffsetSize),
 	)
 	if err := v.Error(cerr); err != nil {
 		return nil, err
 	}
 
+	horizonBufferSize := dataOffset[hsize] * 4 //size of float
+	if horizonBufferSize == 0 {
+		//empty array can't be referenced
+		horizonBufferSize = 1
+	}
+
 	horizon, err := v.fetchHorizon(
-		cSurface,
+		cPrimarySurface,
+		cTopSurface,
+		cBottomSurface,
 		nrows,
 		ncols,
-		above,
-		below,
+		dataOffset,
 		interpolation,
-		horizonSize,
+		C.size_t(horizonBufferSize),
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	return v.calculateAttributes(
-		cSurface,
+		cPrimarySurface,
+		cTopSurface,
+		cBottomSurface,
 		hsize,
+		dataOffset,
 		horizon,
-		horizonSize,
+		C.size_t(horizonBufferSize),
 		cAttributes,
-		above,
-		below,
 		stepsize,
 	)
 }
 
 func (v VDSHandle) fetchHorizon(
-	cSurface CRegularSurface,
+	cPrimarySurface cRegularSurface,
+	cTopSurface cRegularSurface,
+	cBottomSurface cRegularSurface,
 	nrows int,
 	ncols int,
-	above float32,
-	below float32,
+	dataOffset []C.size_t,
 	interpolation int,
-	horizonSize C.size_t,
+	horizonBufferSize C.size_t,
 ) ([]byte, error) {
-	buffer := make([]byte, horizonSize)
 	hsize := nrows * ncols
+	buffer := make([]byte, horizonBufferSize)
+
 	// note that it is possible to hit go's own goroutines limit
 	// but we do not deal with it here
 
@@ -649,9 +707,10 @@ func (v VDSHandle) fetchHorizon(
 			cerr := C.horizon(
 				cCtx,
 				v.Handle(),
-				cSurface.get(),
-				C.float(above),
-				C.float(below),
+				cPrimarySurface.get(),
+				cTopSurface.get(),
+				cBottomSurface.get(),
+				&dataOffset[0],
 				C.enum_interpolation_method(interpolation),
 				C.size_t(from),
 				C.size_t(to),
@@ -683,13 +742,14 @@ func (v VDSHandle) fetchHorizon(
 }
 
 func (v VDSHandle) calculateAttributes(
-	cSurface CRegularSurface,
+	cPrimarySurface cRegularSurface,
+	cTopSurface cRegularSurface,
+	cBottomSurface cRegularSurface,
 	hsize int,
+	dataOffset []C.size_t,
 	horizon []byte,
 	horizonSize C.size_t,
 	cAttributes []uint32,
-	above float32,
-	below float32,
 	stepsize float32,
 ) ([][]byte, error) {
 	nAttributes := len(cAttributes)
@@ -717,13 +777,14 @@ func (v VDSHandle) calculateAttributes(
 			cErr := C.attribute(
 				cCtx,
 				v.Handle(),
-				cSurface.get(),
+				cPrimarySurface.get(),
+				cTopSurface.get(),
+				cBottomSurface.get(),
+				&dataOffset[0],
 				unsafe.Pointer(&horizon[0]),
 				horizonSize,
 				&cAttributes[0],
 				C.size_t(nAttributes),
-				C.float(above),
-				C.float(below),
 				C.float(stepsize),
 				C.size_t(from),
 				C.size_t(to),
