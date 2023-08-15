@@ -25,7 +25,7 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 				Lineno:    0, //side-effect assurance that 0 is accepted
 				Sas:       "n/a",
 				Bounds: []testBound{
-					{ Direction: "inline", Lower: 1, Upper: 3 },
+					{Direction: "inline", Lower: 1, Upper: 3},
 				},
 			},
 		},
@@ -41,7 +41,7 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 				Lineno:    10,
 				Sas:       "n/a",
 				Bounds: []testBound{
-					{ Direction: "inline", Lower: 1, Upper: 3 },
+					{Direction: "inline", Lower: 1, Upper: 3},
 				},
 			},
 		},
@@ -145,8 +145,8 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				name:   "Incomplete bounds parameters POST Request",
 				method: http.MethodPost,
 				jsonRequest: "{\"vds\":\"" + well_known +
-				"\", \"lineno\":1, \"direction\": \"i\", \"sas\": \"n/a\", " +
-				"\"bounds\": [{\"Upper\": 2 }]}",
+					"\", \"lineno\":1, \"direction\": \"i\", \"sas\": \"n/a\", " +
+					"\"bounds\": [{\"Upper\": 2 }]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for 'Direction'",
 			},
@@ -267,7 +267,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters GET request",
 				method: http.MethodGet,
-				jsonRequest: "{\"vds\":\"" + well_known  +
+				jsonRequest: "{\"vds\":\"" + well_known +
 					"\", \"coordinateSystem\":\"ilxl\"," +
 					"\"fillValue\": -999.25," +
 					"\"coordinates\":[[0, 0]]}",
@@ -280,7 +280,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters POST Request",
 				method: http.MethodPost,
-				jsonRequest: "{\"vds\":\"" + well_known  +
+				jsonRequest: "{\"vds\":\"" + well_known +
 					"\", \"coordinateSystem\":\"ilxl\"," +
 					"\"fillValue\": -999.25," +
 					"\"sas\": \"n/a\"}",

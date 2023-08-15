@@ -242,13 +242,13 @@ func TestSliceInvalidAxis(t *testing.T) {
 
 func TestSliceBounds(t *testing.T) {
 	newBound := func(direction string, lower, upper int) Bound {
-		return Bound{ Direction: &direction, Lower: &lower, Upper: &upper }
+		return Bound{Direction: &direction, Lower: &lower, Upper: &upper}
 	}
 	newAxis := func(
 		annotation string,
-		min        float64,
-		max        float64,
-		samples    int,
+		min float64,
+		max float64,
+		samples int,
 	) Axis {
 		unit := "ms"
 		anno := strings.ToLower(annotation)
@@ -265,22 +265,22 @@ func TestSliceBounds(t *testing.T) {
 		}
 	}
 
-	testCases := []struct{
+	testCases := []struct {
 		name          string
 		direction     string
 		lineno        int
 		bounds        []Bound
 		expectedSlice []float32
 		expectedErr   error
-		expectedShape  []int
-		expectedXAxis  Axis
-		expectedYAxis  Axis
-		expectedGeo    [][]float64
-	} {
+		expectedShape []int
+		expectedXAxis Axis
+		expectedYAxis Axis
+		expectedGeo   [][]float64
+	}{
 		{
-			name: "Constraint in slice dir is ignored - same coordinate system",
+			name:      "Constraint in slice dir is ignored - same coordinate system",
 			direction: "i",
-			lineno: 1,
+			lineno:    1,
 			bounds: []Bound{
 				newBound("i", 0, 1),
 			},
@@ -291,12 +291,12 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{2, 4},
 			expectedXAxis: newAxis("Sample", 4, 16, 4),
 			expectedYAxis: newAxis("Crossline", 10, 11, 2),
-			expectedGeo:   [][]float64{ {8, 4}, {6, 7} },
+			expectedGeo:   [][]float64{{8, 4}, {6, 7}},
 		},
 		{
-			name: "Constraint in slice dir is ignored - different coordinate system",
+			name:      "Constraint in slice dir is ignored - different coordinate system",
 			direction: "crossline",
-			lineno: 10,
+			lineno:    10,
 			bounds: []Bound{
 				newBound("j", 0, 1),
 			},
@@ -308,15 +308,15 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{3, 4},
 			expectedXAxis: newAxis("Sample", 4, 16, 4),
 			expectedYAxis: newAxis("Inline", 1, 5, 3),
-			expectedGeo:   [][]float64{ {2, 0}, {14, 8} },
+			expectedGeo:   [][]float64{{2, 0}, {14, 8}},
 		},
 		{
-			name: "Multiple constraints in slice dir are all ignored",
+			name:      "Multiple constraints in slice dir are all ignored",
 			direction: "time",
-			lineno: 4,
+			lineno:    4,
 			bounds: []Bound{
 				newBound("time", 8, 12),
-				newBound("k",    0, 1),
+				newBound("k", 0, 1),
 			},
 			expectedSlice: []float32{
 				100, 104,
@@ -326,12 +326,12 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{3, 2},
 			expectedXAxis: newAxis("Crossline", 10, 11, 2),
 			expectedYAxis: newAxis("Inline", 1, 5, 3),
-			expectedGeo:   [][]float64{ {2, 0}, {14, 8}, {12, 11}, {0, 3} },
+			expectedGeo:   [][]float64{{2, 0}, {14, 8}, {12, 11}, {0, 3}},
 		},
 		{
-			name: "Single constraint - same coordinate system",
+			name:      "Single constraint - same coordinate system",
 			direction: "inline",
-			lineno: 3,
+			lineno:    3,
 			bounds: []Bound{
 				newBound("crossline", 10, 10),
 			},
@@ -341,12 +341,12 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{1, 4},
 			expectedXAxis: newAxis("Sample", 4, 16, 4),
 			expectedYAxis: newAxis("Crossline", 10, 10, 1),
-			expectedGeo:   [][]float64{ {8, 4}, {8, 4} },
+			expectedGeo:   [][]float64{{8, 4}, {8, 4}},
 		},
 		{
-			name: "Single constraint - different coordinate system",
+			name:      "Single constraint - different coordinate system",
 			direction: "sample",
-			lineno: 4,
+			lineno:    4,
 			bounds: []Bound{
 				newBound("i", 0, 1),
 			},
@@ -357,12 +357,12 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{2, 2},
 			expectedXAxis: newAxis("Crossline", 10, 11, 2),
 			expectedYAxis: newAxis("Inline", 1, 3, 2),
-			expectedGeo:   [][]float64{ {2, 0}, {8, 4}, {6, 7}, {0, 3} },
+			expectedGeo:   [][]float64{{2, 0}, {8, 4}, {6, 7}, {0, 3}},
 		},
 		{
-			name: "Two constraints - same coordinate system",
+			name:      "Two constraints - same coordinate system",
 			direction: "k",
-			lineno: 0,
+			lineno:    0,
 			bounds: []Bound{
 				newBound("i", 0, 1),
 				newBound("j", 0, 0),
@@ -374,12 +374,12 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{2, 1},
 			expectedXAxis: newAxis("Crossline", 10, 10, 1),
 			expectedYAxis: newAxis("Inline", 1, 3, 2),
-			expectedGeo:   [][]float64{ {2, 0}, {8, 4}, {8, 4}, {2, 0} },
+			expectedGeo:   [][]float64{{2, 0}, {8, 4}, {8, 4}, {2, 0}},
 		},
 		{
-			name: "Two constraints - different coordinate system",
+			name:      "Two constraints - different coordinate system",
 			direction: "j",
-			lineno: 0,
+			lineno:    0,
 			bounds: []Bound{
 				newBound("inline", 1, 3),
 				newBound("k", 1, 2),
@@ -391,15 +391,15 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{2, 2},
 			expectedXAxis: newAxis("Sample", 8, 12, 2),
 			expectedYAxis: newAxis("Inline", 1, 3, 2),
-			expectedGeo:   [][]float64{ {2, 0}, {8, 4} },
+			expectedGeo:   [][]float64{{2, 0}, {8, 4}},
 		},
 		{
-			name: "Horizonal bounds for full axis range is the same as no bound",
+			name:      "Horizonal bounds for full axis range is the same as no bound",
 			direction: "time",
-			lineno: 12,
+			lineno:    12,
 			bounds: []Bound{
 				newBound("crossline", 10, 11),
-				newBound("i",         0,  2),
+				newBound("i", 0, 2),
 			},
 			expectedSlice: []float32{
 				102, 106,
@@ -409,12 +409,12 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{3, 2},
 			expectedXAxis: newAxis("Crossline", 10, 11, 2),
 			expectedYAxis: newAxis("Inline", 1, 5, 3),
-			expectedGeo:   [][]float64{ {2, 0}, {14, 8}, {12, 11}, {0, 3} },
+			expectedGeo:   [][]float64{{2, 0}, {14, 8}, {12, 11}, {0, 3}},
 		},
 		{
-			name: "Vertical bounds for full axis range is the same as no bound",
+			name:      "Vertical bounds for full axis range is the same as no bound",
 			direction: "inline",
-			lineno: 5,
+			lineno:    5,
 			bounds: []Bound{
 				newBound("time", 4, 16),
 			},
@@ -425,14 +425,14 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{2, 4},
 			expectedXAxis: newAxis("Sample", 4, 16, 4),
 			expectedYAxis: newAxis("Crossline", 10, 11, 2),
-			expectedGeo:   [][]float64{ {14, 8}, {12, 11} },
+			expectedGeo:   [][]float64{{14, 8}, {12, 11}},
 		},
 		{
-			name: "The last bound takes precedence",
+			name:      "The last bound takes precedence",
 			direction: "inline",
-			lineno: 5,
+			lineno:    5,
 			bounds: []Bound{
-				newBound("time", 4,  8),
+				newBound("time", 4, 8),
 				newBound("time", 12, 16),
 			},
 			expectedSlice: []float32{
@@ -442,27 +442,27 @@ func TestSliceBounds(t *testing.T) {
 			expectedShape: []int{2, 2},
 			expectedXAxis: newAxis("Sample", 12, 16, 2),
 			expectedYAxis: newAxis("Crossline", 10, 11, 2),
-			expectedGeo:   [][]float64{ {14, 8}, {12, 11} },
+			expectedGeo:   [][]float64{{14, 8}, {12, 11}},
 		},
 		{
-			name: "Out-Of-Bounds bounds errors",
+			name:      "Out-Of-Bounds bounds errors",
 			direction: "inline",
-			lineno: 5,
+			lineno:    5,
 			bounds: []Bound{
-				newBound("time", 8,  20),
+				newBound("time", 8, 20),
 			},
 			expectedSlice: []float32{},
-			expectedErr: NewInvalidArgument(""),
+			expectedErr:   NewInvalidArgument(""),
 		},
 		{
-			name: "Incorrect vertical domain",
+			name:      "Incorrect vertical domain",
 			direction: "inline",
-			lineno: 5,
+			lineno:    5,
 			bounds: []Bound{
-				newBound("depth", 8,  20),
+				newBound("depth", 8, 20),
 			},
 			expectedSlice: []float32{},
-			expectedErr: NewInvalidArgument(""),
+			expectedErr:   NewInvalidArgument(""),
 		},
 	}
 
@@ -845,34 +845,34 @@ func TestFenceBordersWithFillValue(t *testing.T) {
 		fence         []float32
 	}{
 		{
-			name       : "coordinate 1 is just-out-of-upper-bound in direction 0",
-			crd_system : CoordinateSystemAnnotation,
+			name:        "coordinate 1 is just-out-of-upper-bound in direction 0",
+			crd_system:  CoordinateSystemAnnotation,
 			coordinates: [][]float32{{5, 9.5}, {6, 11.25}},
-			fence      : []float32{116, 117, 118, 119, -999.25, -999.25, -999.25, -999.25},
+			fence:       []float32{116, 117, 118, 119, -999.25, -999.25, -999.25, -999.25},
 		},
 		{
-			name       : "coordinate 0 is just-out-of-upper-bound in direction 1",
-			crd_system : CoordinateSystemAnnotation,
+			name:        "coordinate 0 is just-out-of-upper-bound in direction 1",
+			crd_system:  CoordinateSystemAnnotation,
 			coordinates: [][]float32{{5.5, 11.5}, {3, 10}},
-			fence      : []float32{-999.25, -999.25, -999.25, -999.25, 108, 109, 110, 111},
+			fence:       []float32{-999.25, -999.25, -999.25, -999.25, 108, 109, 110, 111},
 		},
 		{
-			name       : "coordinate is long way out of upper-bound in both directions",
-			crd_system : CoordinateSystemCdp,
+			name:        "coordinate is long way out of upper-bound in both directions",
+			crd_system:  CoordinateSystemCdp,
 			coordinates: [][]float32{{700, 1200}},
-			fence      : []float32{-999.25, -999.25, -999.25, -999.25},
+			fence:       []float32{-999.25, -999.25, -999.25, -999.25},
 		},
 		{
-			name       : "coordinate 1 is just-out-of-lower-bound in direction 1",
-			crd_system : CoordinateSystemAnnotation,
+			name:        "coordinate 1 is just-out-of-lower-bound in direction 1",
+			crd_system:  CoordinateSystemAnnotation,
 			coordinates: [][]float32{{0, 11}, {5.9999, 10}, {0.0001, 9.4999}},
-			fence      : []float32{104, 105, 106, 107, 116, 117, 118, 119, -999.25, -999.25, -999.25, -999.25},
+			fence:       []float32{104, 105, 106, 107, 116, 117, 118, 119, -999.25, -999.25, -999.25, -999.25},
 		},
 		{
-			name       : "negative coordinate 0 is out-of-lower-bound in direction 0",
-			crd_system : CoordinateSystemIndex,
+			name:        "negative coordinate 0 is out-of-lower-bound in direction 0",
+			crd_system:  CoordinateSystemIndex,
 			coordinates: [][]float32{{-1, 0}, {-3, 0}},
-			fence      : []float32{-999.25, -999.25, -999.25, -999.25, -999.25, -999.25, -999.25, -999.25},
+			fence:       []float32{-999.25, -999.25, -999.25, -999.25, -999.25, -999.25, -999.25, -999.25},
 		},
 	}
 
@@ -988,7 +988,7 @@ func TestInvalidFence(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 	handle, _ := NewVDSHandle(well_known)
 	defer handle.Close()
-	_, err := handle.GetFence(CoordinateSystemIndex, fence, interpolationMethod, &fillValue,)
+	_, err := handle.GetFence(CoordinateSystemIndex, fence, interpolationMethod, &fillValue)
 
 	require.ErrorContains(t, err,
 		"invalid coordinate [1 1 0] at position 1, expected [x y] pair",
@@ -1046,7 +1046,7 @@ func TestFenceInterpolationDifferentBeyondDatapoints(t *testing.T) {
 		buf1, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod, &fillValue)
 		for _, v2 := range interpolationMethods[i+1:] {
 			interpolationMethod, _ := GetInterpolationMethod(v2)
-			buf2, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod, &fillValue,)
+			buf2, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod, &fillValue)
 
 			require.NotEqual(t, buf1, buf2)
 		}

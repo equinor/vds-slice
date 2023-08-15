@@ -102,7 +102,7 @@ type Array struct {
 // @Description Slice bounds.
 type Bound struct {
 	// Direction of the bound. See SliceRequest.Direction for valid options
-	Direction *string  `json:"direction" binding:"required" example:"inline"`
+	Direction *string `json:"direction" binding:"required" example:"inline"`
 
 	// Lower bound - inclusive
 	Lower *int `json:"lower" binding:"required" example:"100"`
@@ -311,7 +311,7 @@ func (r *cRegularSurface) Close() error {
 	return nil
 }
 
-func (surface *RegularSurface) toCdata(shift float32) ([]C.float, error){
+func (surface *RegularSurface) toCdata(shift float32) ([]C.float, error) {
 	nrows := len(surface.Values)
 	ncols := len(surface.Values[0])
 
@@ -485,9 +485,9 @@ func (v VDSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, erro
 }
 
 func (v VDSHandle) GetSliceMetadata(
-	lineno    int,
+	lineno int,
 	direction int,
-	bounds    []Bound,
+	bounds []Bound,
 ) ([]byte, error) {
 	var result C.struct_response
 
