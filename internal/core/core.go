@@ -644,7 +644,6 @@ func (v VDSHandle) GetAttributes(
 
 	var nrows = len(referenceSurface.Values)
 	var ncols = len(referenceSurface.Values[0])
-	var hsize = nrows * ncols
 
 	cReferenceSurfaceData, err := referenceSurface.toCdata(0)
 	if err != nil {
@@ -677,6 +676,30 @@ func (v VDSHandle) GetAttributes(
 		return nil, err
 	}
 	defer cBottomSurface.Close()
+
+	return v.getAttributes(
+		cReferenceSurface,
+		cTopSurface,
+		cBottomSurface,
+		nrows,
+		ncols,
+		targetAttributes,
+		interpolation,
+		stepsize,
+	)
+}
+
+func (v VDSHandle) getAttributes(
+	cReferenceSurface cRegularSurface,
+	cTopSurface cRegularSurface,
+	cBottomSurface cRegularSurface,
+	nrows int,
+	ncols int,
+	targetAttributes []int,
+	interpolation int,
+	stepsize float32,
+) ([][]byte, error) {
+	var hsize = nrows * ncols
 
 	dataOffsetSize := hsize + 1
 	dataOffset := make([]C.size_t, dataOffsetSize)
