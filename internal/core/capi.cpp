@@ -222,22 +222,24 @@ int metadata(
 int horizon_buffer_offsets(
     Context* ctx,
     DataHandle* handle,
-    RegularSurface* surface,
-    float above,
-    float below,
+    RegularSurface* reference,
+    RegularSurface* top,
+    RegularSurface* bottom,
     size_t* out,
     size_t out_size
 ) {
     try {
-        if (not out)     throw detail::nullptr_error("Invalid out pointer");
-        if (not handle)  throw detail::nullptr_error("Invalid handle");
-        if (not surface) throw detail::nullptr_error("Invalid surface");
+        if (not out)      throw detail::nullptr_error("Invalid out pointer");
+        if (not handle)   throw detail::nullptr_error("Invalid handle");
+        if (not reference)throw detail::nullptr_error("Invalid reference surface");
+        if (not top)      throw detail::nullptr_error("Invalid top surface");
+        if (not bottom)   throw detail::nullptr_error("Invalid bottom surface");
 
         cppapi::horizon_buffer_offsets(
             *handle,
-            *surface,
-            above,
-            below,
+            *reference,
+            *top,
+            *bottom,
             out,
             out_size
         );
@@ -250,9 +252,9 @@ int horizon_buffer_offsets(
 int horizon(
     Context* ctx,
     DataHandle* handle,
-    RegularSurface* surface,
-    float above,
-    float below,
+    RegularSurface* reference,
+    RegularSurface* top,
+    RegularSurface* bottom,
     std::size_t* buffer_offsets,
     enum interpolation_method interpolation,
     size_t from,
@@ -262,14 +264,16 @@ int horizon(
     try {
         if (not out)            throw detail::nullptr_error("Invalid out pointer");
         if (not handle)         throw detail::nullptr_error("Invalid handle");
-        if (not surface)        throw detail::nullptr_error("Invalid surface");
+        if (not reference)      throw detail::nullptr_error("Invalid reference surface");
+        if (not top)            throw detail::nullptr_error("Invalid top surface");
+        if (not bottom)         throw detail::nullptr_error("Invalid bottom surface");
         if (not buffer_offsets) throw detail::nullptr_error("Invalid data offset buffer");
 
         cppapi::horizon(
             *handle,
-            *surface,
-            above,
-            below,
+            *reference,
+            *top,
+            *bottom,
             buffer_offsets,
             interpolation,
             from,
@@ -303,14 +307,14 @@ int attribute_metadata(
 int attribute(
     Context* ctx,
     DataHandle* handle,
-    RegularSurface* surface,
+    RegularSurface* reference,
+    RegularSurface* top,
+    RegularSurface* bottom,
     size_t* data_offsets,
     const void* data,
     size_t size,
     enum attribute* attributes,
     size_t nattributes,
-    float above,
-    float below,
     float stepsize,
     size_t from,
     size_t to,
@@ -319,15 +323,19 @@ int attribute(
     try {
         if (not out)          throw detail::nullptr_error("Invalid out pointer");
         if (not handle)       throw detail::nullptr_error("Invalid handle");
-        if (not surface)      throw detail::nullptr_error("Invalid surface");
+        if (not reference)    throw detail::nullptr_error("Invalid reference surface");
+        if (not top)          throw detail::nullptr_error("Invalid top surface");
+        if (not bottom)       throw detail::nullptr_error("Invalid bottom surface");
         if (not data)         throw detail::nullptr_error("Invalid data");
         if (not data_offsets) throw detail::nullptr_error("Invalid data offset buffer");
 
+        if (from >= to)  throw std::runtime_error("No data to iterate over");
+
         std::size_t nsamples = size / sizeof(float);
-        std::size_t hsize = surface->size();
+        std::size_t hsize = reference->size();
         std::size_t vsize = nsamples / hsize;
 
-        Horizon horizon((float*)data, hsize, vsize, data_offsets, surface->fillvalue());
+        Horizon horizon((float*)data, hsize, vsize, data_offsets, reference->fillvalue());
 
         MetadataHandle const& metadata = handle->get_metadata();
         auto const& sample = metadata.sample();
@@ -335,6 +343,17 @@ int attribute(
         if (stepsize == 0) {
             stepsize = sample.stride();
         }
+
+        /* calculations below are temporary */
+        auto first_nonzero = std::find_if(data_offsets, &data_offsets[hsize + 1],
+                                          [](std::size_t i) { return i!= 0; });
+        auto nonfill_index =  std::distance(data_offsets, first_nonzero - 1);
+        if (nonfill_index >= hsize){
+            nonfill_index = 0;
+        }
+
+        auto above = reference->value(nonfill_index) - top->value(nonfill_index);
+        auto below = bottom->value(nonfill_index) - reference->value(nonfill_index);
 
         VerticalWindow src_window(above, below, sample.stride(), 2, sample.min());
         VerticalWindow dst_window(above, below, stepsize);
@@ -347,7 +366,9 @@ int attribute(
         cppapi::attributes(
             *handle,
             horizon,
-            *surface,
+            *reference,
+            *top,
+            *bottom,
             src_window,
             dst_window,
             attributes,

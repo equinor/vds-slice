@@ -226,7 +226,9 @@ void compute_all(
 
 void calc_attributes(
     Horizon const& horizon,
-    RegularSurface const& surface,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
     VerticalWindow const& src_window,
     VerticalWindow const& dst_window,
     std::vector< std::unique_ptr< AttributeMap > >& attrs,
@@ -236,7 +238,6 @@ void calc_attributes(
     auto fill = horizon.fillvalue();
 
     for (std::size_t i = from; i < to; ++i) {
-        auto depth = surface.value(i);
         auto data  = horizon.at(i);
 
         if (data.begin() == data.end()) {
@@ -256,7 +257,7 @@ void calc_attributes(
             src_window,
             dst_buffer,
             dst_window,
-            depth
+            reference.value(i)
         );
         
         compute_all(attrs, i, dst_buffer.begin(), dst_buffer.end());

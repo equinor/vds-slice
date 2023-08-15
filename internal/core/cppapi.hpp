@@ -28,18 +28,18 @@ void fence(
 
 void horizon_buffer_offsets(
     DataHandle& handle,
-    RegularSurface const& surface,
-    float above,
-    float below,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
     std::size_t* out,
     std::size_t out_size
 ) noexcept (false);
 
 void horizon(
     DataHandle& handle,
-    RegularSurface const& surface,
-    float above,
-    float below,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
     std::size_t* buffer_offsets,
     enum interpolation_method interpolation,
     std::size_t from,
@@ -50,7 +50,9 @@ void horizon(
 void attributes(
     DataHandle& handle,
     Horizon const& horizon,
-    RegularSurface const& surface,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
     VerticalWindow const& src_window,
     VerticalWindow const& dst_window,
     enum attribute* attributes,

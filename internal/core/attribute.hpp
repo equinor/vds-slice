@@ -311,7 +311,9 @@ public:
 
 void calc_attributes(
     Horizon const& horizon,
-    RegularSurface const& surface,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom,
     VerticalWindow const& src_window,
     VerticalWindow const& dst_window,
     std::vector< std::unique_ptr< AttributeMap > >& attrs,

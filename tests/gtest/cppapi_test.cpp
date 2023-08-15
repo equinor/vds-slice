@@ -81,19 +81,35 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
         nodata, nodata, nodata, nodata, nodata, nodata
     };
 
-    RegularSurface surface =
+    RegularSurface primary_surface =
         RegularSurface(surface_data.data(), nrows, ncols, other_plane, fill);
+
+    std::array<float, size> above_data = surface_data;
+    std::array<float, size> below_data = surface_data;
+
+    std::transform(above_data.cbegin(), above_data.cend(), above_data.begin(),
+                  [above](float value) { return value - above; });
+    std::transform(below_data.cbegin(), below_data.cend(), below_data.begin(),
+                   [below](float value) { return value + below; });
+
+    RegularSurface top_surface =
+        RegularSurface(above_data.data(), nrows, ncols, other_plane, fill);
+
+    RegularSurface bottom_surface =
+        RegularSurface(below_data.data(), nrows, ncols, other_plane, fill);
 
     constexpr std::size_t offset_size = size+1;
     std::array<std::size_t, offset_size> offsets;
-    cppapi::horizon_buffer_offsets(*handle, surface, above, below, offsets.data(), offset_size);
+    cppapi::horizon_buffer_offsets(*handle, primary_surface, top_surface, bottom_surface,
+                           offsets.data(), offset_size);
 
     std::size_t horizon_size = offsets[size];
     std::vector< float> res(horizon_size);
-    cppapi::horizon(*handle, surface, above, below, offsets.data(), NEAREST, 0, size, res.data());
+    cppapi::horizon(*handle, primary_surface, top_surface, bottom_surface,
+                           offsets.data(), NEAREST, 0, size, res.data());
 
-    std::size_t vsize = horizon_size / (surface.size() * sizeof(float));
-    Horizon horizon(res.data(), size, vsize, offsets.data(), surface.fillvalue());
+    std::size_t vsize = horizon_size / (primary_surface.size() * sizeof(float));
+    Horizon horizon(res.data(), size, vsize, offsets.data(), primary_surface.fillvalue());
 
     /* We are checking here points unordered. Meaning that if all points in a
      * row appear somewhere in the horizon, we assume we are good. Alternative
