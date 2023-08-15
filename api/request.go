@@ -302,3 +302,73 @@ func (h AttributeAlongSurfaceRequest) toString() (string, error) {
 		h.Attributes,
 	), nil
 }
+
+// Query for Attribute between surfaces endpoints
+// @Description Query payload for attribute "between" endpoint.
+type AttributeBetweenSurfacesRequest struct {
+	AttributeRequest
+
+	// One of the two surfaces between which data will be retrieved. This value
+	// should be given in the VDS's vertical domain, Annotation (for example,
+	// Depth or Time). Surface will be used as reference for any sampling
+	// operation, i.e. points that are on this surface will be present in the
+	// final calculations and could be retrieved through samplevalue. At the
+	// surface points where no data exists fillvalue will be set in the result
+	// buffer.
+	PrimarySurface core.RegularSurface `json:"primarySurface" binding:"required"`
+
+	// One of the two surfaces between which data will be retrieved. This value
+	// should be given in the VDS's vertical domain, Annotation (for example,
+	// Depth or Time). Surface will be used to define data boundaries. For every
+	// point on the primary surface the closest point on the secondary surface
+	// would be found and its value set as the request boundary. It might not be
+	// included in final calculations. If the closest value is fillvalue,
+	// fillvalue will be set in the result buffer. It is not required for
+	// surfaces to have the same plane (origin, rotation, step). If surfaces
+	// intersect, exception will be thrown. If any of the values of the surface
+	// is outside of data boundaries, exception will be raised.
+	SecondarySurface core.RegularSurface `json:"secondarySurface" binding:"required"`
+} //@name AttributeBetweenSurfacesRequest
+
+/** Compute a hash of the request that uniquely identifies the requested attributes
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (h AttributeBetweenSurfacesRequest) Hash() (string, error) {
+	// Strip the sas token before computing hash
+	h.Sas = ""
+	return cache.Hash(h)
+}
+
+func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
+	msg := "{vds: %s, " +
+		"Primary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
+		"Secondary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
+		"Interpolation: %s, Stepsize: %.2f, Attributes: %v}"
+	return fmt.Sprintf(
+		msg,
+		h.Vds,
+		len(h.PrimarySurface.Values[0]),
+		len(h.PrimarySurface.Values),
+		*h.PrimarySurface.Rotation,
+		*h.PrimarySurface.Xori,
+		*h.PrimarySurface.Yori,
+		h.PrimarySurface.Xinc,
+		h.PrimarySurface.Yinc,
+		*h.PrimarySurface.FillValue,
+		len(h.SecondarySurface.Values[0]),
+		len(h.SecondarySurface.Values),
+		*h.SecondarySurface.Rotation,
+		*h.SecondarySurface.Xori,
+		*h.SecondarySurface.Yori,
+		h.SecondarySurface.Xinc,
+		h.SecondarySurface.Yinc,
+		*h.SecondarySurface.FillValue,
+		h.Interpolation,
+		h.Stepsize,
+		h.Attributes,
+	), nil
+}
