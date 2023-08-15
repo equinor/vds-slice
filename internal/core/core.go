@@ -621,7 +621,7 @@ func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 }
 
 func (v VDSHandle) GetAttributes(
-	primarySurface RegularSurface,
+	referenceSurface RegularSurface,
 	above float32,
 	below float32,
 	stepsize float32,
@@ -642,37 +642,37 @@ func (v VDSHandle) GetAttributes(
 		return nil, NewInvalidArgument(msg)
 	}
 
-	var nrows = len(primarySurface.Values)
-	var ncols = len(primarySurface.Values[0])
+	var nrows = len(referenceSurface.Values)
+	var ncols = len(referenceSurface.Values[0])
 	var hsize = nrows * ncols
 
-	cPrimarySurfaceData, err := primarySurface.toCdata(0)
+	cReferenceSurfaceData, err := referenceSurface.toCdata(0)
 	if err != nil {
 		return nil, err
 	}
 
-	cPrimarySurface, err := primarySurface.toCRegularSurface(cPrimarySurfaceData)
+	cReferenceSurface, err := referenceSurface.toCRegularSurface(cReferenceSurfaceData)
 	if err != nil {
 		return nil, err
 	}
-	defer cPrimarySurface.Close()
+	defer cReferenceSurface.Close()
 
-	cTopSurfaceData, err := primarySurface.toCdata(-above)
+	cTopSurfaceData, err := referenceSurface.toCdata(-above)
 	if err != nil {
 		return nil, err
 	}
 
-	cTopSurface, err := primarySurface.toCRegularSurface(cTopSurfaceData)
+	cTopSurface, err := referenceSurface.toCRegularSurface(cTopSurfaceData)
 	if err != nil {
 		return nil, err
 	}
 	defer cTopSurface.Close()
 
-	cBottomSurfaceData, err := primarySurface.toCdata(below)
+	cBottomSurfaceData, err := referenceSurface.toCdata(below)
 	if err != nil {
 		return nil, err
 	}
-	cBottomSurface, err := primarySurface.toCRegularSurface(cBottomSurfaceData)
+	cBottomSurface, err := referenceSurface.toCRegularSurface(cBottomSurfaceData)
 	if err != nil {
 		return nil, err
 	}
@@ -684,7 +684,7 @@ func (v VDSHandle) GetAttributes(
 	cerr := C.horizon_buffer_offsets(
 		v.context(),
 		v.Handle(),
-		cPrimarySurface.get(),
+		cReferenceSurface.get(),
 		cTopSurface.get(),
 		cBottomSurface.get(),
 		&dataOffset[0],
@@ -701,7 +701,7 @@ func (v VDSHandle) GetAttributes(
 	}
 
 	horizon, err := v.fetchHorizon(
-		cPrimarySurface,
+		cReferenceSurface,
 		cTopSurface,
 		cBottomSurface,
 		nrows,
@@ -715,7 +715,7 @@ func (v VDSHandle) GetAttributes(
 	}
 
 	return v.calculateAttributes(
-		cPrimarySurface,
+		cReferenceSurface,
 		cTopSurface,
 		cBottomSurface,
 		hsize,
@@ -742,7 +742,7 @@ func (v VDSHandle) normalizeAttributes(
 }
 
 func (v VDSHandle) fetchHorizon(
-	cPrimarySurface cRegularSurface,
+	cReferenceSurface cRegularSurface,
 	cTopSurface cRegularSurface,
 	cBottomSurface cRegularSurface,
 	nrows int,
@@ -783,7 +783,7 @@ func (v VDSHandle) fetchHorizon(
 			cerr := C.horizon(
 				cCtx,
 				v.Handle(),
-				cPrimarySurface.get(),
+				cReferenceSurface.get(),
 				cTopSurface.get(),
 				cBottomSurface.get(),
 				&dataOffset[0],
@@ -818,7 +818,7 @@ func (v VDSHandle) fetchHorizon(
 }
 
 func (v VDSHandle) calculateAttributes(
-	cPrimarySurface cRegularSurface,
+	cReferenceSurface cRegularSurface,
 	cTopSurface cRegularSurface,
 	cBottomSurface cRegularSurface,
 	hsize int,
@@ -859,7 +859,7 @@ func (v VDSHandle) calculateAttributes(
 			cErr := C.attribute(
 				cCtx,
 				v.Handle(),
-				cPrimarySurface.get(),
+				cReferenceSurface.get(),
 				cTopSurface.get(),
 				cBottomSurface.get(),
 				&dataOffset[0],
