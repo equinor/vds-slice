@@ -207,11 +207,8 @@ func (s SliceRequest) toString() (string, error) {
 
 // Query for Attribute endpoints
 // @Description Query payload for attribute endpoint.
-type AttributeAlongSurfaceRequest struct {
+type AttributeRequest struct {
 	RequestedResource
-
-	// Surface along which data must be retrieved
-	Surface core.RegularSurface `json:"surface" binding:"required"`
 
 	// Horizontal interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
@@ -223,23 +220,6 @@ type AttributeAlongSurfaceRequest struct {
 	// Note: For nearest interpolation result will snap to the nearest point
 	// as per "half up" rounding. This is different from openvds logic.
 	Interpolation string `json:"interpolation" example:"linear"`
-
-	// Samples interval above the horizon to include in attribute calculation.
-	// This value should be given in the VDS's vertical domain. E.g. if the
-	// vertical domain is 'ms' then a value of 22 means to include samples up
-	// to 22 ms above the horizon definition. The value is rounded down to the
-	// nearest whole sample. I.e. if the cube is sampled at 4ms, the attribute
-	// calculation will include samples 4, 8, 12, 16 and 20ms above the
-	// horizon, while the sample at 24ms is excluded.
-	//
-	// Defaults to zero
-	Above float32 `json:"above"`
-
-	// Samples interval below the horizon to include in attribute calculation.
-	// Implements the same behaviour as 'above'.
-	//
-	// Defaults to zero
-	Below float32 `json:"below"`
 
 	// Stepsize for samples within the window defined by above below
 	//
@@ -260,6 +240,32 @@ type AttributeAlongSurfaceRequest struct {
 	// request. This is considerably faster than doing one request per
 	// attribute.
 	Attributes []string `json:"attributes" binding:"required"`
+} //@name AttributeRequest
+
+// Query for Attribute along the surface endpoints
+// @Description Query payload for attribute "along" endpoint.
+type AttributeAlongSurfaceRequest struct {
+	AttributeRequest
+
+	// Surface along which data must be retrieved
+	Surface core.RegularSurface `json:"surface" binding:"required"`
+
+	// Samples interval above the horizon to include in attribute calculation.
+	// This value should be given in the VDS's vertical domain. E.g. if the
+	// vertical domain is 'ms' then a value of 22 means to include samples up
+	// to 22 ms above the horizon definition. The value is rounded down to the
+	// nearest whole sample. I.e. if the cube is sampled at 4ms, the attribute
+	// calculation will include samples 4, 8, 12, 16 and 20ms above the
+	// horizon, while the sample at 24ms is excluded.
+	//
+	// Defaults to zero
+	Above float32 `json:"above"`
+
+	// Samples interval below the horizon to include in attribute calculation.
+	// Implements the same behaviour as 'above'.
+	//
+	// Defaults to zero
+	Below float32 `json:"below"`
 } //@name AttributeAlongSurfaceRequest
 
 /** Compute a hash of the request that uniquely identifies the requested attributes
