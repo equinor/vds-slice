@@ -628,13 +628,9 @@ func (v VDSHandle) GetAttributes(
 	attributes []string,
 	interpolation int,
 ) ([][]byte, error) {
-	var targetAttributes []int
-	for _, attr := range attributes {
-		id, err := GetAttributeType(attr)
-		if err != nil {
-			return nil, err
-		}
-		targetAttributes = append(targetAttributes, id)
+	targetAttributes, err := v.normalizeAttributes(attributes)
+	if err != nil {
+		return nil, err
 	}
 
 	if above < 0 || below < 0 {
@@ -649,11 +645,6 @@ func (v VDSHandle) GetAttributes(
 	var nrows = len(primarySurface.Values)
 	var ncols = len(primarySurface.Values[0])
 	var hsize = nrows * ncols
-
-	cAttributes := make([]C.enum_attribute, len(targetAttributes))
-	for i := range targetAttributes {
-		cAttributes[i] = C.enum_attribute(targetAttributes[i])
-	}
 
 	cPrimarySurfaceData, err := primarySurface.toCdata(0)
 	if err != nil {
@@ -731,9 +722,23 @@ func (v VDSHandle) GetAttributes(
 		dataOffset,
 		horizon,
 		C.size_t(horizonBufferSize),
-		cAttributes,
+		targetAttributes,
 		stepsize,
 	)
+}
+
+func (v VDSHandle) normalizeAttributes(
+	attributes []string,
+) ([]int, error) {
+	var targetAttributes []int
+	for _, attr := range attributes {
+		id, err := GetAttributeType(attr)
+		if err != nil {
+			return nil, err
+		}
+		targetAttributes = append(targetAttributes, id)
+	}
+	return targetAttributes, nil
 }
 
 func (v VDSHandle) fetchHorizon(
@@ -820,9 +825,15 @@ func (v VDSHandle) calculateAttributes(
 	dataOffset []C.size_t,
 	horizon []byte,
 	horizonSize C.size_t,
-	cAttributes []uint32,
+	targetAttributes []int,
 	stepsize float32,
 ) ([][]byte, error) {
+
+	cAttributes := make([]C.enum_attribute, len(targetAttributes))
+	for i := range targetAttributes {
+		cAttributes[i] = C.enum_attribute(targetAttributes[i])
+	}
+
 	nAttributes := len(cAttributes)
 	var mapsize = hsize * 4
 	buffer := make([]byte, mapsize*nAttributes)
