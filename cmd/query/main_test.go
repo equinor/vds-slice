@@ -168,9 +168,9 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 		},
 		sliceTest{
 			baseTest{
-				name:           "Request which passed all input checks but still should fail",
+				name:           "Request with out-of-bound lineno",
 				method:         http.MethodPost,
-				expectedStatus: http.StatusInternalServerError,
+				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Invalid lineno: 10, valid range: [0:2:1]",
 			},
 			testSliceRequest{

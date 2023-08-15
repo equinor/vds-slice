@@ -452,7 +452,7 @@ func TestSliceBounds(t *testing.T) {
 				newBound("time", 8,  20),
 			},
 			expectedSlice: []float32{},
-			expectedErr: NewInternalError(""),
+			expectedErr: NewInvalidArgument(""),
 		},
 		{
 			name: "Incorrect vertical domain",
