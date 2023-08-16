@@ -281,6 +281,58 @@ func (e *Endpoint) attributesAlongSurface(ctx *gin.Context, request AttributeAlo
 	writeResponse(ctx, metadata, data)
 }
 
+func (e *Endpoint) attributesBetweenSurfaces(ctx *gin.Context, request AttributeBetweenSurfacesRequest) {
+	prepareRequestLogging(ctx, request)
+
+	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	cacheKey, err := request.Hash()
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	handle, err := core.NewVDSHandle(conn)
+	if abortOnError(ctx, err) {
+		return
+	}
+	defer handle.Close()
+
+	cacheEntry, hit := e.Cache.Get(cacheKey)
+	if hit && conn.IsAuthorizedToRead() {
+		ctx.Set("cache-hit", true)
+		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
+		return
+	}
+
+	interpolation, err := core.GetInterpolationMethod(request.Interpolation)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	metadata, err := handle.GetAttributeMetadata(request.PrimarySurface.Values)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	data, err := handle.GetAttributesBetweenSurfaces(
+		request.PrimarySurface,
+		request.SecondarySurface,
+		request.Stepsize,
+		request.Attributes,
+		interpolation,
+	)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata))
+
+	writeResponse(ctx, metadata, data)
+}
+
 func parseGetRequest(ctx *gin.Context, v Normalizable) error {
 	if err := json.Unmarshal([]byte(ctx.Query("query")), v); err != nil {
 		return core.NewInvalidArgument(err.Error())
@@ -444,4 +496,25 @@ func (e *Endpoint) AttributesAlongSurfacePost(ctx *gin.Context) {
 	}
 
 	e.attributesAlongSurface(ctx, request)
+}
+
+// AttributesBetweenSurfacesPost godoc
+// @Summary  Returns horizon attributes between provided surfaces
+// @description.markdown attribute_between
+// @Tags     attributes
+// @Param    body  body  AttributeBetweenSurfacesRequest  True  "Request Parameters"
+// @Accept   application/json
+// @Produce  multipart/mixed
+// @Success  200 {object} core.AttributeMetadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
+// @Router   /attributes/surface/between  [post]
+func (e *Endpoint) AttributesBetweenSurfacesPost(ctx *gin.Context) {
+	var request AttributeBetweenSurfacesRequest
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	e.attributesBetweenSurfaces(ctx, request)
 }
