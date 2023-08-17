@@ -180,6 +180,20 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				Sas:       "n/a",
 			},
 		},
+		sliceTest{
+			baseTest{
+				name:           "Datahandle error",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusInternalServerError,
+				expectedError:  "Could not open VDS",
+			},
+			testSliceRequest{
+				Vds:       "unknown",
+				Direction: "i",
+				Lineno:    1,
+				Sas:       "n/a",
+			},
+		},
 	}
 	testErrorHTTPResponse(t, testcases)
 }
@@ -319,7 +333,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 		},
 		fenceTest{
 			baseTest{
-				name:           "Request which passed all input checks but still should fail",
+				name:           "Datahandle error",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusInternalServerError,
 				expectedError:  "Could not open VDS",
@@ -442,7 +456,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 		},
 		metadataTest{
 			baseTest{
-				name:           "Request which passed all input checks but still should fail",
+				name:           "Datahandle error",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusInternalServerError,
 				expectedError:  "Could not open VDS",
@@ -592,7 +606,7 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 		},
 		attributeTest{
 			baseTest{
-				name:           "Request which passed all input checks but still should fail",
+				name:           "Datahandle error",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusInternalServerError,
 				expectedError:  "Could not open VDS",
