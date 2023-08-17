@@ -20,6 +20,11 @@ struct SubVolume {
         int const                    lineno,
         enum coordinate_system const coordinate_system
     );
+
+    void constrain(
+        MetadataHandle const& metadata,
+        std::vector< Bound > const& bounds
+    ) noexcept (false);
 };
 
 #endif /* VDS_SLICE_SUBVOLUME_HPP */

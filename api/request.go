@@ -161,6 +161,27 @@ type SliceRequest struct {
 
 	// Line number of the slice
 	Lineno *int `json:"lineno" binding:"required" example:"10000"`
+
+	// Restrict the slice in the other dimensions (sub-slicing)
+	//
+	// Bounds can be used to retrieve sub-slices. For example: when requesting
+	// a time slice you can set inline and/or crossline bounds to restrict the
+	// area of the slice.
+	//
+	// Bounds are optional. Not specifying any bounds will produce the requested
+	// slice through the entire volume.
+	//
+	// Any bounds in the same direction as the slice itself are ignored.
+	//
+	// Bounds are applied one after the other. If there are multiple bounds in the
+	// same direction, the last one takes precedence.
+	//
+	// Bounds will throw out-of-bounds error if their range is outside the
+	// cubes dimensions.
+	//
+	// Bounds can be set using both annotation and index. You are free to mix
+	// and match as you see fit.
+	Bounds []core.Bound `json:"bounds" binding:"dive"`
 } //@name SliceRequest
 
 /** Compute a hash of the request that uniquely identifies the requested slice

@@ -149,11 +149,18 @@ type testErrorResponse struct {
 	Error string `json:"error" binding:"required"`
 }
 
+type testBound struct {
+	Direction string  `json:"direction"`
+	Lower     float32 `json:"lower"`
+	Upper     float32 `json:"upper"`
+}
+
 type testSliceRequest struct {
-	Vds       string `json:"vds"`
-	Direction string `json:"direction"`
-	Lineno    int    `json:"lineno"`
-	Sas       string `json:"sas"`
+	Vds       string      `json:"vds"`
+	Direction string      `json:"direction"`
+	Lineno    int         `json:"lineno"`
+	Sas       string      `json:"sas"`
+	Bounds    []testBound `json:"bounds"`
 }
 
 type testFenceRequest struct {

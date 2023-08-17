@@ -282,7 +282,7 @@ def test_assure_only_allowed_storage_accounts(path, payload):
     (
         "slice",
         make_slice_request(direction="inline", lineno=4),
-        http.HTTPStatus.INTERNAL_SERVER_ERROR,
+        http.HTTPStatus.BAD_REQUEST,
         "Invalid lineno: 4, valid range: [1.000000:5.000000:2.000000]"
     ),
     (

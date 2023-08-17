@@ -1,6 +1,8 @@
 #ifndef VDS_SLICE_CPPAPI_HPP
 #define VDS_SLICE_CPPAPI_HPP
 
+#include <vector>
+
 #include "ctypes.h"
 
 #include "attribute.hpp"
@@ -14,6 +16,7 @@ void slice(
     DataHandle& handle,
     Direction const direction,
     int lineno,
+    std::vector< Bound > const& bounds,
     response* out
 ) noexcept (false);
 
@@ -93,6 +96,7 @@ void slice_metadata(
     DataHandle& handle,
     Direction const direction,
     int lineno,
+    std::vector< Bound > const& bounds,
     response* out
 ) noexcept (false);
 
