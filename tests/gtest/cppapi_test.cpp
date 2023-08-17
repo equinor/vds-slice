@@ -513,6 +513,73 @@ TEST_F(SurfaceAlignmentTest, UnalignedSurfacesPrimaryUnaligned)
     test_successful_align_call(primary, secondary, expected.data(), true);
 }
 
+TEST_F(SurfaceAlignmentTest, IdenticalSurfaces)
+{
+    static constexpr std::size_t pnrows = 3;
+    static constexpr std::size_t pncols = 2;
+
+    std::array<float, pnrows * pncols> primary_surface_data = {
+        20, 20,
+        20, 20,
+        20, 20
+    };
+
+    static constexpr std::size_t snrows = 3;
+    static constexpr std::size_t sncols = 2;
+
+    std::array<float, snrows * sncols> secondary_surface_data = {
+        20, 20,
+        20, 20,
+        20, 20
+    };
+
+    const std::array<float, pnrows * pncols> expected = {
+        20, 20,
+        20, 20,
+        20, 20
+    };
+    // current behavior, but value shouldn't matter
+    const bool expected_primary_is_top = false;
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+
+    test_successful_align_call(primary, secondary, expected.data(), expected_primary_is_top);
+}
+
+TEST_F(SurfaceAlignmentTest, SameStartingValue)
+{
+    static constexpr std::size_t pnrows = 2;
+    static constexpr std::size_t pncols = 2;
+
+    std::array<float, pnrows * pncols> primary_surface_data = {
+        20, 20,
+        21, 20,
+    };
+
+    static constexpr std::size_t snrows = 2;
+    static constexpr std::size_t sncols = 2;
+
+    std::array<float, snrows * sncols> secondary_surface_data = {
+        20, 20,
+        20, 20,
+    };
+
+    const std::array<float, pnrows * pncols> expected = {
+        20, 20,
+        20, 20,
+    };
+
+    RegularSurface primary = RegularSurface(
+        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+    RegularSurface secondary = RegularSurface(
+        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+
+    test_successful_align_call(primary, secondary, expected.data(), false);
+}
+
 TEST_F(SurfaceAlignmentTest, IntersectingSurfaces)
 {
     static constexpr std::size_t pnrows = 3;
