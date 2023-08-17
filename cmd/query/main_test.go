@@ -524,6 +524,21 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 				Attributes: []string{"samplevalue"},
 			},
 		},
+		attributeBetweenSurfacesTest{
+			baseTest{
+				name:           "Valid json POST Request between surfaces",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusOK,
+			},
+
+			testAttributeBetweenSurfacesRequest{
+				Vds:             samples10,
+				ValuesPrimary:   [][]float32{{20, 20}, {20, 20}, {20, 20}},
+				ValuesSecondary: [][]float32{{20, 20}, {20, 20}, {20, 20}},
+				Sas:             "n/a",
+				Attributes:      []string{"samplevalue"},
+			},
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -555,7 +570,7 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 	testcases := []endpointTest{
 		attributeAlongSurfaceTest{
 			baseTest{
-				name:           "Invalid json POST request",
+				name:           "Along: Invalid json POST request",
 				method:         http.MethodPost,
 				jsonRequest:    "help I am a duck",
 				expectedStatus: http.StatusBadRequest,
@@ -563,9 +578,19 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 			},
 			testAttributeAlongSurfaceRequest{},
 		},
+		attributeBetweenSurfacesTest{
+			baseTest{
+				name:           "Between: Invalid json POST request",
+				method:         http.MethodPost,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			},
+			testAttributeBetweenSurfacesRequest{},
+		},
 		attributeAlongSurfaceTest{
 			baseTest{
-				name:   "Missing parameters POST Request",
+				name:   "Along: Missing parameters POST Request",
 				method: http.MethodPost,
 				jsonRequest: "{\"vds\":\"" + well_known +
 					"\", \"interpolation\":\"cubic\", \"sas\": \"n/a\"}",
@@ -574,9 +599,20 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 			},
 			testAttributeAlongSurfaceRequest{},
 		},
+		attributeBetweenSurfacesTest{
+			baseTest{
+				name:   "Between: Missing parameters POST Request",
+				method: http.MethodPost,
+				jsonRequest: "{\"vds\":\"" + well_known +
+					"\", \"interpolation\":\"cubic\", \"sas\": \"n/a\"}",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "Error:Field validation for",
+			},
+			testAttributeBetweenSurfacesRequest{},
+		},
 		attributeAlongSurfaceTest{
 			baseTest{
-				name:           "Request with incorrect interpolation method",
+				name:           "Along: Bad Request: wrong incorrect interpolation method",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "invalid interpolation method",
@@ -589,9 +625,25 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				Attributes:    []string{"samplevalue"},
 			},
 		},
+		attributeBetweenSurfacesTest{
+			baseTest{
+				name:           "Between: Bad Request: wrong incorrect interpolation method",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid interpolation method",
+			},
+			testAttributeBetweenSurfacesRequest{
+				Vds:             well_known,
+				ValuesPrimary:   [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				ValuesSecondary: [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:             "n/a",
+				Interpolation:   "unsupported",
+				Attributes:      []string{"samplevalue"},
+			},
+		},
 		attributeAlongSurfaceTest{
 			baseTest{
-				name:           "Datahandle error",
+				name:           "Along: Datahandle error",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusInternalServerError,
 				expectedError:  "Could not open VDS",
@@ -601,6 +653,21 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				Values:     [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:        "n/a",
 				Attributes: []string{"samplevalue"},
+			},
+		},
+		attributeBetweenSurfacesTest{
+			baseTest{
+				name:           "Between: Datahandle error",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusInternalServerError,
+				expectedError:  "Could not open VDS",
+			},
+			testAttributeBetweenSurfacesRequest{
+				Vds:             "unknown",
+				ValuesPrimary:   [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				ValuesSecondary: [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:             "n/a",
+				Attributes:      []string{"samplevalue"},
 			},
 		},
 	}

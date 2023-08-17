@@ -165,6 +165,7 @@ func setupApp(app *gin.Engine, endpoint *api.Endpoint, metric *metrics.Metrics) 
 	attributesSurface := attributes.Group("surface")
 
 	attributesSurface.POST("along", endpoint.AttributesAlongSurfacePost)
+	attributesSurface.POST("between", endpoint.AttributesBetweenSurfacesPost)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
