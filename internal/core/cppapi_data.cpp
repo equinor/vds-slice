@@ -101,15 +101,15 @@ void validate_vertical_axis(
 
 /**
  * For every index in 'novals', write n successive floats with value
- * 'fillvalue' to dst. Where n is 'vertical_size'.
+ * 'fillvalue' to dst.
  */
 void write_fillvalue(
     char * dst,
     std::vector< std::size_t > const& novals,
-    std::size_t vertical_size,
+    std::size_t nsamples,
     float fillvalue
 ) {
-    std::vector< float > fill(vertical_size, fillvalue);
+    std::vector< float > fill(nsamples, fillvalue);
     std::for_each(novals.begin(), novals.end(), [&](std::size_t i) {
         std::memcpy(
             dst + i * sizeof(float),
@@ -158,9 +158,12 @@ void fence(
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method,
+    const float* fillValue,
     response* out
 ) {
     MetadataHandle const& metadata = handle.get_metadata();
+
+    std::vector< std::size_t > noval_indicies;
 
     std::unique_ptr< voxel[] > coords(new voxel[npoints]{{0}});
 
@@ -178,9 +181,10 @@ void fence(
             }
         }
     };
-
-    Axis inline_axis = metadata.iline();
+    Axis inline_axis    = metadata.iline();
     Axis crossline_axis = metadata.xline();
+    Axis samples_axis   = metadata.sample();
+    auto nsamples       = samples_axis.nsamples();
 
     for (size_t i = 0; i < npoints; i++) {
         const float x = *(coordinates++);
@@ -189,13 +193,16 @@ void fence(
         auto coordinate = transform_coordinate(x, y);
 
         auto validate_boundary = [&] (const int voxel, Axis const& axis) {
-            if(!axis.inrange(coordinate[voxel])){
-                const std::string coordinate_str =
-                    "(" +std::to_string(x) + "," + std::to_string(y) + ")";
-                throw std::runtime_error(
-                    "Coordinate " + coordinate_str + " is out of boundaries "+
-                    "in dimension "+ std::to_string(voxel)+ "."
-                );
+            if (!axis.inrange(coordinate[voxel])) {
+                if (fillValue == nullptr) {
+                    const std::string coordinate_str =
+                        "(" +std::to_string(x) + "," + std::to_string(y) + ")";
+                    throw detail::bad_request(
+                        "Coordinate " + coordinate_str + " is out of boundaries "+
+                        "in dimension "+ std::to_string(voxel)+ "."
+                    );
+                }
+                noval_indicies.push_back(i * nsamples);
             }
         };
 
@@ -217,7 +224,9 @@ void fence(
         npoints,
         interpolation_method
     );
-
+    if (!noval_indicies.empty()){
+            write_fillvalue(data.get(), noval_indicies, nsamples, *fillValue);
+    }
     return to_response(std::move(data), size, out);
 }
 

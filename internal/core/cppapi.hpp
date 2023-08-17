@@ -23,6 +23,7 @@ void fence(
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method,
+    const float* fillValue,
     response* out
 ) noexcept (false);
 

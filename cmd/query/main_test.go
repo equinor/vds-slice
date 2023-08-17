@@ -179,6 +179,7 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 				Vds:              well_known,
 				CoordinateSystem: "ilxl",
 				Coordinates:      [][]float32{{3, 11}, {2, 10}},
+				FillValue:        float32(-999.25),
 				Sas:              "n/a",
 			},
 		},
@@ -193,6 +194,7 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 				Vds:              well_known,
 				CoordinateSystem: "ij",
 				Coordinates:      [][]float32{{0, 1}, {1, 1}, {1, 0}},
+				FillValue:        float32(-999.25),
 				Sas:              "n/a",
 			},
 		},
@@ -247,8 +249,10 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters GET request",
 				method: http.MethodGet,
-				jsonRequest: "{\"vds\":\"" + well_known +
-					"\", \"coordinateSystem\":\"ilxl\", \"coordinates\":[[0, 0]]}",
+				jsonRequest: "{\"vds\":\"" + well_known  +
+					"\", \"coordinateSystem\":\"ilxl\"," +
+					"\"fillValue\": -999.25," +
+					"\"coordinates\":[[0, 0]]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "No valid Sas token is found",
 			},
@@ -258,8 +262,10 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters POST Request",
 				method: http.MethodPost,
-				jsonRequest: "{\"vds\":\"" + well_known +
-					"\", \"coordinateSystem\":\"ilxl\", \"sas\": \"n/a\"}",
+				jsonRequest: "{\"vds\":\"" + well_known  +
+					"\", \"coordinateSystem\":\"ilxl\"," +
+					"\"fillValue\": -999.25," +
+					"\"sas\": \"n/a\"}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for 'Coordinates'",
 			},

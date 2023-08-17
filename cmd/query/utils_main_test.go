@@ -160,6 +160,7 @@ type testFenceRequest struct {
 	Vds              string      `json:"vds"`
 	CoordinateSystem string      `json:"coordinateSystem"`
 	Coordinates      [][]float32 `json:"coordinates"`
+	FillValue        float32     `json:"fillValue"`
 	Sas              string      `json:"sas"`
 }
 

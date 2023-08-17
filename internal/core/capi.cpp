@@ -166,6 +166,7 @@ int fence(
     const float* coordinates,
     size_t npoints,
     enum interpolation_method interpolation_method,
+    const float* fillValue,
     response* out
 ) {
     try {
@@ -178,6 +179,7 @@ int fence(
             coordinates,
             npoints,
             interpolation_method,
+            fillValue,
             out
         );
         return STATUS_OK;
