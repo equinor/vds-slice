@@ -234,12 +234,12 @@ type AttributeRequest struct {
 	//
 	// Setting this to zero, or omitting it will default it to the vertical
 	// stepsize in the VDS volume.
-	Stepsize float32 `json:"stepsize"`
+	Stepsize float32 `json:"stepsize" example:"1.0"`
 
 	// Requested attributes. Multiple attributes can be calculated by the same
 	// request. This is considerably faster than doing one request per
 	// attribute.
-	Attributes []string `json:"attributes" binding:"required"`
+	Attributes []string `json:"attributes" binding:"required" swaggertype:"array,string" example:"min,max"`
 } //@name AttributeRequest
 
 // Query for Attribute along the surface endpoints
@@ -259,13 +259,13 @@ type AttributeAlongSurfaceRequest struct {
 	// horizon, while the sample at 24ms is excluded.
 	//
 	// Defaults to zero
-	Above float32 `json:"above"`
+	Above float32 `json:"above" example:"20.0"`
 
 	// Samples interval below the horizon to include in attribute calculation.
 	// Implements the same behaviour as 'above'.
 	//
 	// Defaults to zero
-	Below float32 `json:"below"`
+	Below float32 `json:"below" example:"20.0"`
 } //@name AttributeAlongSurfaceRequest
 
 /** Compute a hash of the request that uniquely identifies the requested attributes
