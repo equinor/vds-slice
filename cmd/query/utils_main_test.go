@@ -112,7 +112,7 @@ type attributeAlongSurfaceTest struct {
 }
 
 func (h attributeAlongSurfaceTest) endpoint() string {
-	return "/horizon"
+	return "/attributes/surface/along"
 }
 
 func (h attributeAlongSurfaceTest) base() baseTest {

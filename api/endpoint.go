@@ -428,14 +428,14 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 // AttributesAlongSurfacePost godoc
 // @Summary  Returns horizon attributes along the surface
 // @description.markdown attribute_along
-// @Tags     horizon
+// @Tags     attributes
 // @Param    body  body  AttributeAlongSurfaceRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} core.AttributeMetadata "(Example below only for metadata part)"
 // @Failure  400 {object} ErrorResponse "Request is invalid"
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
-// @Router   /horizon  [post]
+// @Router   /attributes/surface/along  [post]
 func (e *Endpoint) AttributesAlongSurfacePost(ctx *gin.Context) {
 	var request AttributeAlongSurfaceRequest
 	err := parsePostRequest(ctx, &request)
