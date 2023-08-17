@@ -689,6 +689,86 @@ func (v VDSHandle) GetAttributesAlongSurface(
 	)
 }
 
+func (v VDSHandle) GetAttributesBetweenSurfaces(
+	primarySurface RegularSurface,
+	secondarySurface RegularSurface,
+	stepsize float32,
+	attributes []string,
+	interpolation int,
+) ([][]byte, error) {
+	targetAttributes, err := v.normalizeAttributes(attributes)
+	if err != nil {
+		return nil, err
+	}
+
+	var nrows = len(primarySurface.Values)
+	var ncols = len(primarySurface.Values[0])
+	var hsize = nrows * ncols
+
+	cPrimarySurfaceData, err := primarySurface.toCdata(0)
+	if err != nil {
+		return nil, err
+	}
+	cPrimarySurface, err := primarySurface.toCRegularSurface(cPrimarySurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cPrimarySurface.Close()
+
+	cSecondarySurfaceData, err := secondarySurface.toCdata(0)
+	if err != nil {
+		return nil, err
+	}
+	cSecondarySurface, err := secondarySurface.toCRegularSurface(cSecondarySurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cSecondarySurface.Close()
+
+	cAlignedSurfaceData := make([]C.float, hsize)
+	cAlignedSurface, err := primarySurface.toCRegularSurface(cAlignedSurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cAlignedSurface.Close()
+
+	var primaryIsTop C.int
+
+	cerr := C.align_surfaces(
+		v.context(),
+		cPrimarySurface.get(),
+		cSecondarySurface.get(),
+		cAlignedSurface.get(),
+		&primaryIsTop,
+	)
+
+	if err := v.Error(cerr); err != nil {
+		return nil, err
+	}
+
+	var cTopSurface cRegularSurface
+	var cBottomSurface cRegularSurface
+
+	if primaryIsTop != 0 {
+		cTopSurface = cPrimarySurface
+		cBottomSurface = cAlignedSurface
+	} else {
+		cTopSurface = cAlignedSurface
+		cBottomSurface = cPrimarySurface
+	}
+
+	return v.getAttributes(
+		cPrimarySurface,
+		cTopSurface,
+		cBottomSurface,
+		nrows,
+		ncols,
+		targetAttributes,
+		interpolation,
+		stepsize,
+	)
+}
+
 func (v VDSHandle) getAttributes(
 	cReferenceSurface cRegularSurface,
 	cTopSurface cRegularSurface,

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 	"testing"
 
@@ -1470,6 +1471,101 @@ func TestAttribute(t *testing.T) {
 	}
 }
 
+func TestAttributeBetweenSurfaces(t *testing.T) {
+	expected := map[string][]float32{
+		"samplevalue": {},
+		"min":         {-1.5, -0.5, -8.5, 5.5, fillValue, -24.5, fillValue, fillValue},
+		"max":         {2.5, 0.5, -8.5, 5.5, fillValue, -8.5, fillValue, fillValue},
+		"maxabs":      {2.5, 0.5, 8.5, 5.5, fillValue, 24.5, fillValue, fillValue},
+		"mean":        {0.5, 0, -8.5, 5.5, fillValue, -16.5, fillValue, fillValue},
+		"meanabs":     {1.3, 0.5, 8.5, 5.5, fillValue, 16.5, fillValue, fillValue},
+		"meanpos":     {1.5, 0.5, 0, 5.5, fillValue, 0, fillValue, fillValue},
+		"meanneg":     {-1, -0.5, -8.5, 0, fillValue, -16.5, fillValue, fillValue},
+		"median":      {0.5, 0, -8.5, 5.5, fillValue, -16.5, fillValue, fillValue},
+		"rms":         {1.5, 0.5, 8.5, 5.5, fillValue, 17.442764, fillValue, fillValue},
+		"var":         {2, 0.25, 0, 0, fillValue, 32, fillValue, fillValue},
+		"sd":          {1.4142135, 0.5, 0, 0, fillValue, 5.656854, fillValue, fillValue},
+		"sumpos":      {4.5, 0.5, 0, 5.5, fillValue, 0, fillValue, fillValue},
+		"sumneg":      {-2, -0.5, -8.5, 0, fillValue, -82.5, fillValue, fillValue},
+	}
+
+	targetAttributes := make([]string, 0, len(expected))
+	for attr := range expected {
+		targetAttributes = append(targetAttributes, attr)
+	}
+	sort.Strings(targetAttributes)
+
+	topValues := [][]float32{
+		{16, 20},
+		{20, 18},
+		{14, 12},
+		{12, 12}, // Out-of-bounds
+	}
+	bottomValues := [][]float32{
+		{32, 24},
+		{20, 18},
+		{fillValue, 28},
+		{28, 28}, // Out-of-bounds
+	}
+	const stepsize = float32(4.0)
+
+	topSurface := samples10Surface(topValues)
+	bottomSurface := samples10Surface(bottomValues)
+
+	testcases := []struct {
+		primary             RegularSurface
+		secondary           RegularSurface
+		expectedSamplevalue []float32
+	}{
+		{
+			primary:             topSurface,
+			secondary:           bottomSurface,
+			expectedSamplevalue: []float32{-1.5, 0.5, -8.5, 5.5, fillValue, -8.5, fillValue, fillValue},
+		},
+		{
+			primary:             bottomSurface,
+			secondary:           topSurface,
+			expectedSamplevalue: []float32{2.5, -0.5, -8.5, 5.5, fillValue, -24.5, fillValue, fillValue},
+		},
+	}
+
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	handle, _ := NewVDSHandle(samples10)
+	defer handle.Close()
+
+	for _, testcase := range testcases {
+		expected["samplevalue"] = testcase.expectedSamplevalue
+		buf, err := handle.GetAttributesBetweenSurfaces(
+			testcase.primary,
+			testcase.secondary,
+			stepsize,
+			targetAttributes,
+			interpolationMethod,
+		)
+		require.NoErrorf(t, err, "Failed to calculate attributes, err %v", err)
+		require.Len(t, buf, len(targetAttributes),
+			"Incorrect number of attributes returned",
+		)
+
+		for i, attr := range buf {
+			result, err := toFloat32(attr)
+			require.NoErrorf(t, err, "Couldn't convert to float32")
+
+			require.InDeltaSlicef(
+				t,
+				expected[targetAttributes[i]],
+				*result,
+				0.000001,
+				"[%s]\nExpected: %v\nActual:   %v",
+				targetAttributes[i],
+				expected[targetAttributes[i]],
+				*result,
+			)
+		}
+	}
+}
+
 func TestAttributeMedianForEvenSampleValue(t *testing.T) {
 	targetAttributes := []string{"median"}
 	expected := [][]float32{
@@ -2067,11 +2163,13 @@ func TestAttributesInconsistentLength(t *testing.T) {
 	targetAttributes := []string{"samplevalue"}
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
+	goodValues := [][]float32{{20, 20, 20}, {20, 20, 20}}
 	badValues := [][]float32{{20, 20}, {20, 20, 20}}
 
 	errmsg := "Surface rows are not of the same length. " +
 		"Row 0 has 2 elements. Row 1 has 3 elements"
 
+	goodSurface := samples10Surface(goodValues)
 	badSurface := samples10Surface(badValues)
 
 	handle, _ := NewVDSHandle(samples10)
@@ -2081,6 +2179,24 @@ func TestAttributesInconsistentLength(t *testing.T) {
 		badSurface,
 		above,
 		below,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.ErrorContains(t, err, errmsg, err)
+
+	_, err = handle.GetAttributesBetweenSurfaces(
+		badSurface,
+		goodSurface,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.ErrorContains(t, err, errmsg, err)
+
+	_, err = handle.GetAttributesBetweenSurfaces(
+		goodSurface,
+		badSurface,
 		stepsize,
 		targetAttributes,
 		interpolationMethod,
