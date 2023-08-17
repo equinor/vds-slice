@@ -2060,6 +2060,34 @@ func TestInvalidAboveBelow(t *testing.T) {
 	}
 }
 
+func TestAttributesInconsistentLength(t *testing.T) {
+	const above = float32(0)
+	const below = float32(0)
+	const stepsize = float32(4)
+	targetAttributes := []string{"samplevalue"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	badValues := [][]float32{{20, 20}, {20, 20, 20}}
+
+	errmsg := "Surface rows are not of the same length. " +
+		"Row 0 has 2 elements. Row 1 has 3 elements"
+
+	badSurface := samples10Surface(badValues)
+
+	handle, _ := NewVDSHandle(samples10)
+	defer handle.Close()
+
+	_, err := handle.GetAttributes(
+		badSurface,
+		above,
+		below,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.ErrorContains(t, err, errmsg, err)
+}
+
 func TestAttributeMetadata(t *testing.T) {
 	values := [][]float32{
 		{10, 10, 10, 10, 10, 10},

@@ -576,21 +576,6 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 		},
 		attributeTest{
 			baseTest{
-				name:           "Request with incorrect row size",
-				method:         http.MethodPost,
-				expectedStatus: http.StatusBadRequest,
-				expectedError: "Surface rows are not of the same length. " +
-					"Row 0 has 2 elements. Row 1 has 3 elements",
-			},
-			testAttributeRequest{
-				Vds:        well_known,
-				Values:     [][]float32{{4, 4}, {4, 4, 4}, {4, 4}},
-				Sas:        "n/a",
-				Attributes: []string{"samplevalue"},
-			},
-		},
-		attributeTest{
-			baseTest{
 				name:           "Request with incorrect interpolation method",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusBadRequest,
