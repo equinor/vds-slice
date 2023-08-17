@@ -57,19 +57,19 @@ type RegularSurface struct {
 	Values [][]float32 `json:"values" binding:"required"`
 
 	// Rotation of the X-axis (East), counter-clockwise, in degrees
-	Rotation *float32 `json:"rotation" binding:"required"`
+	Rotation *float32 `json:"rotation" binding:"required" example:"33.78"`
 
 	// X-coordinate of the origin
-	Xori *float32 `json:"xori" binding:"required"`
+	Xori *float32 `json:"xori" binding:"required" example:"-324.1"`
 
 	// Y-coordinate of the origin
-	Yori *float32 `json:"yori" binding:"required"`
+	Yori *float32 `json:"yori" binding:"required" example:"6721.33"`
 
 	// X-increment - The physical distance between height-map columns
-	Xinc float32 `json:"xinc" binding:"required"`
+	Xinc float32 `json:"xinc" binding:"required" example:"8.12"`
 
 	// Y-increment - The physical distance between height-map rows
-	Yinc float32 `json:"yinc" binding:"required"`
+	Yinc float32 `json:"yinc" binding:"required" example:"-1.02"`
 
 	// Any sample in the input values with value == fillValue will be ignored
 	// and the fillValue will be used in the amplitude map.
@@ -77,7 +77,7 @@ type RegularSurface struct {
 	// output[i][j] == fillValue.
 	// Additionally, the fillValue is used for any point of the surface that
 	// falls outside the bounds of the seismic volume.
-	FillValue *float32 `json:"fillValue" binding:"required"`
+	FillValue *float32 `json:"fillValue" binding:"required" example:"-999.25"`
 } // @name RegularSurface
 
 // @Description The bounding box of the survey, defined by its 4 corner
