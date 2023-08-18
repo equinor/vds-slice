@@ -507,8 +507,8 @@ func TestAttributeOutOfBounds(t *testing.T) {
 }
 
 func TestAttributeHappyHTTPResponse(t *testing.T) {
-	testcases := []attributeTest{
-		{
+	testcases := []attributeEndpointTest{
+		attributeTest{
 			baseTest{
 				name:           "Valid json POST Request",
 				method:         http.MethodPost,
@@ -533,21 +533,21 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 
 		parts := readMultipartData(t, w)
 		require.Equalf(t, 2, len(parts),
-			"Wrong number of multipart data parts in case '%s'", testcase.name)
+			"Wrong number of multipart data parts in case '%s'", testcase.base().name)
 
 		metadata := string(parts[0])
-		xLength := len(testcase.attribute.Values)
-		yLength := len(testcase.attribute.Values[0])
+		xLength := testcase.nrows()
+		yLength := testcase.ncols()
 		expectedMetadata := `{
 			"shape": [` + fmt.Sprint(xLength) + `,` + fmt.Sprint(yLength) + `],
 			"format": "<f4"
 		}`
 		require.JSONEqf(t, expectedMetadata, metadata,
-			"Metadata not equal in case '%s'", testcase.name)
+			"Metadata not equal in case '%s'", testcase.base().name)
 
 		expectedDataLength := xLength * yLength * 4 //4 bytes each
 		require.Equalf(t, expectedDataLength, len(parts[1]),
-			"Wrong number of bytes in data reply in case '%s'", testcase.name)
+			"Wrong number of bytes in data reply in case '%s'", testcase.base().name)
 	}
 }
 

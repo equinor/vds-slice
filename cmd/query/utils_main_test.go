@@ -100,6 +100,12 @@ func (m metadataTest) requestAsJSON() (string, error) {
 	return string(req), nil
 }
 
+type attributeEndpointTest interface {
+	endpointTest
+	nrows() int
+	ncols() int
+}
+
 type attributeTest struct {
 	baseTest
 	attribute testAttributeRequest
@@ -111,6 +117,14 @@ func (h attributeTest) endpoint() string {
 
 func (h attributeTest) base() baseTest {
 	return h.baseTest
+}
+
+func (h attributeTest) nrows() int {
+	return len(h.attribute.Values)
+}
+
+func (h attributeTest) ncols() int {
+	return len(h.attribute.Values[0])
 }
 
 func (h attributeTest) requestAsJSON() (string, error) {
