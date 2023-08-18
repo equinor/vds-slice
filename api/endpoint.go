@@ -223,7 +223,7 @@ func validateVerticalWindow(above float32, below float32, stepSize float32) erro
 	return nil
 }
 
-func (e *Endpoint) attributesAlongSurface(ctx *gin.Context, request AttributeRequest) {
+func (e *Endpoint) attributesAlongSurface(ctx *gin.Context, request AttributeAlongSurfaceRequest) {
 	prepareRequestLogging(ctx, request)
 
 	err := validateVerticalWindow(request.Above, request.Below, request.Stepsize)
@@ -429,7 +429,7 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 // @Summary  Returns horizon attributes along the surface
 // @description.markdown attribute_along
 // @Tags     horizon
-// @Param    body  body  AttributeRequest  True  "Request Parameters"
+// @Param    body  body  AttributeAlongSurfaceRequest  True  "Request Parameters"
 // @Accept   application/json
 // @Produce  multipart/mixed
 // @Success  200 {object} core.AttributeMetadata "(Example below only for metadata part)"
@@ -437,7 +437,7 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 // @Failure  500 {object} ErrorResponse "openvds failed to process the request"
 // @Router   /horizon  [post]
 func (e *Endpoint) AttributesAlongSurfacePost(ctx *gin.Context) {
-	var request AttributeRequest
+	var request AttributeAlongSurfaceRequest
 	err := parsePostRequest(ctx, &request)
 	if abortOnError(ctx, err) {
 		return

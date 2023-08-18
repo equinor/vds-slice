@@ -207,7 +207,7 @@ func (s SliceRequest) toString() (string, error) {
 
 // Query for Attribute endpoints
 // @Description Query payload for attribute endpoint.
-type AttributeRequest struct {
+type AttributeAlongSurfaceRequest struct {
 	RequestedResource
 
 	// Surface along which data must be retrieved
@@ -260,20 +260,20 @@ type AttributeRequest struct {
 	// request. This is considerably faster than doing one request per
 	// attribute.
 	Attributes []string `json:"attributes" binding:"required"`
-} //@name AttributeRequest
+} //@name AttributeAlongSurfaceRequest
 
 /** Compute a hash of the request that uniquely identifies the requested attributes
  *
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (h AttributeRequest) Hash() (string, error) {
+func (h AttributeAlongSurfaceRequest) Hash() (string, error) {
 	// Strip the sas token before computing hash
 	h.Sas = ""
 	return cache.Hash(h)
 }
 
-func (h AttributeRequest) toString() (string, error) {
+func (h AttributeAlongSurfaceRequest) toString() (string, error) {
 	msg := "{vds: %s, Horizon: (ncols: %d, nrows: %d), Rotation: %.2f, " +
 		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f, " +
 		"interpolation: %s, Above: %.2f, Below: %.2f, Stepsize: %.2f, " +
