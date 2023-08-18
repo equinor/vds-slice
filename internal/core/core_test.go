@@ -2204,6 +2204,59 @@ func TestAttributesInconsistentLength(t *testing.T) {
 	require.ErrorContains(t, err, errmsg, err)
 }
 
+func TestAttributesAllFill(t *testing.T) {
+	const above = float32(0)
+	const below = float32(0)
+	const stepsize = float32(4)
+	targetAttributes := []string{"samplevalue", "min"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	fillValues := [][]float32{{fillValue, fillValue, fillValue}, {fillValue, fillValue, fillValue}}
+	fillSurface := samples10Surface(fillValues)
+	expected := []float32{fillValue, fillValue, fillValue, fillValue, fillValue, fillValue}
+
+	handle, _ := NewVDSHandle(samples10)
+	defer handle.Close()
+
+	bufAlong, err := handle.GetAttributesAlongSurface(
+		fillSurface,
+		above,
+		below,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.NoErrorf(t, err,
+		"Along: Failed to calculate attributes, err: %v",
+		err,
+	)
+
+	bufBetween, err := handle.GetAttributesBetweenSurfaces(
+		fillSurface,
+		fillSurface,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.NoErrorf(t, err,
+		"Between: Failed to calculate attributes, err: %v",
+		err,
+	)
+
+	require.Len(t, bufAlong, len(targetAttributes), "Along: Wrong number of attributes")
+	require.Len(t, bufBetween, len(targetAttributes), "Between: Wrong number of attributes")
+
+	for i, attr := range targetAttributes {
+		along, err := toFloat32(bufAlong[i])
+		require.NoErrorf(t, err, "Couldn't convert to float32")
+		between, err := toFloat32(bufBetween[i])
+		require.NoErrorf(t, err, "Couldn't convert to float32")
+
+		require.Equalf(t, expected, *along, "[%v]", attr)
+		require.Equalf(t, expected, *between, "[%v]", attr)
+	}
+}
+
 func TestAttributeMetadata(t *testing.T) {
 	values := [][]float32{
 		{10, 10, 10, 10, 10, 10},
