@@ -95,14 +95,14 @@ func TestSupportedFormats(t *testing.T) {
 func TestSupportedFormatsHorizon(t *testing.T) {
 	var testcases []endpointTest
 	addTests := func(format int) {
-		attributeTest := attributeTest{
+		attributeTest := attributeAlongSurfaceTest{
 			baseTest{
 				name:           fmt.Sprintf("horizon request, format %d", format),
 				method:         http.MethodPost,
 				expectedStatus: http.StatusOK,
 			},
 
-			testAttributeRequest{
+			testAttributeAlongSurfaceRequest{
 				Vds:        fmt.Sprintf(formatFile, format),
 				Values:     [][]float32{{20}},
 				Sas:        "n/a",

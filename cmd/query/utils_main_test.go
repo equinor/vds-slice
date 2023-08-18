@@ -106,28 +106,28 @@ type attributeEndpointTest interface {
 	ncols() int
 }
 
-type attributeTest struct {
+type attributeAlongSurfaceTest struct {
 	baseTest
-	attribute testAttributeRequest
+	attribute testAttributeAlongSurfaceRequest
 }
 
-func (h attributeTest) endpoint() string {
+func (h attributeAlongSurfaceTest) endpoint() string {
 	return "/horizon"
 }
 
-func (h attributeTest) base() baseTest {
+func (h attributeAlongSurfaceTest) base() baseTest {
 	return h.baseTest
 }
 
-func (h attributeTest) nrows() int {
+func (h attributeAlongSurfaceTest) nrows() int {
 	return len(h.attribute.Values)
 }
 
-func (h attributeTest) ncols() int {
+func (h attributeAlongSurfaceTest) ncols() int {
 	return len(h.attribute.Values[0])
 }
 
-func (h attributeTest) requestAsJSON() (string, error) {
+func (h attributeAlongSurfaceTest) requestAsJSON() (string, error) {
 	out := map[string]interface{}{}
 
 	out["vds"] = h.attribute.Vds
@@ -190,7 +190,7 @@ type testMetadataRequest struct {
 	Sas string `json:"sas"`
 }
 
-type testAttributeRequest struct {
+type testAttributeAlongSurfaceRequest struct {
 	Vds           string
 	Sas           string
 	Values        [][]float32

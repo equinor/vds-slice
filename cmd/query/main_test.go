@@ -472,14 +472,14 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 }
 
 func TestAttributeOutOfBounds(t *testing.T) {
-	newCase := func(name string, above, below, stepSize float32, status int) attributeTest {
-		return attributeTest{
+	newCase := func(name string, above, below, stepSize float32, status int) attributeAlongSurfaceTest {
+		return attributeAlongSurfaceTest{
 			baseTest{
 				name:           name,
 				method:         http.MethodPost,
 				expectedStatus: status,
 			},
-			testAttributeRequest{
+			testAttributeAlongSurfaceRequest{
 				Vds:        samples10,
 				Values:     [][]float32{{20}},
 				Sas:        "n/a",
@@ -508,14 +508,14 @@ func TestAttributeOutOfBounds(t *testing.T) {
 
 func TestAttributeHappyHTTPResponse(t *testing.T) {
 	testcases := []attributeEndpointTest{
-		attributeTest{
+		attributeAlongSurfaceTest{
 			baseTest{
-				name:           "Valid json POST Request",
+				name:           "Valid json POST Request along surface",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusOK,
 			},
 
-			testAttributeRequest{
+			testAttributeAlongSurfaceRequest{
 				Vds:        samples10,
 				Values:     [][]float32{{20, 20}, {20, 20}, {20, 20}},
 				Sas:        "n/a",
@@ -553,7 +553,7 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 
 func TestAttributeErrorHTTPResponse(t *testing.T) {
 	testcases := []endpointTest{
-		attributeTest{
+		attributeAlongSurfaceTest{
 			baseTest{
 				name:           "Invalid json POST request",
 				method:         http.MethodPost,
@@ -561,9 +561,9 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "invalid character",
 			},
-			testAttributeRequest{},
+			testAttributeAlongSurfaceRequest{},
 		},
-		attributeTest{
+		attributeAlongSurfaceTest{
 			baseTest{
 				name:   "Missing parameters POST Request",
 				method: http.MethodPost,
@@ -572,16 +572,16 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for",
 			},
-			testAttributeRequest{},
+			testAttributeAlongSurfaceRequest{},
 		},
-		attributeTest{
+		attributeAlongSurfaceTest{
 			baseTest{
 				name:           "Request with incorrect interpolation method",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "invalid interpolation method",
 			},
-			testAttributeRequest{
+			testAttributeAlongSurfaceRequest{
 				Vds:           well_known,
 				Values:        [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:           "n/a",
@@ -589,14 +589,14 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				Attributes:    []string{"samplevalue"},
 			},
 		},
-		attributeTest{
+		attributeAlongSurfaceTest{
 			baseTest{
 				name:           "Datahandle error",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusInternalServerError,
 				expectedError:  "Could not open VDS",
 			},
-			testAttributeRequest{
+			testAttributeAlongSurfaceRequest{
 				Vds:        "unknown",
 				Values:     [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:        "n/a",

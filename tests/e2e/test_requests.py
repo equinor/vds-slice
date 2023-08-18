@@ -62,7 +62,7 @@ def make_metadata_request(vds=VDSURL, sas="sas"):
     }
 
 
-def make_attribute_request(
+def make_attributes_along_surface_request(
     vds=SAMPLES10_URL,
     surface=surface(),
     values=[[20]],
@@ -162,13 +162,13 @@ def test_metadata(method):
     assert expected_metadata == metadata
 
 
-def test_attributes():
+def test_attributes_along_surface():
     values = [
         [20, 20],
         [20, 20],
         [20, 20]
     ]
-    meta, data = request_attributes("post", values)
+    meta, data = request_attributes_along_surface("post", values)
 
     expected = np.array([[-0.5, 0.5], [-8.5, 6.5], [16.5, -16.5]])
     assert np.array_equal(data, expected)
@@ -186,7 +186,7 @@ def test_attributes():
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
-    ("horizon", make_attribute_request()),
+    ("horizon", make_attributes_along_surface_request()),
 ])
 @pytest.mark.parametrize("sas, allowed_error_messages", [
     (
@@ -214,7 +214,7 @@ def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_message
 @pytest.mark.parametrize("path, payload", [
     ("slice", make_slice_request(vds=VDSURL)),
     ("fence", make_fence_request(vds=VDSURL)),
-    ("horizon", make_attribute_request()),
+    ("horizon", make_attributes_along_surface_request()),
 ])
 @pytest.mark.parametrize("token, status, error", [
     (generate_container_signature(
@@ -266,7 +266,7 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
     ("slice", make_slice_request()),
     ("fence", make_fence_request()),
     ("metadata", make_metadata_request()),
-    ("horizon", make_attribute_request()),
+    ("horizon", make_attributes_along_surface_request()),
 ])
 def test_assure_only_allowed_storage_accounts(path, payload):
     payload.update({
@@ -299,7 +299,7 @@ def test_assure_only_allowed_storage_accounts(path, payload):
     ),
     (
         "horizon",
-        make_attribute_request(surface={}),
+        make_attributes_along_surface_request(surface={}),
         http.HTTPStatus.BAD_REQUEST,
         "Error:Field validation for"
     ),
@@ -372,11 +372,11 @@ def request_metadata(method):
     return rdata.json()
 
 
-def request_attributes(method, values):
+def request_attributes_along_surface(method, values):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = make_attribute_request(values=values, sas=sas)
+    payload = make_attributes_along_surface_request(values=values, sas=sas)
     rdata = send_request("horizon", method, payload)
     rdata.raise_for_status()
 
@@ -393,7 +393,7 @@ def request_attributes(method, values):
     ("slice"    ,   make_slice_request()      ),
     ("fence"    ,   make_fence_request()      ),
     ("metadata" ,   make_metadata_request()   ),
-    ("horizon"  ,   make_attribute_request()  ),
+    ("horizon"  ,   make_attributes_along_surface_request()  ),
 ])
 @pytest.mark.parametrize("vds, sas, expected", [
     ( f'{SAMPLES10_URL}?{gen_default_sas()}' , ''                , http.HTTPStatus.OK            ),
