@@ -25,7 +25,7 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 				Lineno:    0, //side-effect assurance that 0 is accepted
 				Sas:       "n/a",
 				Bounds: []testBound{
-					{ Direction: "inline", Lower: 1, Upper: 3 },
+					{Direction: "inline", Lower: 1, Upper: 3},
 				},
 			},
 		},
@@ -41,7 +41,7 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 				Lineno:    10,
 				Sas:       "n/a",
 				Bounds: []testBound{
-					{ Direction: "inline", Lower: 1, Upper: 3 },
+					{Direction: "inline", Lower: 1, Upper: 3},
 				},
 			},
 		},
@@ -145,8 +145,8 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				name:   "Incomplete bounds parameters POST Request",
 				method: http.MethodPost,
 				jsonRequest: "{\"vds\":\"" + well_known +
-				"\", \"lineno\":1, \"direction\": \"i\", \"sas\": \"n/a\", " +
-				"\"bounds\": [{\"Upper\": 2 }]}",
+					"\", \"lineno\":1, \"direction\": \"i\", \"sas\": \"n/a\", " +
+					"\"bounds\": [{\"Upper\": 2 }]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for 'Direction'",
 			},
@@ -177,6 +177,20 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				Vds:       well_known,
 				Direction: "i",
 				Lineno:    10,
+				Sas:       "n/a",
+			},
+		},
+		sliceTest{
+			baseTest{
+				name:           "Datahandle error",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusInternalServerError,
+				expectedError:  "Could not open VDS",
+			},
+			testSliceRequest{
+				Vds:       "unknown",
+				Direction: "i",
+				Lineno:    1,
 				Sas:       "n/a",
 			},
 		},
@@ -267,7 +281,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters GET request",
 				method: http.MethodGet,
-				jsonRequest: "{\"vds\":\"" + well_known  +
+				jsonRequest: "{\"vds\":\"" + well_known +
 					"\", \"coordinateSystem\":\"ilxl\"," +
 					"\"fillValue\": -999.25," +
 					"\"coordinates\":[[0, 0]]}",
@@ -280,7 +294,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters POST Request",
 				method: http.MethodPost,
-				jsonRequest: "{\"vds\":\"" + well_known  +
+				jsonRequest: "{\"vds\":\"" + well_known +
 					"\", \"coordinateSystem\":\"ilxl\"," +
 					"\"fillValue\": -999.25," +
 					"\"sas\": \"n/a\"}",
@@ -319,7 +333,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 		},
 		fenceTest{
 			baseTest{
-				name:           "Request which passed all input checks but still should fail",
+				name:           "Datahandle error",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusInternalServerError,
 				expectedError:  "Could not open VDS",
@@ -442,7 +456,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 		},
 		metadataTest{
 			baseTest{
-				name:           "Request which passed all input checks but still should fail",
+				name:           "Datahandle error",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusInternalServerError,
 				expectedError:  "Could not open VDS",
@@ -458,14 +472,14 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 }
 
 func TestAttributeOutOfBounds(t *testing.T) {
-	newCase := func(name string, above, below, stepSize float32, status int) attributeTest {
-		return attributeTest{
+	newCase := func(name string, above, below, stepSize float32, status int) attributeAlongSurfaceTest {
+		return attributeAlongSurfaceTest{
 			baseTest{
 				name:           name,
 				method:         http.MethodPost,
 				expectedStatus: status,
 			},
-			testAttributeRequest{
+			testAttributeAlongSurfaceRequest{
 				Vds:        samples10,
 				Values:     [][]float32{{20}},
 				Sas:        "n/a",
@@ -493,21 +507,36 @@ func TestAttributeOutOfBounds(t *testing.T) {
 }
 
 func TestAttributeHappyHTTPResponse(t *testing.T) {
-	testcases := []attributeTest{
-		{
+	testcases := []attributeEndpointTest{
+		attributeAlongSurfaceTest{
 			baseTest{
-				name:           "Valid json POST Request",
+				name:           "Valid json POST Request along surface",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusOK,
 			},
 
-			testAttributeRequest{
+			testAttributeAlongSurfaceRequest{
 				Vds:        samples10,
 				Values:     [][]float32{{20, 20}, {20, 20}, {20, 20}},
 				Sas:        "n/a",
 				Above:      8.0,
 				Below:      4.0,
 				Attributes: []string{"samplevalue"},
+			},
+		},
+		attributeBetweenSurfacesTest{
+			baseTest{
+				name:           "Valid json POST Request between surfaces",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusOK,
+			},
+
+			testAttributeBetweenSurfacesRequest{
+				Vds:             samples10,
+				ValuesPrimary:   [][]float32{{20, 20}, {20, 20}, {20, 20}},
+				ValuesSecondary: [][]float32{{20, 20}, {20, 20}, {20, 20}},
+				Sas:             "n/a",
+				Attributes:      []string{"samplevalue"},
 			},
 		},
 	}
@@ -519,70 +548,76 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 
 		parts := readMultipartData(t, w)
 		require.Equalf(t, 2, len(parts),
-			"Wrong number of multipart data parts in case '%s'", testcase.name)
+			"Wrong number of multipart data parts in case '%s'", testcase.base().name)
 
 		metadata := string(parts[0])
-		xLength := len(testcase.attribute.Values)
-		yLength := len(testcase.attribute.Values[0])
+		xLength := testcase.nrows()
+		yLength := testcase.ncols()
 		expectedMetadata := `{
 			"shape": [` + fmt.Sprint(xLength) + `,` + fmt.Sprint(yLength) + `],
 			"format": "<f4"
 		}`
 		require.JSONEqf(t, expectedMetadata, metadata,
-			"Metadata not equal in case '%s'", testcase.name)
+			"Metadata not equal in case '%s'", testcase.base().name)
 
 		expectedDataLength := xLength * yLength * 4 //4 bytes each
 		require.Equalf(t, expectedDataLength, len(parts[1]),
-			"Wrong number of bytes in data reply in case '%s'", testcase.name)
+			"Wrong number of bytes in data reply in case '%s'", testcase.base().name)
 	}
 }
 
 func TestAttributeErrorHTTPResponse(t *testing.T) {
 	testcases := []endpointTest{
-		attributeTest{
+		attributeAlongSurfaceTest{
 			baseTest{
-				name:           "Invalid json POST request",
+				name:           "Along: Invalid json POST request",
 				method:         http.MethodPost,
 				jsonRequest:    "help I am a duck",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "invalid character",
 			},
-			testAttributeRequest{},
+			testAttributeAlongSurfaceRequest{},
 		},
-		attributeTest{
+		attributeBetweenSurfacesTest{
 			baseTest{
-				name:   "Missing parameters POST Request",
+				name:           "Between: Invalid json POST request",
+				method:         http.MethodPost,
+				jsonRequest:    "help I am a duck",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid character",
+			},
+			testAttributeBetweenSurfacesRequest{},
+		},
+		attributeAlongSurfaceTest{
+			baseTest{
+				name:   "Along: Missing parameters POST Request",
 				method: http.MethodPost,
 				jsonRequest: "{\"vds\":\"" + well_known +
 					"\", \"interpolation\":\"cubic\", \"sas\": \"n/a\"}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for",
 			},
-			testAttributeRequest{},
+			testAttributeAlongSurfaceRequest{},
 		},
-		attributeTest{
+		attributeBetweenSurfacesTest{
 			baseTest{
-				name:           "Request with incorrect row size",
-				method:         http.MethodPost,
+				name:   "Between: Missing parameters POST Request",
+				method: http.MethodPost,
+				jsonRequest: "{\"vds\":\"" + well_known +
+					"\", \"interpolation\":\"cubic\", \"sas\": \"n/a\"}",
 				expectedStatus: http.StatusBadRequest,
-				expectedError: "Surface rows are not of the same length. " +
-					"Row 0 has 2 elements. Row 1 has 3 elements",
+				expectedError:  "Error:Field validation for",
 			},
-			testAttributeRequest{
-				Vds:        well_known,
-				Values:     [][]float32{{4, 4}, {4, 4, 4}, {4, 4}},
-				Sas:        "n/a",
-				Attributes: []string{"samplevalue"},
-			},
+			testAttributeBetweenSurfacesRequest{},
 		},
-		attributeTest{
+		attributeAlongSurfaceTest{
 			baseTest{
-				name:           "Request with incorrect interpolation method",
+				name:           "Along: Bad Request: wrong incorrect interpolation method",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "invalid interpolation method",
 			},
-			testAttributeRequest{
+			testAttributeAlongSurfaceRequest{
 				Vds:           well_known,
 				Values:        [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:           "n/a",
@@ -590,18 +625,49 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				Attributes:    []string{"samplevalue"},
 			},
 		},
-		attributeTest{
+		attributeBetweenSurfacesTest{
 			baseTest{
-				name:           "Request which passed all input checks but still should fail",
+				name:           "Between: Bad Request: wrong incorrect interpolation method",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "invalid interpolation method",
+			},
+			testAttributeBetweenSurfacesRequest{
+				Vds:             well_known,
+				ValuesPrimary:   [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				ValuesSecondary: [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:             "n/a",
+				Interpolation:   "unsupported",
+				Attributes:      []string{"samplevalue"},
+			},
+		},
+		attributeAlongSurfaceTest{
+			baseTest{
+				name:           "Along: Datahandle error",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusInternalServerError,
 				expectedError:  "Could not open VDS",
 			},
-			testAttributeRequest{
+			testAttributeAlongSurfaceRequest{
 				Vds:        "unknown",
 				Values:     [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				Sas:        "n/a",
 				Attributes: []string{"samplevalue"},
+			},
+		},
+		attributeBetweenSurfacesTest{
+			baseTest{
+				name:           "Between: Datahandle error",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusInternalServerError,
+				expectedError:  "Could not open VDS",
+			},
+			testAttributeBetweenSurfacesRequest{
+				Vds:             "unknown",
+				ValuesPrimary:   [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				ValuesSecondary: [][]float32{{4, 4}, {4, 4}, {4, 4}},
+				Sas:             "n/a",
+				Attributes:      []string{"samplevalue"},
 			},
 		},
 	}

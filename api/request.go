@@ -210,9 +210,6 @@ func (s SliceRequest) toString() (string, error) {
 type AttributeRequest struct {
 	RequestedResource
 
-	// Surface along which data must be retrieved
-	Surface core.RegularSurface `json:"surface" binding:"required"`
-
 	// Horizontal interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
 	// Defaults to nearest.
@@ -223,23 +220,6 @@ type AttributeRequest struct {
 	// Note: For nearest interpolation result will snap to the nearest point
 	// as per "half up" rounding. This is different from openvds logic.
 	Interpolation string `json:"interpolation" example:"linear"`
-
-	// Samples interval above the horizon to include in attribute calculation.
-	// This value should be given in the VDS's vertical domain. E.g. if the
-	// vertical domain is 'ms' then a value of 22 means to include samples up
-	// to 22 ms above the horizon definition. The value is rounded down to the
-	// nearest whole sample. I.e. if the cube is sampled at 4ms, the attribute
-	// calculation will include samples 4, 8, 12, 16 and 20ms above the
-	// horizon, while the sample at 24ms is excluded.
-	//
-	// Defaults to zero
-	Above float32 `json:"above"`
-
-	// Samples interval below the horizon to include in attribute calculation.
-	// Implements the same behaviour as 'above'.
-	//
-	// Defaults to zero
-	Below float32 `json:"below"`
 
 	// Stepsize for samples within the window defined by above below
 	//
@@ -254,26 +234,52 @@ type AttributeRequest struct {
 	//
 	// Setting this to zero, or omitting it will default it to the vertical
 	// stepsize in the VDS volume.
-	Stepsize float32 `json:"stepsize"`
+	Stepsize float32 `json:"stepsize" example:"1.0"`
 
 	// Requested attributes. Multiple attributes can be calculated by the same
 	// request. This is considerably faster than doing one request per
 	// attribute.
-	Attributes []string `json:"attributes" binding:"required"`
+	Attributes []string `json:"attributes" binding:"required" swaggertype:"array,string" example:"min,max"`
 } //@name AttributeRequest
+
+// Query for Attribute along the surface endpoints
+// @Description Query payload for attribute "along" endpoint.
+type AttributeAlongSurfaceRequest struct {
+	AttributeRequest
+
+	// Surface along which data must be retrieved
+	Surface core.RegularSurface `json:"surface" binding:"required"`
+
+	// Samples interval above the horizon to include in attribute calculation.
+	// This value should be given in the VDS's vertical domain. E.g. if the
+	// vertical domain is 'ms' then a value of 22 means to include samples up
+	// to 22 ms above the horizon definition. The value is rounded down to the
+	// nearest whole sample. I.e. if the cube is sampled at 4ms, the attribute
+	// calculation will include samples 4, 8, 12, 16 and 20ms above the
+	// horizon, while the sample at 24ms is excluded.
+	//
+	// Defaults to zero
+	Above float32 `json:"above" example:"20.0"`
+
+	// Samples interval below the horizon to include in attribute calculation.
+	// Implements the same behaviour as 'above'.
+	//
+	// Defaults to zero
+	Below float32 `json:"below" example:"20.0"`
+} //@name AttributeAlongSurfaceRequest
 
 /** Compute a hash of the request that uniquely identifies the requested attributes
  *
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (h AttributeRequest) Hash() (string, error) {
+func (h AttributeAlongSurfaceRequest) Hash() (string, error) {
 	// Strip the sas token before computing hash
 	h.Sas = ""
 	return cache.Hash(h)
 }
 
-func (h AttributeRequest) toString() (string, error) {
+func (h AttributeAlongSurfaceRequest) toString() (string, error) {
 	msg := "{vds: %s, Horizon: (ncols: %d, nrows: %d), Rotation: %.2f, " +
 		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f, " +
 		"interpolation: %s, Above: %.2f, Below: %.2f, Stepsize: %.2f, " +
@@ -292,6 +298,76 @@ func (h AttributeRequest) toString() (string, error) {
 		h.Interpolation,
 		h.Above,
 		h.Below,
+		h.Stepsize,
+		h.Attributes,
+	), nil
+}
+
+// Query for Attribute between surfaces endpoints
+// @Description Query payload for attribute "between" endpoint.
+type AttributeBetweenSurfacesRequest struct {
+	AttributeRequest
+
+	// One of the two surfaces between which data will be retrieved. This value
+	// should be given in the VDS's vertical domain, Annotation (for example,
+	// Depth or Time). Surface will be used as reference for any sampling
+	// operation, i.e. points that are on this surface will be present in the
+	// final calculations and could be retrieved through samplevalue. At the
+	// surface points where no data exists fillvalue will be set in the result
+	// buffer.
+	PrimarySurface core.RegularSurface `json:"primarySurface" binding:"required"`
+
+	// One of the two surfaces between which data will be retrieved. This value
+	// should be given in the VDS's vertical domain, Annotation (for example,
+	// Depth or Time). Surface will be used to define data boundaries. For every
+	// point on the primary surface the closest point on the secondary surface
+	// would be found and its value set as the request boundary. It might not be
+	// included in final calculations. If the closest value is fillvalue,
+	// fillvalue will be set in the result buffer. It is not required for
+	// surfaces to have the same plane (origin, rotation, step). If surfaces
+	// intersect, exception will be thrown. If any of the values of the surface
+	// is outside of data boundaries, exception will be raised.
+	SecondarySurface core.RegularSurface `json:"secondarySurface" binding:"required"`
+} //@name AttributeBetweenSurfacesRequest
+
+/** Compute a hash of the request that uniquely identifies the requested attributes
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (h AttributeBetweenSurfacesRequest) Hash() (string, error) {
+	// Strip the sas token before computing hash
+	h.Sas = ""
+	return cache.Hash(h)
+}
+
+func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
+	msg := "{vds: %s, " +
+		"Primary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
+		"Secondary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
+		"Interpolation: %s, Stepsize: %.2f, Attributes: %v}"
+	return fmt.Sprintf(
+		msg,
+		h.Vds,
+		len(h.PrimarySurface.Values[0]),
+		len(h.PrimarySurface.Values),
+		*h.PrimarySurface.Rotation,
+		*h.PrimarySurface.Xori,
+		*h.PrimarySurface.Yori,
+		h.PrimarySurface.Xinc,
+		h.PrimarySurface.Yinc,
+		*h.PrimarySurface.FillValue,
+		len(h.SecondarySurface.Values[0]),
+		len(h.SecondarySurface.Values),
+		*h.SecondarySurface.Rotation,
+		*h.SecondarySurface.Xori,
+		*h.SecondarySurface.Yori,
+		h.SecondarySurface.Xinc,
+		h.SecondarySurface.Yinc,
+		*h.SecondarySurface.FillValue,
+		h.Interpolation,
 		h.Stepsize,
 		h.Attributes,
 	), nil

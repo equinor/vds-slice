@@ -100,20 +100,39 @@ func (m metadataTest) requestAsJSON() (string, error) {
 	return string(req), nil
 }
 
-type attributeTest struct {
+type attributeEndpointTest interface {
+	endpointTest
+	nrows() int
+	ncols() int
+}
+
+type attributeAlongSurfaceTest struct {
 	baseTest
-	attribute testAttributeRequest
+	attribute testAttributeAlongSurfaceRequest
 }
 
-func (h attributeTest) endpoint() string {
-	return "/horizon"
+type attributeBetweenSurfacesTest struct {
+	baseTest
+	attribute testAttributeBetweenSurfacesRequest
 }
 
-func (h attributeTest) base() baseTest {
+func (h attributeAlongSurfaceTest) endpoint() string {
+	return "/attributes/surface/along"
+}
+
+func (h attributeAlongSurfaceTest) base() baseTest {
 	return h.baseTest
 }
 
-func (h attributeTest) requestAsJSON() (string, error) {
+func (h attributeAlongSurfaceTest) nrows() int {
+	return len(h.attribute.Values)
+}
+
+func (h attributeAlongSurfaceTest) ncols() int {
+	return len(h.attribute.Values[0])
+}
+
+func (h attributeAlongSurfaceTest) requestAsJSON() (string, error) {
 	out := map[string]interface{}{}
 
 	out["vds"] = h.attribute.Vds
@@ -131,6 +150,60 @@ func (h attributeTest) requestAsJSON() (string, error) {
 	out["below"] = h.attribute.Below
 	out["stepsize"] = h.attribute.Stepsize
 	out["Attributes"] = h.attribute.Attributes
+	if h.attribute.Interpolation != "" {
+		out["interpolation"] = h.attribute.Interpolation
+	} else {
+		out["interpolation"] = "cubic"
+	}
+
+	req, err := json.Marshal(out)
+	if err != nil {
+		return "", fmt.Errorf("cannot marshal attribute request %v", h.attribute)
+	}
+	return string(req), nil
+}
+
+func (h attributeBetweenSurfacesTest) endpoint() string {
+	return "/attributes/surface/between"
+}
+
+func (h attributeBetweenSurfacesTest) base() baseTest {
+	return h.baseTest
+}
+
+func (h attributeBetweenSurfacesTest) nrows() int {
+	return len(h.attribute.ValuesPrimary)
+}
+
+func (h attributeBetweenSurfacesTest) ncols() int {
+	return len(h.attribute.ValuesPrimary[0])
+}
+
+func (h attributeBetweenSurfacesTest) requestAsJSON() (string, error) {
+	out := map[string]interface{}{}
+
+	out["vds"] = h.attribute.Vds
+	out["sas"] = h.attribute.Sas
+
+	primary := map[string]interface{}{}
+	primary["values"] = h.attribute.ValuesPrimary
+	primary["rotation"] = 33.69
+	primary["xinc"] = 7.2111
+	primary["yinc"] = 3.6056
+	primary["xori"] = 2
+	primary["yori"] = 0
+	primary["fillValue"] = 666.66
+	out["primarySurface"] = primary
+
+	secondary := map[string]interface{}{}
+	for k, v := range primary {
+		secondary[k] = v
+	}
+	secondary["values"] = h.attribute.ValuesSecondary
+	out["secondarySurface"] = secondary
+
+	out["stepsize"] = h.attribute.Stepsize
+	out["attributes"] = h.attribute.Attributes
 	if h.attribute.Interpolation != "" {
 		out["interpolation"] = h.attribute.Interpolation
 	} else {
@@ -176,7 +249,7 @@ type testMetadataRequest struct {
 	Sas string `json:"sas"`
 }
 
-type testAttributeRequest struct {
+type testAttributeAlongSurfaceRequest struct {
 	Vds           string
 	Sas           string
 	Values        [][]float32
@@ -185,6 +258,16 @@ type testAttributeRequest struct {
 	Below         float32
 	Stepsize      float32
 	Attributes    []string
+}
+
+type testAttributeBetweenSurfacesRequest struct {
+	Vds             string
+	Sas             string
+	ValuesPrimary   [][]float32
+	ValuesSecondary [][]float32
+	Interpolation   string
+	Stepsize        float32
+	Attributes      []string
 }
 
 type testSliceAxis struct {

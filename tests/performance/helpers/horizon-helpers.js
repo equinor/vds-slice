@@ -28,7 +28,7 @@ export function sendHorizonRequest(
     attributes: attributes
   };
   let payload = Object.assign({}, properties, surface);
-  sendRequest("horizon", payload);
+  sendRequest("attributes/surface/along", payload);
 }
 
 export function retrieveMetadataForHorizonRequest(metadata) {

@@ -57,19 +57,19 @@ type RegularSurface struct {
 	Values [][]float32 `json:"values" binding:"required"`
 
 	// Rotation of the X-axis (East), counter-clockwise, in degrees
-	Rotation *float32 `json:"rotation" binding:"required"`
+	Rotation *float32 `json:"rotation" binding:"required" example:"33.78"`
 
 	// X-coordinate of the origin
-	Xori *float32 `json:"xori" binding:"required"`
+	Xori *float32 `json:"xori" binding:"required" example:"-324.1"`
 
 	// Y-coordinate of the origin
-	Yori *float32 `json:"yori" binding:"required"`
+	Yori *float32 `json:"yori" binding:"required" example:"6721.33"`
 
 	// X-increment - The physical distance between height-map columns
-	Xinc float32 `json:"xinc" binding:"required"`
+	Xinc float32 `json:"xinc" binding:"required" example:"8.12"`
 
 	// Y-increment - The physical distance between height-map rows
-	Yinc float32 `json:"yinc" binding:"required"`
+	Yinc float32 `json:"yinc" binding:"required" example:"-1.02"`
 
 	// Any sample in the input values with value == fillValue will be ignored
 	// and the fillValue will be used in the amplitude map.
@@ -77,7 +77,7 @@ type RegularSurface struct {
 	// output[i][j] == fillValue.
 	// Additionally, the fillValue is used for any point of the surface that
 	// falls outside the bounds of the seismic volume.
-	FillValue *float32 `json:"fillValue" binding:"required"`
+	FillValue *float32 `json:"fillValue" binding:"required" example:"-999.25"`
 } // @name RegularSurface
 
 // @Description The bounding box of the survey, defined by its 4 corner
@@ -102,7 +102,7 @@ type Array struct {
 // @Description Slice bounds.
 type Bound struct {
 	// Direction of the bound. See SliceRequest.Direction for valid options
-	Direction *string  `json:"direction" binding:"required" example:"inline"`
+	Direction *string `json:"direction" binding:"required" example:"inline"`
 
 	// Lower bound - inclusive
 	Lower *int `json:"lower" binding:"required" example:"100"`
@@ -311,7 +311,7 @@ func (r *cRegularSurface) Close() error {
 	return nil
 }
 
-func (surface *RegularSurface) toCdata(shift float32) ([]C.float, error){
+func (surface *RegularSurface) toCdata(shift float32) ([]C.float, error) {
 	nrows := len(surface.Values)
 	ncols := len(surface.Values[0])
 
@@ -485,9 +485,9 @@ func (v VDSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, erro
 }
 
 func (v VDSHandle) GetSliceMetadata(
-	lineno    int,
+	lineno int,
 	direction int,
-	bounds    []Bound,
+	bounds []Bound,
 ) ([]byte, error) {
 	var result C.struct_response
 
@@ -620,21 +620,17 @@ func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	return buf, nil
 }
 
-func (v VDSHandle) GetAttributes(
-	primarySurface RegularSurface,
+func (v VDSHandle) GetAttributesAlongSurface(
+	referenceSurface RegularSurface,
 	above float32,
 	below float32,
 	stepsize float32,
 	attributes []string,
 	interpolation int,
 ) ([][]byte, error) {
-	var targetAttributes []int
-	for _, attr := range attributes {
-		id, err := GetAttributeType(attr)
-		if err != nil {
-			return nil, err
-		}
-		targetAttributes = append(targetAttributes, id)
+	targetAttributes, err := v.normalizeAttributes(attributes)
+	if err != nil {
+		return nil, err
 	}
 
 	if above < 0 || below < 0 {
@@ -646,46 +642,144 @@ func (v VDSHandle) GetAttributes(
 		return nil, NewInvalidArgument(msg)
 	}
 
+	var nrows = len(referenceSurface.Values)
+	var ncols = len(referenceSurface.Values[0])
+
+	cReferenceSurfaceData, err := referenceSurface.toCdata(0)
+	if err != nil {
+		return nil, err
+	}
+
+	cReferenceSurface, err := referenceSurface.toCRegularSurface(cReferenceSurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cReferenceSurface.Close()
+
+	cTopSurfaceData, err := referenceSurface.toCdata(-above)
+	if err != nil {
+		return nil, err
+	}
+
+	cTopSurface, err := referenceSurface.toCRegularSurface(cTopSurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cTopSurface.Close()
+
+	cBottomSurfaceData, err := referenceSurface.toCdata(below)
+	if err != nil {
+		return nil, err
+	}
+	cBottomSurface, err := referenceSurface.toCRegularSurface(cBottomSurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cBottomSurface.Close()
+
+	return v.getAttributes(
+		cReferenceSurface,
+		cTopSurface,
+		cBottomSurface,
+		nrows,
+		ncols,
+		targetAttributes,
+		interpolation,
+		stepsize,
+	)
+}
+
+func (v VDSHandle) GetAttributesBetweenSurfaces(
+	primarySurface RegularSurface,
+	secondarySurface RegularSurface,
+	stepsize float32,
+	attributes []string,
+	interpolation int,
+) ([][]byte, error) {
+	targetAttributes, err := v.normalizeAttributes(attributes)
+	if err != nil {
+		return nil, err
+	}
+
 	var nrows = len(primarySurface.Values)
 	var ncols = len(primarySurface.Values[0])
 	var hsize = nrows * ncols
-
-	cAttributes := make([]C.enum_attribute, len(targetAttributes))
-	for i := range targetAttributes {
-		cAttributes[i] = C.enum_attribute(targetAttributes[i])
-	}
 
 	cPrimarySurfaceData, err := primarySurface.toCdata(0)
 	if err != nil {
 		return nil, err
 	}
-
 	cPrimarySurface, err := primarySurface.toCRegularSurface(cPrimarySurfaceData)
 	if err != nil {
 		return nil, err
 	}
 	defer cPrimarySurface.Close()
 
-	cTopSurfaceData, err := primarySurface.toCdata(-above)
+	cSecondarySurfaceData, err := secondarySurface.toCdata(0)
 	if err != nil {
+		return nil, err
+	}
+	cSecondarySurface, err := secondarySurface.toCRegularSurface(cSecondarySurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cSecondarySurface.Close()
+
+	cAlignedSurfaceData := make([]C.float, hsize)
+	cAlignedSurface, err := primarySurface.toCRegularSurface(cAlignedSurfaceData)
+	if err != nil {
+		return nil, err
+	}
+	defer cAlignedSurface.Close()
+
+	var primaryIsTop C.int
+
+	cerr := C.align_surfaces(
+		v.context(),
+		cPrimarySurface.get(),
+		cSecondarySurface.get(),
+		cAlignedSurface.get(),
+		&primaryIsTop,
+	)
+
+	if err := v.Error(cerr); err != nil {
 		return nil, err
 	}
 
-	cTopSurface, err := primarySurface.toCRegularSurface(cTopSurfaceData)
-	if err != nil {
-		return nil, err
-	}
-	defer cTopSurface.Close()
+	var cTopSurface cRegularSurface
+	var cBottomSurface cRegularSurface
 
-	cBottomSurfaceData, err := primarySurface.toCdata(below)
-	if err != nil {
-		return nil, err
+	if primaryIsTop != 0 {
+		cTopSurface = cPrimarySurface
+		cBottomSurface = cAlignedSurface
+	} else {
+		cTopSurface = cAlignedSurface
+		cBottomSurface = cPrimarySurface
 	}
-	cBottomSurface, err := primarySurface.toCRegularSurface(cBottomSurfaceData)
-	if err != nil {
-		return nil, err
-	}
-	defer cBottomSurface.Close()
+
+	return v.getAttributes(
+		cPrimarySurface,
+		cTopSurface,
+		cBottomSurface,
+		nrows,
+		ncols,
+		targetAttributes,
+		interpolation,
+		stepsize,
+	)
+}
+
+func (v VDSHandle) getAttributes(
+	cReferenceSurface cRegularSurface,
+	cTopSurface cRegularSurface,
+	cBottomSurface cRegularSurface,
+	nrows int,
+	ncols int,
+	targetAttributes []int,
+	interpolation int,
+	stepsize float32,
+) ([][]byte, error) {
+	var hsize = nrows * ncols
 
 	dataOffsetSize := hsize + 1
 	dataOffset := make([]C.size_t, dataOffsetSize)
@@ -693,7 +787,7 @@ func (v VDSHandle) GetAttributes(
 	cerr := C.horizon_buffer_offsets(
 		v.context(),
 		v.Handle(),
-		cPrimarySurface.get(),
+		cReferenceSurface.get(),
 		cTopSurface.get(),
 		cBottomSurface.get(),
 		&dataOffset[0],
@@ -710,7 +804,7 @@ func (v VDSHandle) GetAttributes(
 	}
 
 	horizon, err := v.fetchHorizon(
-		cPrimarySurface,
+		cReferenceSurface,
 		cTopSurface,
 		cBottomSurface,
 		nrows,
@@ -724,20 +818,34 @@ func (v VDSHandle) GetAttributes(
 	}
 
 	return v.calculateAttributes(
-		cPrimarySurface,
+		cReferenceSurface,
 		cTopSurface,
 		cBottomSurface,
 		hsize,
 		dataOffset,
 		horizon,
 		C.size_t(horizonBufferSize),
-		cAttributes,
+		targetAttributes,
 		stepsize,
 	)
 }
 
+func (v VDSHandle) normalizeAttributes(
+	attributes []string,
+) ([]int, error) {
+	var targetAttributes []int
+	for _, attr := range attributes {
+		id, err := GetAttributeType(attr)
+		if err != nil {
+			return nil, err
+		}
+		targetAttributes = append(targetAttributes, id)
+	}
+	return targetAttributes, nil
+}
+
 func (v VDSHandle) fetchHorizon(
-	cPrimarySurface cRegularSurface,
+	cReferenceSurface cRegularSurface,
 	cTopSurface cRegularSurface,
 	cBottomSurface cRegularSurface,
 	nrows int,
@@ -778,7 +886,7 @@ func (v VDSHandle) fetchHorizon(
 			cerr := C.horizon(
 				cCtx,
 				v.Handle(),
-				cPrimarySurface.get(),
+				cReferenceSurface.get(),
 				cTopSurface.get(),
 				cBottomSurface.get(),
 				&dataOffset[0],
@@ -813,16 +921,22 @@ func (v VDSHandle) fetchHorizon(
 }
 
 func (v VDSHandle) calculateAttributes(
-	cPrimarySurface cRegularSurface,
+	cReferenceSurface cRegularSurface,
 	cTopSurface cRegularSurface,
 	cBottomSurface cRegularSurface,
 	hsize int,
 	dataOffset []C.size_t,
 	horizon []byte,
 	horizonSize C.size_t,
-	cAttributes []uint32,
+	targetAttributes []int,
 	stepsize float32,
 ) ([][]byte, error) {
+
+	cAttributes := make([]C.enum_attribute, len(targetAttributes))
+	for i := range targetAttributes {
+		cAttributes[i] = C.enum_attribute(targetAttributes[i])
+	}
+
 	nAttributes := len(cAttributes)
 	var mapsize = hsize * 4
 	buffer := make([]byte, mapsize*nAttributes)
@@ -848,7 +962,7 @@ func (v VDSHandle) calculateAttributes(
 			cErr := C.attribute(
 				cCtx,
 				v.Handle(),
-				cPrimarySurface.get(),
+				cReferenceSurface.get(),
 				cTopSurface.get(),
 				cBottomSurface.get(),
 				&dataOffset[0],

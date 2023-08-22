@@ -463,9 +463,10 @@ struct SurfacesCrossoverValidator {
     bool have_crossed(float primary, float secondary) {
         if (primary > secondary) {
             this->primary_is_bottom = true;
-        }
-        else if (primary < secondary) {
+        } else if (primary < secondary) {
             this->primary_is_top = true;
+        } else { //primary == secondary
+            return false;
         }
         return this->primary_is_top == this->primary_is_bottom;
     }
