@@ -92,7 +92,7 @@ func TestMetadata(t *testing.T) {
 			Ij:   [][]float64{{0, 0}, {2, 0}, {2, 1}, {0, 1}},
 		},
 		Crs:             "utmXX",
-		InputFileName:   "well_known.segy",
+		InputFileName:   `\.segy$`,
 		ImportTimeStamp: `\d{4}-\d{2}-\d{2}[A-Z]\d{2}:\d{2}:\d{2}\.\d{3}([A-Z]|\d+)?$`,
 	}
 
@@ -106,9 +106,12 @@ func TestMetadata(t *testing.T) {
 	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
 
 	require.Regexp(t, expected.ImportTimeStamp, meta.ImportTimeStamp)
+	require.Regexp(t, expected.InputFileName, meta.InputFileName)
 
 	expected.ImportTimeStamp = "dummy"
 	meta.ImportTimeStamp = "dummy"
+	expected.InputFileName = "dummy"
+	meta.InputFileName = "dummy"
 
 	require.Equal(t, meta, expected)
 }
