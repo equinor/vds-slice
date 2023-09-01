@@ -14,15 +14,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func make_connection(name string) Connection {
-	path := fmt.Sprintf("../../testdata/%s/%s_default.vds", name, name)
+func make_connection(name string, ext string ) Connection {
+	if ext == ""{
+		ext = "default.vds"
+	}
+	path := fmt.Sprintf("../../testdata/%s/%s_%s", name, name, ext)
 	path = fmt.Sprintf("file://%s", path)
 	return NewFileConnection(path)
 }
-
-var well_known = make_connection("well_known")
-var samples10 = make_connection("10_samples")
-var prestack = make_connection("prestack")
+var well_known_custom_order = make_connection("well_known", "custom_order.vds")
+var well_known = make_connection("well_known", "")
+var samples10 = make_connection("10_samples", "")
+var prestack = make_connection("prestack", "")
 
 var fillValue = float32(-999.25)
 
@@ -77,6 +80,43 @@ func toFloat32(buf []byte) (*[]float32, error) {
 	}
 
 	return &out, nil
+}
+
+func TestCustomOrderMetadata(t *testing.T) {
+	expected := Metadata{
+		Axis: []*Axis{
+			{Annotation: "Inline", Min: 1, Max: 5, Samples: 3, Unit: "unitless"},
+			{Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, Unit: "unitless"},
+			{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, Unit: "ms"},
+		},
+		BoundingBox: BoundingBox{
+			Cdp:  [][]float64{{2, 0}, {14, 8}, {12, 11}, {0, 3}},
+			Ilxl: [][]float64{{1, 10}, {5, 10}, {5, 11}, {1, 11}},
+			Ij:   [][]float64{{0, 0}, {2, 0}, {2, 1}, {0, 1}},
+		},
+		Crs:             "utmXX",
+		InputFileName:   `\.segy$`,
+		ImportTimeStamp: `\d{4}-\d{2}-\d{2}[A-Z]\d{2}:\d{2}:\d{2}\.\d{3}([A-Z]|\d+)?$`,
+	}
+
+	handle, _ := NewVDSHandle(well_known_custom_order)
+	defer handle.Close()
+	buf, err := handle.GetMetadata()
+	require.NoErrorf(t, err, "Failed to retrive metadata, err %v", err)
+
+	var meta Metadata
+	err = json.Unmarshal(buf, &meta)
+	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
+
+	require.Regexp(t, expected.ImportTimeStamp, meta.ImportTimeStamp)
+	require.Regexp(t, expected.InputFileName, meta.InputFileName)
+
+	expected.ImportTimeStamp = "dummy"
+	meta.ImportTimeStamp = "dummy"
+	expected.InputFileName = "dummy"
+	meta.InputFileName = "dummy"
+
+	require.Equal(t, meta, expected)
 }
 
 func TestMetadata(t *testing.T) {
