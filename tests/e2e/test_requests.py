@@ -135,8 +135,8 @@ def test_slice(method):
 
     expected_meta = json.loads("""
     {
-        "x": {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"},
-        "y": {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
+        "x": {"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "stride": 4.0, "unit": "ms"},
+        "y": {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "stride": 1.0, "unit": "unitless"},
         "shape": [ 2, 4],
         "format": "<f4",
         "geospatial": [[14.0, 8.0], [12.0, 11.0]]
@@ -173,9 +173,9 @@ def test_metadata(method):
     metadata = dict(request_metadata(method))
     expected_metadata = {
         "axis": [
-            {"annotation": "Inline",    "max": 5.0,  "min": 1.0,  "samples": 3, "unit": "unitless"},
-            {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples": 2, "unit": "unitless"},
-            {"annotation": "Sample",    "max": 16.0, "min": 4.0,  "samples": 4, "unit": "ms"}
+            {"annotation": "Inline",    "max": 5.0,  "min": 1.0,  "samples": 3, "stride": 2.0, "unit": "unitless"},
+            {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples": 2, "stride": 1.0, "unit": "unitless"},
+            {"annotation": "Sample",    "max": 16.0, "min": 4.0,  "samples": 4, "stride": 4.0, "unit": "ms"}
         ],
         "boundingBox": {
             "cdp" : [[2,0]  , [14,8] , [12,11] , [0,3] ],
