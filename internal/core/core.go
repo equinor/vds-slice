@@ -47,6 +47,9 @@ type Axis struct {
 	// Number of samples along the axis
 	Samples int `json:"samples" example:"1600"`
 
+	// Increment from one sample to the next
+	Stride float64 `json:"stride" example:"4.0"`
+
 	// Axis units
 	Unit string `json:"unit" example:"ms"`
 } // @name Axis
