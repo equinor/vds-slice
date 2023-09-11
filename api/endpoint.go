@@ -226,7 +226,7 @@ func validateVerticalWindow(above float32, below float32, stepSize float32) erro
 func (e *Endpoint) attributesAlongSurface(ctx *gin.Context, request AttributeAlongSurfaceRequest) {
 	prepareRequestLogging(ctx, request)
 
-	err := validateVerticalWindow(request.Above, request.Below, request.Stepsize)
+	err := validateVerticalWindow(request.Above, request.Below, request.StepSize)
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -268,7 +268,7 @@ func (e *Endpoint) attributesAlongSurface(ctx *gin.Context, request AttributeAlo
 		request.Surface,
 		request.Above,
 		request.Below,
-		request.Stepsize,
+		request.StepSize,
 		request.Attributes,
 		interpolation,
 	)
@@ -320,7 +320,7 @@ func (e *Endpoint) attributesBetweenSurfaces(ctx *gin.Context, request Attribute
 	data, err := handle.GetAttributesBetweenSurfaces(
 		request.PrimarySurface,
 		request.SecondarySurface,
-		request.Stepsize,
+		request.StepSize,
 		request.Attributes,
 		interpolation,
 	)

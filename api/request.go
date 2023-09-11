@@ -221,7 +221,7 @@ type AttributeRequest struct {
 	// as per "half up" rounding. This is different from openvds logic.
 	Interpolation string `json:"interpolation" example:"linear"`
 
-	// Stepsize for samples within the window defined by above below
+	// StepSize for samples within the window defined by above below
 	//
 	// Samples within the vertical window will be re-sampled to 'stepsize'
 	// using cubic interpolation (modified makima) before the attributes are
@@ -234,7 +234,7 @@ type AttributeRequest struct {
 	//
 	// Setting this to zero, or omitting it will default it to the vertical
 	// stepsize in the VDS volume.
-	Stepsize float32 `json:"stepsize" example:"1.0"`
+	StepSize float32 `json:"stepsize" example:"1.0"`
 
 	// Requested attributes. Multiple attributes can be calculated by the same
 	// request. This is considerably faster than doing one request per
@@ -282,7 +282,7 @@ func (h AttributeAlongSurfaceRequest) Hash() (string, error) {
 func (h AttributeAlongSurfaceRequest) toString() (string, error) {
 	msg := "{vds: %s, Horizon: (ncols: %d, nrows: %d), Rotation: %.2f, " +
 		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f, " +
-		"interpolation: %s, Above: %.2f, Below: %.2f, Stepsize: %.2f, " +
+		"interpolation: %s, Above: %.2f, Below: %.2f, StepSize: %.2f, " +
 		"Attributes: %v}"
 	return fmt.Sprintf(
 		msg,
@@ -298,7 +298,7 @@ func (h AttributeAlongSurfaceRequest) toString() (string, error) {
 		h.Interpolation,
 		h.Above,
 		h.Below,
-		h.Stepsize,
+		h.StepSize,
 		h.Attributes,
 	), nil
 }
@@ -347,7 +347,7 @@ func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
 		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
 		"Secondary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
 		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
-		"Interpolation: %s, Stepsize: %.2f, Attributes: %v}"
+		"Interpolation: %s, StepSize: %.2f, Attributes: %v}"
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
@@ -368,7 +368,7 @@ func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
 		h.SecondarySurface.Yinc,
 		*h.SecondarySurface.FillValue,
 		h.Interpolation,
-		h.Stepsize,
+		h.StepSize,
 		h.Attributes,
 	), nil
 }
