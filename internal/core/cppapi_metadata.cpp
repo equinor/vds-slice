@@ -51,17 +51,18 @@ nlohmann::json json_axis(
 
     int dim = axis.dimension();
 
-    float min = axis.min() + axis.stride() * lower[dim];
-    float max = axis.min() + axis.stride() * (upper[dim] - 1); // inclusive
+    float min = axis.min() + axis.stepsize() * lower[dim];
+    float max = axis.min() + axis.stepsize() * (upper[dim] - 1); // inclusive
     std::size_t samples = upper[dim] - lower[dim];
 
     nlohmann::json doc;
     doc = {
-        { "annotation", axis.name() },
-        { "min",        min         },
-        { "max",        max         },
-        { "samples",    samples     },
-        { "unit",       axis.unit() },
+        { "annotation", axis.name()       },
+        { "min",        min               },
+        { "max",        max               },
+        { "samples",    samples           },
+        { "stepsize",     axis.stepsize() },
+        { "unit",       axis.unit()       },
     };
     return doc;
 }

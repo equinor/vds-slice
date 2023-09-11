@@ -28,10 +28,10 @@ export function setup() {
 
 export default function (params) {
   const [surface, inlineAxis, xlineAxis, sampleAxis] = params;
-  const sampleAxisStride =
+  const sampleAxisStepSize =
     (sampleAxis.max - sampleAxis.min) / (sampleAxis.samples - 1);
   const depth =
-    Math.floor(sampleAxis.samples / 2) * sampleAxisStride + sampleAxis.min;
+    Math.floor(sampleAxis.samples / 2) * sampleAxisStepSize + sampleAxis.min;
   const above = 10;
   const below = 10;
   const stepsize = 1;

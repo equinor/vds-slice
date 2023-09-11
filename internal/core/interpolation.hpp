@@ -8,8 +8,8 @@
 #include <boost/math/interpolators/makima.hpp>
 
 template< typename T >
-struct StrideGenerator {
-    StrideGenerator(T start, T step) : cur(start), step(step) {}
+struct StepSizeGenerator {
+    StepSizeGenerator(T start, T step) : cur(start), step(step) {}
 
     T operator()() {
         T tmp = this->cur;
@@ -34,14 +34,14 @@ void cubic_makima(
     T step  = src_window.stepsize();
 
     std::vector< T > xs(ys.size());
-    std::generate(xs.begin(), xs.end(), StrideGenerator(start, step));
+    std::generate(xs.begin(), xs.end(), StepSizeGenerator(start, step));
 
     using boost::math::interpolators::makima;
     auto spline = makima< std::vector< T >>(std::move(xs), std::move(ys));
 
     start = dst_window.at(0, reference_point);
     step  = dst_window.stepsize();
-    auto gen_x = StrideGenerator(start, step);
+    auto gen_x = StepSizeGenerator(start, step);
     std::generate(dst_buffer.begin(), dst_buffer.end(), [&spline, &gen_x](){
         return spline(gen_x());
     });

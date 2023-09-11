@@ -148,7 +148,7 @@ func (h attributeAlongSurfaceTest) requestAsJSON() (string, error) {
 	out["surface"] = surface
 	out["above"] = h.attribute.Above
 	out["below"] = h.attribute.Below
-	out["stepsize"] = h.attribute.Stepsize
+	out["stepsize"] = h.attribute.StepSize
 	out["Attributes"] = h.attribute.Attributes
 	if h.attribute.Interpolation != "" {
 		out["interpolation"] = h.attribute.Interpolation
@@ -202,7 +202,7 @@ func (h attributeBetweenSurfacesTest) requestAsJSON() (string, error) {
 	secondary["values"] = h.attribute.ValuesSecondary
 	out["secondarySurface"] = secondary
 
-	out["stepsize"] = h.attribute.Stepsize
+	out["stepsize"] = h.attribute.StepSize
 	out["attributes"] = h.attribute.Attributes
 	if h.attribute.Interpolation != "" {
 		out["interpolation"] = h.attribute.Interpolation
@@ -256,7 +256,7 @@ type testAttributeAlongSurfaceRequest struct {
 	Interpolation string
 	Above         float32
 	Below         float32
-	Stepsize      float32
+	StepSize      float32
 	Attributes    []string
 }
 
@@ -266,7 +266,7 @@ type testAttributeBetweenSurfacesRequest struct {
 	ValuesPrimary   [][]float32
 	ValuesSecondary [][]float32
 	Interpolation   string
-	Stepsize        float32
+	StepSize        float32
 	Attributes      []string
 }
 
@@ -275,6 +275,7 @@ type testSliceAxis struct {
 	Max        float32 `json:"max"        binding:"required"`
 	Min        float32 `json:"min"        binding:"required"`
 	Samples    int     `json:"samples"    binding:"required"`
+	StepSize   float32 `json:"stepsize"   binding:"required"`
 	Unit       string  `json:"unit"       binding:"required"`
 }
 

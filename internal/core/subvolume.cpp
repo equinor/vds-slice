@@ -15,16 +15,16 @@ int lineno_annotation_to_voxel(
 ) {
     float min    = axis.min();
     float max    = axis.max();
-    float stride = axis.stride();
+    float stepsize = axis.stepsize();
 
-    float voxelline = (lineno - min) / stride;
+    float voxelline = (lineno - min) / stepsize;
 
     if (lineno < min || lineno > max || std::floor(voxelline) != voxelline) {
         throw detail::bad_request(
             "Invalid lineno: " + std::to_string(lineno) +
             ", valid range: [" + std::to_string(min) +
             ":" + std::to_string(max) +
-            ":" + std::to_string(stride) + "]"
+            ":" + std::to_string(stepsize) + "]"
         );
     }
 
