@@ -115,7 +115,16 @@ To run the tests:
     ```
     Cache is expected to be turned on.
 
-3. Run E2E tests from the tests directory
+
+3. Create Python test environment (if needed)
+    These commands will create, activate and install the required packages for the E2E tests.
+    ```
+    cd tests
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r e2e/requirements-dev.txt
+    ```
+4. Run E2E tests from the tests directory
 
     ```
     cd tests
