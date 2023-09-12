@@ -472,7 +472,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 }
 
 func TestAttributeOutOfBounds(t *testing.T) {
-	newCase := func(name string, above, below, stepSize float32, status int) attributeAlongSurfaceTest {
+	newCase := func(name string, above, below, stepsize float32, status int) attributeAlongSurfaceTest {
 		return attributeAlongSurfaceTest{
 			baseTest{
 				name:           name,
@@ -485,7 +485,7 @@ func TestAttributeOutOfBounds(t *testing.T) {
 				Sas:        "n/a",
 				Above:      above,
 				Below:      below,
-				Stepsize:   stepSize,
+				StepSize:   stepsize,
 				Attributes: []string{"samplevalue"},
 			},
 		}
@@ -497,7 +497,7 @@ func TestAttributeOutOfBounds(t *testing.T) {
 		newCase("Above is too high", 250, 1, 1, http.StatusBadRequest),
 		newCase("Below is too low", 1, -1, 1, http.StatusBadRequest),
 		newCase("Below is too high", 1, 250, 1, http.StatusBadRequest),
-		newCase("Stepsize is too low", 1, 1, -1, http.StatusBadRequest),
+		newCase("StepSize is too low", 1, 1, -1, http.StatusBadRequest),
 	}
 
 	for _, testcase := range testCases {
