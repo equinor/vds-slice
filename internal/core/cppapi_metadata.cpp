@@ -57,11 +57,12 @@ nlohmann::json json_axis(
 
     nlohmann::json doc;
     doc = {
-        { "annotation", axis.name()       },
-        { "min",        min               },
-        { "max",        max               },
-        { "samples",    samples           },
-        { "unit",       axis.unit()       },
+        { "annotation", axis.name()     },
+        { "min",        min             },
+        { "max",        max             },
+        { "samples",    samples         },
+        { "stepsize",   axis.stepsize() },
+        { "unit",       axis.unit()     },
     };
     return doc;
 }

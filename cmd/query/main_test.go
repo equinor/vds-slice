@@ -57,13 +57,13 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 			"Wrong number of multipart data parts in case '%s'", testcase.name)
 
 		inlineAxis := testSliceAxis{
-			Annotation: "Inline", Max: 3.0, Min: 1.0, Samples: 2, Unit: "unitless",
+			Annotation: "Inline", Max: 3.0, Min: 1.0, Samples: 2, StepSize: 2, Unit: "unitless",
 		}
 		crosslineAxis := testSliceAxis{
-			Annotation: "Crossline", Max: 11.0, Min: 10.0, Samples: 2, Unit: "unitless",
+			Annotation: "Crossline", Max: 11.0, Min: 10.0, Samples: 2, StepSize: 1, Unit: "unitless",
 		}
 		sampleAxis := testSliceAxis{
-			Annotation: "Sample", Max: 16.0, Min: 4.0, Samples: 4, Unit: "ms",
+			Annotation: "Sample", Max: 16.0, Min: 4.0, Samples: 4, StepSize: 4, Unit: "ms",
 		}
 		expectedFormat := "<f4"
 
@@ -383,9 +383,9 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 		metadata := w.Body.String()
 		expectedMetadata := `{
 			"axis": [
-				{"annotation": "Inline", "max": 5.0, "min": 1.0, "samples" : 3, "unit": "unitless"},
-				{"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "unit": "unitless"},
-				{"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "unit": "ms"}
+				{"annotation": "Inline", "max": 5.0, "min": 1.0, "samples" : 3, "stepsize":2, "unit": "unitless"},
+				{"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "stepsize":1, "unit": "unitless"},
+				{"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "stepsize":4, "unit": "ms"}
 			],
 			"boundingBox": {
 				"cdp": [[2,0],[14,8],[12,11],[0,3]],

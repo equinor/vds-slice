@@ -275,6 +275,7 @@ type testSliceAxis struct {
 	Max        float32 `json:"max"        binding:"required"`
 	Min        float32 `json:"min"        binding:"required"`
 	Samples    int     `json:"samples"    binding:"required"`
+	StepSize   float32 `json:"stepsize"   binding:"required"`
 	Unit       string  `json:"unit"       binding:"required"`
 }
 

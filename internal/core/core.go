@@ -47,6 +47,9 @@ type Axis struct {
 	// Number of samples along the axis
 	Samples int `json:"samples" example:"1600"`
 
+	// Distance from one sample to the next
+	StepSize float64 `json:"stepsize" example:"4.0"`
+
 	// Axis units
 	Unit string `json:"unit" example:"ms"`
 } // @name Axis
