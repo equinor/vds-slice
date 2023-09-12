@@ -18,7 +18,7 @@ public:
     float min() const noexcept(true);
     float max() const noexcept(true);
 
-    float stride() const noexcept (true);
+    float stepsize() const noexcept (true);
 
     std::string unit() const noexcept(true);
     int dimension() const noexcept(true);

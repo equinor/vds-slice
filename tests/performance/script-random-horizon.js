@@ -28,9 +28,9 @@ export function setup() {
 
 export default function (params) {
   const [surface, inlineAxis, xlineAxis, sampleAxis] = params;
-  const sampleAxisStride =
+  const sampleAxisStepSize =
     (sampleAxis.max - sampleAxis.min) / (sampleAxis.samples - 1);
-  const depth = [sampleAxis.min, sampleAxis.max, sampleAxisStride];
+  const depth = [sampleAxis.min, sampleAxis.max, sampleAxisStepSize];
   const attributes = ["samplevalue", "min", "max", "mean", "rms", "sd"]
   const above = 20;
   const below = 20;

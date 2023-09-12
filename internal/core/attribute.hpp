@@ -49,7 +49,7 @@
  */
 class Horizon{
 private:
-    struct StridedIterator {
+    struct StepSizedIterator {
     public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type   = std::ptrdiff_t;
@@ -57,20 +57,20 @@ private:
         using pointer           = const float*;
         using reference         = const float&;
 
-        StridedIterator(pointer cur, std::size_t step) : cur(cur), step(step) {}
+        StepSizedIterator(pointer cur, std::size_t step) : cur(cur), step(step) {}
 
         reference operator*()  { return *this->cur; }
         pointer   operator->() { return  this->cur; }
 
-        StridedIterator& operator++() { this->cur += this->step; return *this; };
+        StepSizedIterator& operator++() { this->cur += this->step; return *this; };
 
         friend
-        bool operator==(StridedIterator const& lhs, StridedIterator const& rhs) {
+        bool operator==(StepSizedIterator const& lhs, StepSizedIterator const& rhs) {
             return lhs.cur == rhs.cur and lhs.step == rhs.step;
         }
 
         friend
-        bool operator!=(StridedIterator const& lhs, StridedIterator const& rhs) {
+        bool operator!=(StepSizedIterator const& lhs, StepSizedIterator const& rhs) {
             return !(lhs == rhs);
         }
     private:
@@ -78,8 +78,8 @@ private:
         std::size_t step;
     };
 
-    struct VerticalIterator : public StridedIterator {
-        VerticalIterator(StridedIterator::pointer cur) : StridedIterator(cur, 1) {}
+    struct VerticalIterator : public StepSizedIterator {
+        VerticalIterator(StepSizedIterator::pointer cur) : StepSizedIterator(cur, 1) {}
     };
 
 public:

@@ -200,7 +200,7 @@ func TestSliceOutOfBounds(t *testing.T) {
 
 }
 
-func TestSliceStridedLineno(t *testing.T) {
+func TestSliceStepSizedLineno(t *testing.T) {
 	testcases := []struct {
 		name      string
 		lineno    int

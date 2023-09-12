@@ -360,10 +360,10 @@ int attribute(
         auto const& sample = metadata.sample();
 
         if (stepsize == 0) {
-            stepsize = sample.stride();
+            stepsize = sample.stepsize();
         }
 
-        VerticalWindow src_window(sample.stride(), 2, sample.min());
+        VerticalWindow src_window(sample.stepsize(), 2, sample.min());
         VerticalWindow dst_window(stepsize);
 
         void* outs[nattributes];
