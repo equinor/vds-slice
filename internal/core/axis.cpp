@@ -33,7 +33,7 @@ int Axis::dimension() const noexcept(true) {
     return this->m_dimension;
 }
 
-float Axis::stride() const noexcept (true) {
+float Axis::stepsize() const noexcept (true) {
     return (this->max() - this->min()) / (this->nsamples() - 1);
 }
 
@@ -42,8 +42,8 @@ std::string Axis::name() const noexcept(true) {
 }
 
 bool Axis::inrange(float coordinate) const noexcept(true) {
-    return (this->min() - 0.5 * this->stride()) <= coordinate && 
-           (this->max() + 0.5 * this->stride()) >  coordinate;
+    return (this->min() - 0.5 * this->stepsize()) <= coordinate &&
+           (this->max() + 0.5 * this->stepsize()) >  coordinate;
 }
 
 float Axis::to_sample_position(float coordinate) noexcept(false) {

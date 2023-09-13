@@ -82,9 +82,9 @@ func toFloat32(buf []byte) (*[]float32, error) {
 func TestMetadata(t *testing.T) {
 	expected := Metadata{
 		Axis: []*Axis{
-			{Annotation: "Inline", Min: 1, Max: 5, Samples: 3, Unit: "unitless"},
-			{Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, Unit: "unitless"},
-			{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, Unit: "ms"},
+			{Annotation: "Inline", Min: 1, Max: 5, Samples: 3, StepSize: 2, Unit: "unitless"},
+			{Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, StepSize: 1, Unit: "unitless"},
+			{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, StepSize: 4, Unit: "ms"},
 		},
 		BoundingBox: BoundingBox{
 			Cdp:  [][]float64{{2, 0}, {14, 8}, {12, 11}, {0, 3}},
@@ -200,7 +200,7 @@ func TestSliceOutOfBounds(t *testing.T) {
 
 }
 
-func TestSliceStridedLineno(t *testing.T) {
+func TestSliceStepSizedLineno(t *testing.T) {
 	testcases := []struct {
 		name      string
 		lineno    int
@@ -250,6 +250,7 @@ func TestSliceBounds(t *testing.T) {
 		min float64,
 		max float64,
 		samples int,
+		stepsize float64,
 	) Axis {
 		unit := "ms"
 		anno := strings.ToLower(annotation)
@@ -262,6 +263,7 @@ func TestSliceBounds(t *testing.T) {
 			Min:        min,
 			Max:        max,
 			Samples:    samples,
+			StepSize:   stepsize,
 			Unit:       unit,
 		}
 	}
@@ -290,8 +292,8 @@ func TestSliceBounds(t *testing.T) {
 				112, 113, 114, 115,
 			},
 			expectedShape: []int{2, 4},
-			expectedXAxis: newAxis("Sample", 4, 16, 4),
-			expectedYAxis: newAxis("Crossline", 10, 11, 2),
+			expectedXAxis: newAxis("Sample", 4, 16, 4, 4),
+			expectedYAxis: newAxis("Crossline", 10, 11, 2, 1),
 			expectedGeo:   [][]float64{{8, 4}, {6, 7}},
 		},
 		{
@@ -307,8 +309,8 @@ func TestSliceBounds(t *testing.T) {
 				116, 117, 118, 119,
 			},
 			expectedShape: []int{3, 4},
-			expectedXAxis: newAxis("Sample", 4, 16, 4),
-			expectedYAxis: newAxis("Inline", 1, 5, 3),
+			expectedXAxis: newAxis("Sample", 4, 16, 4, 4),
+			expectedYAxis: newAxis("Inline", 1, 5, 3, 2),
 			expectedGeo:   [][]float64{{2, 0}, {14, 8}},
 		},
 		{
@@ -325,8 +327,8 @@ func TestSliceBounds(t *testing.T) {
 				116, 120,
 			},
 			expectedShape: []int{3, 2},
-			expectedXAxis: newAxis("Crossline", 10, 11, 2),
-			expectedYAxis: newAxis("Inline", 1, 5, 3),
+			expectedXAxis: newAxis("Crossline", 10, 11, 2, 1),
+			expectedYAxis: newAxis("Inline", 1, 5, 3, 2),
 			expectedGeo:   [][]float64{{2, 0}, {14, 8}, {12, 11}, {0, 3}},
 		},
 		{
@@ -340,8 +342,8 @@ func TestSliceBounds(t *testing.T) {
 				108, 109, 110, 111,
 			},
 			expectedShape: []int{1, 4},
-			expectedXAxis: newAxis("Sample", 4, 16, 4),
-			expectedYAxis: newAxis("Crossline", 10, 10, 1),
+			expectedXAxis: newAxis("Sample", 4, 16, 4, 4),
+			expectedYAxis: newAxis("Crossline", 10, 10, 1, 1),
 			expectedGeo:   [][]float64{{8, 4}, {8, 4}},
 		},
 		{
@@ -356,8 +358,8 @@ func TestSliceBounds(t *testing.T) {
 				108, 112,
 			},
 			expectedShape: []int{2, 2},
-			expectedXAxis: newAxis("Crossline", 10, 11, 2),
-			expectedYAxis: newAxis("Inline", 1, 3, 2),
+			expectedXAxis: newAxis("Crossline", 10, 11, 2, 1),
+			expectedYAxis: newAxis("Inline", 1, 3, 2, 2),
 			expectedGeo:   [][]float64{{2, 0}, {8, 4}, {6, 7}, {0, 3}},
 		},
 		{
@@ -373,8 +375,8 @@ func TestSliceBounds(t *testing.T) {
 				108,
 			},
 			expectedShape: []int{2, 1},
-			expectedXAxis: newAxis("Crossline", 10, 10, 1),
-			expectedYAxis: newAxis("Inline", 1, 3, 2),
+			expectedXAxis: newAxis("Crossline", 10, 10, 1, 1),
+			expectedYAxis: newAxis("Inline", 1, 3, 2, 2),
 			expectedGeo:   [][]float64{{2, 0}, {8, 4}, {8, 4}, {2, 0}},
 		},
 		{
@@ -390,8 +392,8 @@ func TestSliceBounds(t *testing.T) {
 				109, 110,
 			},
 			expectedShape: []int{2, 2},
-			expectedXAxis: newAxis("Sample", 8, 12, 2),
-			expectedYAxis: newAxis("Inline", 1, 3, 2),
+			expectedXAxis: newAxis("Sample", 8, 12, 2, 4),
+			expectedYAxis: newAxis("Inline", 1, 3, 2, 2),
 			expectedGeo:   [][]float64{{2, 0}, {8, 4}},
 		},
 		{
@@ -408,8 +410,8 @@ func TestSliceBounds(t *testing.T) {
 				118, 122,
 			},
 			expectedShape: []int{3, 2},
-			expectedXAxis: newAxis("Crossline", 10, 11, 2),
-			expectedYAxis: newAxis("Inline", 1, 5, 3),
+			expectedXAxis: newAxis("Crossline", 10, 11, 2, 1),
+			expectedYAxis: newAxis("Inline", 1, 5, 3, 2),
 			expectedGeo:   [][]float64{{2, 0}, {14, 8}, {12, 11}, {0, 3}},
 		},
 		{
@@ -424,8 +426,8 @@ func TestSliceBounds(t *testing.T) {
 				120, 121, 122, 123,
 			},
 			expectedShape: []int{2, 4},
-			expectedXAxis: newAxis("Sample", 4, 16, 4),
-			expectedYAxis: newAxis("Crossline", 10, 11, 2),
+			expectedXAxis: newAxis("Sample", 4, 16, 4, 4),
+			expectedYAxis: newAxis("Crossline", 10, 11, 2, 1),
 			expectedGeo:   [][]float64{{14, 8}, {12, 11}},
 		},
 		{
@@ -441,8 +443,8 @@ func TestSliceBounds(t *testing.T) {
 				122, 123,
 			},
 			expectedShape: []int{2, 2},
-			expectedXAxis: newAxis("Sample", 12, 16, 2),
-			expectedYAxis: newAxis("Crossline", 10, 11, 2),
+			expectedXAxis: newAxis("Sample", 12, 16, 2, 4),
+			expectedYAxis: newAxis("Crossline", 10, 11, 2, 1),
 			expectedGeo:   [][]float64{{14, 8}, {12, 11}},
 		},
 		{
@@ -565,8 +567,8 @@ func TestSliceMetadata(t *testing.T) {
 		Array: Array{
 			Format: "<f4",
 		},
-		X:          Axis{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, Unit: "ms"},
-		Y:          Axis{Annotation: "Inline", Min: 1, Max: 5, Samples: 3, Unit: "unitless"},
+		X:          Axis{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, StepSize: 4, Unit: "ms"},
+		Y:          Axis{Annotation: "Inline", Min: 1, Max: 5, Samples: 3, StepSize: 2, Unit: "unitless"},
 		Geospatial: [][]float64{{0, 3}, {12, 11}},
 		Shape:      []int{3, 4},
 	}

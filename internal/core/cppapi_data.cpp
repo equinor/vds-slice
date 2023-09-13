@@ -264,7 +264,7 @@ void horizon_buffer_offsets(
     auto xline  = metadata.xline();
     auto sample = metadata.sample();
 
-    VerticalWindow window(sample.stride(), 2, sample.min());
+    VerticalWindow window(sample.stepsize(), 2, sample.min());
 
     out[0] = 0;
     for (int i = 0; i < reference.size(); ++i) {
@@ -337,7 +337,7 @@ void horizon(
     }
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
-    VerticalWindow window(sample.stride(), 2, sample.min());
+    VerticalWindow window(sample.stepsize(), 2, sample.min());
     std::size_t cur = 0;
     for (int i = from; i < to; ++i) {
         if(buffer_offsets[i] == buffer_offsets[i+1]) {
