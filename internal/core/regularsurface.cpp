@@ -95,6 +95,38 @@ Point RegularSurface::from_cdp(
     return this->m_plane.m_inverse_transformation * point;
 }
 
+std::pair<std::size_t, std::size_t> as_pair(std::size_t row, std::size_t col) {
+    return std::pair<std::size_t, std::size_t>(row, col);
+}
+
+float &RegularSurface::operator[](std::size_t i) noexcept(false) {
+    if (i >= this->size())
+        throw std::runtime_error("operator[]: index out of range");
+    return this->m_data[i];
+}
+
+const float &RegularSurface::operator[](std::size_t i) const noexcept(false) {
+    if (i >= this->size())
+        throw std::runtime_error("const operator[]: index out of range");
+    return this->m_data[i];
+}
+
+float &RegularSurface::operator[](std::pair<std::size_t, std::size_t> p) noexcept(false) {
+    if (p.first >= this->nrows())
+        throw std::runtime_error("operator[]: index out of range");
+    if (p.second >= this->ncols())
+        throw std::runtime_error("operator[]: index out of range");
+    return this->m_data[p.first * this->ncols() + p.second];
+}
+
+const float &RegularSurface::operator[](std::pair<std::size_t, std::size_t> p) const noexcept(false) {
+    if (p.first >= this->nrows())
+        throw std::runtime_error("const operator[]: index out of range");
+    if (p.second >= this->ncols())
+        throw std::runtime_error("const operator[]: index out of range");
+    return this->m_data[p.first * this->ncols() + p.second];
+}
+
 float RegularSurface::value(
     std::size_t const row,
     std::size_t const col
