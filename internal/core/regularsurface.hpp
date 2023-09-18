@@ -121,14 +121,6 @@ public:
 
     float(&operator[](std::pair<std::size_t, std::size_t>) noexcept(false));
     const float(&operator[](std::pair<std::size_t, std::size_t>) const noexcept(false));
-    /* Value at grid position (row, col) */
-    float value(
-        std::size_t const row,
-        std::size_t const col
-    ) const noexcept (false);
-
-    float value(std::size_t i) const noexcept (false);
-    void set_value(std::size_t i, float value) noexcept (false);
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 

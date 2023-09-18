@@ -126,25 +126,3 @@ const float &RegularSurface::operator[](std::pair<std::size_t, std::size_t> p) c
         throw std::runtime_error("const operator[]: index out of range");
     return this->m_data[p.first * this->ncols() + p.second];
 }
-
-float RegularSurface::value(
-    std::size_t const row,
-    std::size_t const col
-) const noexcept (false) {
-    if (row >= this->nrows()) throw std::runtime_error("Row out of range");
-    if (col >= this->ncols()) throw std::runtime_error("Col out of range");
-
-    return this->m_data[row * this->ncols() + col];
-};
-
-float RegularSurface::value(std::size_t i) const noexcept (false) {
-    if (i >= this->size()) throw std::runtime_error("index out of range");
-
-    return this->m_data[i];
-}
-
-void RegularSurface::set_value(std::size_t i, float value) noexcept (false) {
-    if (i >= this->size()) throw std::runtime_error("index out of range");
-
-    this->m_data[i] = value;
-}

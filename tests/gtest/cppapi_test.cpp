@@ -232,7 +232,7 @@ void test_successful_align_call(
 
     for (int i = 0; i < primary.size(); ++i)
     {
-        EXPECT_EQ(aligned.value(i), expected_data[i]) << "Wrong surface at index " << i;
+        EXPECT_EQ(aligned[i], expected_data[i]) << "Wrong surface at index " << i;
     }
 }
 
