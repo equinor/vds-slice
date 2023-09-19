@@ -268,9 +268,9 @@ void horizon_buffer_offsets(
 
     out[0] = 0;
     for (int i = 0; i < reference.size(); ++i) {
-        float reference_depth = reference.value(i);
-        float top_depth       = top.value(i);
-        float bottom_depth    = bottom.value(i);
+        float reference_depth = reference[i];
+        float top_depth       = top[i];
+        float bottom_depth    = bottom[i];
 
         if (reference_depth == reference.fillvalue() ||
             top_depth == top.fillvalue() ||
@@ -344,9 +344,9 @@ void horizon(
             continue;
         }
 
-        window.move(reference.value(i) - top.value(i), bottom.value(i) - reference.value(i));
+        window.move(reference[i] - top[i], bottom[i] - reference[i]);
 
-        double nearest_reference_depth = window.nearest(reference.value(i));
+        double nearest_reference_depth = window.nearest(reference[i]);
 
         auto const cdp = reference.to_cdp(i);
         auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
@@ -496,8 +496,8 @@ void align_surfaces(
     SurfacesCrossoverValidator surfaces;
 
     for (std::size_t i = 0; i < primary.size(); ++i) {
-        if (primary.fillvalue() == primary.value(i)) {
-            aligned.set_value(i, aligned.fillvalue());
+        if (primary.fillvalue() == primary[i]) {
+            aligned[i] = aligned.fillvalue();
             continue;
         }
         auto secondary_pos = secondary.from_cdp(primary.to_cdp(i));
@@ -508,20 +508,20 @@ void align_surfaces(
         if (secondary_row < 0 || secondary_row >= secondary.nrows() ||
             (secondary_col < 0 || secondary_col >= secondary.ncols()))
         {
-            aligned.set_value(i, aligned.fillvalue());
+            aligned[i] = aligned.fillvalue();
             continue;
         }
 
-        auto secondary_value = secondary.value(secondary_row, secondary_col);
+        auto secondary_value = secondary[as_pair(secondary_row, secondary_col)];
 
         if(secondary.fillvalue() == secondary_value) {
-            aligned.set_value(i, aligned.fillvalue());
+            aligned[i] = aligned.fillvalue();
             continue;
         }
 
-        aligned.set_value(i, secondary_value);
+        aligned[i] = secondary_value;
 
-        if (surfaces.have_crossed(primary.value(i), aligned.value(i))) {
+        if (surfaces.have_crossed(primary[i], aligned[i])) {
             std::size_t row = i / primary.ncols();
             std::size_t col = i % primary.ncols();
             throw detail::bad_request("Surfaces intersect at primary surface point ("

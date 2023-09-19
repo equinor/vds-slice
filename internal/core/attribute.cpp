@@ -231,8 +231,8 @@ void calc_attributes(
     AttributeMap::AttributeComputeParams params;
 
     for (std::size_t i = from; i < to; ++i) {
-        auto above = reference.value(i) - top.value(i);
-        auto below = bottom.value(i) - reference.value(i);
+        auto above = reference[i] - top[i];
+        auto below = bottom[i] - reference[i];
 
         src_window.move(above, below);
         dst_window.move(above, below);
@@ -256,7 +256,7 @@ void calc_attributes(
             src_window,
             dst_buffer,
             dst_window,
-            reference.value(i)
+            reference[i]
         );
 
         params.update(

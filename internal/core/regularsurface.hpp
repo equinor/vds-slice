@@ -68,6 +68,8 @@ struct Plane
     AffineTransformation m_inverse_transformation;
 };
 
+std::pair<std::size_t, std::size_t> as_pair(std::size_t row, std::size_t col);
+
 /** Regular Surface - a set of data points over the finite part of 2D plane.
  * It is represented as 2D array with geospacial information. Each array value
  * can mean anything, but in practice it would likely be the depth at the grid
@@ -114,20 +116,17 @@ public:
         Point point
     ) const noexcept (false);
 
-    /* Value at grid position (row, col) */
-    float value(
-        std::size_t const row,
-        std::size_t const col
-    ) const noexcept (false);
+    float(&operator[](std::size_t i) noexcept(false));
+    const float(&operator[](std::size_t i) const noexcept(false));
 
-    float value(std::size_t i) const noexcept (false);
-    void set_value(std::size_t i, float value) noexcept (false);
+    float(&operator[](std::pair<std::size_t, std::size_t>) noexcept(false));
+    const float(&operator[](std::pair<std::size_t, std::size_t>) const noexcept(false));
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
-    std::size_t nrows() const noexcept (true) { return this->m_nrows; };
-    std::size_t ncols() const noexcept (true) { return this->m_ncols; };
-    std::size_t size()  const noexcept (true) { return this->ncols() * this->nrows(); };
+    std::size_t nrows() const noexcept(true) { return this->m_nrows; };
+    std::size_t ncols() const noexcept(true) { return this->m_ncols; };
+    std::size_t size() const noexcept(true) { return this->ncols() * this->nrows(); };
 
     Plane plane() const noexcept (true) { return this->m_plane; };
 private:
