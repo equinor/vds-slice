@@ -1,4 +1,4 @@
-#include "subvolume.hpp"
+#include "subcube.hpp"
 
 #include <stdexcept>
 
@@ -71,7 +71,7 @@ int to_voxel(
 
 } /* namespace */
 
-SubVolume::SubVolume(MetadataHandle const& metadata) {
+SubCube::SubCube(MetadataHandle const& metadata) {
     auto const& iline  = metadata.iline();
     auto const& xline  = metadata.xline();
     auto const& sample = metadata.sample();
@@ -82,7 +82,7 @@ SubVolume::SubVolume(MetadataHandle const& metadata) {
 }
 
 
-void SubVolume::constrain(
+void SubCube::constrain(
     MetadataHandle const& metadata,
     std::vector< Bound > const& bounds
 ) noexcept (false) {
@@ -99,7 +99,7 @@ void SubVolume::constrain(
     }
 }
 
-void SubVolume::set_slice(
+void SubCube::set_slice(
     Axis const&                  axis,
     int const                    lineno,
     enum coordinate_system const coordinate_system

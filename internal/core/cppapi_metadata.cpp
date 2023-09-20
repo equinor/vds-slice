@@ -44,10 +44,10 @@ void to_response(nlohmann::json const& metadata, response* response) {
 
 nlohmann::json json_axis(
     Axis const& axis,
-    SubVolume const& subvolume
+    SubCube const& subcube
 ) {
-    auto const& lower = subvolume.bounds.lower;
-    auto const& upper = subvolume.bounds.upper;
+    auto const& lower = subcube.bounds.lower;
+    auto const& upper = subcube.bounds.upper;
 
     int dim = axis.dimension();
 
@@ -72,7 +72,7 @@ nlohmann::json json_slice_geospatial(
     Direction const direction,
     Axis const& axis,
     int lineno,
-    SubVolume const& bounds
+    SubCube const& bounds
 ) {
     auto const& transformer = metadata.coordinate_transformer();
 
@@ -158,7 +158,7 @@ void slice_metadata(
     Axis const& crossline_axis = metadata.xline();
     Axis const& sample_axis = metadata.sample();
 
-    SubVolume bounds(metadata);
+    SubCube bounds(metadata);
     bounds.constrain(metadata, slicebounds);
     bounds.set_slice(axis, lineno, direction.coordinate_system());
 
@@ -223,7 +223,7 @@ void metadata(DataHandle& handle, response* out) {
     meta["boundingBox"]["cdp"]  = bbox.world();
     meta["boundingBox"]["ilxl"] = bbox.annotation();
 
-    SubVolume volume(metadata);
+    SubCube volume(metadata);
 
     Axis const& inline_axis = metadata.iline();
     meta["axis"].push_back(json_axis(inline_axis, volume));

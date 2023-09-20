@@ -7,7 +7,7 @@
 #include <OpenVDS/OpenVDS.h>
 
 #include "metadatahandle.hpp"
-#include "subvolume.hpp"
+#include "subcube.hpp"
 
 using voxel = float[OpenVDS::Dimensionality_Max];
 
@@ -20,12 +20,12 @@ public:
 
     static OpenVDS::VolumeDataFormat format() noexcept (true);
 
-    std::int64_t subvolume_buffer_size(SubVolume const& subvolume) noexcept (false);
+    std::int64_t subcube_buffer_size(SubCube const& subcube) noexcept (false);
 
-    void read_subvolume(
+    void read_subcube(
         void * const buffer,
         std::int64_t size,
-        SubVolume const& subvolume
+        SubCube const& subcube
     ) noexcept (false);
 
     std::int64_t traces_buffer_size(std::size_t const ntraces) noexcept (false);

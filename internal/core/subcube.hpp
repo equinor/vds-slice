@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_SUBVOLUME_HPP
-#define VDS_SLICE_SUBVOLUME_HPP
+#ifndef VDS_SLICE_SUBCUBE_HPP
+#define VDS_SLICE_SUBCUBE_HPP
 
 #include <OpenVDS/OpenVDS.h>
 
@@ -7,13 +7,13 @@
 #include "metadatahandle.hpp"
 #include "ctypes.h"
 
-struct SubVolume {
+struct SubCube {
     struct {
         int lower[OpenVDS::VolumeDataLayout::Dimensionality_Max]{0, 0, 0, 0, 0, 0};
         int upper[OpenVDS::VolumeDataLayout::Dimensionality_Max]{1, 1, 1, 1, 1, 1};
     } bounds;
 
-    SubVolume(MetadataHandle const& metadata);
+    SubCube(MetadataHandle const& metadata);
 
     void set_slice(
         Axis const&                  axis,
@@ -27,4 +27,4 @@ struct SubVolume {
     ) noexcept (false);
 };
 
-#endif /* VDS_SLICE_SUBVOLUME_HPP */
+#endif /* VDS_SLICE_SUBCUBE_HPP */

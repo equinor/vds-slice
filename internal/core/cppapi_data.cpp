@@ -15,7 +15,7 @@
 #include "exceptions.hpp"
 #include "metadatahandle.hpp"
 #include "regularsurface.hpp"
-#include "subvolume.hpp"
+#include "subcube.hpp"
 #include "verticalwindow.hpp"
 
 namespace {
@@ -147,14 +147,14 @@ void slice(
         validate_vertical_axis(metadata.sample(), bound_dir);
     }
 
-    SubVolume bounds(metadata);
+    SubCube bounds(metadata);
     bounds.constrain(metadata, slicebounds);
     bounds.set_slice(axis, lineno, direction.coordinate_system());
 
-    std::int64_t const size = handle.subvolume_buffer_size(bounds);
+    std::int64_t const size = handle.subcube_buffer_size(bounds);
 
     std::unique_ptr< char[] > data(new char[size]);
-    handle.read_subvolume(data.get(), size, bounds);
+    handle.read_subcube(data.get(), size, bounds);
 
     return to_response(std::move(data), size, out);
 }

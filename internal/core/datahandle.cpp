@@ -6,7 +6,7 @@
 #include <OpenVDS/OpenVDS.h>
 
 #include "metadatahandle.hpp"
-#include "subvolume.hpp"
+#include "subcube.hpp"
 
 namespace {
 
@@ -57,12 +57,12 @@ OpenVDS::VolumeDataFormat DataHandle::format() noexcept (true) {
     return OpenVDS::VolumeDataFormat::Format_R32;
 }
 
-std::int64_t DataHandle::subvolume_buffer_size(
-    SubVolume const& subvolume
+std::int64_t DataHandle::subcube_buffer_size(
+    SubCube const& subcube
 ) noexcept (false) {
     std::int64_t size = this->m_access_manager.GetVolumeSubsetBufferSize(
-        subvolume.bounds.lower,
-        subvolume.bounds.upper,
+        subcube.bounds.lower,
+        subcube.bounds.upper,
         DataHandle::format(),
         DataHandle::lod_level,
         DataHandle::channel
@@ -71,10 +71,10 @@ std::int64_t DataHandle::subvolume_buffer_size(
     return size;
 }
 
-void DataHandle::read_subvolume(
+void DataHandle::read_subcube(
     void * const buffer,
     std::int64_t size,
-    SubVolume const& subvolume
+    SubCube const& subcube
 ) noexcept (false) {
     auto request = this->m_access_manager.RequestVolumeSubset(
         buffer,
@@ -82,8 +82,8 @@ void DataHandle::read_subvolume(
         OpenVDS::Dimensions_012,
         DataHandle::lod_level,
         DataHandle::channel,
-        subvolume.bounds.lower,
-        subvolume.bounds.upper,
+        subcube.bounds.lower,
+        subcube.bounds.upper,
         DataHandle::format()
     );
     bool const success = request.get()->WaitForCompletion();
