@@ -97,6 +97,9 @@ struct BoundedPlane : public Plane
     std::size_t ncols() const noexcept (true) { return this->m_ncols; };
     std::size_t size()  const noexcept (true) { return this->ncols() * this->nrows(); };
 
+    std::size_t row(std::size_t i) const noexcept (false);
+    std::size_t col(std::size_t i) const noexcept (false);
+
 private:
     std::size_t  m_nrows;
     std::size_t  m_ncols;

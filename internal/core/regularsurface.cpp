@@ -72,6 +72,18 @@ bool BoundedPlane::operator==(const BoundedPlane& other) const {
     return Plane::operator==(other) && this->m_nrows == other.m_nrows && this->m_ncols == other.m_ncols;
 }
 
+std::size_t BoundedPlane::row(std::size_t i) const noexcept (false) {
+    if (i >= this->size())
+        throw std::runtime_error("Index out of range");
+    return i / this->ncols();
+}
+
+std::size_t BoundedPlane::col(std::size_t i) const noexcept (false) {
+    if (i >= this->size())
+        throw std::runtime_error("Index out of range");
+    return i % this->ncols();
+}
+
 Point BoundedPlane::to_cdp(
     std::size_t const row,
     std::size_t const col

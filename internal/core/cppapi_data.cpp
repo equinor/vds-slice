@@ -355,8 +355,8 @@ void horizon(
         if (not sample.inrange(nearest_top_depth) or
             not sample.inrange(nearest_bottom_depth))
         {
-            auto row = i / horizontal.ncols();
-            auto col = i % horizontal.ncols();
+            auto row = horizontal.row(i);
+            auto col = horizontal.col(i);
             throw std::runtime_error(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
@@ -514,8 +514,8 @@ void align_surfaces(
         aligned[i] = secondary_value;
 
         if (surfaces.have_crossed(primary[i], aligned[i])) {
-            std::size_t row = i / primary.plane().ncols();
-            std::size_t col = i % primary.plane().ncols();
+            std::size_t row = primary.plane().row(i);
+            std::size_t col = primary.plane().col(i);
             throw detail::bad_request("Surfaces intersect at primary surface point ("
                                         + std::to_string(row) + ", "
                                         + std::to_string(col) + ")");
