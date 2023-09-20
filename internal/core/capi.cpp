@@ -97,9 +97,7 @@ int regular_surface_new(
 
         *out = new RegularSurface(
             data,
-            nrows,
-            ncols,
-            Plane(xori, yori, xinc, yinc, rot),
+            BoundedPlane(Plane(xori, yori, xinc, yinc, rot), nrows, ncols),
             fillvalue
         );
         return STATUS_OK;
