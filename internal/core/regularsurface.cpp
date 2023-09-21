@@ -64,11 +64,11 @@ AffineTransformation AffineTransformation::inverse_from_rotation(
     }}));
 }
 
-bool Plane::operator==(const Plane& other) const {
+bool Plane::operator==(const Plane& other) const noexcept(true) {
     return this->m_transformation == other.m_transformation;
 }
 
-bool BoundedPlane::operator==(const BoundedPlane& other) const {
+bool BoundedPlane::operator==(const BoundedPlane& other) const noexcept(true) {
     return Plane::operator==(other) && this->m_nrows == other.m_nrows && this->m_ncols == other.m_ncols;
 }
 

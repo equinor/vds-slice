@@ -62,7 +62,7 @@ struct Plane
      * here would be equal only when parameters provided in the constructor were
      * equal.
      */
-    bool operator==(const Plane& other) const;
+    bool operator==(const Plane& other) const noexcept(true);
 
     AffineTransformation m_transformation;
     AffineTransformation m_inverse_transformation;
@@ -91,7 +91,7 @@ struct BoundedPlane : public Plane
         Point point
     ) const noexcept (false);
 
-    bool operator==(const BoundedPlane& other) const;
+    bool operator==(const BoundedPlane& other) const noexcept(true);
 
     std::size_t nrows() const noexcept (true) { return this->m_nrows; };
     std::size_t ncols() const noexcept (true) { return this->m_ncols; };
