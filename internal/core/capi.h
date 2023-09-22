@@ -81,6 +81,23 @@ int regular_surface_free(
     RegularSurface* surface
 );
 
+struct SurfaceBoundedSubVolume;
+typedef struct SurfaceBoundedSubVolume SurfaceBoundedSubVolume;
+
+int subvolume_new(
+    Context* ctx,
+    DataHandle* handle,
+    RegularSurface* reference,
+    RegularSurface* top,
+    RegularSurface* bottom,
+    SurfaceBoundedSubVolume** out
+);
+
+int subvolume_free(
+    Context* ctx,
+    SurfaceBoundedSubVolume* subvolume
+);
+
 int metadata(
     Context* ctx,
     DataHandle* handle,

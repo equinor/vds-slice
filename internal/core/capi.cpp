@@ -4,6 +4,7 @@
 #include "cppapi.hpp"
 
 #include "exceptions.hpp"
+#include "subvolume.hpp"
 
 void response_delete(struct response* buf) {
     if (!buf)
@@ -115,6 +116,53 @@ int regular_surface_free(Context* ctx, RegularSurface* surface) {
         return STATUS_OK;
     } catch (const std::exception& e) {
         if (ctx) ctx->errmsg = e.what();
+        return STATUS_RUNTIME_ERROR;
+    }
+}
+
+int subvolume_new(
+    Context* ctx,
+    DataHandle* handle,
+    RegularSurface* reference,
+    RegularSurface* top,
+    RegularSurface* bottom,
+    SurfaceBoundedSubVolume** out
+) {
+    try {
+        if (not out)
+            throw detail::nullptr_error("Invalid out pointer");
+        if (not handle)
+            throw detail::nullptr_error("Invalid handle");
+        if (not reference)
+            throw detail::nullptr_error("Invalid reference surface");
+        if (not top)
+            throw detail::nullptr_error("Invalid top surface");
+        if (not bottom)
+            throw detail::nullptr_error("Invalid bottom surface");
+
+        *out = make_subvolume(
+            handle->get_metadata(),
+            *reference,
+            *top,
+            *bottom
+        );
+        return STATUS_OK;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
+    }
+}
+
+int subvolume_free(Context* ctx, SurfaceBoundedSubVolume* subvolume) {
+    try {
+        if (not subvolume)
+            return STATUS_OK;
+
+        delete subvolume;
+
+        return STATUS_OK;
+    } catch (const std::exception& e) {
+        if (ctx)
+            ctx->errmsg = e.what();
         return STATUS_RUNTIME_ERROR;
     }
 }
