@@ -62,10 +62,47 @@ struct Plane
      * here would be equal only when parameters provided in the constructor were
      * equal.
      */
-    bool operator==(const Plane& other) const;
+    bool operator==(const Plane& other) const noexcept(true);
 
     AffineTransformation m_transformation;
     AffineTransformation m_inverse_transformation;
+};
+
+struct BoundedPlane : public Plane
+{
+    BoundedPlane(
+        Plane plane,
+        std::size_t nrows,
+        std::size_t ncols
+    ) : Plane(plane), m_nrows(nrows), m_ncols(ncols) {}
+
+    /* Grid position (row, col) -> world coordinates */
+    Point to_cdp(
+        std::size_t const row,
+        std::size_t const col
+    ) const noexcept (false);
+
+    Point to_cdp(
+        std::size_t i
+    ) const noexcept(false);
+
+    /* World coordinates -> grid position */
+    Point from_cdp(
+        Point point
+    ) const noexcept (false);
+
+    bool operator==(const BoundedPlane& other) const noexcept(true);
+
+    std::size_t nrows() const noexcept (true) { return this->m_nrows; };
+    std::size_t ncols() const noexcept (true) { return this->m_ncols; };
+    std::size_t size()  const noexcept (true) { return this->ncols() * this->nrows(); };
+
+    std::size_t row(std::size_t i) const noexcept (false);
+    std::size_t col(std::size_t i) const noexcept (false);
+
+private:
+    std::size_t  m_nrows;
+    std::size_t  m_ncols;
 };
 
 std::pair<std::size_t, std::size_t> as_pair(std::size_t row, std::size_t col);
@@ -90,31 +127,21 @@ class RegularSurface{
 public:
     RegularSurface(
         float* data,
-        std::size_t  nrows,
-        std::size_t  ncols,
-        Plane plane,
+        BoundedPlane plane,
         float fillvalue
     ) : m_data(data),
-        m_nrows(nrows),
-        m_ncols(ncols),
         m_fillvalue(fillvalue),
         m_plane(plane)
     {}
 
-    /* Grid position (row, col) -> world coordinates */
-    Point to_cdp(
-        std::size_t const row,
-        std::size_t const col
-    ) const noexcept (false);
-
-    Point to_cdp(
-        std::size_t i
-    ) const noexcept(false);
-
-    /* World coordinates -> grid position */
-    Point from_cdp(
-        Point point
-    ) const noexcept (false);
+    RegularSurface(
+        float* data,
+        std::size_t  nrows,
+        std::size_t  ncols,
+        Plane plane,
+        float fillvalue
+    ) : RegularSurface(data, BoundedPlane(plane, nrows, ncols), fillvalue)
+    {}
 
     float(&operator[](std::size_t i) noexcept(false));
     const float(&operator[](std::size_t i) const noexcept(false));
@@ -124,17 +151,14 @@ public:
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
-    std::size_t nrows() const noexcept(true) { return this->m_nrows; };
-    std::size_t ncols() const noexcept(true) { return this->m_ncols; };
-    std::size_t size() const noexcept(true) { return this->ncols() * this->nrows(); };
+    std::size_t size() const noexcept (true) { return this->m_plane.size(); };
 
-    Plane plane() const noexcept (true) { return this->m_plane; };
+    BoundedPlane const& plane() const noexcept(true) { return this->m_plane; };
+
 private:
-    float*       m_data;
-    std::size_t  m_nrows;
-    std::size_t  m_ncols;
-    float        m_fillvalue;
-    const Plane  m_plane;
+    float*             m_data;
+    float              m_fillvalue;
+    const BoundedPlane m_plane;
 };
 
 // } // namespace surface

@@ -15,7 +15,7 @@
 #include "exceptions.hpp"
 #include "metadatahandle.hpp"
 #include "regularsurface.hpp"
-#include "subvolume.hpp"
+#include "subcube.hpp"
 #include "verticalwindow.hpp"
 
 namespace {
@@ -147,14 +147,14 @@ void slice(
         validate_vertical_axis(metadata.sample(), bound_dir);
     }
 
-    SubVolume bounds(metadata);
+    SubCube bounds(metadata);
     bounds.constrain(metadata, slicebounds);
     bounds.set_slice(axis, lineno, direction.coordinate_system());
 
-    std::int64_t const size = handle.subvolume_buffer_size(bounds);
+    std::int64_t const size = handle.subcube_buffer_size(bounds);
 
     std::unique_ptr< char[] > data(new char[size]);
-    handle.read_subvolume(data.get(), size, bounds);
+    handle.read_subcube(data.get(), size, bounds);
 
     return to_response(std::move(data), size, out);
 }
@@ -245,15 +245,13 @@ void horizon_buffer_offsets(
     std::size_t* out,
     std::size_t out_size
 ) {
-    if (reference.size() != top.size() or reference.size() != bottom.size()) {
-        throw std::runtime_error("Expected surfaces to be of the same size");
-    }
-
     if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
-        throw std::runtime_error("Expected surfaces to have the same plane");
+        throw std::runtime_error("Expected surfaces to have the same plane and size");
     }
 
-    if (out_size != (reference.size() + 1)) {
+    auto const horizontal = reference.plane();
+
+    if (out_size != (horizontal.size() + 1)) {
         throw std::runtime_error("out buffer must be the size of surface + 1");
     }
 
@@ -267,7 +265,7 @@ void horizon_buffer_offsets(
     VerticalWindow window(sample.stepsize(), 2, sample.min());
 
     out[0] = 0;
-    for (int i = 0; i < reference.size(); ++i) {
+    for (int i = 0; i < horizontal.size(); ++i) {
         float reference_depth = reference[i];
         float top_depth       = top[i];
         float bottom_depth    = bottom[i];
@@ -287,7 +285,7 @@ void horizon_buffer_offsets(
                 "Planes are not ordered as top <= reference <= bottom");
         }
 
-        auto const cdp = reference.to_cdp(i);
+        auto const cdp = horizontal.to_cdp(i);
         auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 
         if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
@@ -312,15 +310,13 @@ void horizon(
     std::size_t to,
     void* out
 ) {
-    if (reference.size() != top.size() or reference.size() != bottom.size()) {
-        throw std::runtime_error("Expected surfaces to be of the same size");
-    }
-
     if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
-        throw std::runtime_error("Expected surfaces to have the same plane");
+        throw std::runtime_error("Expected surfaces to have the same plane and size");
     }
 
-    if (to > reference.size()){
+    auto const horizontal = reference.plane();
+
+    if (to > horizontal.size()){
         throw std::invalid_argument("'to' must be less than surface size");
     }
 
@@ -348,7 +344,7 @@ void horizon(
 
         double nearest_reference_depth = window.nearest(reference[i]);
 
-        auto const cdp = reference.to_cdp(i);
+        auto const cdp = horizontal.to_cdp(i);
         auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 
         double nearest_top_depth    = nearest_reference_depth -
@@ -359,8 +355,8 @@ void horizon(
         if (not sample.inrange(nearest_top_depth) or
             not sample.inrange(nearest_bottom_depth))
         {
-            auto row = i / reference.ncols();
-            auto col = i % reference.ncols();
+            auto row = horizontal.row(i);
+            auto col = horizontal.col(i);
             throw std::runtime_error(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
@@ -418,12 +414,8 @@ void attributes(
     std::size_t to,
     void** out
 ) {
-    if (reference.size() != top.size() or reference.size() != bottom.size()) {
-        throw std::runtime_error("Expected surfaces to be of the same size");
-    }
-
     if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
-        throw std::runtime_error("Expected surfaces to have the same plane");
+        throw std::runtime_error("Expected surfaces to have the same plane and size");
     }
 
     std::size_t size = horizon.mapsize();
@@ -488,7 +480,7 @@ void align_surfaces(
     RegularSurface &aligned,
     bool* primary_is_top
 ) {
-    if (primary.size() != aligned.size() or !(primary.plane() == aligned.plane())) {
+    if (!(primary.plane() == aligned.plane())) {
         throw std::runtime_error(
             "Expected primary and aligned surfaces to differ in data only.");
     }
@@ -500,13 +492,13 @@ void align_surfaces(
             aligned[i] = aligned.fillvalue();
             continue;
         }
-        auto secondary_pos = secondary.from_cdp(primary.to_cdp(i));
+        auto secondary_pos = secondary.plane().from_cdp(primary.plane().to_cdp(i));
         // calculated value can be out of bounds, also negative
         auto secondary_row = std::lround(secondary_pos.x);
         auto secondary_col = std::lround(secondary_pos.y);
 
-        if (secondary_row < 0 || secondary_row >= secondary.nrows() ||
-            (secondary_col < 0 || secondary_col >= secondary.ncols()))
+        if (secondary_row < 0 || secondary_row >= secondary.plane().nrows() ||
+            (secondary_col < 0 || secondary_col >= secondary.plane().ncols()))
         {
             aligned[i] = aligned.fillvalue();
             continue;
@@ -522,8 +514,8 @@ void align_surfaces(
         aligned[i] = secondary_value;
 
         if (surfaces.have_crossed(primary[i], aligned[i])) {
-            std::size_t row = i / primary.ncols();
-            std::size_t col = i % primary.ncols();
+            std::size_t row = primary.plane().row(i);
+            std::size_t col = primary.plane().col(i);
             throw detail::bad_request("Surfaces intersect at primary surface point ("
                                         + std::to_string(row) + ", "
                                         + std::to_string(col) + ")");
