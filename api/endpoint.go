@@ -84,6 +84,44 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	ctx.Data(http.StatusOK, "application/json", buffer)
 }
 
+func (e *Endpoint) makeDataRequest(
+	ctx *gin.Context,
+	request DataRequest,
+) {
+	prepareRequestLogging(ctx, request)
+	conn, err := e.MakeVdsConnection(request.credentials())
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	cacheKey, err := request.hash()
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	cacheEntry, hit := e.Cache.Get(cacheKey)
+	if hit && conn.IsAuthorizedToRead() {
+		ctx.Set("cache-hit", true)
+		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
+		return
+	}
+
+	handle, err := core.NewVDSHandle(conn)
+	if abortOnError(ctx, err) {
+		return
+	}
+	defer handle.Close()
+
+	data, metadata, err := request.execute(handle)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata))
+
+	writeResponse(ctx, metadata, data)
+}
+
 func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 	prepareRequestLogging(ctx, request)
 	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)

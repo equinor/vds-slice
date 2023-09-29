@@ -34,6 +34,17 @@ type RequestedResource struct {
 	Sas string `json:"sas,omitempty" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
 }
 
+func (r RequestedResource) credentials() (string, string) {
+	return r.Vds, r.Sas
+}
+
+type DataRequest interface {
+	toString() (string, error)
+	hash() (string, error)
+	credentials() (string, string)
+	execute(handle core.VDSHandle) (data [][]byte, metadata []byte, err error)
+}
+
 type Stringable interface {
 	toString() (string, error)
 }
