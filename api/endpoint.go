@@ -91,7 +91,7 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 		return
 	}
 
-	cacheKey, err := request.Hash()
+	cacheKey, err := request.hash()
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -140,7 +140,7 @@ func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
 		return
 	}
 
-	cacheKey, err := request.Hash()
+	cacheKey, err := request.hash()
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -236,7 +236,7 @@ func (e *Endpoint) attributesAlongSurface(ctx *gin.Context, request AttributeAlo
 		return
 	}
 
-	cacheKey, err := request.Hash()
+	cacheKey, err := request.hash()
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -289,7 +289,7 @@ func (e *Endpoint) attributesBetweenSurfaces(ctx *gin.Context, request Attribute
 		return
 	}
 
-	cacheKey, err := request.Hash()
+	cacheKey, err := request.hash()
 	if abortOnError(ctx, err) {
 		return
 	}

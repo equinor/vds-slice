@@ -132,7 +132,7 @@ func (f FenceRequest) toString() (string, error) {
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (f FenceRequest) Hash() (string, error) {
+func (f FenceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	f.Sas = ""
 	return cache.Hash(f)
@@ -189,7 +189,7 @@ type SliceRequest struct {
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (s SliceRequest) Hash() (string, error) {
+func (s SliceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	s.Sas = ""
 	return cache.Hash(s)
@@ -273,7 +273,7 @@ type AttributeAlongSurfaceRequest struct {
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (h AttributeAlongSurfaceRequest) Hash() (string, error) {
+func (h AttributeAlongSurfaceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	h.Sas = ""
 	return cache.Hash(h)
@@ -335,7 +335,7 @@ type AttributeBetweenSurfacesRequest struct {
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (h AttributeBetweenSurfacesRequest) Hash() (string, error) {
+func (h AttributeBetweenSurfacesRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	h.Sas = ""
 	return cache.Hash(h)

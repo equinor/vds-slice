@@ -54,12 +54,12 @@ func TestSasIsOmmitedFromSliceHash(t *testing.T) {
 	request1 := newSliceRequest("some-path", "some-sas", "inline", 9961)
 	request2 := newSliceRequest("some-path", "different-sas", "inline", 9961)
 
-	hash1, err := request1.Hash()
+	hash1, err := request1.hash()
 	require.NoErrorf(t, err,
 		"Failed to compute hash, err: %v", err,
 	)
 
-	hash2, err := request2.Hash()
+	hash2, err := request2.hash()
 	require.NoErrorf(t, err,
 		"Failed to compute hash, err: %v", err,
 	)
@@ -83,12 +83,12 @@ func TestSasIsOmmitedFromFenceHash(t *testing.T) {
 		"linear",
 	)
 
-	hash1, err := request1.Hash()
+	hash1, err := request1.hash()
 	require.NoErrorf(t, err,
 		"Failed to compute hash, err: %v", err,
 	)
 
-	hash2, err := request2.Hash()
+	hash2, err := request2.hash()
 	require.NoErrorf(t, err,
 		"Failed to compute hash, err: %v", err,
 	)
@@ -120,12 +120,12 @@ func TestSliceGivesUniqueHash(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		hash1, err := testCase.request1.Hash()
+		hash1, err := testCase.request1.hash()
 		require.NoErrorf(t, err,
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
 
-		hash2, err := testCase.request2.Hash()
+		hash2, err := testCase.request2.hash()
 		require.NoErrorf(t, err,
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
@@ -169,12 +169,12 @@ func TestFenceGivesUniqueHash(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		hash1, err := testCase.request1.Hash()
+		hash1, err := testCase.request1.hash()
 		require.NoErrorf(t, err,
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
 
-		hash2, err := testCase.request2.Hash()
+		hash2, err := testCase.request2.hash()
 		require.NoErrorf(t, err,
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
