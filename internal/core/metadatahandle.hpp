@@ -33,7 +33,7 @@ private:
     Axis m_sample;
 
     void dimension_validation() const;
-    void axis_order_validation() const;
+    int get_dimension(std::vector<std::string> const & names) const;
 };
 
 #endif /* VDS_SLICE_METADATAHANDLE_HPP */

@@ -15,14 +15,16 @@ import (
 )
 
 func make_connection(name string) Connection {
-	path := fmt.Sprintf("../../testdata/%s/%s_default.vds", name, name)
+	path := fmt.Sprintf("../../testdata/%s", name)
 	path = fmt.Sprintf("file://%s", path)
 	return NewFileConnection(path)
 }
 
-var well_known = make_connection("well_known")
-var samples10 = make_connection("10_samples")
-var prestack = make_connection("prestack")
+var well_known_custom_axis_order = make_connection("well_known/well_known_custom_axis_order.vds")
+var invalid_axes_names = make_connection("invalid_data/invalid_axes_names.vds")
+var well_known = make_connection("well_known/well_known_default.vds")
+var samples10 = make_connection("10_samples/10_samples_default.vds")
+var prestack = make_connection("prestack/prestack_default.vds")
 
 var fillValue = float32(-999.25)
 
@@ -92,8 +94,8 @@ func TestMetadata(t *testing.T) {
 			Ij:   [][]float64{{0, 0}, {2, 0}, {2, 1}, {0, 1}},
 		},
 		Crs:             "utmXX",
-		InputFileName:   "well_known.segy",
-		ImportTimeStamp: `^\d{4}-\d{2}-\d{2}[A-Z]\d{2}:\d{2}:\d{2}\.\d{3}[A-Z]$`,
+		InputFileName:   `\.segy$`,
+		ImportTimeStamp: `^\d{4}-\d{2}-\d{2}[A-Z]\d{2}:\d{2}:\d{2}\.\d{3}([A-Z]|\d+)?$`,
 	}
 
 	handle, _ := NewVDSHandle(well_known)
@@ -106,11 +108,39 @@ func TestMetadata(t *testing.T) {
 	require.NoErrorf(t, err, "Failed to unmarshall response, err: %v", err)
 
 	require.Regexp(t, expected.ImportTimeStamp, meta.ImportTimeStamp)
+	require.Regexp(t, expected.InputFileName, meta.InputFileName)
 
 	expected.ImportTimeStamp = "dummy"
 	meta.ImportTimeStamp = "dummy"
+	expected.InputFileName = "dummy"
+	meta.InputFileName = "dummy"
 
 	require.Equal(t, meta, expected)
+}
+
+func TestMetadataCustomAxisOrder(t *testing.T) {
+	expected := []*Axis{
+		{Annotation: "Inline", Min: 1, Max: 5, Samples: 3, StepSize: 2, Unit: "unitless"},
+		{Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, StepSize: 1, Unit: "unitless"},
+		{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, StepSize: 4, Unit: "ms"},
+	}
+	handle, err := NewVDSHandle(well_known_custom_axis_order)
+	require.NoErrorf(t, err, "Failed to open vds file")
+
+	defer handle.Close()
+	buf, err := handle.GetMetadata()
+	require.NoErrorf(t, err, "Failed to retrieve metadata")
+
+	var meta Metadata
+	err = json.Unmarshal(buf, &meta)
+	require.NoErrorf(t, err, "Failed to unmarshall response")
+	require.Equal(t, meta.Axis, expected)
+}
+
+func TestMetadataAxesNames(t *testing.T) {
+	expected := "Requested axis not found under names "
+	_, err := NewVDSHandle(invalid_axes_names)
+	require.ErrorContains(t, err, expected)
 }
 
 func TestSliceData(t *testing.T) {
