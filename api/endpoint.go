@@ -353,11 +353,13 @@ func parsePostRequest(ctx *gin.Context, v Normalizable) error {
 }
 
 func (e *Endpoint) Health(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "I am up and running")
+
+	ctx.HTML(http.StatusOK, "index.html", gin.H{})
 }
 
 // MetadataGet godoc
 // @Summary  Return volumetric metadata about the VDS
+// @description.markdown metadata
 // @Tags     metadata
 // @Param    query  query  string  True  "Urlencoded/escaped MetadataRequest"
 // @Produce  json
@@ -377,6 +379,7 @@ func (e *Endpoint) MetadataGet(ctx *gin.Context) {
 
 // MetadataPost godoc
 // @Summary  Return volumetric metadata about the VDS
+// @description.markdown metadata
 // @Tags     metadata
 // @Param    body  body  MetadataRequest  True  "Request parameters"
 // @Produce  json
