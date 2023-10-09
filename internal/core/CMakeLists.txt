@@ -13,7 +13,6 @@ add_library(cppcore
   regularsurface.cpp
   subcube.cpp
   subvolume.cpp
-  verticalwindow.cpp
 )
 
 target_include_directories(cppcore

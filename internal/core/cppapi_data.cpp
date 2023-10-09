@@ -17,7 +17,6 @@
 #include "regularsurface.hpp"
 #include "subcube.hpp"
 #include "subvolume.hpp"
-#include "verticalwindow.hpp"
 
 namespace {
 
@@ -236,67 +235,6 @@ void fence(
             write_fillvalue(data.get(), noval_indicies, nsamples, *fillValue);
     }
     return to_response(std::move(data), size, out);
-}
-
-void horizon_buffer_offsets(
-    DataHandle& handle,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    std::size_t* out,
-    std::size_t out_size
-) {
-    if (!(reference.grid() == top.grid() && reference.grid() == bottom.grid())) {
-        throw std::runtime_error("Expected surfaces to have the same grid and size");
-    }
-
-    auto const horizontal_grid = reference.grid();
-
-    if (out_size != (horizontal_grid.size() + 1)) {
-        throw std::runtime_error("out buffer must be the size of surface + 1");
-    }
-
-    MetadataHandle const& metadata = handle.get_metadata();
-    auto transform = metadata.coordinate_transformer();
-
-    auto iline  = metadata.iline ();
-    auto xline  = metadata.xline();
-    auto sample = metadata.sample();
-
-    VerticalWindow window(sample.stepsize(), 2, sample.min());
-
-    out[0] = 0;
-    for (int i = 0; i < horizontal_grid.size(); ++i) {
-        float reference_depth = reference[i];
-        float top_depth       = top[i];
-        float bottom_depth    = bottom[i];
-
-        if (reference_depth == reference.fillvalue() ||
-            top_depth == top.fillvalue() ||
-            bottom_depth == bottom.fillvalue())
-        {
-            out[i+1] = out[i];
-            continue;
-        }
-
-        if (reference_depth < top_depth ||
-            reference_depth > bottom_depth)
-        {
-            throw std::runtime_error(
-                "Planes are not ordered as top <= reference <= bottom");
-        }
-
-        auto const cdp = horizontal_grid.to_cdp(i);
-        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
-
-        if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
-            out[i+1] = out[i];
-            continue;
-        }
-
-        window.move(reference_depth - top_depth, bottom_depth - reference_depth);
-        out[i+1] = out[i] + window.size();
-    }
 }
 
 

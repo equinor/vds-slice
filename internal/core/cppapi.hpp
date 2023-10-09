@@ -31,15 +31,6 @@ void fence(
     response* out
 ) noexcept (false);
 
-void horizon_buffer_offsets(
-    DataHandle& handle,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    std::size_t* out,
-    std::size_t out_size
-) noexcept (false);
-
 void horizon(
     DataHandle& handle,
     SurfaceBoundedSubVolume& subvolume,

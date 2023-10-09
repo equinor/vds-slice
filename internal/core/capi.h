@@ -142,16 +142,6 @@ int fence_metadata(
     response* out
 );
 
-int horizon_buffer_offsets(
-    Context* ctx,
-    DataHandle* handle,
-    RegularSurface* reference,
-    RegularSurface* top,
-    RegularSurface* bottom,
-    size_t* out,
-    size_t out_size
-);
-
 int horizon(
     Context* ctx,
     DataHandle* handle,

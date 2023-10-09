@@ -285,36 +285,6 @@ int metadata(
     }
 }
 
-int horizon_buffer_offsets(
-    Context* ctx,
-    DataHandle* handle,
-    RegularSurface* reference,
-    RegularSurface* top,
-    RegularSurface* bottom,
-    size_t* out,
-    size_t out_size
-) {
-    try {
-        if (not out)      throw detail::nullptr_error("Invalid out pointer");
-        if (not handle)   throw detail::nullptr_error("Invalid handle");
-        if (not reference)throw detail::nullptr_error("Invalid reference surface");
-        if (not top)      throw detail::nullptr_error("Invalid top surface");
-        if (not bottom)   throw detail::nullptr_error("Invalid bottom surface");
-
-        cppapi::horizon_buffer_offsets(
-            *handle,
-            *reference,
-            *top,
-            *bottom,
-            out,
-            out_size
-        );
-        return STATUS_OK;
-    } catch (...) {
-        return handle_exception(ctx, std::current_exception());
-    }
-}
-
 int horizon(
     Context* ctx,
     DataHandle* handle,

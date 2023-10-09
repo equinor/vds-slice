@@ -8,31 +8,7 @@
 #include <vector>
 
 #include "attribute.hpp"
-#include "interpolation.hpp"
 #include "regularsurface.hpp"
-#include "verticalwindow.hpp"
-
-Horizon::Window Horizon::at(std::size_t i) const noexcept (false) {
-    std::size_t begin = m_buffer_offsets[i];
-    std::size_t end = m_buffer_offsets[i+1];
-
-    return {
-        Horizon::VerticalIt(this->m_ptr + begin),
-        Horizon::VerticalIt(this->m_ptr + end)
-    };
-}
-
-void AttributeMap::AttributeComputeParams::update(
-    InputIt begin,
-    InputIt end,
-    std::size_t size,
-    std::size_t reference_index
-) noexcept (true) {
-    this->begin = begin;
-    this->end = end;
-    this->size = size;
-    this->reference_index = reference_index;
-}
 
 float Value::compute(
     ResampledSegment const & segment
