@@ -68,23 +68,23 @@ bool Grid::operator==(const Grid& other) const noexcept(true) {
     return this->m_transformation == other.m_transformation;
 }
 
-bool BoundedPlane::operator==(const BoundedPlane& other) const noexcept(true) {
+bool BoundedGrid::operator==(const BoundedGrid& other) const noexcept(true) {
     return Grid::operator==(other) && this->m_nrows == other.m_nrows && this->m_ncols == other.m_ncols;
 }
 
-std::size_t BoundedPlane::row(std::size_t i) const noexcept (false) {
+std::size_t BoundedGrid::row(std::size_t i) const noexcept (false) {
     if (i >= this->size())
         throw std::runtime_error("Index out of range");
     return i / this->ncols();
 }
 
-std::size_t BoundedPlane::col(std::size_t i) const noexcept (false) {
+std::size_t BoundedGrid::col(std::size_t i) const noexcept (false) {
     if (i >= this->size())
         throw std::runtime_error("Index out of range");
     return i % this->ncols();
 }
 
-Point BoundedPlane::to_cdp(
+Point BoundedGrid::to_cdp(
     std::size_t const row,
     std::size_t const col
 ) const noexcept (false) {
@@ -96,7 +96,7 @@ Point BoundedPlane::to_cdp(
     return this->m_transformation * point;
 }
 
-Point BoundedPlane::to_cdp(
+Point BoundedGrid::to_cdp(
     std::size_t i
 ) const noexcept(false) {
     auto row = i / this->ncols();
@@ -105,7 +105,7 @@ Point BoundedPlane::to_cdp(
     return to_cdp(row, col);
 }
 
-Point BoundedPlane::from_cdp(
+Point BoundedGrid::from_cdp(
     Point point
 ) const noexcept (false) {
     return this->m_inverse_transformation * point;
@@ -116,29 +116,29 @@ std::pair<std::size_t, std::size_t> as_pair(std::size_t row, std::size_t col) {
 }
 
 float &RegularSurface::operator[](std::size_t i) noexcept(false) {
-    if (i >= this->m_plane.size())
+    if (i >= this->m_grid.size())
         throw std::runtime_error("operator[]: index out of range");
     return this->m_data[i];
 }
 
 const float &RegularSurface::operator[](std::size_t i) const noexcept(false) {
-    if (i >= this->m_plane.size())
+    if (i >= this->m_grid.size())
         throw std::runtime_error("const operator[]: index out of range");
     return this->m_data[i];
 }
 
 float &RegularSurface::operator[](std::pair<std::size_t, std::size_t> p) noexcept(false) {
-    if (p.first >= this->m_plane.nrows())
+    if (p.first >= this->m_grid.nrows())
         throw std::runtime_error("operator[]: index out of range");
-    if (p.second >= this->m_plane.ncols())
+    if (p.second >= this->m_grid.ncols())
         throw std::runtime_error("operator[]: index out of range");
-    return this->m_data[p.first * this->m_plane.ncols() + p.second];
+    return this->m_data[p.first * this->m_grid.ncols() + p.second];
 }
 
 const float &RegularSurface::operator[](std::pair<std::size_t, std::size_t> p) const noexcept(false) {
-    if (p.first >= this->m_plane.nrows())
+    if (p.first >= this->m_grid.nrows())
         throw std::runtime_error("const operator[]: index out of range");
-    if (p.second >= this->m_plane.ncols())
+    if (p.second >= this->m_grid.ncols())
         throw std::runtime_error("const operator[]: index out of range");
-    return this->m_data[p.first * this->m_plane.ncols() + p.second];
+    return this->m_data[p.first * this->m_grid.ncols() + p.second];
 }

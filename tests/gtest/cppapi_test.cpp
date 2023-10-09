@@ -244,7 +244,7 @@ void test_successful_align_call(
 ) {
     std::vector< float> data(primary.size());
     RegularSurface aligned = RegularSurface(
-        data.data(), primary.plane(), secondary.fillvalue());
+        data.data(), primary.grid(), secondary.fillvalue());
 
     test_successful_align_call(primary, secondary, aligned, expected_data, expected_primary_is_top);
 }
@@ -397,7 +397,7 @@ TEST_F(SurfaceAlignmentTest, HolesInData)
 
     std::vector< float> data(primary.size());
     RegularSurface aligned = RegularSurface(
-        data.data(), primary.plane(), fill3);
+        data.data(), primary.grid(), fill3);
 
     test_successful_align_call(primary, secondary, aligned, expected.data(), true);
 }

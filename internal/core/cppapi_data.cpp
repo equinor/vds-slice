@@ -245,13 +245,13 @@ void horizon_buffer_offsets(
     std::size_t* out,
     std::size_t out_size
 ) {
-    if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
-        throw std::runtime_error("Expected surfaces to have the same plane and size");
+    if (!(reference.grid() == top.grid() && reference.grid() == bottom.grid())) {
+        throw std::runtime_error("Expected surfaces to have the same grid and size");
     }
 
-    auto const horizontal = reference.plane();
+    auto const horizontal_grid = reference.grid();
 
-    if (out_size != (horizontal.size() + 1)) {
+    if (out_size != (horizontal_grid.size() + 1)) {
         throw std::runtime_error("out buffer must be the size of surface + 1");
     }
 
@@ -265,7 +265,7 @@ void horizon_buffer_offsets(
     VerticalWindow window(sample.stepsize(), 2, sample.min());
 
     out[0] = 0;
-    for (int i = 0; i < horizontal.size(); ++i) {
+    for (int i = 0; i < horizontal_grid.size(); ++i) {
         float reference_depth = reference[i];
         float top_depth       = top[i];
         float bottom_depth    = bottom[i];
@@ -285,7 +285,7 @@ void horizon_buffer_offsets(
                 "Planes are not ordered as top <= reference <= bottom");
         }
 
-        auto const cdp = horizontal.to_cdp(i);
+        auto const cdp = horizontal_grid.to_cdp(i);
         auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 
         if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
@@ -310,13 +310,13 @@ void horizon(
     std::size_t to,
     void* out
 ) {
-    if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
-        throw std::runtime_error("Expected surfaces to have the same plane and size");
+    if (!(reference.grid() == top.grid() && reference.grid() == bottom.grid())) {
+        throw std::runtime_error("Expected surfaces to have the same grid and size");
     }
 
-    auto const horizontal = reference.plane();
+    auto const horizontal_grid = reference.grid();
 
-    if (to > horizontal.size()){
+    if (to > horizontal_grid.size()){
         throw std::invalid_argument("'to' must be less than surface size");
     }
 
@@ -344,7 +344,7 @@ void horizon(
 
         double nearest_reference_depth = window.nearest(reference[i]);
 
-        auto const cdp = horizontal.to_cdp(i);
+        auto const cdp = horizontal_grid.to_cdp(i);
         auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 
         double nearest_top_depth    = nearest_reference_depth -
@@ -355,8 +355,8 @@ void horizon(
         if (not sample.inrange(nearest_top_depth) or
             not sample.inrange(nearest_bottom_depth))
         {
-            auto row = horizontal.row(i);
-            auto col = horizontal.col(i);
+            auto row = horizontal_grid.row(i);
+            auto col = horizontal_grid.col(i);
             throw std::runtime_error(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
@@ -414,8 +414,8 @@ void attributes(
     std::size_t to,
     void** out
 ) {
-    if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
-        throw std::runtime_error("Expected surfaces to have the same plane and size");
+    if (!(reference.grid() == top.grid() && reference.grid() == bottom.grid())) {
+        throw std::runtime_error("Expected surfaces to have the same grid and size");
     }
 
     std::size_t size = horizon.mapsize();
@@ -480,7 +480,7 @@ void align_surfaces(
     RegularSurface &aligned,
     bool* primary_is_top
 ) {
-    if (!(primary.plane() == aligned.plane())) {
+    if (!(primary.grid() == aligned.grid())) {
         throw std::runtime_error(
             "Expected primary and aligned surfaces to differ in data only.");
     }
@@ -492,13 +492,13 @@ void align_surfaces(
             aligned[i] = aligned.fillvalue();
             continue;
         }
-        auto secondary_pos = secondary.plane().from_cdp(primary.plane().to_cdp(i));
+        auto secondary_pos = secondary.grid().from_cdp(primary.grid().to_cdp(i));
         // calculated value can be out of bounds, also negative
         auto secondary_row = std::lround(secondary_pos.x);
         auto secondary_col = std::lround(secondary_pos.y);
 
-        if (secondary_row < 0 || secondary_row >= secondary.plane().nrows() ||
-            (secondary_col < 0 || secondary_col >= secondary.plane().ncols()))
+        if (secondary_row < 0 || secondary_row >= secondary.grid().nrows() ||
+            (secondary_col < 0 || secondary_col >= secondary.grid().ncols()))
         {
             aligned[i] = aligned.fillvalue();
             continue;
@@ -514,8 +514,8 @@ void align_surfaces(
         aligned[i] = secondary_value;
 
         if (surfaces.have_crossed(primary[i], aligned[i])) {
-            std::size_t row = primary.plane().row(i);
-            std::size_t col = primary.plane().col(i);
+            std::size_t row = primary.grid().row(i);
+            std::size_t col = primary.grid().col(i);
             throw detail::bad_request("Surfaces intersect at primary surface point ("
                                         + std::to_string(row) + ", "
                                         + std::to_string(col) + ")");
