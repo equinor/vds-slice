@@ -194,28 +194,6 @@ float SumNeg::compute(
     return sum;
 }
 
-void fill_all(
-    std::vector< std::unique_ptr< AttributeMap > >& attributes,
-    float value,
-    std::size_t pos
-) {
-    for (auto& attr : attributes) {
-        attr->write(value, pos);
-    }
-}
-
-template< typename InputIt >
-void compute_all(
-    std::vector< std::unique_ptr< AttributeMap > >& attributes,
-    std::size_t pos,
-    AttributeMap::AttributeComputeParams & params
-) {
-    for (auto& attr : attributes) {
-        auto value = attr->compute(params);
-        attr->write(value, pos);
-    }
-}
-
 void calc_attributes(
     Horizon const& horizon,
     RegularSurface const& reference,
@@ -240,7 +218,9 @@ void calc_attributes(
         auto data  = horizon.at(i);
 
         if (data.begin() == data.end()) {
-            fill_all(attrs, fill, i);
+            for (auto& attr : attrs) {
+                attr->write(fill, i);
+            }
             continue;
         }
 
@@ -266,6 +246,9 @@ void calc_attributes(
             dst_window.nsamples_above()
         );
         
-        compute_all<double>(attrs, i, params);
+        for (auto& attr : attrs) {
+            auto value = attr->compute(params);
+            attr->write(value, i);
+        }
     }
 }
