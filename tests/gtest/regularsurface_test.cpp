@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 namespace {
 
-static Plane samples_10_plane = Plane(2, 0, 7.2111, 3.6056, 33.69);
+static Grid samples_10_grid = Grid(2, 0, 7.2111, 3.6056, 33.69);
 static constexpr float fill = -999.25;
 static constexpr std::size_t nrows = 3;
 static constexpr std::size_t ncols = 2;
@@ -52,7 +52,7 @@ TEST(AffineTransformationTest, InverseProperty) {
 
 TEST(RegularSurfaceSubscriptTest, SingleIndexOutOfRange) {
     RegularSurface surface =
-        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     std::size_t index_lower = 0;
     std::size_t index_upper = ref_surface_data.size() - 1;
@@ -70,7 +70,7 @@ TEST(RegularSurfaceSubscriptTest, SingleIndexOutOfRange) {
 
 TEST(RegularSurfaceSubscriptTest, SingleSubscriptVersusRefValue) {
     RegularSurface surface =
-        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     for (std::size_t i = 0; i < ref_surface_data.size(); i++) {
         EXPECT_EQ(surface[i], ref_surface_data[i]) << "Unexpected value";
@@ -81,7 +81,7 @@ TEST(RegularSurfaceSubscriptTest, SingleUpdateValue) {
     std::array<float, nrows *ncols> surface_data = ref_surface_data;
 
     RegularSurface surface =
-        RegularSurface(surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        RegularSurface(surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     for (std::size_t i = 0; i < surface_data.size(); i++) {
         surface[i] *= 2;
@@ -95,7 +95,7 @@ TEST(RegularSurfaceSubscriptTest, SingleUpdateValue) {
 
 TEST(RegularSurfaceSubscriptTest, DoubleRowOutOfRange) {
     RegularSurface surface =
-        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     auto lower_row = as_pair(0, 1);
     auto upper_row = as_pair(nrows - 1, 1);
@@ -116,7 +116,7 @@ TEST(RegularSurfaceSubscriptTest, DoubleRowOutOfRange) {
 
 TEST(RegularSurfaceSubscriptTest, DoubleColOutOfRange) {
     RegularSurface surface =
-        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     auto lower_col = as_pair(1, 0);
     auto upper_col = as_pair(1, ncols - 1);
@@ -138,7 +138,7 @@ TEST(RegularSurfaceSubscriptTest, DoubleColOutOfRange) {
 TEST(RegularSurfaceSubscriptTest, DoubleUpdateValues) {
     std::array<float, nrows *ncols> surface_data = ref_surface_data;
     RegularSurface surface =
-        RegularSurface(surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        RegularSurface(surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     for (std::size_t row = 0; row < nrows; row++) {
         for (std::size_t col = 0; col < ncols; col++) {
@@ -157,7 +157,7 @@ TEST(RegularSurfaceSubscriptTest, DoubleUpdateValues) {
 
 TEST(RegularSurfaceSubscriptTest, DoubleVersusReference) {
     RegularSurface surface =
-        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        RegularSurface(ref_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     for (std::size_t row = 0; row < nrows; row++) {
         for (std::size_t col = 0; col < ncols; col++) {

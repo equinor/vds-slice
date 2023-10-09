@@ -38,9 +38,18 @@ struct AffineTransformation : private std::array< std::array< double, 3>, 2 > {
     )noexcept (true);
 };
 
-struct Plane
+/**
+ * Represents a geometrical plane which is seen and intended as a grid.
+ *
+ * Note that usually the object would resemble a cartesian plane, but as system
+ * properties are not checked on creation, it is possible to create a grid where
+ * axes are not perpendicular. Anyway mathematical perpendicularity is difficult
+ * to achieve here due to floating point errors and plane data coming from other
+ * systems. So it is up to the user to assure grid's properties are as desired.
+ */
+struct Grid
 {
-    Plane(
+    Grid(
         double xori,
         double yori,
         double xinc,
@@ -53,28 +62,28 @@ struct Plane
     {}
 
     /**
-     * Compares planes for equality using equality of their affine
+     * Compares grids for equality using equality of their affine
      * transformations.
      *
-     * Note that in theory planes which differ only by 360 degree rotation
-     * should represent the same plane and be considered equal. However due to
+     * Note that in theory grids which differ only by 360 degree rotation
+     * should represent the same grid and be considered equal. However due to
      * double precision calculations would differ a bit. Thus note that values
      * here would be equal only when parameters provided in the constructor were
      * equal.
      */
-    bool operator==(const Plane& other) const noexcept(true);
+    bool operator==(const Grid& other) const noexcept(true);
 
     AffineTransformation m_transformation;
     AffineTransformation m_inverse_transformation;
 };
 
-struct BoundedPlane : public Plane
+struct BoundedPlane : public Grid
 {
     BoundedPlane(
-        Plane plane,
+        Grid grid,
         std::size_t nrows,
         std::size_t ncols
-    ) : Plane(plane), m_nrows(nrows), m_ncols(ncols) {}
+    ) : Grid(grid), m_nrows(nrows), m_ncols(ncols) {}
 
     /* Grid position (row, col) -> world coordinates */
     Point to_cdp(
@@ -138,9 +147,9 @@ public:
         float* data,
         std::size_t  nrows,
         std::size_t  ncols,
-        Plane plane,
+        Grid grid,
         float fillvalue
-    ) : RegularSurface(data, BoundedPlane(plane, nrows, ncols), fillvalue)
+    ) : RegularSurface(data, BoundedPlane(grid, nrows, ncols), fillvalue)
     {}
 
     float(&operator[](std::size_t i) noexcept(false));
