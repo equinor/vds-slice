@@ -2,6 +2,7 @@
 #define VDS_SLICE_ATTRIBUTE_HPP
 
 #include "regularsurface.hpp"
+#include "subvolume.hpp"
 #include "verticalwindow.hpp"
 #include <cstddef>
 #include <cstring>
@@ -152,7 +153,7 @@ public:
         ) noexcept (true) ;
     };
 
-    virtual float compute(AttributeComputeParams const & params) noexcept (false) = 0;
+    virtual float compute(ResampledSegment const & segment) noexcept (false) = 0;
 
     void write(float value, std::size_t index) {
         std::size_t offset = index * sizeof(float);
@@ -173,7 +174,7 @@ private:
 struct Value final : public AttributeMap {
     Value(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 
@@ -181,63 +182,63 @@ class Min final : public AttributeMap {
 public:
     Min(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class Max final : public AttributeMap {
 public:
     Max(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class MaxAbs final : public AttributeMap {
 public:
     MaxAbs(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class Mean final : public AttributeMap {
 public:
     Mean(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class MeanAbs final : public AttributeMap {
 public:
     MeanAbs(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class MeanPos final : public AttributeMap {
 public:
     MeanPos(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class MeanNeg final : public AttributeMap {
 public:
     MeanNeg(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class Median final : public AttributeMap {
 public:
     Median(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class Rms final : public AttributeMap {
 public:
     Rms(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 /* Calculated the population variance as we are interested in variance strictly
@@ -247,7 +248,7 @@ class Var final : public AttributeMap {
 public:
     Var(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 /* Calculated the population standard deviation as we are interested in
@@ -257,30 +258,26 @@ class Sd final : public AttributeMap {
 public:
     Sd(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class SumPos final : public AttributeMap {
 public:
     SumPos(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 class SumNeg final : public AttributeMap {
 public:
     SumNeg(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
-    float compute(AttributeComputeParams const & params) noexcept (false) override;
+    float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
 void calc_attributes(
-    Horizon const& horizon,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    VerticalWindow& src_window,
-    VerticalWindow& dst_window,
+    SurfaceBoundedSubVolume const& src_subvolume,
+    ResampledSegmentBlueprint const* dst_segment_blueprint,
     std::vector< std::unique_ptr< AttributeMap > >& attrs,
     std::size_t from,
     std::size_t to

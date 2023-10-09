@@ -318,33 +318,21 @@ int horizon_buffer_offsets(
 int horizon(
     Context* ctx,
     DataHandle* handle,
-    RegularSurface* reference,
-    RegularSurface* top,
-    RegularSurface* bottom,
-    std::size_t* buffer_offsets,
+    SurfaceBoundedSubVolume* subvolume,
     enum interpolation_method interpolation,
     size_t from,
-    size_t to,
-    void* out
+    size_t to
 ) {
     try {
-        if (not out)            throw detail::nullptr_error("Invalid out pointer");
-        if (not handle)         throw detail::nullptr_error("Invalid handle");
-        if (not reference)      throw detail::nullptr_error("Invalid reference surface");
-        if (not top)            throw detail::nullptr_error("Invalid top surface");
-        if (not bottom)         throw detail::nullptr_error("Invalid bottom surface");
-        if (not buffer_offsets) throw detail::nullptr_error("Invalid data offset buffer");
+        if (not handle)    throw detail::nullptr_error("Invalid handle");
+        if (not subvolume) throw detail::nullptr_error("Invalid subvolume");
 
         cppapi::horizon(
             *handle,
-            *reference,
-            *top,
-            *bottom,
-            buffer_offsets,
+            *subvolume,
             interpolation,
             from,
-            to,
-            out
+            to
         );
         return STATUS_OK;
     } catch (...) {
@@ -373,12 +361,7 @@ int attribute_metadata(
 int attribute(
     Context* ctx,
     DataHandle* handle,
-    RegularSurface* reference,
-    RegularSurface* top,
-    RegularSurface* bottom,
-    size_t* data_offsets,
-    const void* data,
-    size_t size,
+    SurfaceBoundedSubVolume* src_subvolume,
     enum attribute* attributes,
     size_t nattributes,
     float stepsize,
@@ -387,20 +370,11 @@ int attribute(
     void*  out
 ) {
     try {
-        if (not out)          throw detail::nullptr_error("Invalid out pointer");
-        if (not handle)       throw detail::nullptr_error("Invalid handle");
-        if (not reference)    throw detail::nullptr_error("Invalid reference surface");
-        if (not top)          throw detail::nullptr_error("Invalid top surface");
-        if (not bottom)       throw detail::nullptr_error("Invalid bottom surface");
-        if (not data)         throw detail::nullptr_error("Invalid data");
-        if (not data_offsets) throw detail::nullptr_error("Invalid data offset buffer");
+        if (not out)           throw detail::nullptr_error("Invalid out pointer");
+        if (not handle)        throw detail::nullptr_error("Invalid handle");
+        if (not src_subvolume) throw detail::nullptr_error("Invalid subvolume");
 
         if (from >= to)  throw std::runtime_error("No data to iterate over");
-
-        std::size_t nsamples = size / sizeof(float);
-        std::size_t hsize = reference->size();
-
-        Horizon horizon((float*)data, hsize, data_offsets, reference->fillvalue());
 
         MetadataHandle const& metadata = handle->get_metadata();
         auto const& sample = metadata.sample();
@@ -409,21 +383,17 @@ int attribute(
             stepsize = sample.stepsize();
         }
 
-        VerticalWindow src_window(sample.stepsize(), 2, sample.min());
-        VerticalWindow dst_window(stepsize);
+        ResampledSegmentBlueprint dst_segment_blueprint = ResampledSegmentBlueprint(stepsize);
 
         void* outs[nattributes];
         for (int i = 0; i < nattributes; ++i) {
-            outs[i] = static_cast< char* >(out) + horizon.mapsize() * i;
+            auto offset = src_subvolume->horizontal_grid().size() * sizeof(float) * i;
+            outs[i] = static_cast< char* >(out) + offset;
         }
 
         cppapi::attributes(
-            horizon,
-            *reference,
-            *top,
-            *bottom,
-            src_window,
-            dst_window,
+            *src_subvolume,
+            &dst_segment_blueprint,
             attributes,
             nattributes,
             from,

@@ -63,18 +63,12 @@ class HorizonTest : public ::testing::Test
         RegularSurface const &bottom_surface,
         const Samples10Points *expected_data
     ) {
-        auto size = primary_surface.size();
-        std::size_t offset_size = size + 1;
-        std::vector<std::size_t> offsets(offset_size);
-        cppapi::horizon_buffer_offsets(*handle, primary_surface, top_surface, bottom_surface,
-                            offsets.data(), offset_size);
+        auto size = primary_surface.grid().size();
 
-        std::size_t horizon_size = offsets[size];
-        std::vector< float> res(horizon_size);
-        cppapi::horizon(*handle, primary_surface, top_surface, bottom_surface,
-                            offsets.data(), NEAREST, 0, size, res.data());
-
-        Horizon horizon(res.data(), size, offsets.data(), primary_surface.fillvalue());
+        SurfaceBoundedSubVolume* subvolume = make_subvolume(
+            handle->get_metadata(), primary_surface, top_surface, bottom_surface
+        );
+        cppapi::horizon(*handle, *subvolume, NEAREST, 0, size);
 
         /* We are checking here points unordered. Meaning that if all points in a
         * row appear somewhere in the horizon, we assume we are good. Alternative
@@ -87,17 +81,18 @@ class HorizonTest : public ::testing::Test
         for (int i = 0; i < size; ++i)
         {
             auto expected_position = expected_data[i];
-            if (horizon.at(i).begin() == horizon.at(i).end()) {
-                ASSERT_EQ(expected_position, nodata)
-                    << "Expected no data at position " << i;
+            if (expected_position == nodata) {
+                ASSERT_TRUE(subvolume->is_empty(i))
+                    << "Expected empty subvolume at position " << i;
                 continue;
             }
-            for (auto it = horizon.at(i).begin(); it != horizon.at(i).end(); ++it)
+            for (auto it = subvolume->vertical_segment(i).begin(); it != subvolume->vertical_segment(i).end(); ++it)
             {
                 ASSERT_THAT(points.at(expected_position), ::testing::Contains(*it))
                     << "Retrieved value " << *it << " is not expected at position " << i;
             }
         }
+        delete subvolume;
     }
 };
 
@@ -138,14 +133,11 @@ TEST_F(HorizonTest, HorizonSize)
      *   gives no performance benefit and only complicates code and creates
      *   problems when use case requires 1 or 3 samples as interpolation
      *   algorithm wants at least 4.
-     *
-     * - there is a difference in fetched size for when reference is on the
-     *   sample and when it is not. Reference position shouldn't matter
      */
     std::array<float, size> expected_fetched_size = {
         5, 5,
         6, 6,
-        7, 6,
+        7, 7,
     };
 
     RegularSurface primary_surface =
@@ -157,24 +149,17 @@ TEST_F(HorizonTest, HorizonSize)
     RegularSurface bottom_surface =
         RegularSurface(bottom_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
-    std::size_t offset_size = size + 1;
-    std::vector<std::size_t> offsets(offset_size);
-    cppapi::horizon_buffer_offsets(*handle, primary_surface, top_surface, bottom_surface,
-                        offsets.data(), offset_size);
-
-    std::size_t horizon_size = offsets[size];
-    std::vector< float> res(horizon_size);
-    cppapi::horizon(*handle, primary_surface, top_surface, bottom_surface,
-                        offsets.data(), NEAREST, 0, size, res.data());
-
-    Horizon horizon(res.data(), size, offsets.data(), primary_surface.fillvalue());
-
+    SurfaceBoundedSubVolume* subvolume = make_subvolume(
+        handle->get_metadata(), primary_surface, top_surface, bottom_surface
+    );
+    cppapi::horizon(*handle, *subvolume, NEAREST, 0, size);
     for (int i = 0; i < size; ++i)
     {
-        int distance = std::distance(horizon.at(i).begin(), horizon.at(i).end());
-        EXPECT_EQ(expected_fetched_size[i], distance)
+        EXPECT_EQ(expected_fetched_size[i], subvolume->vertical_segment(i).size())
             << "Retrieved segment size not as expected at position " << i;
     }
+
+    delete subvolume;
 }
 
 TEST_F(HorizonTest, DataForUnalignedSurface)

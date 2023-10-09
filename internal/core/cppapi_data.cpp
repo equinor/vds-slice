@@ -16,6 +16,7 @@
 #include "metadatahandle.hpp"
 #include "regularsurface.hpp"
 #include "subcube.hpp"
+#include "subvolume.hpp"
 #include "verticalwindow.hpp"
 
 namespace {
@@ -301,21 +302,12 @@ void horizon_buffer_offsets(
 
 void horizon(
     DataHandle& handle,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    std::size_t* buffer_offsets,
+    SurfaceBoundedSubVolume& subvolume,
     enum interpolation_method interpolation,
     std::size_t from,
-    std::size_t to,
-    void* out
+    std::size_t to
 ) {
-    if (!(reference.grid() == top.grid() && reference.grid() == bottom.grid())) {
-        throw std::runtime_error("Expected surfaces to have the same grid and size");
-    }
-
-    auto const horizontal_grid = reference.grid();
-
+    auto const horizontal_grid = subvolume.horizontal_grid();
     if (to > horizontal_grid.size()){
         throw std::invalid_argument("'to' must be less than surface size");
     }
@@ -327,33 +319,25 @@ void horizon(
     auto xline  = metadata.xline();
     auto sample = metadata.sample();
 
-    std::size_t const nsamples = buffer_offsets[to] - buffer_offsets[from];
+    std::size_t const nsamples = subvolume.nsamples(from, to);
     if (nsamples == 0){
         return;
     }
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
-    VerticalWindow window(sample.stepsize(), 2, sample.min());
     std::size_t cur = 0;
     for (int i = from; i < to; ++i) {
-        if(buffer_offsets[i] == buffer_offsets[i+1]) {
+        if (subvolume.is_empty(i)) {
             continue;
         }
 
-        window.move(reference[i] - top[i], bottom[i] - reference[i]);
+        auto segment = subvolume.vertical_segment(i);
 
-        double nearest_reference_depth = window.nearest(reference[i]);
+        double top_sample_depth    = segment.top_sample_position();
+        double bottom_sample_depth = segment.bottom_sample_position();
 
-        auto const cdp = horizontal_grid.to_cdp(i);
-        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
-
-        double nearest_top_depth    = nearest_reference_depth -
-                                      window.nsamples_above() * window.stepsize();
-        double nearest_bottom_depth = nearest_reference_depth +
-                                      window.nsamples_below() * window.stepsize();
-
-        if (not sample.inrange(nearest_top_depth) or
-            not sample.inrange(nearest_bottom_depth))
+        if (not sample.inrange(top_sample_depth) or
+            not sample.inrange(bottom_sample_depth))
         {
             auto row = horizontal_grid.row(i);
             auto col = horizontal_grid.col(i);
@@ -361,21 +345,24 @@ void horizon(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
                 " col:" + std::to_string(col) +
-                ". Request: [" + std::to_string(nearest_top_depth) +
-                ", " + std::to_string(nearest_bottom_depth) +
+                ". Request: [" + std::to_string(top_sample_depth) +
+                ", " + std::to_string(bottom_sample_depth) +
                 "]. Seismic bounds: [" + std::to_string(sample.min())
                 + ", " +std::to_string(sample.max()) + "]"
             );
         }
 
+        auto const cdp = horizontal_grid.to_cdp(i);
+        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
+
         ij[0]  = iline.to_sample_position(ij[0]);
         ij[1]  = xline.to_sample_position(ij[1]);
 
-        double top_sample_depth = sample.to_sample_position(nearest_top_depth);
-        for (int idx = 0; idx < window.size(); ++idx) {
+        double k = sample.to_sample_position(top_sample_depth);
+        for (int idx = 0; idx < segment.size(); ++idx) {
             samples[cur][  iline.dimension() ] = ij[0];
             samples[cur][  xline.dimension() ] = ij[1];
-            samples[cur][ sample.dimension() ] = top_sample_depth + idx;
+            samples[cur][ sample.dimension() ] = k + idx;
             ++cur;
         }
     }
@@ -387,38 +374,26 @@ void horizon(
 
     auto const size = handle.samples_buffer_size(nsamples);
 
-    std::unique_ptr< char[] > buffer(new char[size]());
     handle.read_samples(
-        buffer.get(),
+        subvolume.data(from),
         size,
         samples.get(),
         nsamples,
         interpolation
     );
-
-    auto offset = buffer_offsets[from] * sizeof(float);
-    std::memcpy((char*)out + offset, buffer.get(), size);
 }
 
 
 void attributes(
-    Horizon const& horizon,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    VerticalWindow& src_window,
-    VerticalWindow& dst_window,
+    SurfaceBoundedSubVolume const& src_subvolume,
+    ResampledSegmentBlueprint const* dst_segment_blueprint,
     enum attribute* attributes,
     std::size_t nattributes,
     std::size_t from,
     std::size_t to,
     void** out
 ) {
-    if (!(reference.grid() == top.grid() && reference.grid() == bottom.grid())) {
-        throw std::runtime_error("Expected surfaces to have the same grid and size");
-    }
-
-    std::size_t size = horizon.mapsize();
+    std::size_t size = src_subvolume.horizontal_grid().size() * sizeof(float);
 
     std::vector< std::unique_ptr< AttributeMap > > attrs;
     for (int i = 0; i < nattributes; ++i) {
@@ -445,7 +420,7 @@ void attributes(
         ++attributes;
     }
 
-    calc_attributes(horizon, reference, top, bottom, src_window, dst_window, attrs, from, to);
+    calc_attributes(src_subvolume, dst_segment_blueprint, attrs, from, to);
 }
 
 namespace {

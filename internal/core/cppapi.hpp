@@ -9,6 +9,7 @@
 #include "datahandle.hpp"
 #include "direction.hpp"
 #include "regularsurface.hpp"
+#include "subvolume.hpp"
 
 namespace cppapi {
 
@@ -41,23 +42,15 @@ void horizon_buffer_offsets(
 
 void horizon(
     DataHandle& handle,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    std::size_t* buffer_offsets,
+    SurfaceBoundedSubVolume& subvolume,
     enum interpolation_method interpolation,
     std::size_t from,
-    std::size_t to,
-    void* out
+    std::size_t to
 ) noexcept (false);
 
 void attributes(
-    Horizon const& horizon,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    VerticalWindow& src_window,
-    VerticalWindow& dst_window,
+    SurfaceBoundedSubVolume const& src_subvolume,
+    ResampledSegmentBlueprint const* dst_segment_blueprint,
     enum attribute* attributes,
     std::size_t nattributes,
     std::size_t from,
