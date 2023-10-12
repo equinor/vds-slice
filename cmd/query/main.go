@@ -168,6 +168,7 @@ func setupApp(app *gin.Engine, endpoint *api.Endpoint, metric *metrics.Metrics) 
 	attributesSurface.POST("between", endpoint.AttributesBetweenSurfacesPost)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	app.LoadHTMLFiles("docs/index.html")
 }
 
 // @title        VDS-slice API
