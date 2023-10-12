@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "regularsurface.hpp"
+
 float fmod_with_tolerance(float x, float y);
 float floor_with_tolerance(float x);
 float ceil_with_tolerance(float x);
@@ -345,5 +347,94 @@ private:
     ResampledSegmentBlueprint const* m_blueprint;
     std::vector<double> m_data;
 };
+
+/**
+ * 3D chunk of (raw) seismic data.
+ *
+ * In this chunk we have multiple vertical sample values for each horizontal
+ * position. Number of samples is different at each position.
+ *
+ * Data is a 3D array. Vertical axis is expected to be the fastest moving, i.e.
+ * vertical samples at the same horizontal position are contiguous in memory.
+ */
+class SurfaceBoundedSubVolume {
+public:
+    BoundedGrid const& horizontal_grid() const noexcept {
+        return m_ref.grid();
+    }
+
+    RawSegment vertical_segment(std::size_t index) const noexcept {
+        return RawSegment(
+            this->m_ref[index],
+            this->m_top[index],
+            this->m_bottom[index],
+            m_data.begin() + m_segment_offsets[index],
+            m_data.begin() + m_segment_offsets[index + 1],
+            &this->m_segment_blueprint
+        );
+    }
+
+    /**
+     * Number if samples contained in total between segments [from, to)
+     */
+    std::size_t nsamples(std::size_t from_segment, std::size_t to_segment) const noexcept {
+        return this->m_segment_offsets[to_segment] - this->m_segment_offsets[from_segment];
+    }
+
+    bool is_empty(std::size_t index) const noexcept {
+        return m_segment_offsets[index] == m_segment_offsets[index + 1];
+    }
+
+    float* data(std::size_t from_segment) noexcept {
+        return this->m_data.data() + m_segment_offsets[from_segment];
+    }
+
+    float fillvalue() const noexcept {
+        return m_ref.fillvalue();
+    }
+
+    /**
+     * Reinitialize segments with data at provided index.
+     * Purpose of this functionality is to avoid creating new segment objects.
+     */
+    void reinitialize(std::size_t index, RawSegment& segment) const;
+
+    /**
+     * Reinitialize segments with data at provided index.
+     * Purpose of this functionality is to avoid creating new segment objects.
+     */
+    void reinitialize(std::size_t index, ResampledSegment& segment) const;
+
+private:
+    SurfaceBoundedSubVolume(
+        RegularSurface const& reference,
+        RegularSurface const& top,
+        RegularSurface const& bottom,
+        RawSegmentBlueprint segment_blueprint
+    )
+        : m_ref(reference), m_top(top), m_bottom(bottom), m_segment_blueprint(segment_blueprint) {
+
+        this->m_segment_offsets = std::vector<std::size_t>(horizontal_grid().size() + 1);
+    }
+
+    std::vector<float> m_data;
+    /**
+     * Distances from data start to start of every segment, i.e.
+     * m_segment_offsets[i] contains number of samples one must skip from start
+     * of m_data to get to the data of segment i.
+     */
+    std::vector<std::size_t> m_segment_offsets;
+
+    RegularSurface const& m_ref;
+    RegularSurface const& m_top;
+    RegularSurface const& m_bottom;
+
+    RawSegmentBlueprint m_segment_blueprint;
+};
+
+/**
+ * Resamples source segment into destination.
+ */
+void resample(RawSegment const& src_segment, ResampledSegment& dst_segment);
 
 #endif /* VDS_SLICE_SUBVOLUME_HPP */
