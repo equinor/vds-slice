@@ -164,4 +164,186 @@ public:
 
 };
 
+/**
+ * Represents part of the trace.
+ */
+class Segment {
+public:
+    virtual std::size_t size() const noexcept = 0;
+
+    virtual float top_sample_position() const noexcept = 0;
+
+    virtual float bottom_sample_position() const noexcept = 0;
+
+    /**
+     * All positions of samples in the segment
+     */
+    std::vector<double> sample_positions() const {
+        std::size_t size = this->size();
+        std::vector<double> positions;
+        positions.reserve(size);
+        float top_sample_position = this->top_sample_position();
+        for (int index = 0; index < size; ++index) {
+            positions.push_back(this->sample_position_at(index, top_sample_position));
+        }
+        return positions;
+    }
+
+    /**
+     * Position of sample at provided index, given that top sample is at position 0
+     */
+    float sample_position_at(std::size_t index) const noexcept{
+        return Segment::sample_position_at(index, this->top_sample_position());
+    }
+
+protected:
+    Segment(
+        const float reference,
+        const float top_boundary,
+        const float bottom_boundary
+    )
+        : m_reference(reference), m_top_boundary(top_boundary),
+          m_bottom_boundary(bottom_boundary) {}
+
+    /**
+     * Position of sample at provided index, given position of the top sample at index 0
+     * Note: top_sample_position is not calculated but provided so that it could be cached
+     */
+    float sample_position_at(std::size_t index, float top_sample_position) const noexcept{
+        return top_sample_position + this->blueprint()->stepsize() * index;
+    }
+
+    /*
+      Re-initialization functions are introduced for performance reason only. In
+      theory it would be nice to create a new immutable object for every cell on
+      the horizontal plane. Yet the number of cells could reach 10 million, and
+      object creation starts to take its toll. Updating existing objects appears
+      to be faster then creating new ones.
+     */
+    void reinitialize(float reference, float top, float bottom) noexcept {
+        this->m_reference = reference;
+        this->m_top_boundary = top;
+        this->m_bottom_boundary = bottom;
+    }
+
+    virtual SegmentBlueprint const* blueprint() const noexcept = 0;
+    float m_reference;
+    float m_top_boundary;
+    float m_bottom_boundary;
+};
+
+/**
+ * Describes a segment which doesn't manage its own data, but has a view to it.
+ * It our case these are segments on the raw vds data.
+ */
+class RawSegment : public Segment {
+public:
+    RawSegment(
+        const float reference,
+        const float top_boundary,
+        const float bottom_boundary,
+        std::vector<float>::const_iterator data_begin,
+        std::vector<float>::const_iterator data_end,
+        RawSegmentBlueprint const* blueprint
+    )
+        : Segment(reference, top_boundary, bottom_boundary),
+          m_blueprint(blueprint),
+          m_data_begin(data_begin),
+          m_data_end(data_end) {}
+
+    void reinitialize(
+        float reference,
+        float top_boundary,
+        float bottom_boundary,
+        std::vector<float>::const_iterator data_begin,
+        std::vector<float>::const_iterator data_end
+    ) noexcept {
+        Segment::reinitialize(reference, top_boundary, bottom_boundary);
+        this->m_data_begin = data_begin;
+        this->m_data_end = data_end;
+    }
+
+    std::size_t size() const noexcept {
+        return this->m_blueprint->size(m_top_boundary, m_bottom_boundary);
+    }
+
+    float top_sample_position() const noexcept {
+        return this->m_blueprint->top_sample_position(m_top_boundary);
+    }
+    float bottom_sample_position() const noexcept {
+        return this->m_blueprint->bottom_sample_position(m_bottom_boundary);
+    }
+
+    std::vector<float>::const_iterator begin() const noexcept { return m_data_begin; }
+    std::vector<float>::const_iterator end() const noexcept { return m_data_end; }
+
+protected:
+    SegmentBlueprint const* blueprint() const noexcept {
+        return m_blueprint;
+    }
+
+private:
+    RawSegmentBlueprint const* m_blueprint;
+    std::vector<float>::const_iterator m_data_begin;
+    std::vector<float>::const_iterator m_data_end;
+};
+
+/**
+ * Describes a segment which manages its own data. In our case these are the
+ * resampled segments.
+ *
+ * This class is needed as we do not want to have a SubVolume object for
+ * resampled data. We do not need to store such a big chunk of data in the
+ * memory as we can store just small ones, perform computations and dispose of
+ * the data immediately.
+ */
+class ResampledSegment : public Segment {
+public:
+    ResampledSegment(
+        float reference,
+        float top_boundary,
+        float bottom_boundary,
+        ResampledSegmentBlueprint const* blueprint
+    )
+        : Segment(reference, top_boundary, bottom_boundary), m_blueprint(blueprint) {
+        this->m_data = std::vector<double>(this->size());
+    }
+
+    void reinitialize(float reference, float top_boundary, float bottom_boundary) {
+        Segment::reinitialize(reference, top_boundary, bottom_boundary);
+
+        this->m_data.resize(this->size());
+    }
+
+    std::vector<double>::iterator begin() noexcept { return m_data.begin(); }
+    std::vector<double>::iterator end() noexcept { return m_data.end(); }
+
+    std::vector<double>::const_iterator begin() const noexcept { return m_data.begin(); }
+    std::vector<double>::const_iterator end() const noexcept { return m_data.end(); }
+
+    std::size_t size() const noexcept {
+        return this->m_blueprint->size(m_reference, m_top_boundary, m_bottom_boundary);
+    }
+
+    float top_sample_position() const noexcept {
+        return this->m_blueprint->top_sample_position(m_reference, m_top_boundary);
+    }
+    float bottom_sample_position() const noexcept {
+        return this->m_blueprint->bottom_sample_position(m_reference, m_bottom_boundary);
+    }
+
+    std::size_t reference_index() const noexcept {
+        return this->m_blueprint->nsamples_above(m_reference, m_top_boundary);
+    }
+
+protected:
+    SegmentBlueprint const* blueprint() const noexcept {
+        return m_blueprint;
+    }
+
+private:
+    ResampledSegmentBlueprint const* m_blueprint;
+    std::vector<double> m_data;
+};
+
 #endif /* VDS_SLICE_SUBVOLUME_HPP */
