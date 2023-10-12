@@ -101,6 +101,81 @@ class HorizonTest : public ::testing::Test
     }
 };
 
+TEST_F(HorizonTest, HorizonSize)
+{
+    static constexpr int nrows = 3;
+    static constexpr int ncols = 2;
+    static constexpr std::size_t size = nrows * ncols;
+
+    // 16, 20 and 24 fall on samples
+
+    std::array<float, size> primary_surface_data = {
+        20, 20,
+        20, 20,
+        20, 19,
+    };
+
+    std::array<float, size> top_surface_data = {
+        20, 17,
+        16, 17,
+        16, 16,
+    };
+
+    std::array<float, size> bottom_surface_data = {
+        20, 23,
+        23, 24,
+        24, 24,
+    };
+
+    /**
+     * Note that in theory these sizes are not optimal:
+     * - depending on the interpolation algorithm we might need several
+     *   additional samples to interpolate points on the borders the best way
+     *   possible. Current belief is that interpolation algorithm needs 2
+     *   additional samples from one side to interpolate properly. That means
+     *   that if border already falls on the sample, we might be fetching too
+     *   much. However it seems like in practice implementing such behavior
+     *   gives no performance benefit and only complicates code and creates
+     *   problems when use case requires 1 or 3 samples as interpolation
+     *   algorithm wants at least 4.
+     *
+     * - there is a difference in fetched size for when reference is on the
+     *   sample and when it is not. Reference position shouldn't matter
+     */
+    std::array<float, size> expected_fetched_size = {
+        5, 5,
+        6, 6,
+        7, 6,
+    };
+
+    RegularSurface primary_surface =
+        RegularSurface(primary_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    RegularSurface top_surface =
+        RegularSurface(top_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    RegularSurface bottom_surface =
+        RegularSurface(bottom_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    std::size_t offset_size = size + 1;
+    std::vector<std::size_t> offsets(offset_size);
+    cppapi::horizon_buffer_offsets(*handle, primary_surface, top_surface, bottom_surface,
+                        offsets.data(), offset_size);
+
+    std::size_t horizon_size = offsets[size];
+    std::vector< float> res(horizon_size);
+    cppapi::horizon(*handle, primary_surface, top_surface, bottom_surface,
+                        offsets.data(), NEAREST, 0, size, res.data());
+
+    Horizon horizon(res.data(), size, offsets.data(), primary_surface.fillvalue());
+
+    for (int i = 0; i < size; ++i)
+    {
+        int distance = std::distance(horizon.at(i).begin(), horizon.at(i).end());
+        EXPECT_EQ(expected_fetched_size[i], distance)
+            << "Retrieved segment size not as expected at position " << i;
+    }
+}
 
 TEST_F(HorizonTest, DataForUnalignedSurface)
 {
