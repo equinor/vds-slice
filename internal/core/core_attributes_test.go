@@ -70,6 +70,12 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 		inbounds bool
 	}{
 		// 2 samples is the margin needed for interpolation
+
+		/* note that this test could mean we are too restrictive in cases "less
+		 * than two samples". If top of the window is at 13 - 4 = 9, there still
+		 * are samples at 8 and 4 - to fit the margin requirement. And yet we
+		 * fail.
+		 */
 		{
 			name:     "Top of window is 2 samples from first depth recording",
 			values:   [][]float32{{16.00}},
