@@ -142,7 +142,7 @@ int fence_metadata(
     response* out
 );
 
-int horizon(
+int fetch_subvolume(
     Context* ctx,
     DataHandle* handle,
     SurfaceBoundedSubVolume* subvolume,

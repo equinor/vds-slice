@@ -39,7 +39,7 @@ std::map<Samples10Points, std::vector<float>> samples_10_data(float fill)
     return points;
 }
 
-class HorizonTest : public ::testing::Test
+class SubvolumeTest : public ::testing::Test
 {
   protected:
     void SetUp() override
@@ -57,7 +57,7 @@ class HorizonTest : public ::testing::Test
     static constexpr float fill = -999.25;
     std::map<float, std::vector<float>> points;
 
-    void test_successful_horizon_call(
+    void test_successful_subvolume_call(
         RegularSurface const &primary_surface,
         RegularSurface const &top_surface,
         RegularSurface const &bottom_surface,
@@ -68,7 +68,7 @@ class HorizonTest : public ::testing::Test
         SurfaceBoundedSubVolume* subvolume = make_subvolume(
             handle->get_metadata(), primary_surface, top_surface, bottom_surface
         );
-        cppapi::horizon(*handle, *subvolume, NEAREST, 0, size);
+        cppapi::fetch_subvolume(*handle, *subvolume, NEAREST, 0, size);
 
         /* We are checking here points unordered. Meaning that if all points in a
         * row appear somewhere in the horizon, we assume we are good. Alternative
@@ -96,7 +96,7 @@ class HorizonTest : public ::testing::Test
     }
 };
 
-TEST_F(HorizonTest, HorizonSize)
+TEST_F(SubvolumeTest, SubvolumeSize)
 {
     static constexpr int nrows = 3;
     static constexpr int ncols = 2;
@@ -152,7 +152,7 @@ TEST_F(HorizonTest, HorizonSize)
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
         handle->get_metadata(), primary_surface, top_surface, bottom_surface
     );
-    cppapi::horizon(*handle, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(*handle, *subvolume, NEAREST, 0, size);
     for (int i = 0; i < size; ++i)
     {
         EXPECT_EQ(expected_fetched_size[i], subvolume->vertical_segment(i).size())
@@ -162,7 +162,7 @@ TEST_F(HorizonTest, HorizonSize)
     delete subvolume;
 }
 
-TEST_F(HorizonTest, DataForUnalignedSurface)
+TEST_F(SubvolumeTest, DataForUnalignedSurface)
 {
     const float above = 2;
     const float below = 2;
@@ -202,10 +202,10 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
     RegularSurface bottom_surface =
         RegularSurface(below_data.data(), nrows, ncols, other_grid, fill);
 
-    test_successful_horizon_call(primary_surface, top_surface, bottom_surface, expected.data());
+    test_successful_subvolume_call(primary_surface, top_surface, bottom_surface, expected.data());
 }
 
-TEST_F(HorizonTest, ManyFills)
+TEST_F(SubvolumeTest, ManyFills)
 {
     static constexpr int nrows = 6;
     static constexpr int ncols = 4;
@@ -256,7 +256,7 @@ TEST_F(HorizonTest, ManyFills)
     RegularSurface bottom_surface =
         RegularSurface(bottom_surface_data.data(), nrows, ncols, larger_grid, fill);
 
-    test_successful_horizon_call(primary_surface, top_surface, bottom_surface, expected.data());
+    test_successful_subvolume_call(primary_surface, top_surface, bottom_surface, expected.data());
 }
 
 

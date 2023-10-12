@@ -285,7 +285,7 @@ int metadata(
     }
 }
 
-int horizon(
+int fetch_subvolume(
     Context* ctx,
     DataHandle* handle,
     SurfaceBoundedSubVolume* subvolume,
@@ -297,7 +297,7 @@ int horizon(
         if (not handle)    throw detail::nullptr_error("Invalid handle");
         if (not subvolume) throw detail::nullptr_error("Invalid subvolume");
 
-        cppapi::horizon(
+        cppapi::fetch_subvolume(
             *handle,
             *subvolume,
             interpolation,

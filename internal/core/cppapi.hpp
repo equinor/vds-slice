@@ -31,7 +31,7 @@ void fence(
     response* out
 ) noexcept (false);
 
-void horizon(
+void fetch_subvolume(
     DataHandle& handle,
     SurfaceBoundedSubVolume& subvolume,
     enum interpolation_method interpolation,

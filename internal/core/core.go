@@ -801,7 +801,7 @@ func (v VDSHandle) getAttributes(
 	}
 	defer C.subvolume_free(cCtx, cSubVolume)
 
-	err := v.fetchHorizon(
+	err := v.fetchSubvolume(
 		cSubVolume,
 		nrows,
 		ncols,
@@ -833,7 +833,7 @@ func (v VDSHandle) normalizeAttributes(
 	return targetAttributes, nil
 }
 
-func (v VDSHandle) fetchHorizon(
+func (v VDSHandle) fetchSubvolume(
 	cSubVolume *C.struct_SurfaceBoundedSubVolume,
 	nrows int,
 	ncols int,
@@ -867,7 +867,7 @@ func (v VDSHandle) fetchHorizon(
 			var cCtx = C.context_new()
 			defer C.context_free(cCtx)
 
-			cerr := C.horizon(
+			cerr := C.fetch_subvolume(
 				cCtx,
 				v.Handle(),
 				cSubVolume,

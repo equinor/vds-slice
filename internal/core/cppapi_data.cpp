@@ -238,7 +238,7 @@ void fence(
 }
 
 
-void horizon(
+void fetch_subvolume(
     DataHandle& handle,
     SurfaceBoundedSubVolume& subvolume,
     enum interpolation_method interpolation,
