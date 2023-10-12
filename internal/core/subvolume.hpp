@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "metadatahandle.hpp"
 #include "regularsurface.hpp"
 
 float fmod_with_tolerance(float x, float y);
@@ -358,6 +359,13 @@ private:
  * vertical samples at the same horizontal position are contiguous in memory.
  */
 class SurfaceBoundedSubVolume {
+    friend SurfaceBoundedSubVolume* make_subvolume(
+        MetadataHandle const& metadata,
+        RegularSurface const& reference,
+        RegularSurface const& top,
+        RegularSurface const& bottom
+    );
+
 public:
     BoundedGrid const& horizontal_grid() const noexcept {
         return m_ref.grid();
@@ -431,6 +439,17 @@ private:
 
     RawSegmentBlueprint m_segment_blueprint;
 };
+
+/**
+ * Constructs new SurfaceBoundedSubVolume object.
+ * Note that object would be allocated on heap.
+ */
+SurfaceBoundedSubVolume* make_subvolume(
+    MetadataHandle const& metadata,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom
+);
 
 /**
  * Resamples source segment into destination.

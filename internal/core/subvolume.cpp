@@ -1,5 +1,7 @@
 #include <cmath>
+#include <stdexcept>
 
+#include "axis.hpp"
 #include "subvolume.hpp"
 
 #include <boost/math/interpolators/makima.hpp>
@@ -32,6 +34,76 @@ float ceil_with_tolerance(float x) {
         return floor;
     }
     return std::ceil(x);
+}
+
+SurfaceBoundedSubVolume* make_subvolume(
+    MetadataHandle const& metadata,
+    RegularSurface const& reference,
+    RegularSurface const& top,
+    RegularSurface const& bottom
+) {
+    if (!(reference.grid() == top.grid() && reference.grid() == bottom.grid())) {
+        throw std::runtime_error("Expected surfaces to have the same plane and size");
+    }
+
+    auto transform = metadata.coordinate_transformer();
+
+    auto iline = metadata.iline();
+    auto xline = metadata.xline();
+    auto sample = metadata.sample();
+
+    RawSegmentBlueprint segment_blueprint = RawSegmentBlueprint(sample.stepsize(), sample.min());
+    auto subvolume = new SurfaceBoundedSubVolume(reference, top, bottom, segment_blueprint);
+    auto const horizontal_grid = subvolume->horizontal_grid();
+
+    subvolume->m_segment_offsets[0] = 0;
+
+    /**
+     * Try to establish how far away from the start each segment in the
+     * subvolume would lay, so we could concurrently fetch data to different
+     * parts of the subvolume. If segment is supposed to have data then we set
+     * the beginning of the new segment to the start of the previous one + size
+     * of the previous one. If segment is empty (because no data exists or user
+     * is not interested), simply set beginning of the next segment same as
+     * current one as no data is expected to be fetched.
+     */
+    for (int i = 0; i < horizontal_grid.size(); ++i) {
+        float reference_depth = reference[i];
+        float top_depth = top[i];
+        float bottom_depth = bottom[i];
+
+        if (
+            reference_depth == reference.fillvalue() ||
+            top_depth == top.fillvalue() ||
+            bottom_depth == bottom.fillvalue()
+        ) {
+            subvolume->m_segment_offsets[i + 1] = subvolume->m_segment_offsets[i];
+            continue;
+        }
+
+        if (
+            reference_depth < top_depth ||
+            reference_depth > bottom_depth
+        ) {
+            throw std::runtime_error(
+                "Planes are not ordered as top <= reference <= bottom"
+            );
+        }
+
+        auto const cdp = horizontal_grid.to_cdp(i);
+        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
+
+        if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
+            subvolume->m_segment_offsets[i + 1] = subvolume->m_segment_offsets[i];
+            continue;
+        }
+
+        subvolume->m_segment_offsets[i + 1] =
+            subvolume->m_segment_offsets[i] + segment_blueprint.size(top_depth, bottom_depth);
+    }
+    subvolume->m_data.reserve(subvolume->m_segment_offsets[horizontal_grid.size()]);
+
+    return subvolume;
 }
 
 void SurfaceBoundedSubVolume::reinitialize(
