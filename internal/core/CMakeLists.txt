@@ -12,7 +12,7 @@ add_library(cppcore
   metadatahandle.cpp
   regularsurface.cpp
   subcube.cpp
-  verticalwindow.cpp
+  subvolume.cpp
 )
 
 target_include_directories(cppcore

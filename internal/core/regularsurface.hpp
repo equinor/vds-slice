@@ -38,9 +38,18 @@ struct AffineTransformation : private std::array< std::array< double, 3>, 2 > {
     )noexcept (true);
 };
 
-struct Plane
+/**
+ * Represents a geometrical plane which is seen and intended as a grid.
+ *
+ * Note that usually the object would resemble a cartesian plane, but as system
+ * properties are not checked on creation, it is possible to create a grid where
+ * axes are not perpendicular. Anyway mathematical perpendicularity is difficult
+ * to achieve here due to floating point errors and plane data coming from other
+ * systems. So it is up to the user to assure grid's properties are as desired.
+ */
+struct Grid
 {
-    Plane(
+    Grid(
         double xori,
         double yori,
         double xinc,
@@ -53,28 +62,28 @@ struct Plane
     {}
 
     /**
-     * Compares planes for equality using equality of their affine
+     * Compares grids for equality using equality of their affine
      * transformations.
      *
-     * Note that in theory planes which differ only by 360 degree rotation
-     * should represent the same plane and be considered equal. However due to
+     * Note that in theory grids which differ only by 360 degree rotation
+     * should represent the same grid and be considered equal. However due to
      * double precision calculations would differ a bit. Thus note that values
      * here would be equal only when parameters provided in the constructor were
      * equal.
      */
-    bool operator==(const Plane& other) const noexcept(true);
+    bool operator==(const Grid& other) const noexcept(true);
 
     AffineTransformation m_transformation;
     AffineTransformation m_inverse_transformation;
 };
 
-struct BoundedPlane : public Plane
+struct BoundedGrid : public Grid
 {
-    BoundedPlane(
-        Plane plane,
+    BoundedGrid(
+        Grid grid,
         std::size_t nrows,
         std::size_t ncols
-    ) : Plane(plane), m_nrows(nrows), m_ncols(ncols) {}
+    ) : Grid(grid), m_nrows(nrows), m_ncols(ncols) {}
 
     /* Grid position (row, col) -> world coordinates */
     Point to_cdp(
@@ -91,7 +100,7 @@ struct BoundedPlane : public Plane
         Point point
     ) const noexcept (false);
 
-    bool operator==(const BoundedPlane& other) const noexcept(true);
+    bool operator==(const BoundedGrid& other) const noexcept(true);
 
     std::size_t nrows() const noexcept (true) { return this->m_nrows; };
     std::size_t ncols() const noexcept (true) { return this->m_ncols; };
@@ -107,7 +116,7 @@ private:
 
 std::pair<std::size_t, std::size_t> as_pair(std::size_t row, std::size_t col);
 
-/** Regular Surface - a set of data points over the finite part of 2D plane.
+/** Regular Surface - a set of data points over the finite part of 2D grid.
  * It is represented as 2D array with geospacial information. Each array value
  * can mean anything, but in practice it would likely be the depth at the grid
  * position used to calculate the horizon.
@@ -127,20 +136,20 @@ class RegularSurface{
 public:
     RegularSurface(
         float* data,
-        BoundedPlane plane,
+        BoundedGrid grid,
         float fillvalue
     ) : m_data(data),
         m_fillvalue(fillvalue),
-        m_plane(plane)
+        m_grid(grid)
     {}
 
     RegularSurface(
         float* data,
         std::size_t  nrows,
         std::size_t  ncols,
-        Plane plane,
+        Grid grid,
         float fillvalue
-    ) : RegularSurface(data, BoundedPlane(plane, nrows, ncols), fillvalue)
+    ) : RegularSurface(data, BoundedGrid(grid, nrows, ncols), fillvalue)
     {}
 
     float(&operator[](std::size_t i) noexcept(false));
@@ -151,14 +160,14 @@ public:
 
     float fillvalue() const noexcept (true) { return this->m_fillvalue; };
 
-    std::size_t size() const noexcept (true) { return this->m_plane.size(); };
+    std::size_t size() const noexcept (true) { return this->m_grid.size(); };
 
-    BoundedPlane const& plane() const noexcept(true) { return this->m_plane; };
+    BoundedGrid const& grid() const noexcept(true) { return this->m_grid; };
 
 private:
     float*             m_data;
     float              m_fillvalue;
-    const BoundedPlane m_plane;
+    const BoundedGrid m_grid;
 };
 
 // } // namespace surface

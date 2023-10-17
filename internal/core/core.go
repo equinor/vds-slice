@@ -784,50 +784,36 @@ func (v VDSHandle) getAttributes(
 ) ([][]byte, error) {
 	var hsize = nrows * ncols
 
-	dataOffsetSize := hsize + 1
-	dataOffset := make([]C.size_t, dataOffsetSize)
-
-	cerr := C.horizon_buffer_offsets(
-		v.context(),
+	var cSubVolume *C.struct_SurfaceBoundedSubVolume
+	var cCtx = C.context_new()
+	defer C.context_free(cCtx)
+	cerr := C.subvolume_new(
+		cCtx,
 		v.Handle(),
 		cReferenceSurface.get(),
 		cTopSurface.get(),
 		cBottomSurface.get(),
-		&dataOffset[0],
-		C.size_t(dataOffsetSize),
+		&cSubVolume,
 	)
-	if err := v.Error(cerr); err != nil {
+
+	if err := toError(cerr, cCtx); err != nil {
 		return nil, err
 	}
+	defer C.subvolume_free(cCtx, cSubVolume)
 
-	horizonBufferSize := dataOffset[hsize] * 4 //size of float
-	if horizonBufferSize == 0 {
-		//empty array can't be referenced
-		horizonBufferSize = 1
-	}
-
-	horizon, err := v.fetchHorizon(
-		cReferenceSurface,
-		cTopSurface,
-		cBottomSurface,
+	err := v.fetchSubvolume(
+		cSubVolume,
 		nrows,
 		ncols,
-		dataOffset,
 		interpolation,
-		C.size_t(horizonBufferSize),
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	return v.calculateAttributes(
-		cReferenceSurface,
-		cTopSurface,
-		cBottomSurface,
+		cSubVolume,
 		hsize,
-		dataOffset,
-		horizon,
-		C.size_t(horizonBufferSize),
 		targetAttributes,
 		stepsize,
 	)
@@ -847,18 +833,13 @@ func (v VDSHandle) normalizeAttributes(
 	return targetAttributes, nil
 }
 
-func (v VDSHandle) fetchHorizon(
-	cReferenceSurface cRegularSurface,
-	cTopSurface cRegularSurface,
-	cBottomSurface cRegularSurface,
+func (v VDSHandle) fetchSubvolume(
+	cSubVolume *C.struct_SurfaceBoundedSubVolume,
 	nrows int,
 	ncols int,
-	dataOffset []C.size_t,
 	interpolation int,
-	horizonBufferSize C.size_t,
-) ([]byte, error) {
+) (error) {
 	hsize := nrows * ncols
-	buffer := make([]byte, horizonBufferSize)
 
 	// note that it is possible to hit go's own goroutines limit
 	// but we do not deal with it here
@@ -886,17 +867,13 @@ func (v VDSHandle) fetchHorizon(
 			var cCtx = C.context_new()
 			defer C.context_free(cCtx)
 
-			cerr := C.horizon(
+			cerr := C.fetch_subvolume(
 				cCtx,
 				v.Handle(),
-				cReferenceSurface.get(),
-				cTopSurface.get(),
-				cBottomSurface.get(),
-				&dataOffset[0],
+				cSubVolume,
 				C.enum_interpolation_method(interpolation),
 				C.size_t(from),
 				C.size_t(to),
-				unsafe.Pointer(&buffer[0]),
 			)
 			errs <- toError(cerr, cCtx)
 			<-guard
@@ -918,19 +895,14 @@ func (v VDSHandle) fetchHorizon(
 	}
 
 	if len(computeErrors) > 0 {
-		return nil, computeErrors[0]
+		return computeErrors[0]
 	}
-	return buffer, nil
+	return nil
 }
 
 func (v VDSHandle) calculateAttributes(
-	cReferenceSurface cRegularSurface,
-	cTopSurface cRegularSurface,
-	cBottomSurface cRegularSurface,
+	cSubVolume *C.struct_SurfaceBoundedSubVolume,
 	hsize int,
-	dataOffset []C.size_t,
-	horizon []byte,
-	horizonSize C.size_t,
 	targetAttributes []int,
 	stepsize float32,
 ) ([][]byte, error) {
@@ -965,12 +937,7 @@ func (v VDSHandle) calculateAttributes(
 			cErr := C.attribute(
 				cCtx,
 				v.Handle(),
-				cReferenceSurface.get(),
-				cTopSurface.get(),
-				cBottomSurface.get(),
-				&dataOffset[0],
-				unsafe.Pointer(&horizon[0]),
-				horizonSize,
+				cSubVolume,
 				&cAttributes[0],
 				C.size_t(nAttributes),
 				C.float(stepsize),

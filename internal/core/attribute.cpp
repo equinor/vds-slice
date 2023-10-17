@@ -8,56 +8,32 @@
 #include <vector>
 
 #include "attribute.hpp"
-#include "interpolation.hpp"
 #include "regularsurface.hpp"
-#include "verticalwindow.hpp"
-
-Horizon::Window Horizon::at(std::size_t i) const noexcept (false) {
-    std::size_t begin = m_buffer_offsets[i];
-    std::size_t end = m_buffer_offsets[i+1];
-
-    return {
-        Horizon::VerticalIt(this->m_ptr + begin),
-        Horizon::VerticalIt(this->m_ptr + end)
-    };
-}
-
-void AttributeMap::AttributeComputeParams::update(
-    InputIt begin,
-    InputIt end,
-    std::size_t size,
-    std::size_t reference_index
-) noexcept (true) {
-    this->begin = begin;
-    this->end = end;
-    this->size = size;
-    this->reference_index = reference_index;
-}
 
 float Value::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
-    auto ptr = params.begin;
-    std::advance(ptr, params.reference_index);
+    auto ptr = segment.begin();
+    std::advance(ptr, segment.reference_index());
     return *ptr;
 }
 
 float Min::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
-    return *std::min_element(params.begin, params.end);
+    return *std::min_element(segment.begin(), segment.end());
 }
 
 float Max::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
-    return *std::max_element(params.begin, params.end);
+    return *std::max_element(segment.begin(), segment.end());
 }
 
 float MaxAbs::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
-    auto max = *std::max_element(params.begin, params.end,
+    auto max = *std::max_element(segment.begin(), segment.end(),
     [](const double& a, const double& b) { 
             return std::abs(a) < std::abs(b); 
         }
@@ -66,25 +42,25 @@ float MaxAbs::compute(
 }
 
 float Mean::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
-    double sum = std::accumulate(params.begin, params.end, 0.0);
-    return sum / params.size;
+    double sum = std::accumulate(segment.begin(), segment.end(), 0.0);
+    return sum / segment.size();
 }
 
 float MeanAbs::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
-    double sum = std::accumulate(params.begin, params.end, 0.0,
+    double sum = std::accumulate(segment.begin(), segment.end(), 0.0,
         [](double acc, double x) { return acc + std::abs(x); });
-    return sum / params.size;
+    return sum / segment.size();
 }
 
 float MeanPos::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
     int count = 0;
-    double sum = std::accumulate(params.begin, params.end, 0.0,
+    double sum = std::accumulate(segment.begin(), segment.end(), 0.0,
         [&](double acc, double x) {
             if (x > 0) {
                 count ++;
@@ -97,10 +73,10 @@ float MeanPos::compute(
 }
 
 float MeanNeg::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
     int count = 0;
-    double sum = std::accumulate(params.begin, params.end, 0.0,
+    double sum = std::accumulate(segment.begin(), segment.end(), 0.0,
         [&](double acc, double x) {
             if (x < 0) {
                 count ++;
@@ -113,7 +89,7 @@ float MeanNeg::compute(
 }
 
 float Median::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
     /*
     The std::nth_element function sets the middle element of a vector in such a
@@ -124,10 +100,10 @@ float Median::compute(
     std::max_element to obtain the largest element before the middle element to
     compute the average.
     */
-    auto temp = std::vector<double>(params.begin, params.end);
-    const auto middle_right = temp.begin() + params.size / 2;
+    auto temp = std::vector<double>(segment.begin(), segment.end());
+    const auto middle_right = temp.begin() + segment.size() / 2;
     std::nth_element(temp.begin(), middle_right, temp.end());
-    if (params.size % 2 == 0) {
+    if (segment.size() % 2 == 0) {
         const auto max_left = std::max_element(temp.begin(), middle_right);
         return (*max_left + *middle_right) / 2;
     }
@@ -137,135 +113,90 @@ float Median::compute(
 }
 
 float Rms::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
-    float sum = std::accumulate(params.begin, params.end, 0.0,
+    float sum = std::accumulate(segment.begin(), segment.end(), 0.0,
         [](double a, double b) {
             return a + std::pow(b, 2);
         }
     );
-    return std::sqrt(sum / params.size);
+    return std::sqrt(sum / segment.size());
 }
 
 namespace {
 
 double variance(
-    AttributeMap::AttributeComputeParams const & params
+    ResampledSegment const & segment
 ){
-    double sum = std::accumulate(params.begin, params.end, 0.0);
-    double mean = sum / params.size;
-    double stdSum = std::accumulate(params.begin, params.end, 0.0,
+    double sum = std::accumulate(segment.begin(), segment.end(), 0.0);
+    double mean = sum / segment.size();
+    double stdSum = std::accumulate(segment.begin(), segment.end(), 0.0,
         [&](double a, double b){ return a + std::pow(b - mean, 2); }
     );
-    return stdSum / params.size;
+    return stdSum / segment.size();
 }
 
 } // namespace
 
 float Var::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
-    return variance(params);
+    return variance(segment);
 }
 
 float Sd::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
-    return std::sqrt(variance(params));
+    return std::sqrt(variance(segment));
 }
 
 float SumPos::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
     double sum = 0.0;
-    std::for_each(params.begin, params.end, [&](double x) {
+    std::for_each(segment.begin(), segment.end(), [&](double x) {
          if (x > 0) { sum += x; }
     });
     return sum; 
 }
 
 float SumNeg::compute(
-    AttributeComputeParams const & params
+    ResampledSegment const & segment
 ) noexcept (false) {
     double sum = 0.0;
-    std::for_each(params.begin, params.end, [&](double x) {
+    std::for_each(segment.begin(), segment.end(), [&](double x) {
          if (x < 0) { sum += x; }
     });
     return sum;
 }
 
-void fill_all(
-    std::vector< std::unique_ptr< AttributeMap > >& attributes,
-    float value,
-    std::size_t pos
-) {
-    for (auto& attr : attributes) {
-        attr->write(value, pos);
-    }
-}
-
-template< typename InputIt >
-void compute_all(
-    std::vector< std::unique_ptr< AttributeMap > >& attributes,
-    std::size_t pos,
-    AttributeMap::AttributeComputeParams & params
-) {
-    for (auto& attr : attributes) {
-        auto value = attr->compute(params);
-        attr->write(value, pos);
-    }
-}
-
 void calc_attributes(
-    Horizon const& horizon,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    VerticalWindow& src_window,
-    VerticalWindow& dst_window,
+    SurfaceBoundedSubVolume const& src_subvolume,
+    ResampledSegmentBlueprint const* dst_segment_blueprint,
     std::vector< std::unique_ptr< AttributeMap > >& attrs,
     std::size_t from,
     std::size_t to
 ) noexcept (false) {
-    auto fill = horizon.fillvalue();
-    AttributeMap::AttributeComputeParams params;
+    auto fill = src_subvolume.fillvalue();
+
+    RawSegment src_segment = src_subvolume.vertical_segment(from);
+    ResampledSegment dst_segment =  ResampledSegment(0, 0, 0, dst_segment_blueprint);
 
     for (std::size_t i = from; i < to; ++i) {
-        auto above = reference[i] - top[i];
-        auto below = bottom[i] - reference[i];
-
-        src_window.move(above, below);
-        dst_window.move(above, below);
-
-        auto data  = horizon.at(i);
-
-        if (data.begin() == data.end()) {
-            fill_all(attrs, fill, i);
+        if (src_subvolume.is_empty(i)) {
+            for (auto& attr : attrs) {
+                attr->write(fill, i);
+            }
             continue;
         }
 
-        /**
-         * Interpolation and attribute calculation should be performed on
-         * doubles to avoid loss of precision in these intermediate steps.
-         */
-        std::vector< double > src_buffer(data.begin(), data.end());
-        std::vector< double > dst_buffer(dst_window.size());
+        src_subvolume.reinitialize(i, src_segment);
+        src_subvolume.reinitialize(i, dst_segment);
+        resample(src_segment, dst_segment);
 
-        cubic_makima(
-            std::move( src_buffer ),
-            src_window,
-            dst_buffer,
-            dst_window,
-            reference[i]
-        );
-
-        params.update(
-            dst_buffer.begin(),
-            dst_buffer.end(),
-            dst_window.size(),
-            dst_window.nsamples_above()
-        );
-        
-        compute_all<double>(attrs, i, params);
+        for (auto& attr : attrs) {
+            auto value = attr->compute(dst_segment);
+            attr->write(value, i);
+        }
     }
 }

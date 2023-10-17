@@ -16,7 +16,7 @@
 #include "metadatahandle.hpp"
 #include "regularsurface.hpp"
 #include "subcube.hpp"
-#include "verticalwindow.hpp"
+#include "subvolume.hpp"
 
 namespace {
 
@@ -237,86 +237,16 @@ void fence(
     return to_response(std::move(data), size, out);
 }
 
-void horizon_buffer_offsets(
+
+void fetch_subvolume(
     DataHandle& handle,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    std::size_t* out,
-    std::size_t out_size
-) {
-    if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
-        throw std::runtime_error("Expected surfaces to have the same plane and size");
-    }
-
-    auto const horizontal = reference.plane();
-
-    if (out_size != (horizontal.size() + 1)) {
-        throw std::runtime_error("out buffer must be the size of surface + 1");
-    }
-
-    MetadataHandle const& metadata = handle.get_metadata();
-    auto transform = metadata.coordinate_transformer();
-
-    auto iline  = metadata.iline ();
-    auto xline  = metadata.xline();
-    auto sample = metadata.sample();
-
-    VerticalWindow window(sample.stepsize(), 2, sample.min());
-
-    out[0] = 0;
-    for (int i = 0; i < horizontal.size(); ++i) {
-        float reference_depth = reference[i];
-        float top_depth       = top[i];
-        float bottom_depth    = bottom[i];
-
-        if (reference_depth == reference.fillvalue() ||
-            top_depth == top.fillvalue() ||
-            bottom_depth == bottom.fillvalue())
-        {
-            out[i+1] = out[i];
-            continue;
-        }
-
-        if (reference_depth < top_depth ||
-            reference_depth > bottom_depth)
-        {
-            throw std::runtime_error(
-                "Planes are not ordered as top <= reference <= bottom");
-        }
-
-        auto const cdp = horizontal.to_cdp(i);
-        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
-
-        if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
-            out[i+1] = out[i];
-            continue;
-        }
-
-        window.move(reference_depth - top_depth, bottom_depth - reference_depth);
-        out[i+1] = out[i] + window.size();
-    }
-}
-
-
-void horizon(
-    DataHandle& handle,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    std::size_t* buffer_offsets,
+    SurfaceBoundedSubVolume& subvolume,
     enum interpolation_method interpolation,
     std::size_t from,
-    std::size_t to,
-    void* out
+    std::size_t to
 ) {
-    if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
-        throw std::runtime_error("Expected surfaces to have the same plane and size");
-    }
-
-    auto const horizontal = reference.plane();
-
-    if (to > horizontal.size()){
+    auto const horizontal_grid = subvolume.horizontal_grid();
+    if (to > horizontal_grid.size()){
         throw std::invalid_argument("'to' must be less than surface size");
     }
 
@@ -327,55 +257,50 @@ void horizon(
     auto xline  = metadata.xline();
     auto sample = metadata.sample();
 
-    std::size_t const nsamples = buffer_offsets[to] - buffer_offsets[from];
+    std::size_t const nsamples = subvolume.nsamples(from, to);
     if (nsamples == 0){
         return;
     }
     std::unique_ptr< voxel[] > samples(new voxel[nsamples]{{0}});
 
-    VerticalWindow window(sample.stepsize(), 2, sample.min());
     std::size_t cur = 0;
     for (int i = from; i < to; ++i) {
-        if(buffer_offsets[i] == buffer_offsets[i+1]) {
+        if (subvolume.is_empty(i)) {
             continue;
         }
 
-        window.move(reference[i] - top[i], bottom[i] - reference[i]);
+        auto segment = subvolume.vertical_segment(i);
 
-        double nearest_reference_depth = window.nearest(reference[i]);
+        double top_sample_depth    = segment.top_sample_position();
+        double bottom_sample_depth = segment.bottom_sample_position();
 
-        auto const cdp = horizontal.to_cdp(i);
-        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
-
-        double nearest_top_depth    = nearest_reference_depth -
-                                      window.nsamples_above() * window.stepsize();
-        double nearest_bottom_depth = nearest_reference_depth +
-                                      window.nsamples_below() * window.stepsize();
-
-        if (not sample.inrange(nearest_top_depth) or
-            not sample.inrange(nearest_bottom_depth))
+        if (not sample.inrange(top_sample_depth) or
+            not sample.inrange(bottom_sample_depth))
         {
-            auto row = horizontal.row(i);
-            auto col = horizontal.col(i);
+            auto row = horizontal_grid.row(i);
+            auto col = horizontal_grid.col(i);
             throw std::runtime_error(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
                 " col:" + std::to_string(col) +
-                ". Request: [" + std::to_string(nearest_top_depth) +
-                ", " + std::to_string(nearest_bottom_depth) +
+                ". Request: [" + std::to_string(top_sample_depth) +
+                ", " + std::to_string(bottom_sample_depth) +
                 "]. Seismic bounds: [" + std::to_string(sample.min())
                 + ", " +std::to_string(sample.max()) + "]"
             );
         }
 
+        auto const cdp = horizontal_grid.to_cdp(i);
+        auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
+
         ij[0]  = iline.to_sample_position(ij[0]);
         ij[1]  = xline.to_sample_position(ij[1]);
 
-        double top_sample_depth = sample.to_sample_position(nearest_top_depth);
-        for (int idx = 0; idx < window.size(); ++idx) {
+        double k = sample.to_sample_position(top_sample_depth);
+        for (int idx = 0; idx < segment.size(); ++idx) {
             samples[cur][  iline.dimension() ] = ij[0];
             samples[cur][  xline.dimension() ] = ij[1];
-            samples[cur][ sample.dimension() ] = top_sample_depth + idx;
+            samples[cur][ sample.dimension() ] = k + idx;
             ++cur;
         }
     }
@@ -387,38 +312,26 @@ void horizon(
 
     auto const size = handle.samples_buffer_size(nsamples);
 
-    std::unique_ptr< char[] > buffer(new char[size]());
     handle.read_samples(
-        buffer.get(),
+        subvolume.data(from),
         size,
         samples.get(),
         nsamples,
         interpolation
     );
-
-    auto offset = buffer_offsets[from] * sizeof(float);
-    std::memcpy((char*)out + offset, buffer.get(), size);
 }
 
 
 void attributes(
-    Horizon const& horizon,
-    RegularSurface const& reference,
-    RegularSurface const& top,
-    RegularSurface const& bottom,
-    VerticalWindow& src_window,
-    VerticalWindow& dst_window,
+    SurfaceBoundedSubVolume const& src_subvolume,
+    ResampledSegmentBlueprint const* dst_segment_blueprint,
     enum attribute* attributes,
     std::size_t nattributes,
     std::size_t from,
     std::size_t to,
     void** out
 ) {
-    if (!(reference.plane() == top.plane() && reference.plane() == bottom.plane())) {
-        throw std::runtime_error("Expected surfaces to have the same plane and size");
-    }
-
-    std::size_t size = horizon.mapsize();
+    std::size_t size = src_subvolume.horizontal_grid().size() * sizeof(float);
 
     std::vector< std::unique_ptr< AttributeMap > > attrs;
     for (int i = 0; i < nattributes; ++i) {
@@ -445,7 +358,7 @@ void attributes(
         ++attributes;
     }
 
-    calc_attributes(horizon, reference, top, bottom, src_window, dst_window, attrs, from, to);
+    calc_attributes(src_subvolume, dst_segment_blueprint, attrs, from, to);
 }
 
 namespace {
@@ -480,7 +393,7 @@ void align_surfaces(
     RegularSurface &aligned,
     bool* primary_is_top
 ) {
-    if (!(primary.plane() == aligned.plane())) {
+    if (!(primary.grid() == aligned.grid())) {
         throw std::runtime_error(
             "Expected primary and aligned surfaces to differ in data only.");
     }
@@ -492,13 +405,13 @@ void align_surfaces(
             aligned[i] = aligned.fillvalue();
             continue;
         }
-        auto secondary_pos = secondary.plane().from_cdp(primary.plane().to_cdp(i));
+        auto secondary_pos = secondary.grid().from_cdp(primary.grid().to_cdp(i));
         // calculated value can be out of bounds, also negative
         auto secondary_row = std::lround(secondary_pos.x);
         auto secondary_col = std::lround(secondary_pos.y);
 
-        if (secondary_row < 0 || secondary_row >= secondary.plane().nrows() ||
-            (secondary_col < 0 || secondary_col >= secondary.plane().ncols()))
+        if (secondary_row < 0 || secondary_row >= secondary.grid().nrows() ||
+            (secondary_col < 0 || secondary_col >= secondary.grid().ncols()))
         {
             aligned[i] = aligned.fillvalue();
             continue;
@@ -514,8 +427,8 @@ void align_surfaces(
         aligned[i] = secondary_value;
 
         if (surfaces.have_crossed(primary[i], aligned[i])) {
-            std::size_t row = primary.plane().row(i);
-            std::size_t col = primary.plane().col(i);
+            std::size_t row = primary.grid().row(i);
+            std::size_t col = primary.grid().col(i);
             throw detail::bad_request("Surfaces intersect at primary surface point ("
                                         + std::to_string(row) + ", "
                                         + std::to_string(col) + ")");

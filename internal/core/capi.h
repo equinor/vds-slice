@@ -81,6 +81,23 @@ int regular_surface_free(
     RegularSurface* surface
 );
 
+struct SurfaceBoundedSubVolume;
+typedef struct SurfaceBoundedSubVolume SurfaceBoundedSubVolume;
+
+int subvolume_new(
+    Context* ctx,
+    DataHandle* handle,
+    RegularSurface* reference,
+    RegularSurface* top,
+    RegularSurface* bottom,
+    SurfaceBoundedSubVolume** out
+);
+
+int subvolume_free(
+    Context* ctx,
+    SurfaceBoundedSubVolume* subvolume
+);
+
 int metadata(
     Context* ctx,
     DataHandle* handle,
@@ -125,27 +142,13 @@ int fence_metadata(
     response* out
 );
 
-int horizon_buffer_offsets(
+int fetch_subvolume(
     Context* ctx,
     DataHandle* handle,
-    RegularSurface* reference,
-    RegularSurface* top,
-    RegularSurface* bottom,
-    size_t* out,
-    size_t out_size
-);
-
-int horizon(
-    Context* ctx,
-    DataHandle* handle,
-    RegularSurface* reference,
-    RegularSurface* top,
-    RegularSurface* bottom,
-    size_t* buffer_offsets,
+    SurfaceBoundedSubVolume* subvolume,
     enum interpolation_method interpolation_method,
     size_t from,
-    size_t to,
-    void* out
+    size_t to
 );
 
 int attribute_metadata(
@@ -177,12 +180,7 @@ int attribute_metadata(
 int attribute(
     Context* ctx,
     DataHandle* handle,
-    RegularSurface* reference,
-    RegularSurface* top,
-    RegularSurface* bottom,
-    size_t* data_offset,
-    const void* data,
-    size_t size,
+    SurfaceBoundedSubVolume* src_subvolume,
     enum attribute* attributes,
     size_t nattributes,
     float stepsize,

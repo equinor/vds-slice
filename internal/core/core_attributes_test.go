@@ -71,28 +71,38 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 	}{
 		// 2 samples is the margin needed for interpolation
 		{
-			name:     "Top of window is 2 samples from first depth recording",
+			name:     "Top boundary is on sample 2 samples away from first depth recording",
 			values:   [][]float32{{16.00}},
 			inbounds: true,
 		},
 		{
-			name:     "Top of window is less than 2 samples from the top",
+			name:     "Top boundary snaps to sample 2 samples away from the top",
 			values:   [][]float32{{13.00}},
+			inbounds: true,
+		},
+		{
+			name:     "Top sample is less than 2 samples from the top",
+			values:   [][]float32{{12.00}},
 			inbounds: false,
 		},
 		{
-			name:     "Bottom of window is 2 samples from last depth recording",
+			name:     "Bottom boundary is on sample 2 samples away from last depth recording",
 			values:   [][]float32{{28.00}},
 			inbounds: true,
 		},
 		{
-			name:     "Bottom of window is less than 2 samples from last depth recording",
+			name:     "Bottom boundary snaps to sample 2 samples away from last depth recording",
 			values:   [][]float32{{31.00}},
+			inbounds: true,
+		},
+		{
+			name:     "Bottom sample is less than 2 samples from last depth recording",
+			values:   [][]float32{{32.00}},
 			inbounds: false,
 		},
 		{
 			name:     "Some values inbounds, some out of bounds",
-			values:   [][]float32{{22.00, 32.00, 12.00}, {18.00, 31.00, 28.00}, {16.00, 15.00, 13.00}},
+			values:   [][]float32{{22.00, 32.00, 12.00}, {18.00, 31.00, 28.00}, {16.00, 15.00, 11.00}},
 			inbounds: false,
 		},
 		{

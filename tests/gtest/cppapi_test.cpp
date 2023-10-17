@@ -11,9 +11,9 @@ namespace
 const std::string SAMPLES_10 = "file://10_samples_default.vds";
 const std::string CREDENTIALS = "";
 
-Plane samples_10_plane = Plane(2, 0, 7.2111, 3.6056, 33.69);
-Plane larger_plane = Plane(-8, -11, 7.2111, 3.6056, 33.69);
-Plane other_plane = Plane(2, 3, 4.472, 2.236, 333.43);
+Grid samples_10_grid = Grid(2, 0, 7.2111, 3.6056, 33.69);
+Grid larger_grid = Grid(-8, -11, 7.2111, 3.6056, 33.69);
+Grid other_grid = Grid(2, 3, 4.472, 2.236, 333.43);
 
 enum Samples10Points
 {
@@ -39,7 +39,7 @@ std::map<Samples10Points, std::vector<float>> samples_10_data(float fill)
     return points;
 }
 
-class HorizonTest : public ::testing::Test
+class SubvolumeTest : public ::testing::Test
 {
   protected:
     void SetUp() override
@@ -57,24 +57,18 @@ class HorizonTest : public ::testing::Test
     static constexpr float fill = -999.25;
     std::map<float, std::vector<float>> points;
 
-    void test_successful_horizon_call(
+    void test_successful_subvolume_call(
         RegularSurface const &primary_surface,
         RegularSurface const &top_surface,
         RegularSurface const &bottom_surface,
         const Samples10Points *expected_data
     ) {
-        auto size = primary_surface.size();
-        std::size_t offset_size = size + 1;
-        std::vector<std::size_t> offsets(offset_size);
-        cppapi::horizon_buffer_offsets(*handle, primary_surface, top_surface, bottom_surface,
-                            offsets.data(), offset_size);
+        auto size = primary_surface.grid().size();
 
-        std::size_t horizon_size = offsets[size];
-        std::vector< float> res(horizon_size);
-        cppapi::horizon(*handle, primary_surface, top_surface, bottom_surface,
-                            offsets.data(), NEAREST, 0, size, res.data());
-
-        Horizon horizon(res.data(), size, offsets.data(), primary_surface.fillvalue());
+        SurfaceBoundedSubVolume* subvolume = make_subvolume(
+            handle->get_metadata(), primary_surface, top_surface, bottom_surface
+        );
+        cppapi::fetch_subvolume(*handle, *subvolume, NEAREST, 0, size);
 
         /* We are checking here points unordered. Meaning that if all points in a
         * row appear somewhere in the horizon, we assume we are good. Alternative
@@ -87,22 +81,88 @@ class HorizonTest : public ::testing::Test
         for (int i = 0; i < size; ++i)
         {
             auto expected_position = expected_data[i];
-            if (horizon.at(i).begin() == horizon.at(i).end()) {
-                ASSERT_EQ(expected_position, nodata)
-                    << "Expected no data at position " << i;
+            if (expected_position == nodata) {
+                ASSERT_TRUE(subvolume->is_empty(i))
+                    << "Expected empty subvolume at position " << i;
                 continue;
             }
-            for (auto it = horizon.at(i).begin(); it != horizon.at(i).end(); ++it)
+            for (auto it = subvolume->vertical_segment(i).begin(); it != subvolume->vertical_segment(i).end(); ++it)
             {
                 ASSERT_THAT(points.at(expected_position), ::testing::Contains(*it))
                     << "Retrieved value " << *it << " is not expected at position " << i;
             }
         }
+        delete subvolume;
     }
 };
 
+TEST_F(SubvolumeTest, SubvolumeSize)
+{
+    static constexpr int nrows = 3;
+    static constexpr int ncols = 2;
+    static constexpr std::size_t size = nrows * ncols;
 
-TEST_F(HorizonTest, DataForUnalignedSurface)
+    // 16, 20 and 24 fall on samples
+
+    std::array<float, size> primary_surface_data = {
+        20, 20,
+        20, 20,
+        20, 19,
+    };
+
+    std::array<float, size> top_surface_data = {
+        20, 17,
+        16, 17,
+        16, 16,
+    };
+
+    std::array<float, size> bottom_surface_data = {
+        20, 23,
+        23, 24,
+        24, 24,
+    };
+
+    /**
+     * Note that in theory these sizes are not optimal:
+     * - depending on the interpolation algorithm we might need several
+     *   additional samples to interpolate points on the borders the best way
+     *   possible. Current belief is that interpolation algorithm needs 2
+     *   additional samples from one side to interpolate properly. That means
+     *   that if border already falls on the sample, we might be fetching too
+     *   much. However it seems like in practice implementing such behavior
+     *   gives no performance benefit and only complicates code and creates
+     *   problems when use case requires 1 or 3 samples as interpolation
+     *   algorithm wants at least 4.
+     */
+    std::array<float, size> expected_fetched_size = {
+        5, 5,
+        6, 6,
+        7, 7,
+    };
+
+    RegularSurface primary_surface =
+        RegularSurface(primary_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    RegularSurface top_surface =
+        RegularSurface(top_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    RegularSurface bottom_surface =
+        RegularSurface(bottom_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    SurfaceBoundedSubVolume* subvolume = make_subvolume(
+        handle->get_metadata(), primary_surface, top_surface, bottom_surface
+    );
+    cppapi::fetch_subvolume(*handle, *subvolume, NEAREST, 0, size);
+    for (int i = 0; i < size; ++i)
+    {
+        EXPECT_EQ(expected_fetched_size[i], subvolume->vertical_segment(i).size())
+            << "Retrieved segment size not as expected at position " << i;
+    }
+
+    delete subvolume;
+}
+
+TEST_F(SubvolumeTest, DataForUnalignedSurface)
 {
     const float above = 2;
     const float below = 2;
@@ -126,7 +186,7 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
     };
 
     RegularSurface primary_surface =
-        RegularSurface(surface_data.data(), nrows, ncols, other_plane, fill);
+        RegularSurface(surface_data.data(), nrows, ncols, other_grid, fill);
 
     std::array<float, size> above_data = surface_data;
     std::array<float, size> below_data = surface_data;
@@ -137,15 +197,15 @@ TEST_F(HorizonTest, DataForUnalignedSurface)
                    [below](float value) { return value + below; });
 
     RegularSurface top_surface =
-        RegularSurface(above_data.data(), nrows, ncols, other_plane, fill);
+        RegularSurface(above_data.data(), nrows, ncols, other_grid, fill);
 
     RegularSurface bottom_surface =
-        RegularSurface(below_data.data(), nrows, ncols, other_plane, fill);
+        RegularSurface(below_data.data(), nrows, ncols, other_grid, fill);
 
-    test_successful_horizon_call(primary_surface, top_surface, bottom_surface, expected.data());
+    test_successful_subvolume_call(primary_surface, top_surface, bottom_surface, expected.data());
 }
 
-TEST_F(HorizonTest, ManyFills)
+TEST_F(SubvolumeTest, ManyFills)
 {
     static constexpr int nrows = 6;
     static constexpr int ncols = 4;
@@ -188,15 +248,15 @@ TEST_F(HorizonTest, ManyFills)
     };
 
     RegularSurface primary_surface =
-        RegularSurface(primary_surface_data.data(), nrows, ncols, larger_plane, fill);
+        RegularSurface(primary_surface_data.data(), nrows, ncols, larger_grid, fill);
 
     RegularSurface top_surface =
-        RegularSurface(top_surface_data.data(), nrows, ncols, larger_plane, fill);
+        RegularSurface(top_surface_data.data(), nrows, ncols, larger_grid, fill);
 
     RegularSurface bottom_surface =
-        RegularSurface(bottom_surface_data.data(), nrows, ncols, larger_plane, fill);
+        RegularSurface(bottom_surface_data.data(), nrows, ncols, larger_grid, fill);
 
-    test_successful_horizon_call(primary_surface, top_surface, bottom_surface, expected.data());
+    test_successful_subvolume_call(primary_surface, top_surface, bottom_surface, expected.data());
 }
 
 
@@ -244,7 +304,7 @@ void test_successful_align_call(
 ) {
     std::vector< float> data(primary.size());
     RegularSurface aligned = RegularSurface(
-        data.data(), primary.plane(), secondary.fillvalue());
+        data.data(), primary.grid(), secondary.fillvalue());
 
     test_successful_align_call(primary, secondary, aligned, expected_data, expected_primary_is_top);
 }
@@ -265,9 +325,9 @@ TEST_F(SurfaceAlignmentTest, AlignedSurfaces)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        primary_surface_data.data(), nrows, ncols, samples_10_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        secondary_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     test_successful_align_call(primary, secondary, secondary_surface_data.data(), true);
 }
@@ -288,9 +348,9 @@ TEST_F(SurfaceAlignmentTest, PrimaryIsBottom)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        primary_surface_data.data(), nrows, ncols, samples_10_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), nrows, ncols, samples_10_plane, fill);
+        secondary_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     test_successful_align_call(primary, secondary, secondary_surface_data.data(), false);
 }
@@ -320,9 +380,9 @@ TEST_F(SurfaceAlignmentTest, SecondaryLarger)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+        primary_surface_data.data(), pnrows, pncols, samples_10_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+        secondary_surface_data.data(), snrows, sncols, samples_10_grid, fill);
 
     test_successful_align_call(primary, secondary, expected.data(), true);
 }
@@ -353,9 +413,9 @@ TEST_F(SurfaceAlignmentTest, PrimaryLarger)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+        primary_surface_data.data(), pnrows, pncols, samples_10_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+        secondary_surface_data.data(), snrows, sncols, samples_10_grid, fill);
 
     test_successful_align_call(primary, secondary, expected.data(), true);
 }
@@ -391,13 +451,13 @@ TEST_F(SurfaceAlignmentTest, HolesInData)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill1);
+        primary_surface_data.data(), pnrows, pncols, samples_10_grid, fill1);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill2);
+        secondary_surface_data.data(), snrows, sncols, samples_10_grid, fill2);
 
     std::vector< float> data(primary.size());
     RegularSurface aligned = RegularSurface(
-        data.data(), primary.plane(), fill3);
+        data.data(), primary.grid(), fill3);
 
     test_successful_align_call(primary, secondary, aligned, expected.data(), true);
 }
@@ -435,9 +495,9 @@ TEST_F(SurfaceAlignmentTest, SurfaceDifferentOrigin)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), pnrows, pncols, larger_plane, fill);
+        primary_surface_data.data(), pnrows, pncols, larger_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+        secondary_surface_data.data(), snrows, sncols, samples_10_grid, fill);
 
     test_successful_align_call(primary, secondary, expected.data(), true);
 }
@@ -470,9 +530,9 @@ TEST_F(SurfaceAlignmentTest, UnalignedSurfacesPrimaryAligned)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+        primary_surface_data.data(), pnrows, pncols, samples_10_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), snrows, sncols, other_plane, fill);
+        secondary_surface_data.data(), snrows, sncols, other_grid, fill);
 
     test_successful_align_call(primary, secondary, expected.data(), true);
 }
@@ -506,9 +566,9 @@ TEST_F(SurfaceAlignmentTest, UnalignedSurfacesPrimaryUnaligned)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), pnrows, pncols, other_plane, fill);
+        primary_surface_data.data(), pnrows, pncols, other_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+        secondary_surface_data.data(), snrows, sncols, samples_10_grid, fill);
 
     test_successful_align_call(primary, secondary, expected.data(), true);
 }
@@ -542,9 +602,9 @@ TEST_F(SurfaceAlignmentTest, IdenticalSurfaces)
     const bool expected_primary_is_top = false;
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+        primary_surface_data.data(), pnrows, pncols, samples_10_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+        secondary_surface_data.data(), snrows, sncols, samples_10_grid, fill);
 
     test_successful_align_call(primary, secondary, expected.data(), expected_primary_is_top);
 }
@@ -573,9 +633,9 @@ TEST_F(SurfaceAlignmentTest, SameStartingValue)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+        primary_surface_data.data(), pnrows, pncols, samples_10_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), snrows, sncols, samples_10_plane, fill);
+        secondary_surface_data.data(), snrows, sncols, samples_10_grid, fill);
 
     test_successful_align_call(primary, secondary, expected.data(), false);
 }
@@ -602,13 +662,13 @@ TEST_F(SurfaceAlignmentTest, IntersectingSurfaces)
     };
 
     RegularSurface primary = RegularSurface(
-        primary_surface_data.data(), pnrows, pncols, samples_10_plane, fill);
+        primary_surface_data.data(), pnrows, pncols, samples_10_grid, fill);
     RegularSurface secondary = RegularSurface(
-        secondary_surface_data.data(), snrows, sncols, other_plane, fill);
+        secondary_surface_data.data(), snrows, sncols, other_grid, fill);
 
     std::vector< float> data(primary.size());
     RegularSurface aligned = RegularSurface(
-        data.data(), pnrows, pncols, samples_10_plane, fill);
+        data.data(), pnrows, pncols, samples_10_grid, fill);
     bool primary_is_top;
 
     EXPECT_THAT(
