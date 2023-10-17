@@ -34,6 +34,17 @@ type RequestedResource struct {
 	Sas string `json:"sas,omitempty" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
 }
 
+func (r RequestedResource) credentials() (string, string) {
+	return r.Vds, r.Sas
+}
+
+type DataRequest interface {
+	toString() (string, error)
+	hash() (string, error)
+	credentials() (string, string)
+	execute(handle core.VDSHandle) (data [][]byte, metadata []byte, err error)
+}
+
 type Stringable interface {
 	toString() (string, error)
 }
@@ -132,7 +143,7 @@ func (f FenceRequest) toString() (string, error) {
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (f FenceRequest) Hash() (string, error) {
+func (f FenceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	f.Sas = ""
 	return cache.Hash(f)
@@ -189,7 +200,7 @@ type SliceRequest struct {
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (s SliceRequest) Hash() (string, error) {
+func (s SliceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	s.Sas = ""
 	return cache.Hash(s)
@@ -273,7 +284,7 @@ type AttributeAlongSurfaceRequest struct {
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (h AttributeAlongSurfaceRequest) Hash() (string, error) {
+func (h AttributeAlongSurfaceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	h.Sas = ""
 	return cache.Hash(h)
@@ -335,7 +346,7 @@ type AttributeBetweenSurfacesRequest struct {
  * The hash is computed based on all fields that contribute toward a unique response.
  * I.e. every field except the sas token.
  */
-func (h AttributeBetweenSurfacesRequest) Hash() (string, error) {
+func (h AttributeBetweenSurfacesRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	h.Sas = ""
 	return cache.Hash(h)

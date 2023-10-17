@@ -84,14 +84,17 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	ctx.Data(http.StatusOK, "application/json", buffer)
 }
 
-func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
+func (e *Endpoint) makeDataRequest(
+	ctx *gin.Context,
+	request DataRequest,
+) {
 	prepareRequestLogging(ctx, request)
-	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
+	conn, err := e.MakeVdsConnection(request.credentials())
 	if abortOnError(ctx, err) {
 		return
 	}
 
-	cacheKey, err := request.Hash()
+	cacheKey, err := request.hash()
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -109,85 +112,74 @@ func (e *Endpoint) slice(ctx *gin.Context, request SliceRequest) {
 	}
 	defer handle.Close()
 
-	axis, err := core.GetAxis(strings.ToLower(request.Direction))
+	data, metadata, err := request.execute(handle)
 	if abortOnError(ctx, err) {
 		return
 	}
 
-	metadata, err := handle.GetSliceMetadata(
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata))
+
+	writeResponse(ctx, metadata, data)
+}
+
+func (request SliceRequest) execute(
+	handle core.VDSHandle,
+) (data [][]byte, metadata []byte, err error) {
+	axis, err := core.GetAxis(strings.ToLower(request.Direction))
+	if err != nil {
+		return
+	}
+
+	metadata, err = handle.GetSliceMetadata(
 		*request.Lineno,
 		axis,
 		request.Bounds,
 	)
-	if abortOnError(ctx, err) {
+	if err != nil {
 		return
 	}
 
-	data, err := handle.GetSlice(*request.Lineno, axis, request.Bounds)
-	if abortOnError(ctx, err) {
+	res, err := handle.GetSlice(*request.Lineno, axis, request.Bounds)
+	if err != nil {
 		return
 	}
+	data = [][]byte{res}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata))
-
-	writeResponse(ctx, metadata, [][]byte{data})
+	return data, metadata, nil
 }
 
-func (e *Endpoint) fence(ctx *gin.Context, request FenceRequest) {
-	prepareRequestLogging(ctx, request)
-	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	cacheKey, err := request.Hash()
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	cacheEntry, hit := e.Cache.Get(cacheKey)
-	if hit && conn.IsAuthorizedToRead() {
-		ctx.Set("cache-hit", true)
-		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
-		return
-	}
-
-	handle, err := core.NewVDSHandle(conn)
-	if abortOnError(ctx, err) {
-		return
-	}
-	defer handle.Close()
-
+func (request FenceRequest) execute(
+	handle core.VDSHandle,
+) (data [][]byte, metadata []byte, err error) {
 	coordinateSystem, err := core.GetCoordinateSystem(
 		strings.ToLower(request.CoordinateSystem),
 	)
-	if abortOnError(ctx, err) {
+	if err != nil {
 		return
 	}
 
 	interpolation, err := core.GetInterpolationMethod(request.Interpolation)
-	if abortOnError(ctx, err) {
+	if err != nil {
 		return
 	}
 
-	metadata, err := handle.GetFenceMetadata(request.Coordinates)
-	if abortOnError(ctx, err) {
+	metadata, err = handle.GetFenceMetadata(request.Coordinates)
+	if err != nil {
 		return
 	}
 
-	data, err := handle.GetFence(
+	res, err := handle.GetFence(
 		coordinateSystem,
 		request.Coordinates,
 		interpolation,
 		request.FillValue,
 	)
-	if abortOnError(ctx, err) {
+	if err != nil {
 		return
 	}
+	data = [][]byte{res}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry([][]byte{data}, metadata))
-
-	writeResponse(ctx, metadata, [][]byte{data})
+	return data, metadata, nil
 }
 
 func validateVerticalWindow(above float32, below float32, stepSize float32) error {
@@ -223,48 +215,25 @@ func validateVerticalWindow(above float32, below float32, stepSize float32) erro
 	return nil
 }
 
-func (e *Endpoint) attributesAlongSurface(ctx *gin.Context, request AttributeAlongSurfaceRequest) {
-	prepareRequestLogging(ctx, request)
-
-	err := validateVerticalWindow(request.Above, request.Below, request.Stepsize)
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	cacheKey, err := request.Hash()
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	handle, err := core.NewVDSHandle(conn)
-	if abortOnError(ctx, err) {
-		return
-	}
-	defer handle.Close()
-
-	cacheEntry, hit := e.Cache.Get(cacheKey)
-	if hit && conn.IsAuthorizedToRead() {
-		ctx.Set("cache-hit", true)
-		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
+func (request AttributeAlongSurfaceRequest) execute(
+	handle core.VDSHandle,
+) (data [][]byte, metadata []byte, err error) {
+	err = validateVerticalWindow(request.Above, request.Below, request.Stepsize)
+	if err != nil {
 		return
 	}
 
 	interpolation, err := core.GetInterpolationMethod(request.Interpolation)
-	if abortOnError(ctx, err) {
+	if err != nil {
 		return
 	}
 
-	metadata, err := handle.GetAttributeMetadata(request.Surface.Values)
-	if abortOnError(ctx, err) {
+	metadata, err = handle.GetAttributeMetadata(request.Surface.Values)
+	if err != nil {
 		return
 	}
 
-	data, err := handle.GetAttributesAlongSurface(
+	data, err = handle.GetAttributesAlongSurface(
 		request.Surface,
 		request.Above,
 		request.Below,
@@ -272,65 +241,38 @@ func (e *Endpoint) attributesAlongSurface(ctx *gin.Context, request AttributeAlo
 		request.Attributes,
 		interpolation,
 	)
-	if abortOnError(ctx, err) {
+	if err != nil {
 		return
 	}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata))
-
-	writeResponse(ctx, metadata, data)
+	return data, metadata, nil
 }
 
-func (e *Endpoint) attributesBetweenSurfaces(ctx *gin.Context, request AttributeBetweenSurfacesRequest) {
-	prepareRequestLogging(ctx, request)
-
-	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	cacheKey, err := request.Hash()
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	handle, err := core.NewVDSHandle(conn)
-	if abortOnError(ctx, err) {
-		return
-	}
-	defer handle.Close()
-
-	cacheEntry, hit := e.Cache.Get(cacheKey)
-	if hit && conn.IsAuthorizedToRead() {
-		ctx.Set("cache-hit", true)
-		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
-		return
-	}
-
+func (request AttributeBetweenSurfacesRequest) execute(
+	handle core.VDSHandle,
+) (data [][]byte, metadata []byte, err error) {
 	interpolation, err := core.GetInterpolationMethod(request.Interpolation)
-	if abortOnError(ctx, err) {
+	if err != nil {
 		return
 	}
 
-	metadata, err := handle.GetAttributeMetadata(request.PrimarySurface.Values)
-	if abortOnError(ctx, err) {
+	metadata, err = handle.GetAttributeMetadata(request.PrimarySurface.Values)
+	if err != nil {
 		return
 	}
 
-	data, err := handle.GetAttributesBetweenSurfaces(
+	data, err = handle.GetAttributesBetweenSurfaces(
 		request.PrimarySurface,
 		request.SecondarySurface,
 		request.Stepsize,
 		request.Attributes,
 		interpolation,
 	)
-	if abortOnError(ctx, err) {
+	if err != nil {
 		return
 	}
 
-	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata))
-
-	writeResponse(ctx, metadata, data)
+	return data, metadata, nil
 }
 
 func parseGetRequest(ctx *gin.Context, v Normalizable) error {
@@ -414,7 +356,7 @@ func (e *Endpoint) SliceGet(ctx *gin.Context) {
 		return
 	}
 
-	e.slice(ctx, request)
+	e.makeDataRequest(ctx, request)
 }
 
 // SlicePost godoc
@@ -435,7 +377,7 @@ func (e *Endpoint) SlicePost(ctx *gin.Context) {
 		return
 	}
 
-	e.slice(ctx, request)
+	e.makeDataRequest(ctx, request)
 }
 
 // FenceGet godoc
@@ -456,7 +398,7 @@ func (e *Endpoint) FenceGet(ctx *gin.Context) {
 		return
 	}
 
-	e.fence(ctx, request)
+	e.makeDataRequest(ctx, request)
 }
 
 // FencePost godoc
@@ -477,7 +419,7 @@ func (e *Endpoint) FencePost(ctx *gin.Context) {
 		return
 	}
 
-	e.fence(ctx, request)
+	e.makeDataRequest(ctx, request)
 }
 
 // AttributesAlongSurfacePost godoc
@@ -498,7 +440,7 @@ func (e *Endpoint) AttributesAlongSurfacePost(ctx *gin.Context) {
 		return
 	}
 
-	e.attributesAlongSurface(ctx, request)
+	e.makeDataRequest(ctx, request)
 }
 
 // AttributesBetweenSurfacesPost godoc
@@ -519,5 +461,5 @@ func (e *Endpoint) AttributesBetweenSurfacesPost(ctx *gin.Context) {
 		return
 	}
 
-	e.attributesBetweenSurfaces(ctx, request)
+	e.makeDataRequest(ctx, request)
 }

@@ -7,10 +7,10 @@ import (
 )
 
 func newSliceRequest(
-	vds       string,
-	sas       string,
+	vds string,
+	sas string,
 	direction string,
-	lineno    int,
+	lineno int,
 ) SliceRequest {
 	return SliceRequest{
 		RequestedResource: RequestedResource{
@@ -23,11 +23,11 @@ func newSliceRequest(
 }
 
 func newFenceRequest(
-	vds              string,
-	sas              string,
+	vds string,
+	sas string,
 	coordinateSystem string,
-	coordinates      [][]float32,
-	interpolation    string,
+	coordinates [][]float32,
+	interpolation string,
 ) FenceRequest {
 	return FenceRequest{
 		RequestedResource: RequestedResource{
@@ -54,12 +54,12 @@ func TestSasIsOmmitedFromSliceHash(t *testing.T) {
 	request1 := newSliceRequest("some-path", "some-sas", "inline", 9961)
 	request2 := newSliceRequest("some-path", "different-sas", "inline", 9961)
 
-	hash1, err := request1.Hash()
+	hash1, err := request1.hash()
 	require.NoErrorf(t, err,
 		"Failed to compute hash, err: %v", err,
 	)
 
-	hash2, err := request2.Hash()
+	hash2, err := request2.hash()
 	require.NoErrorf(t, err,
 		"Failed to compute hash, err: %v", err,
 	)
@@ -72,23 +72,23 @@ func TestSasIsOmmitedFromFenceHash(t *testing.T) {
 		"some-path",
 		"some-sas",
 		"ij",
-		[][]float32{{1,2}, {2,3}},
+		[][]float32{{1, 2}, {2, 3}},
 		"linear",
 	)
 	request2 := newFenceRequest(
 		"some-path",
 		"different-sas",
 		"ij",
-		[][]float32{{1,2}, {2,3}},
+		[][]float32{{1, 2}, {2, 3}},
 		"linear",
 	)
 
-	hash1, err := request1.Hash()
+	hash1, err := request1.hash()
 	require.NoErrorf(t, err,
 		"Failed to compute hash, err: %v", err,
 	)
-	
-	hash2, err := request2.Hash()
+
+	hash2, err := request2.hash()
 	require.NoErrorf(t, err,
 		"Failed to compute hash, err: %v", err,
 	)
@@ -97,35 +97,35 @@ func TestSasIsOmmitedFromFenceHash(t *testing.T) {
 }
 
 func TestSliceGivesUniqueHash(t *testing.T) {
-	testCases := []struct{
+	testCases := []struct {
 		name     string
 		request1 SliceRequest
 		request2 SliceRequest
 	}{
 		{
-			name: "Vds differ",
+			name:     "Vds differ",
 			request1: newSliceRequest("vds1", "sas", "inline", 10),
 			request2: newSliceRequest("vds2", "sas", "inline", 10),
 		},
 		{
-			name: "direction differ",
+			name:     "direction differ",
 			request1: newSliceRequest("vds", "sas", "inline", 10),
-			request2: newSliceRequest("vds", "sas", "i",      10),
+			request2: newSliceRequest("vds", "sas", "i", 10),
 		},
 		{
-			name: "lineno differ",
+			name:     "lineno differ",
 			request1: newSliceRequest("vds", "sas", "inline", 10),
 			request2: newSliceRequest("vds", "sas", "inline", 11),
 		},
 	}
 
 	for _, testCase := range testCases {
-		hash1, err := testCase.request1.Hash()
+		hash1, err := testCase.request1.hash()
 		require.NoErrorf(t, err,
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
-		
-		hash2, err := testCase.request2.Hash()
+
+		hash2, err := testCase.request2.hash()
 		require.NoErrorf(t, err,
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
@@ -138,43 +138,43 @@ func TestSliceGivesUniqueHash(t *testing.T) {
 }
 
 func TestFenceGivesUniqueHash(t *testing.T) {
-	fence1 := [][]float32{{ 1, 2 }, {3, 4}}
-	fence2 := [][]float32{{ 2, 2 }, {3, 4}}
+	fence1 := [][]float32{{1, 2}, {3, 4}}
+	fence2 := [][]float32{{2, 2}, {3, 4}}
 
-	testCases := []struct{
+	testCases := []struct {
 		name     string
 		request1 FenceRequest
 		request2 FenceRequest
 	}{
 		{
-			name: "Vds differ",
+			name:     "Vds differ",
 			request1: newFenceRequest("vds1", "sas", "ij", fence1, "linear"),
 			request2: newFenceRequest("vds2", "sas", "ij", fence1, "linear"),
 		},
 		{
-			name: "Coordinate system differ",
-			request1: newFenceRequest("vds", "sas", "ij",  fence1, "linear"),
+			name:     "Coordinate system differ",
+			request1: newFenceRequest("vds", "sas", "ij", fence1, "linear"),
 			request2: newFenceRequest("vds", "sas", "cdp", fence1, "linear"),
 		},
 		{
-			name: "Coordinates differ",
+			name:     "Coordinates differ",
 			request1: newFenceRequest("vds", "sas", "ij", fence1, "linear"),
 			request2: newFenceRequest("vds", "sas", "ij", fence2, "linear"),
 		},
 		{
-			name: "Interpolation differ",
+			name:     "Interpolation differ",
 			request1: newFenceRequest("vds", "sas", "ij", fence1, "linear"),
 			request2: newFenceRequest("vds", "sas", "ij", fence1, "cubic"),
 		},
 	}
 
 	for _, testCase := range testCases {
-		hash1, err := testCase.request1.Hash()
+		hash1, err := testCase.request1.hash()
 		require.NoErrorf(t, err,
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
-		
-		hash2, err := testCase.request2.Hash()
+
+		hash2, err := testCase.request2.hash()
 		require.NoErrorf(t, err,
 			"[%s] Failed to compute hash, err: %v", testCase.name, err,
 		)
@@ -241,8 +241,8 @@ func TestExtractSasFromUrl(t *testing.T) {
 func TestPortPresenceInURL(t *testing.T) {
 
 	testCases := []struct {
-		request     RequestedResource
-		expected    string
+		request  RequestedResource
+		expected string
 	}{
 		{
 			request: newRequestedResource(
