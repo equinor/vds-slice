@@ -302,6 +302,7 @@ func TestAttribute(t *testing.T) {
 	targetAttributes := []string{
 		"samplevalue",
 		"min",
+		"min_at",
 		"max",
 		"maxabs",
 		"mean",
@@ -318,6 +319,7 @@ func TestAttribute(t *testing.T) {
 	expected := [][]float32{
 		{-0.5, 0.5, -8.5, 6.5, fillValue, -16.5, fillValue, fillValue},                        // samplevalue
 		{-2.5, -1.5, -12.5, 2.5, fillValue, -24.5, fillValue, fillValue},                      // min
+		{12, 28, 12, 12, fillValue, 28, fillValue, fillValue},                                 // min_at
 		{1.5, 2.5, -4.5, 10.5, fillValue, -8.5, fillValue, fillValue},                         // max
 		{2.5, 2.5, 12.5, 10.5, fillValue, 24.5, fillValue, fillValue},                         // maxabs
 		{-0.5, 0.5, -8.5, 6.5, fillValue, -16.5, fillValue, fillValue},                        // mean
@@ -998,6 +1000,7 @@ func TestAttributeBetweenSurfaces(t *testing.T) {
 	expected := map[string][]float32{
 		"samplevalue": {},
 		"min":         {-1.5, -0.5, -8.5, 5.5, fillValue, -24.5, fillValue, fillValue},
+		"min_at":      {16, 24, 20, 18, fillValue, 28, fillValue, fillValue},
 		"max":         {2.5, 0.5, -8.5, 5.5, fillValue, -8.5, fillValue, fillValue},
 		"maxabs":      {2.5, 0.5, 8.5, 5.5, fillValue, 24.5, fillValue, fillValue},
 		"mean":        {0.5, 0, -8.5, 5.5, fillValue, -16.5, fillValue, fillValue},

@@ -24,6 +24,15 @@ float Min::compute(
     return *std::min_element(segment.begin(), segment.end());
 }
 
+float MinAt::compute(
+    ResampledSegment const & segment) noexcept(false) {
+    auto min_index = std::distance(
+            segment.begin(),
+            std::min_element(segment.begin(), segment.end())
+        );
+    return segment.sample_position_at(min_index);
+}
+
 float Max::compute(
     ResampledSegment const & segment
 ) noexcept (false) {
