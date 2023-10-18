@@ -24,6 +24,7 @@ samplevalue | Seismic sample value at the exact surface position
 min         | Minimum value
 min_at      | Minimum value position
 max         | Maximum value
+max_at      | Maximum value position
 maxabs      | Absolute maximum value
 mean        | Mean value
 meanabs     | Mean of absolute values

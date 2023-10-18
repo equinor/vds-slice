@@ -38,6 +38,7 @@ enum attribute {
     MIN,
     MINAT,
     MAX,
+    MAXAT,
     MAXABS,
     MEAN,
     MEANABS,

@@ -341,6 +341,7 @@ void attributes(
             case MIN:     { append(attrs,   Min(dst, size)       );   break; }
             case MINAT:   { append(attrs,   MinAt(dst, size)     );   break; }
             case MAX:     { append(attrs,   Max(dst, size)       );   break; }
+            case MAXAT:   { append(attrs,   MaxAt(dst, size)     );   break; }
             case MAXABS:  { append(attrs,   MaxAbs(dst, size)    );   break; }
             case MEAN:    { append(attrs,   Mean(dst, size)      );   break; }
             case MEANABS: { append(attrs,   MeanAbs(dst, size)   );   break; }

@@ -39,6 +39,16 @@ float Max::compute(
     return *std::max_element(segment.begin(), segment.end());
 }
 
+float MaxAt::compute(
+    ResampledSegment const & segment
+) noexcept (false) {
+    auto max_index = std::distance(
+        segment.begin(),
+        std::max_element(segment.begin(), segment.end())
+    );
+    return segment.sample_position_at(max_index);
+}
+
 float MaxAbs::compute(
     ResampledSegment const & segment
 ) noexcept (false) {

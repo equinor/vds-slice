@@ -304,6 +304,7 @@ func TestAttribute(t *testing.T) {
 		"min",
 		"min_at",
 		"max",
+		"max_at",
 		"maxabs",
 		"mean",
 		"meanabs",
@@ -321,6 +322,7 @@ func TestAttribute(t *testing.T) {
 		{-2.5, -1.5, -12.5, 2.5, fillValue, -24.5, fillValue, fillValue},                      // min
 		{12, 28, 12, 12, fillValue, 28, fillValue, fillValue},                                 // min_at
 		{1.5, 2.5, -4.5, 10.5, fillValue, -8.5, fillValue, fillValue},                         // max
+		{28, 12, 28, 28, fillValue, 12, fillValue, fillValue},                                 // max_at
 		{2.5, 2.5, 12.5, 10.5, fillValue, 24.5, fillValue, fillValue},                         // maxabs
 		{-0.5, 0.5, -8.5, 6.5, fillValue, -16.5, fillValue, fillValue},                        // mean
 		{1.3, 1.3, 8.5, 6.5, fillValue, 16.5, fillValue, fillValue},                           // meanabs
@@ -1002,6 +1004,7 @@ func TestAttributeBetweenSurfaces(t *testing.T) {
 		"min":         {-1.5, -0.5, -8.5, 5.5, fillValue, -24.5, fillValue, fillValue},
 		"min_at":      {16, 24, 20, 18, fillValue, 28, fillValue, fillValue},
 		"max":         {2.5, 0.5, -8.5, 5.5, fillValue, -8.5, fillValue, fillValue},
+		"max_at":      {32, 20, 20, 18, fillValue, 12, fillValue, fillValue},
 		"maxabs":      {2.5, 0.5, 8.5, 5.5, fillValue, 24.5, fillValue, fillValue},
 		"mean":        {0.5, 0, -8.5, 5.5, fillValue, -16.5, fillValue, fillValue},
 		"meanabs":     {1.3, 0.5, 8.5, 5.5, fillValue, 16.5, fillValue, fillValue},

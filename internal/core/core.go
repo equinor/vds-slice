@@ -237,6 +237,8 @@ func GetAttributeType(attribute string) (int, error) {
 		return C.MINAT, nil
 	case "max":
 		return C.MAX, nil
+	case "max_at":
+		return C.MAXAT, nil
 	case "maxabs":
 		return C.MAXABS, nil
 	case "mean":
@@ -263,7 +265,7 @@ func GetAttributeType(attribute string) (int, error) {
 		fallthrough
 	default:
 		options := []string{
-			"samplevalue", "min", "min_at", "max", "maxabs", "mean", "meanabs", "meanpos",
+			"samplevalue", "min", "min_at", "max", "max_at", "maxabs", "mean", "meanabs", "meanpos",
 			"meanneg", "median", "rms", "var", "sd", "sumpos", "sumneg",
 		}
 		msg := "invalid attribute '%s', valid options are: %s"
