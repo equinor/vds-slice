@@ -49,15 +49,42 @@ float MaxAt::compute(
     return segment.sample_position_at(max_index);
 }
 
-float MaxAbs::compute(
+namespace {
+
+double max_abs(
     ResampledSegment const & segment
-) noexcept (false) {
+){
     auto max = *std::max_element(segment.begin(), segment.end(),
     [](const double& a, const double& b) { 
             return std::abs(a) < std::abs(b); 
         }
     );
     return std::abs(max);
+}
+
+} // namespace
+
+float MaxAbs::compute(
+    ResampledSegment const & segment
+) noexcept (false) {
+    return max_abs(segment);
+}
+
+float MaxAbsAt::compute(
+    ResampledSegment const & segment
+) noexcept (false) {
+
+    auto max_abs_val = max_abs(segment);
+    auto max_abs_index = std::distance(
+        segment.begin(),
+        std::find_if(segment.begin(), segment.end(),
+        [&](const double& val) {
+                return std::abs(val) == max_abs_val;
+            }
+        )
+    );
+
+    return segment.sample_position_at(max_abs_index);
 }
 
 float Mean::compute(

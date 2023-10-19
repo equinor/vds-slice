@@ -337,22 +337,23 @@ void attributes(
     for (int i = 0; i < nattributes; ++i) {
         void* dst = out[i];
         switch (*attributes) {
-            case VALUE:   { append(attrs,   Value(dst, size)     );   break; }
-            case MIN:     { append(attrs,   Min(dst, size)       );   break; }
-            case MINAT:   { append(attrs,   MinAt(dst, size)     );   break; }
-            case MAX:     { append(attrs,   Max(dst, size)       );   break; }
-            case MAXAT:   { append(attrs,   MaxAt(dst, size)     );   break; }
-            case MAXABS:  { append(attrs,   MaxAbs(dst, size)    );   break; }
-            case MEAN:    { append(attrs,   Mean(dst, size)      );   break; }
-            case MEANABS: { append(attrs,   MeanAbs(dst, size)   );   break; }
-            case MEANPOS: { append(attrs,   MeanPos(dst, size)   );   break; }
-            case MEANNEG: { append(attrs,   MeanNeg(dst, size)   );   break; }
-            case MEDIAN:  { append(attrs,   Median(dst, size)    );   break; }
-            case RMS:     { append(attrs,   Rms(dst, size)       );   break; }
-            case VAR:     { append(attrs,   Var(dst, size)       );   break; }
-            case SD:      { append(attrs,   Sd(dst, size)        );   break; }
-            case SUMPOS:  { append(attrs,   SumPos(dst, size)    );   break; }
-            case SUMNEG:  { append(attrs,   SumNeg(dst, size)    );   break; }
+            case VALUE:    { append(attrs,   Value(dst, size)     );   break; }
+            case MIN:      { append(attrs,   Min(dst, size)       );   break; }
+            case MINAT:    { append(attrs,   MinAt(dst, size)     );   break; }
+            case MAX:      { append(attrs,   Max(dst, size)       );   break; }
+            case MAXAT:    { append(attrs,   MaxAt(dst, size)     );   break; }
+            case MAXABS:   { append(attrs,   MaxAbs(dst, size)    );   break; }
+            case MAXABSAT: { append(attrs,   MaxAbsAt(dst, size)  );   break; }
+            case MEAN:     { append(attrs,   Mean(dst, size)      );   break; }
+            case MEANABS:  { append(attrs,   MeanAbs(dst, size)   );   break; }
+            case MEANPOS:  { append(attrs,   MeanPos(dst, size)   );   break; }
+            case MEANNEG:  { append(attrs,   MeanNeg(dst, size)   );   break; }
+            case MEDIAN:   { append(attrs,   Median(dst, size)    );   break; }
+            case RMS:      { append(attrs,   Rms(dst, size)       );   break; }
+            case VAR:      { append(attrs,   Var(dst, size)       );   break; }
+            case SD:       { append(attrs,   Sd(dst, size)        );   break; }
+            case SUMPOS:   { append(attrs,   SumPos(dst, size)    );   break; }
+            case SUMNEG:   { append(attrs,   SumNeg(dst, size)    );   break; }
 
             default:
                 throw std::runtime_error("Attribute not implemented");

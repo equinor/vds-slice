@@ -76,6 +76,13 @@ public:
     float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
+class MaxAbsAt final : public AttributeMap {
+public:
+    MaxAbsAt(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(ResampledSegment const & segment) noexcept (false) override;
+};
+
 class Mean final : public AttributeMap {
 public:
     Mean(void* dst, std::size_t size) : AttributeMap(dst, size) {}

@@ -40,6 +40,7 @@ enum attribute {
     MAX,
     MAXAT,
     MAXABS,
+    MAXABSAT,
     MEAN,
     MEANABS,
     MEANPOS,

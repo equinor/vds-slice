@@ -26,6 +26,7 @@ min_at      | Minimum value position
 max         | Maximum value
 max_at      | Maximum value position
 maxabs      | Absolute maximum value
+maxabs_at   | Absolute maximum value position
 mean        | Mean value
 meanabs     | Mean of absolute values
 meanpos     | Mean of positive values
