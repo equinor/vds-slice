@@ -43,8 +43,8 @@ COPY . .
 ARG CGO_CPPFLAGS="-I/open-vds/Dist/OpenVDS/include"
 ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
 RUN go build -a ./...
-RUN GOBIN=/tools go install github.com/swaggo/swag/cmd/swag@v1.8.4
-RUN /tools/swag init -g cmd/query/main.go --md docs
+RUN GOBIN=/tools go install github.com/swaggo/swag/cmd/swag@v1.16.2
+RUN /tools/swag init --dir cmd/query,api,internal/core -g main.go --md docs
 
 
 FROM builder as tester
