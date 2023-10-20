@@ -48,6 +48,13 @@ public:
     float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
+class MinAt final : public AttributeMap {
+public:
+    MinAt(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(ResampledSegment const & segment) noexcept (false) override;
+};
+
 class Max final : public AttributeMap {
 public:
     Max(void* dst, std::size_t size) : AttributeMap(dst, size) {}
@@ -55,9 +62,23 @@ public:
     float compute(ResampledSegment const & segment) noexcept (false) override;
 };
 
+class MaxAt final : public AttributeMap {
+public:
+    MaxAt(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(ResampledSegment const & segment) noexcept (false) override;
+};
+
 class MaxAbs final : public AttributeMap {
 public:
     MaxAbs(void* dst, std::size_t size) : AttributeMap(dst, size) {}
+
+    float compute(ResampledSegment const & segment) noexcept (false) override;
+};
+
+class MaxAbsAt final : public AttributeMap {
+public:
+    MaxAbsAt(void* dst, std::size_t size) : AttributeMap(dst, size) {}
 
     float compute(ResampledSegment const & segment) noexcept (false) override;
 };

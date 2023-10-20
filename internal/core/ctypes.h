@@ -36,8 +36,11 @@ enum interpolation_method {
 enum attribute {
     VALUE,
     MIN,
+    MINAT,
     MAX,
+    MAXAT,
     MAXABS,
+    MAXABSAT,
     MEAN,
     MEANABS,
     MEANPOS,
