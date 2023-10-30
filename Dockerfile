@@ -89,6 +89,7 @@ RUN apk --no-cache add \
     libuuid \
     boost-log
 
+WORKDIR /server
 COPY --from=installer /open-vds/Dist/OpenVDS/lib/* /open-vds/
 COPY --from=installer /server /server
 
