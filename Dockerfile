@@ -89,8 +89,10 @@ RUN apk --no-cache add \
     libuuid \
     boost-log
 
+WORKDIR /server
 COPY --from=installer /open-vds/Dist/OpenVDS/lib/* /open-vds/
 COPY --from=installer /server /server
+COPY --from=installer /src/docs/index.html /server/docs/
 
 RUN addgroup -S -g 1001 radix-non-root-group
 RUN adduser -S -u 1001 -G radix-non-root-group radix-non-root-user
