@@ -276,8 +276,17 @@ func (request AttributeBetweenSurfacesRequest) execute(
 }
 
 func parseGetRequest(ctx *gin.Context, v Normalizable) error {
-	if err := json.Unmarshal([]byte(ctx.Query("query")), v); err != nil {
-		return core.NewInvalidArgument(err.Error())
+	query, status := ctx.GetQuery("query")
+	if (!status){
+		return core.NewInvalidArgument(
+			"GET request to specified endpoint requires a 'query' parameter",
+		)
+	}
+	if err := json.Unmarshal([]byte(query), v); err != nil {
+		msg := "Please ensure that the supplied query is valid " +
+			"and conforms to the expected swagger Request specification: %v"
+		return core.NewInvalidArgument(
+			fmt.Sprintf(msg, err.Error()))
 	}
 
 	if err := binding.Validator.ValidateStruct(v); err != nil {

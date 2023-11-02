@@ -110,6 +110,16 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 		},
 		sliceTest{
 			baseTest{
+				name:           "GET request missing query parameter",
+				method:         http.MethodGet,
+				jsonRequest:    "MODIFIER: skip query parameter",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "GET request to specified endpoint requires a 'query' parameter",
+			},
+			testSliceRequest{},
+		},
+		sliceTest{
+			baseTest{
 				name:           "Invalid json POST request",
 				method:         http.MethodPost,
 				jsonRequest:    "help I am a duck",
@@ -264,6 +274,16 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 				jsonRequest:    "help I am a duck",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "invalid character",
+			},
+			testFenceRequest{},
+		},
+		fenceTest{
+			baseTest{
+				name:           "GET request missing query parameter",
+				method:         http.MethodGet,
+				jsonRequest:    "MODIFIER: skip query parameter",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "GET request to specified endpoint requires a 'query' parameter",
 			},
 			testFenceRequest{},
 		},
@@ -426,6 +446,16 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "invalid character",
 			}, testMetadataRequest{},
+		},
+		metadataTest{
+			baseTest{
+				name:           "GET request missing query parameter",
+				method:         http.MethodGet,
+				jsonRequest:    "MODIFIER: skip query parameter",
+				expectedStatus: http.StatusBadRequest,
+				expectedError:  "GET request to specified endpoint requires a 'query' parameter",
+			},
+			testMetadataRequest{},
 		},
 		metadataTest{
 			baseTest{
