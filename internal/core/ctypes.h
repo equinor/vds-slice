@@ -33,6 +33,13 @@ enum interpolation_method {
     TRIANGULAR
 };
 
+enum cube_function {
+    SUBTRACT,
+    ADDITION,
+    MULTIPLICATION,
+    DIVISION
+};
+
 enum attribute {
     VALUE,
     MIN,

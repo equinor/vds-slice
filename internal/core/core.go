@@ -54,7 +54,7 @@ type Axis struct {
 	Unit string `json:"unit" example:"ms"`
 } // @name Axis
 
-// @Description Geometrical plane with depth/time datapoints
+// @Description Geometrical plane with depth/time data points
 type RegularSurface struct {
 	// Values / height-map
 	Values [][]float32 `json:"values" binding:"required"`
@@ -94,7 +94,7 @@ type BoundingBox struct {
 } //@name BoundingBox
 
 type Array struct {
-	// Data format is represented by numpy-style formatcodes. Currently the
+	// Data format is represented by numpy-style format codes. Currently the
 	// format is always 4-byte floats, little endian (<f4).
 	Format string `json:"format" example:"<f4"`
 
@@ -379,12 +379,12 @@ func (surface *RegularSurface) toCRegularSurface(cdata []C.float) (cRegularSurfa
 }
 
 type VDSHandle struct {
-	handle *C.struct_DataHandle
-	ctx    *C.struct_Context
+	dataSource *C.struct_DataSource
+	ctx        *C.struct_Context
 }
 
-func (v VDSHandle) Handle() *C.struct_DataHandle {
-	return v.handle
+func (v VDSHandle) DataSource() *C.struct_DataSource {
+	return v.dataSource
 }
 
 func (v VDSHandle) context() *C.struct_Context {
@@ -398,7 +398,7 @@ func (v VDSHandle) Error(status C.int) error {
 func (v VDSHandle) Close() error {
 	defer C.context_free(v.ctx)
 
-	cerr := C.datahandle_free(v.ctx, v.handle)
+	cerr := C.datasource_free(v.ctx, v.dataSource)
 	return toError(cerr, v.ctx)
 }
 
@@ -410,21 +410,47 @@ func NewVDSHandle(conn Connection) (VDSHandle, error) {
 	defer C.free(unsafe.Pointer(ccred))
 
 	var cctx = C.context_new()
-	var handle *C.struct_DataHandle
+	var dataSource *C.struct_DataSource
 
-	cerr := C.datahandle_new(cctx, curl, ccred, &handle)
+	cerr := C.ovds_datasource_new(cctx, curl, ccred, &dataSource)
 
 	if err := toError(cerr, cctx); err != nil {
 		defer C.context_free(cctx)
 		return VDSHandle{}, err
 	}
 
-	return VDSHandle{handle: handle, ctx: cctx}, nil
+	return VDSHandle{dataSource: dataSource, ctx: cctx}, nil
+}
+
+func NewVDSMultiHandle(conn_A Connection, conn_B Connection, cube_function int) (VDSHandle, error) {
+	curl_A := C.CString(conn_A.Url())
+	defer C.free(unsafe.Pointer(curl_A))
+
+	ccred_A := C.CString(conn_A.ConnectionString())
+	defer C.free(unsafe.Pointer(ccred_A))
+
+	curl_B := C.CString(conn_B.Url())
+	defer C.free(unsafe.Pointer(curl_B))
+
+	ccred_B := C.CString(conn_B.ConnectionString())
+	defer C.free(unsafe.Pointer(ccred_B))
+
+	var cctx = C.context_new()
+	var dataSource *C.struct_DataSource
+
+	cerr := C.ovds_multi_datasource_new(cctx, curl_A, ccred_A, curl_B, ccred_B, C.enum_cube_function(cube_function), &dataSource)
+
+	if err := toError(cerr, cctx); err != nil {
+		defer C.context_free(cctx)
+		return VDSHandle{}, err
+	}
+
+	return VDSHandle{dataSource: dataSource, ctx: cctx}, nil
 }
 
 func (v VDSHandle) GetMetadata() ([]byte, error) {
 	var result C.struct_response
-	cerr := C.metadata(v.context(), v.Handle(), &result)
+	cerr := C.metadata(v.context(), v.DataSource(), &result)
 
 	defer C.response_delete(&result)
 
@@ -477,7 +503,7 @@ func (v VDSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, erro
 
 	cerr := C.slice(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.int(lineno),
 		C.enum_axis_name(direction),
 		bound,
@@ -513,7 +539,7 @@ func (v VDSHandle) GetSliceMetadata(
 
 	cerr := C.slice_metadata(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.int(lineno),
 		C.enum_axis_name(direction),
 		bound,
@@ -538,7 +564,7 @@ func (v VDSHandle) GetFence(
 	fillValue *float32,
 ) ([]byte, error) {
 	coordinate_len := 2
-	ccoordinates := make([]C.float, len(coordinates)*coordinate_len)
+	c_coordinates := make([]C.float, len(coordinates)*coordinate_len)
 	for i := range coordinates {
 
 		if len(coordinates[i]) != coordinate_len {
@@ -551,16 +577,16 @@ func (v VDSHandle) GetFence(
 		}
 
 		for j := range coordinates[i] {
-			ccoordinates[i*coordinate_len+j] = C.float(coordinates[i][j])
+			c_coordinates[i*coordinate_len+j] = C.float(coordinates[i][j])
 		}
 	}
 
 	var result C.struct_response
 	cerr := C.fence(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.enum_coordinate_system(coordinateSystem),
-		&ccoordinates[0],
+		&c_coordinates[0],
 		C.size_t(len(coordinates)),
 		C.enum_interpolation_method(interpolation),
 		(*C.float)(fillValue),
@@ -581,7 +607,7 @@ func (v VDSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.fence_metadata(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.size_t(len(coordinates)),
 		&result,
 	)
@@ -614,7 +640,7 @@ func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.attribute_metadata(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.size_t(len(data)),
 		C.size_t(len(data[0])),
 		&result,
@@ -796,7 +822,7 @@ func (v VDSHandle) getAttributes(
 	defer C.context_free(cCtx)
 	cerr := C.subvolume_new(
 		cCtx,
-		v.Handle(),
+		v.DataSource(),
 		cReferenceSurface.get(),
 		cTopSurface.get(),
 		cBottomSurface.get(),
@@ -845,7 +871,7 @@ func (v VDSHandle) fetchSubvolume(
 	nrows int,
 	ncols int,
 	interpolation int,
-) (error) {
+) error {
 	hsize := nrows * ncols
 
 	// note that it is possible to hit go's own goroutines limit
@@ -876,7 +902,7 @@ func (v VDSHandle) fetchSubvolume(
 
 			cerr := C.fetch_subvolume(
 				cCtx,
-				v.Handle(),
+				v.DataSource(),
 				cSubVolume,
 				C.enum_interpolation_method(interpolation),
 				C.size_t(from),
@@ -943,7 +969,7 @@ func (v VDSHandle) calculateAttributes(
 
 			cErr := C.attribute(
 				cCtx,
-				v.Handle(),
+				v.DataSource(),
 				cSubVolume,
 				&cAttributes[0],
 				C.size_t(nAttributes),

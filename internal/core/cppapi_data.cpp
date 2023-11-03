@@ -11,6 +11,7 @@
 #include "attribute.hpp"
 #include "axis.hpp"
 #include "datahandle.hpp"
+#include "datasource.hpp"
 #include "direction.hpp"
 #include "exceptions.hpp"
 #include "metadatahandle.hpp"
@@ -129,7 +130,7 @@ void append(std::vector< std::unique_ptr< AttributeMap > >& vec, T obj) {
 namespace cppapi {
 
 void slice(
-    DataHandle& handle,
+    DataSource& handle,
     Direction const direction,
     int lineno,
     std::vector< Bound > const& slicebounds,
@@ -160,7 +161,7 @@ void slice(
 }
 
 void fence(
-    DataHandle& handle,
+    DataSource& handle,
     enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
@@ -239,7 +240,7 @@ void fence(
 
 
 void fetch_subvolume(
-    DataHandle& handle,
+    DataSource& handle,
     SurfaceBoundedSubVolume& subvolume,
     enum interpolation_method interpolation,
     std::size_t from,
