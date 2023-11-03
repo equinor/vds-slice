@@ -125,7 +125,7 @@ func parseopts() opts {
 			"different port than the server itself. This allows for them to be kept\n"+
 			"private, if desirable. Defaults to 8081.\n"+
 			"Ignored if metrics are not turned on. (see --metrics)\n"+
-			"Can also be set by enviroment variable 'VDSSLICE_METRICS_PORT'",
+			"Can also be set by environment variable 'VDSSLICE_METRICS_PORT'",
 		"int",
 	)
 
@@ -166,6 +166,8 @@ func setupApp(app *gin.Engine, endpoint *api.Endpoint, metric *metrics.Metrics) 
 
 	attributesSurface.POST("along", endpoint.AttributesAlongSurfacePost)
 	attributesSurface.POST("between", endpoint.AttributesBetweenSurfacesPost)
+	attributesSurface.POST("along4d", endpoint.AttributesAlong4dSurfacePost)
+	attributesSurface.POST("between4d", endpoint.AttributesBetween4dSurfacesPost)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	app.LoadHTMLFiles("docs/index.html")
@@ -199,7 +201,7 @@ func main() {
 		 * Host the /metrics endpoint on a different app instance. This is needed
 		 * in order to serve it on a different port, while also giving some benefits
 		 * such that our main app server's logs doesn't get polluted by tools that
-		 * are continually scarping the /metrics endpoint. I.e. graphana.
+		 * are continually scarping the /metrics endpoint. I.e. Grafana.
 		 */
 		metricsApp := gin.New()
 		metricsApp.SetTrustedProxies(nil)

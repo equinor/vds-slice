@@ -383,3 +383,149 @@ func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
 		h.Attributes,
 	), nil
 }
+
+// Query for Attribute along the surface endpoints
+// @Description Query payload for attribute "along4d" endpoint.
+type AttributeAlong4dSurfaceRequest struct {
+	AttributeRequest
+
+	// The blob URL for second VDS
+	Vds_B string `json:"vds_b" binding:"required" example:"https://account.blob.core.windows.net/container/blob"`
+
+	// A valid sas-token with read access to the container specified in Vds2
+	Sas_B string `json:"sas_b,omitempty" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
+
+	// Surface along which data must be retrieved
+	Surface core.RegularSurface `json:"surface" binding:"required"`
+
+	// Samples interval above the horizon to include in attribute calculation.
+	// This value should be given in the VDS's vertical domain. E.g. if the
+	// vertical domain is 'ms' then a value of 22 means to include samples up
+	// to 22 ms above the horizon definition. The value is rounded down to the
+	// nearest whole sample. I.e. if the cube is sampled at 4ms, the attribute
+	// calculation will include samples 4, 8, 12, 16 and 20ms above the
+	// horizon, while the sample at 24ms is excluded.
+	//
+	// Defaults to zero
+	Above float32 `json:"above" example:"20.0"`
+
+	// Samples interval below the horizon to include in attribute calculation.
+	// Implements the same behavior as 'above'.
+	//
+	// Defaults to zero
+	Below float32 `json:"below" example:"20.0"`
+} //@name AttributeAlong4dSurfaceRequest
+
+/** Compute a hash of the request that uniquely identifies the requested attributes
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (h AttributeAlong4dSurfaceRequest) Hash() (string, error) {
+	// Strip the sas token before computing hash
+	h.Sas = ""
+	h.Sas_B = ""
+	return cache.Hash(h)
+}
+
+func (h AttributeAlong4dSurfaceRequest) toString() (string, error) {
+	msg := "{vds: %s, vds2: %s, Horizon: (ncols: %d, nrows: %d), Rotation: %.2f, " +
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f, " +
+		"interpolation: %s, Above: %.2f, Below: %.2f, Stepsize: %.2f, " +
+		"Attributes: %v}"
+	return fmt.Sprintf(
+		msg,
+		h.Vds,
+		h.Vds_B,
+		len(h.Surface.Values[0]),
+		len(h.Surface.Values),
+		*h.Surface.Rotation,
+		*h.Surface.Xori,
+		*h.Surface.Yori,
+		h.Surface.Xinc,
+		h.Surface.Yinc,
+		*h.Surface.FillValue,
+		h.Interpolation,
+		h.Above,
+		h.Below,
+		h.Stepsize,
+		h.Attributes,
+	), nil
+}
+
+// Query for Attribute along the surface endpoints
+// @Description Query payload for attribute "along4d" endpoint.
+type AttributeBetween4dSurfacesRequest struct {
+	AttributeRequest
+
+	// The blob URL for second VDS
+	Vds_B string `json:"vds_b" binding:"required" example:"https://account.blob.core.windows.net/container/blob"`
+
+	// A valid sas-token with read access to the container specified in Vds2
+	Sas_B string `json:"sas_b,omitempty" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
+
+	// One of the two surfaces between which data will be retrieved. This value
+	// should be given in the VDS's vertical domain, Annotation (for example,
+	// Depth or Time). Surface will be used as reference for any sampling
+	// operation, i.e. points that are on this surface will be present in the
+	// final calculations and could be retrieved through samplevalue. At the
+	// surface points where no data exists fillvalue will be set in the result
+	// buffer.
+	PrimarySurface core.RegularSurface `json:"primarySurface" binding:"required"`
+
+	// One of the two surfaces between which data will be retrieved. This value
+	// should be given in the VDS's vertical domain, Annotation (for example,
+	// Depth or Time). Surface will be used to define data boundaries. For every
+	// point on the primary surface the closest point on the secondary surface
+	// would be found and its value set as the request boundary. It might not be
+	// included in final calculations. If the closest value is fillvalue,
+	// fillvalue will be set in the result buffer. It is not required for
+	// surfaces to have the same plane (origin, rotation, step). If surfaces
+	// intersect, exception will be thrown. If any of the values of the surface
+	// is outside of data boundaries, exception will be raised.
+	SecondarySurface core.RegularSurface `json:"secondarySurface" binding:"required"`
+} //@name AttributeBetween4dSurfacesRequest
+
+/** Compute a hash of the request that uniquely identifies the requested attributes
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (h AttributeBetween4dSurfacesRequest) Hash() (string, error) {
+	// Strip the sas token before computing hash
+	h.Sas = ""
+	h.Sas_B = ""
+	return cache.Hash(h)
+}
+
+func (h AttributeBetween4dSurfacesRequest) toString() (string, error) {
+	msg := "{vds: %s, " +
+		"Primary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
+		"Secondary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
+		"Interpolation: %s, Stepsize: %.2f, Attributes: %v}"
+	return fmt.Sprintf(
+		msg,
+		h.Vds,
+		len(h.PrimarySurface.Values[0]),
+		len(h.PrimarySurface.Values),
+		*h.PrimarySurface.Rotation,
+		*h.PrimarySurface.Xori,
+		*h.PrimarySurface.Yori,
+		h.PrimarySurface.Xinc,
+		h.PrimarySurface.Yinc,
+		*h.PrimarySurface.FillValue,
+		len(h.SecondarySurface.Values[0]),
+		len(h.SecondarySurface.Values),
+		*h.SecondarySurface.Rotation,
+		*h.SecondarySurface.Xori,
+		*h.SecondarySurface.Yori,
+		h.SecondarySurface.Xinc,
+		h.SecondarySurface.Yinc,
+		*h.SecondarySurface.FillValue,
+		h.Interpolation,
+		h.Stepsize,
+		h.Attributes,
+	), nil
+}

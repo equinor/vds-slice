@@ -27,7 +27,7 @@ func httpStatusCode(err error) int {
 /* Call abortOnError on the context in case of an error
  *
  * This function is designed specifically for our endpoint handler functions
- * and aims at making the errorhandling as short and concise as possible.
+ * and aims at making the error handling as short and concise as possible.
  *
  * If err != nil the error will be mapped to an appropriate http status code
  * through the httpStatusCode mapper, and ctx.AbortWithError will be called
@@ -37,7 +37,7 @@ func httpStatusCode(err error) int {
  * If err == nil the ctx is left untouched and this function returns false,
  * indicating that the context was not aborted.
  *
- * The result is a oneline error handling:
+ * The result is a one line error handling:
  *
  *     err, _ := func()
  *     if abortOnError(ctx, err) { return }
@@ -113,6 +113,140 @@ func (e *Endpoint) makeDataRequest(
 	defer handle.Close()
 
 	data, metadata, err := request.execute(handle)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata))
+
+	writeResponse(ctx, metadata, data)
+}
+
+func (e *Endpoint) attributesAlong4dSurface(ctx *gin.Context, request AttributeAlong4dSurfaceRequest) {
+	prepareRequestLogging(ctx, request)
+
+	err := validateVerticalWindow(request.Above, request.Below, request.Stepsize)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	conn_A, err := e.MakeVdsConnection(request.Vds, request.Sas)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	conn_B, err := e.MakeVdsConnection(request.Vds_B, request.Sas_B)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	cacheKey, err := request.Hash()
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	handle, err := core.NewVDSMultiHandle(conn_A, conn_B, 0)
+	if abortOnError(ctx, err) {
+		return
+	}
+	defer handle.Close()
+
+	cacheEntry, hit := e.Cache.Get(cacheKey)
+	if hit && conn_A.IsAuthorizedToRead() {
+		ctx.Set("cache-hit", true)
+		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
+		return
+	}
+
+	cacheEntry_B, hit := e.Cache.Get(cacheKey)
+	if hit && conn_B.IsAuthorizedToRead() {
+		ctx.Set("cache-hit", true)
+		writeResponse(ctx, cacheEntry_B.Metadata(), cacheEntry_B.Data())
+		return
+	}
+
+	interpolation, err := core.GetInterpolationMethod(request.Interpolation)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	metadata, err := handle.GetAttributeMetadata(request.Surface.Values)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	data, err := handle.GetAttributesAlongSurface(
+		request.Surface,
+		request.Above,
+		request.Below,
+		request.Stepsize,
+		request.Attributes,
+		interpolation,
+	)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	e.Cache.Set(cacheKey, cache.NewCacheEntry(data, metadata))
+
+	writeResponse(ctx, metadata, data)
+}
+
+func (e *Endpoint) AttributeBetween4dSurfaces(ctx *gin.Context, request AttributeBetween4dSurfacesRequest) {
+	prepareRequestLogging(ctx, request)
+
+	conn_A, err := e.MakeVdsConnection(request.Vds, request.Sas)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	conn_B, err := e.MakeVdsConnection(request.Vds_B, request.Sas_B)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	cacheKey, err := request.Hash()
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	handle, err := core.NewVDSMultiHandle(conn_A, conn_B, 0)
+	if abortOnError(ctx, err) {
+		return
+	}
+	defer handle.Close()
+
+	cacheEntry, hit := e.Cache.Get(cacheKey)
+	if hit && conn_A.IsAuthorizedToRead() {
+		ctx.Set("cache-hit", true)
+		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
+		return
+	}
+
+	cacheEntry_B, hit := e.Cache.Get(cacheKey)
+	if hit && conn_B.IsAuthorizedToRead() {
+		ctx.Set("cache-hit", true)
+		writeResponse(ctx, cacheEntry_B.Metadata(), cacheEntry_B.Data())
+		return
+	}
+
+	interpolation, err := core.GetInterpolationMethod(request.Interpolation)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	metadata, err := handle.GetAttributeMetadata(request.PrimarySurface.Values)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	data, err := handle.GetAttributesBetweenSurfaces(
+		request.PrimarySurface,
+		request.SecondarySurface,
+		request.Stepsize,
+		request.Attributes,
+		interpolation,
+	)
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -462,4 +596,46 @@ func (e *Endpoint) AttributesBetweenSurfacesPost(ctx *gin.Context) {
 	}
 
 	e.makeDataRequest(ctx, request)
+}
+
+// AttributesAlong4dSurfacePost godoc
+// @Summary  Returns horizon attributes along the surface of the difference between two cubes
+// @description.markdown attribute_along_4d
+// @Tags     attributes
+// @Param    body  body  AttributeAlong4dSurfaceRequest  True  "Request Parameters"
+// @Accept   application/json
+// @Produce  multipart/mixed
+// @Success  200 {object} core.AttributeMetadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
+// @Router   /attributes/surface/along4d  [post]
+func (e *Endpoint) AttributesAlong4dSurfacePost(ctx *gin.Context) {
+	var request AttributeAlong4dSurfaceRequest
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	e.attributesAlong4dSurface(ctx, request)
+}
+
+// AttributesBetween4dSurfacesPost godoc
+// @Summary  Returns horizon attributes between provided surfaces of the difference between two cubes
+// @description.markdown attribute_between_4d
+// @Tags     attributes
+// @Param    body  body  AttributeBetween4dSurfacesRequest  True  "Request Parameters"
+// @Accept   application/json
+// @Produce  multipart/mixed
+// @Success  200 {object} core.AttributeMetadata "(Example below only for metadata part)"
+// @Failure  400 {object} ErrorResponse "Request is invalid"
+// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
+// @Router   /attributes/surface/between4d  [post]
+func (e *Endpoint) AttributesBetween4dSurfacesPost(ctx *gin.Context) {
+	var request AttributeBetween4dSurfacesRequest
+	err := parsePostRequest(ctx, &request)
+	if abortOnError(ctx, err) {
+		return
+	}
+
+	e.AttributeBetween4dSurfaces(ctx, request)
 }
