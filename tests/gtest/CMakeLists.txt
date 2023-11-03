@@ -10,6 +10,7 @@ add_executable(cppcoretests
   cppapi_test.cpp
   regularsurface_test.cpp
   subvolume_test.cpp
+  subcube_test.cpp
 )
 
 target_link_libraries(cppcoretests
