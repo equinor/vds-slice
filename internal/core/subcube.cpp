@@ -109,3 +109,12 @@ void SubCube::set_slice(
     this->bounds.lower[axis.dimension()] = voxelline;
     this->bounds.upper[axis.dimension()] = voxelline + 1;
 }
+
+std::size_t SubCube::size() const noexcept(true) {
+
+    std::size_t size = 1;
+    for (int i = 0; i < OpenVDS::VolumeDataLayout::Dimensionality_Max; ++i) {
+        size *= this->bounds.upper[i] - this->bounds.lower[i];
+    }
+    return size;
+}

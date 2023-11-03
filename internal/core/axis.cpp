@@ -49,3 +49,71 @@ bool Axis::inrange(float coordinate) const noexcept(true) {
 float Axis::to_sample_position(float coordinate) noexcept(false) {
     return this->m_axis_descriptor.CoordinateToSamplePosition(coordinate);
 }
+
+bool Axis::operator!=(Axis const &other) const noexcept(false) {
+
+    if (this->nsamples() != other.nsamples()) {
+        throw std::runtime_error(
+            "Axis: " + this->name() +
+            ": Mismatch in number of samples: " +
+            std::to_string(this->nsamples()) +
+            " != " + std::to_string(other.nsamples()));
+        return true;
+    }
+
+    if (this->min() != other.min()) {
+        throw std::runtime_error(
+            "Axis: " + this->name() +
+            ": Mismatch in min value: " +
+            std::to_string(this->min()) +
+            " != " + std::to_string(other.min()));
+        return true;
+    }
+
+    if (this->max() != other.max()) {
+        throw std::runtime_error(
+            "Axis: " + this->name() +
+            ": Mismatch in max value: " +
+            std::to_string(this->max()) +
+            " != " + std::to_string(other.max()));
+        return true;
+    }
+
+    if (this->stepsize() != other.stepsize()) {
+        throw std::runtime_error(
+            "Axis: " + this->name() +
+            ": Mismatch in stepsize: " +
+            std::to_string(this->stepsize()) +
+            " != " + std::to_string(other.stepsize()));
+        return true;
+    }
+
+    if (this->unit() != other.unit()) {
+        throw std::runtime_error(
+            "Axis: " + this->name() +
+            ": Mismatch in unit: " +
+            this->unit() +
+            " != " + other.unit());
+        return true;
+    }
+
+    if (this->dimension() != other.dimension()) {
+        throw std::runtime_error(
+            "Axis: " + this->name() +
+            ": Mismatch in dimension: " +
+            std::to_string(this->dimension()) +
+            " != " + std::to_string(other.dimension()));
+        return true;
+    }
+
+    if (this->name() != other.name()) {
+        throw std::runtime_error(
+            "Axis: " + this->name() +
+            ": Mismatch in name: " +
+            this->name() +
+            " != " + other.name());
+        return true;
+    }
+
+    return false;
+}
