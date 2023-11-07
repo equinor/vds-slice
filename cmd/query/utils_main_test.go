@@ -344,7 +344,10 @@ func prepareRequest(ctx *gin.Context, t *testing.T, testcase endpointTest) {
 		)
 
 		q := url.Values{}
-		q.Add("query", jsonRequest)
+
+		if jsonRequest != "MODIFIER: skip query parameter" {
+			q.Add("query", jsonRequest)
+		}
 		ctx.Request.URL.RawQuery = q.Encode()
 
 	case http.MethodPost:
