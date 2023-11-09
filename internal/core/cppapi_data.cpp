@@ -17,6 +17,7 @@
 #include "regularsurface.hpp"
 #include "subcube.hpp"
 #include "subvolume.hpp"
+#include "utils.hpp"
 
 namespace {
 
@@ -203,7 +204,8 @@ void fence(
             if (!axis.inrange(coordinate[voxel])) {
                 if (fillValue == nullptr) {
                     const std::string coordinate_str =
-                        "(" +std::to_string(x) + "," + std::to_string(y) + ")";
+                        "(" +utils::to_string_with_precision(x, 6) + "," +
+                        utils::to_string_with_precision(y, 6) + ")";
                     throw detail::bad_request(
                         "Coordinate " + coordinate_str + " is out of boundaries "+
                         "in dimension "+ std::to_string(voxel)+ "."
@@ -283,10 +285,10 @@ void fetch_subvolume(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
                 " col:" + std::to_string(col) +
-                ". Request: [" + std::to_string(top_sample_depth) +
-                ", " + std::to_string(bottom_sample_depth) +
-                "]. Seismic bounds: [" + std::to_string(sample.min())
-                + ", " +std::to_string(sample.max()) + "]"
+                ". Request: [" + utils::to_string_with_precision(top_sample_depth) +
+                ", " + utils::to_string_with_precision(bottom_sample_depth) +
+                "]. Seismic bounds: [" + utils::to_string_with_precision(sample.min())
+                + ", " + utils::to_string_with_precision(sample.max()) + "]"
             );
         }
 

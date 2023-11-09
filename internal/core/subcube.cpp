@@ -6,6 +6,7 @@
 #include "exceptions.hpp"
 #include "metadatahandle.hpp"
 #include "ctypes.h"
+#include "utils.hpp"
 
 namespace {
 
@@ -22,9 +23,9 @@ int lineno_annotation_to_voxel(
     if (lineno < min || lineno > max || std::floor(voxelline) != voxelline) {
         throw detail::bad_request(
             "Invalid lineno: " + std::to_string(lineno) +
-            ", valid range: [" + std::to_string(min) +
-            ":" + std::to_string(max) +
-            ":" + std::to_string(stepsize) + "]"
+            ", valid range: [" + utils::to_string_with_precision(min) +
+            ":" + utils::to_string_with_precision(max) +
+            ":" + utils::to_string_with_precision(stepsize) + "]"
         );
     }
 
