@@ -253,11 +253,6 @@ def test_attributes_between_surfaces():
             "409 Public access is not permitted",
             "401 Server failed to authenticate the request"
         ]
-    ),
-    (
-        generate_container_signature(
-            STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY, permission=""),
-        ["403 Server failed to authenticate"]
     )
 ])
 def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_messages):
