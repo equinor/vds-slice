@@ -42,7 +42,7 @@ type DataRequest interface {
 	toString() (string, error)
 	hash() (string, error)
 	credentials() (string, string)
-	execute(handle core.VDSHandle) (data [][]byte, metadata []byte, err error)
+	execute(handle core.DSHandle) (data [][]byte, metadata []byte, err error)
 }
 
 type Stringable interface {

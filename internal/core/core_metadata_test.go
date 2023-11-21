@@ -24,7 +24,7 @@ func TestMetadata(t *testing.T) {
 		ImportTimeStamp: `^\d{4}-\d{2}-\d{2}[A-Z]\d{2}:\d{2}:\d{2}\.\d{3}[A-Z]$`,
 	}
 
-	handle, _ := NewVDSHandle(well_known)
+	handle, _ := NewDSHandle(well_known)
 	defer handle.Close()
 	buf, err := handle.GetMetadata()
 	require.NoErrorf(t, err, "Failed to retrieve metadata, err %v", err)
@@ -47,7 +47,7 @@ func TestMetadataCustomAxisOrder(t *testing.T) {
 		{Annotation: "Crossline", Min: 10, Max: 11, Samples: 2, StepSize: 1, Unit: "unitless"},
 		{Annotation: "Sample", Min: 4, Max: 16, Samples: 4, StepSize: 4, Unit: "ms"},
 	}
-	handle, err := NewVDSHandle(well_known_custom_axis_order)
+	handle, err := NewDSHandle(well_known_custom_axis_order)
 	require.NoErrorf(t, err, "Failed to open vds file")
 
 	defer handle.Close()
@@ -62,6 +62,6 @@ func TestMetadataCustomAxisOrder(t *testing.T) {
 
 func TestMetadataAxesNames(t *testing.T) {
 	expected := "Requested axis not found under names "
-	_, err := NewVDSHandle(invalid_axes_names)
+	_, err := NewDSHandle(invalid_axes_names)
 	require.ErrorContains(t, err, expected)
 }

@@ -46,7 +46,7 @@ func TestSurfaceUnalignedWithSeismic(t *testing.T) {
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributesAlongSurface(
 		surface,
@@ -120,7 +120,7 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 	for _, testcase := range testcases {
 		surface := samples10Surface(testcase.values)
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
-		handle, _ := NewVDSHandle(samples10)
+		handle, _ := NewDSHandle(samples10)
 		defer handle.Close()
 		_, boundsErr := handle.GetAttributesAlongSurface(
 			surface,
@@ -267,7 +267,7 @@ func TestSurfaceHorizontalBounds(t *testing.T) {
 			Yinc:      float32(yinc),
 			FillValue: &fillValue,
 		}
-		handle, _ := NewVDSHandle(samples10)
+		handle, _ := NewDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributesAlongSurface(
 			surface,
@@ -352,7 +352,7 @@ func TestAttribute(t *testing.T) {
 	const below = float32(8.0)
 	const stepsize = float32(4.0)
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributesAlongSurface(
 		surface,
@@ -404,7 +404,7 @@ func TestAttributeMedianForEvenSampleValue(t *testing.T) {
 	const below = float32(4.0)
 	const stepsize = float32(4.0)
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributesAlongSurface(
 		surface,
@@ -478,7 +478,7 @@ func TestAttributesAboveBelowStepSizeIgnoredForSampleValue(t *testing.T) {
 	surface := samples10Surface(values)
 
 	for _, testCase := range testCases {
-		handle, _ := NewVDSHandle(samples10)
+		handle, _ := NewDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributesAlongSurface(
 			surface,
@@ -599,7 +599,7 @@ func TestAttributeSubsamplingAligned(t *testing.T) {
 	surface := samples10Surface(values)
 
 	for _, testCase := range testCases {
-		handle, _ := NewVDSHandle(samples10)
+		handle, _ := NewDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributesAlongSurface(
 			surface,
@@ -685,7 +685,7 @@ func TestAttributesUnalignedAndSubsampled(t *testing.T) {
 
 	surface := samples10Surface(values)
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributesAlongSurface(
 		surface,
@@ -794,7 +794,7 @@ func TestAttributesUnaligned(t *testing.T) {
 
 		surface := samples10Surface(values)
 
-		handle, _ := NewVDSHandle(samples10)
+		handle, _ := NewDSHandle(samples10)
 		defer handle.Close()
 		buf, err := handle.GetAttributesAlongSurface(
 			surface,
@@ -847,7 +847,7 @@ func TestAttributesSupersampling(t *testing.T) {
 
 	surface := samples10Surface(values)
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributesAlongSurface(
 		surface,
@@ -896,7 +896,7 @@ func TestAttributesEverythingUnaligned(t *testing.T) {
 
 	surface := samples10Surface(values)
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 	buf, err := handle.GetAttributesAlongSurface(
 		surface,
@@ -953,7 +953,7 @@ func TestInvalidAboveBelow(t *testing.T) {
 	for _, testcase := range testcases {
 		surface := samples10Surface(values)
 		interpolationMethod, _ := GetInterpolationMethod("nearest")
-		handle, _ := NewVDSHandle(samples10)
+		handle, _ := NewDSHandle(samples10)
 		defer handle.Close()
 		_, boundsErr := handle.GetAttributesAlongSurface(
 			surface,
@@ -986,7 +986,7 @@ func TestAttributeMetadata(t *testing.T) {
 		},
 	}
 
-	handle, _ := NewVDSHandle(well_known)
+	handle, _ := NewDSHandle(well_known)
 	defer handle.Close()
 	buf, err := handle.GetAttributeMetadata(values)
 	require.NoErrorf(t, err, "Failed to retrieve attribute metadata, err %v", err)
@@ -1063,7 +1063,7 @@ func TestAttributeBetweenSurfaces(t *testing.T) {
 
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 
 	for _, testcase := range testcases {
@@ -1114,7 +1114,7 @@ func TestAttributesInconsistentLength(t *testing.T) {
 	goodSurface := samples10Surface(goodValues)
 	badSurface := samples10Surface(badValues)
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 
 	_, err := handle.GetAttributesAlongSurface(
@@ -1157,7 +1157,7 @@ func TestAttributesAllFill(t *testing.T) {
 	fillSurface := samples10Surface(fillValues)
 	expected := []float32{fillValue, fillValue, fillValue, fillValue, fillValue, fillValue}
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 
 	bufAlong, err := handle.GetAttributesAlongSurface(

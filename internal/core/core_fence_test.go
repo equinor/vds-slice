@@ -39,7 +39,7 @@ func TestFence(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetFence(
 			testcase.coordinate_system,
@@ -103,7 +103,7 @@ func TestFenceBorders(t *testing.T) {
 
 	for _, testcase := range testcases {
 		interpolationMethod, _ := GetInterpolationMethod("linear")
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		_, err := handle.GetFence(testcase.coordinate_system, testcase.coordinates, interpolationMethod, nil)
 
@@ -154,7 +154,7 @@ func TestFenceBordersWithFillValue(t *testing.T) {
 	var fillValue float32 = -999.25
 	for _, testcase := range testcases {
 		interpolationMethod, _ := GetInterpolationMethod("linear")
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetFence(
 			testcase.crd_system,
@@ -233,7 +233,7 @@ func TestFenceNearestInterpolationSnap(t *testing.T) {
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetFence(
 			testcase.coordinate_system,
@@ -261,7 +261,7 @@ func TestInvalidFence(t *testing.T) {
 
 	var fillValue float32 = -999.25
 	interpolationMethod, _ := GetInterpolationMethod("nearest")
-	handle, _ := NewVDSHandle(well_known)
+	handle, _ := NewDSHandle(well_known)
 	defer handle.Close()
 	_, err := handle.GetFence(CoordinateSystemIndex, fence, interpolationMethod, &fillValue)
 
@@ -290,7 +290,7 @@ func TestFenceInterpolationSameAtDataPoints(t *testing.T) {
 	expected := []float32{25.5, 4.5, 8.5, 12.5, 16.5, 20.5, 24.5, 20.5, 16.5, 8.5}
 	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular"}
 
-	handle, _ := NewVDSHandle(samples10)
+	handle, _ := NewDSHandle(samples10)
 	defer handle.Close()
 	var fillValue float32 = -999.25
 	for _, interpolation := range interpolationMethods {
@@ -316,7 +316,7 @@ func TestFenceInterpolationDifferentBeyondDatapoints(t *testing.T) {
 	interpolationMethods := []string{"nearest", "linear", "cubic", "triangular", "angular"}
 	for i, v1 := range interpolationMethods {
 		interpolationMethod, _ := GetInterpolationMethod(v1)
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		buf1, _ := handle.GetFence(CoordinateSystemCdp, fence, interpolationMethod, &fillValue)
 		for _, v2 := range interpolationMethods[i+1:] {
@@ -364,7 +364,7 @@ func TestFenceMetadata(t *testing.T) {
 		},
 	}
 
-	handle, _ := NewVDSHandle(well_known)
+	handle, _ := NewDSHandle(well_known)
 	defer handle.Close()
 	buf, err := handle.GetFenceMetadata(coordinates)
 	require.NoErrorf(t, err, "Failed to retrieve fence metadata, err %v", err)
