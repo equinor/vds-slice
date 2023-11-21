@@ -44,15 +44,15 @@ class SubvolumeTest : public ::testing::Test
   protected:
     void SetUp() override
     {
-        handle = make_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str());
+        datasource = make_single_datasource(SAMPLES_10.c_str(), CREDENTIALS.c_str());
     }
 
     void TearDown() override
     {
-        delete handle;
+        delete datasource;
     }
 
-    DataHandle *handle;
+    SingleDataSource *datasource;
 
     static constexpr float fill = -999.25;
     std::map<float, std::vector<float>> points;
@@ -66,9 +66,10 @@ class SubvolumeTest : public ::testing::Test
         auto size = primary_surface.grid().size();
 
         SurfaceBoundedSubVolume* subvolume = make_subvolume(
-            handle->get_metadata(), primary_surface, top_surface, bottom_surface
+            datasource->get_metadata(), primary_surface, top_surface, bottom_surface
         );
-        cppapi::fetch_subvolume(*handle, *subvolume, NEAREST, 0, size);
+
+        cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
 
         /* We are checking here points unordered. Meaning that if all points in a
         * row appear somewhere in the horizon, we assume we are good. Alternative
@@ -150,9 +151,10 @@ TEST_F(SubvolumeTest, SubvolumeSize)
         RegularSurface(bottom_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        handle->get_metadata(), primary_surface, top_surface, bottom_surface
+        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
     );
-    cppapi::fetch_subvolume(*handle, *subvolume, NEAREST, 0, size);
+
+    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
     for (int i = 0; i < size; ++i)
     {
         EXPECT_EQ(expected_fetched_size[i], subvolume->vertical_segment(i).size())
@@ -265,15 +267,15 @@ class SurfaceAlignmentTest : public ::testing::Test
   protected:
     void SetUp() override
     {
-        handle = make_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str());
+        datasource = make_single_datasource(SAMPLES_10.c_str(), CREDENTIALS.c_str());
     }
 
     void TearDown() override
     {
-        delete handle;
+        delete datasource;
     }
 
-    DataHandle *handle;
+    SingleDataSource *datasource;
 
     static constexpr float fill = -999.25;
 };
