@@ -92,3 +92,71 @@ int SingleMetadataHandle::get_dimension(std::vector<std::string> const& names) c
     );
 }
 
+DoubleMetadataHandle::DoubleMetadataHandle(
+    MetadataHandle const& handle_A,
+    MetadataHandle const& handle_B
+)
+    : m_handle_A(&handle_A),
+      m_handle_B(&handle_B) {
+    this->validate_metadata();
+}
+
+Axis DoubleMetadataHandle::iline() const noexcept(true) {
+    // Axis iline in handle A and B are identical by validate_metadata()
+    return this->m_handle_A->iline();
+}
+
+Axis DoubleMetadataHandle::xline() const noexcept(true) {
+    // Axis xline in handle A and B are identical by validate_metadata()
+    return this->m_handle_A->xline();
+}
+
+Axis DoubleMetadataHandle::sample() const noexcept(true) {
+    // Axis sample in handle A and B are identical by validate_metadata()
+    return this->m_handle_A->sample();
+}
+
+Axis DoubleMetadataHandle::get_axis(
+    Direction const direction
+) const noexcept(false) {
+    if (direction.is_iline())
+        return this->iline();
+    else if (direction.is_xline())
+        return this->xline();
+    else if (direction.is_sample())
+        return this->sample();
+
+    throw std::runtime_error("Unhandled axis");
+}
+
+BoundingBox DoubleMetadataHandle::bounding_box() const noexcept(false) {
+    throw std::runtime_error("Not implemented");
+}
+
+std::string DoubleMetadataHandle::crs() const noexcept(false) {
+    throw std::runtime_error("Not implemented");
+}
+
+std::string DoubleMetadataHandle::input_filename() const noexcept(false) {
+    throw std::runtime_error("Not implemented");
+}
+
+std::string DoubleMetadataHandle::import_time_stamp() const noexcept(false) {
+    throw std::runtime_error("Not implemented");
+}
+
+OpenVDS::IJKCoordinateTransformer DoubleMetadataHandle::coordinate_transformer() const noexcept(false) {
+    throw std::runtime_error("Not implemented");
+}
+
+void DoubleMetadataHandle::dimension_validation() const {
+    this->m_handle_A->dimension_validation();
+    this->m_handle_B->dimension_validation();
+}
+
+void DoubleMetadataHandle::validate_metadata() const noexcept(false) {
+    this->dimension_validation();
+    this->m_handle_A->iline().assert_equal(this->m_handle_B->iline());
+    this->m_handle_A->xline().assert_equal(this->m_handle_B->xline());
+    this->m_handle_A->sample().assert_equal(this->m_handle_B->sample());
+}
