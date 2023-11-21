@@ -52,7 +52,7 @@ public:
 private:
     OpenVDS::ScopedVDSHandle m_file_handle;
     OpenVDS::VolumeDataAccessManager m_access_manager;
-    MetadataHandle m_metadata;
+    SingleMetadataHandle m_metadata;
 
     static int constexpr lod_level = 0;
     static int constexpr channel = 0;
