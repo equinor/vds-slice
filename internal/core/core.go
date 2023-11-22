@@ -402,24 +402,32 @@ func (v DSHandle) Close() error {
 	return toError(cerr, v.ctx)
 }
 
-func NewDSHandle(conn Connection) (DSHandle, error) {
-	curl := C.CString(conn.Url())
-	defer C.free(unsafe.Pointer(curl))
+func NewDSHandle(conn []Connection, binary_operator string) (DSHandle, error) {
 
-	ccred := C.CString(conn.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
+	if len(conn) == 0 {
+		return DSHandle{}, NewInvalidArgument("No connections provided")
+	} else if len(conn) == 1 {
+		var conn_p = conn[0]
+		curl := C.CString(conn_p.Url())
+		defer C.free(unsafe.Pointer(curl))
 
-	var cctx = C.context_new()
-	var dataSource *C.struct_DataSource
+		ccred := C.CString(conn_p.ConnectionString())
+		defer C.free(unsafe.Pointer(ccred))
 
-	cerr := C.single_datasource_new(cctx, curl, ccred, &dataSource)
+		var cctx = C.context_new()
+		var dataSource *C.struct_DataSource
 
-	if err := toError(cerr, cctx); err != nil {
-		defer C.context_free(cctx)
-		return DSHandle{}, err
+		cerr := C.single_datasource_new(cctx, curl, ccred, &dataSource)
+
+		if err := toError(cerr, cctx); err != nil {
+			defer C.context_free(cctx)
+			return DSHandle{}, err
+		}
+
+		return DSHandle{dataSource: dataSource, ctx: cctx}, nil
 	}
 
-	return DSHandle{dataSource: dataSource, ctx: cctx}, nil
+	return DSHandle{}, NewInvalidArgument("Only one connection is supported")
 }
 
 func (v DSHandle) GetMetadata() ([]byte, error) {

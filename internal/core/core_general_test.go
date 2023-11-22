@@ -16,11 +16,11 @@ func make_connection(name string) Connection {
 	return NewFileConnection(path)
 }
 
-var well_known_custom_axis_order = make_connection("well_known/well_known_custom_axis_order.vds")
-var invalid_axes_names = make_connection("invalid_data/invalid_axes_names.vds")
-var well_known = make_connection("well_known/well_known_default.vds")
-var samples10 = make_connection("10_samples/10_samples_default.vds")
-var prestack = make_connection("prestack/prestack_default.vds")
+var well_known_custom_axis_order = []Connection{make_connection("well_known/well_known_custom_axis_order.vds")}
+var invalid_axes_names = []Connection{make_connection("invalid_data/invalid_axes_names.vds")}
+var well_known = []Connection{make_connection("well_known/well_known_default.vds")}
+var samples10 = []Connection{make_connection("10_samples/10_samples_default.vds")}
+var prestack = []Connection{make_connection("prestack/prestack_default.vds")}
 
 var fillValue = float32(-999.25)
 
@@ -78,7 +78,7 @@ func toFloat32(buf []byte) (*[]float32, error) {
 }
 
 func TestOnly3DSupported(t *testing.T) {
-	handle, err := NewDSHandle(prestack)
+	handle, err := NewDSHandle(prestack, "")
 	if err != nil {
 		handle.Close()
 	}

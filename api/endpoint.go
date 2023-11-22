@@ -70,7 +70,7 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 		return
 	}
 
-	handle, err := core.NewDSHandle(conn)
+	handle, err := core.NewDSHandle([]core.Connection{conn}, "")
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -89,9 +89,17 @@ func (e *Endpoint) makeDataRequest(
 	request DataRequest,
 ) {
 	prepareRequestLogging(ctx, request)
-	conn, err := e.MakeVdsConnection(request.credentials())
-	if abortOnError(ctx, err) {
-		return
+
+	vds_url, sas_key := request.credentials()
+	var conn []core.Connection
+
+	for i := 0; i < len(vds_url); i++ {
+		fmt.Println(vds_url[i])
+		conn_t, err := e.MakeVdsConnection(vds_url[i], sas_key[i])
+		conn = append(conn, conn_t)
+		if abortOnError(ctx, err) {
+			return
+		}
 	}
 
 	cacheKey, err := request.hash()
@@ -100,13 +108,15 @@ func (e *Endpoint) makeDataRequest(
 	}
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
-	if hit && conn.IsAuthorizedToRead() {
-		ctx.Set("cache-hit", true)
-		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
-		return
+	for i := 0; i < len(conn); i++ {
+		if hit && conn[i].IsAuthorizedToRead() {
+			ctx.Set("cache-hit", true)
+			writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
+			return
+		}
 	}
 
-	handle, err := core.NewDSHandle(conn)
+	handle, err := core.NewDSHandle(conn, request.cubeFunction())
 	if abortOnError(ctx, err) {
 		return
 	}

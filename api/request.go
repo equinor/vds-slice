@@ -34,15 +34,16 @@ type RequestedResource struct {
 	Sas string `json:"sas,omitempty" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
 }
 
-func (r RequestedResource) credentials() (string, string) {
-	return r.Vds, r.Sas
+func (r RequestedResource) credentials() ([]string, []string) {
+	return []string{r.Vds}, []string{r.Sas}
 }
 
 type DataRequest interface {
 	toString() (string, error)
 	hash() (string, error)
-	credentials() (string, string)
+	credentials() ([]string, []string)
 	execute(handle core.DSHandle) (data [][]byte, metadata []byte, err error)
+	cubeFunction() string
 }
 
 type Stringable interface {
@@ -149,6 +150,10 @@ func (f FenceRequest) hash() (string, error) {
 	return cache.Hash(f)
 }
 
+func (f FenceRequest) cubeFunction() string {
+	return ""
+}
+
 // Query for slice endpoints
 // @Description Query payload for slice endpoint /slice.
 type SliceRequest struct {
@@ -204,6 +209,10 @@ func (s SliceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	s.Sas = ""
 	return cache.Hash(s)
+}
+
+func (s SliceRequest) cubeFunction() string {
+	return ""
 }
 
 func (s SliceRequest) toString() (string, error) {
@@ -290,6 +299,10 @@ func (h AttributeAlongSurfaceRequest) hash() (string, error) {
 	return cache.Hash(h)
 }
 
+func (s AttributeAlongSurfaceRequest) cubeFunction() string {
+	return ""
+}
+
 func (h AttributeAlongSurfaceRequest) toString() (string, error) {
 	msg := "{vds: %s, Horizon: (ncols: %d, nrows: %d), Rotation: %.2f, " +
 		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f, " +
@@ -350,6 +363,10 @@ func (h AttributeBetweenSurfacesRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
 	h.Sas = ""
 	return cache.Hash(h)
+}
+
+func (s AttributeBetweenSurfacesRequest) cubeFunction() string {
+	return ""
 }
 
 func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
