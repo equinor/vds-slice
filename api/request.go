@@ -321,7 +321,7 @@ type AttributeAlongRequest struct {
 	Above float32 `json:"above" example:"20.0"`
 
 	// Samples interval below the horizon to include in attribute calculation.
-	// Implements the same behaviour as 'above'.
+	// Implements the same behavior as 'above'.
 	//
 	// Defaults to zero
 	Below float32 `json:"below" example:"20.0"`

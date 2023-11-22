@@ -62,7 +62,7 @@ func samples10Surface(data [][]float32) RegularSurface {
 func toFloat32(buf []byte) (*[]float32, error) {
 	fsize := 4 // sizeof(float32)
 	if len(buf)%fsize != 0 {
-		return nil, errors.New("Invalid buffersize")
+		return nil, errors.New("Invalid buffer size")
 	}
 
 	outlen := len(buf) / 4

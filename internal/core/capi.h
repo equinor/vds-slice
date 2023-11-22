@@ -19,7 +19,7 @@ enum status_code {
  *
  * Any function that accepts a context as one of its input parameters can use
  * it to write additional information that might be of use to the caller. This
- * includes, but is not limited, to writting error messages into the context if
+ * includes, but is not limited, to writing error messages into the context if
  * the function should fail. In that case the caller can call errmsg(Context*
  * ctx) to retrieve the error message.
  */
