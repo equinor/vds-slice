@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"regexp"
 	"strings"
 	"unsafe"
 )
@@ -418,6 +419,37 @@ func NewDSHandle(conn []Connection, binary_operator string) (DSHandle, error) {
 		var dataSource *C.struct_DataSource
 
 		cerr := C.single_datasource_new(cctx, curl, ccred, &dataSource)
+
+		if err := toError(cerr, cctx); err != nil {
+			defer C.context_free(cctx)
+			return DSHandle{}, err
+		}
+
+		return DSHandle{dataSource: dataSource, ctx: cctx}, nil
+	} else if len(conn) == 2 {
+
+		var conn_A = conn[0]
+		curl_A := C.CString(conn_A.Url())
+		defer C.free(unsafe.Pointer(curl_A))
+
+		ccred_A := C.CString(conn_A.ConnectionString())
+		defer C.free(unsafe.Pointer(ccred_A))
+
+		var conn_B = conn[1]
+		curl_B := C.CString(conn_B.Url())
+		defer C.free(unsafe.Pointer(curl_B))
+
+		ccred_B := C.CString(conn_B.ConnectionString())
+		defer C.free(unsafe.Pointer(ccred_B))
+
+		var cctx = C.context_new()
+		var dataSource *C.struct_DataSource
+
+		cube_string := regexp.MustCompile(`[^A-Z]+`).ReplaceAllString(strings.ToUpper(binary_operator), "SUBTRACT")
+		c_function := C.CString(cube_string)
+		defer C.free(unsafe.Pointer(c_function))
+
+		cerr := C.double_datasource_new(cctx, curl_A, ccred_A, curl_B, ccred_B, c_function, &dataSource)
 
 		if err := toError(cerr, cctx); err != nil {
 			defer C.context_free(cctx)
