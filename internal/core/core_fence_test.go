@@ -275,7 +275,7 @@ func TestInvalidFence(t *testing.T) {
 // interpolation method. So we have to trust openvds on this.
 //
 // But we can check that we use openvds correctly by checking interpolated data
-// at known datapoints. Openvds claims that data would still be the same for all
+// at known data points. Openvds claims that data would still be the same for all
 // interpolation algorithms [1].
 //
 // We had a bug that caused cubic and linear return incorrect values. So this is
@@ -308,7 +308,7 @@ func TestFenceInterpolationSameAtDataPoints(t *testing.T) {
 	}
 }
 
-// Also, as we can't check interpolation properly, check that beyond datapoints
+// Also, as we can't check interpolation properly, check that beyond data points
 // different values are returned by each algorithm
 func TestFenceInterpolationDifferentBeyondDatapoints(t *testing.T) {
 	fence := [][]float32{{3.2, 3}, {3.2, 6.3}, {1, 3}, {3.2, 3}, {5.4, 3}}

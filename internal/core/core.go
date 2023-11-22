@@ -61,7 +61,7 @@ type Axis struct {
 	Unit string `json:"unit" example:"ms"`
 } // @name Axis
 
-// @Description Geometrical plane with depth/time datapoints
+// @Description Geometrical plane with depth/time data points
 type RegularSurface struct {
 	// Values / height-map
 	Values [][]float32 `json:"values" binding:"required"`
@@ -101,7 +101,7 @@ type BoundingBox struct {
 } //@name BoundingBox
 
 type Array struct {
-	// Data format is represented by numpy-style formatcodes. Currently the
+	// Data format is represented by numpy-style format codes. Currently the
 	// format is always 4-byte floats, little endian (<f4).
 	Format string `json:"format" example:"<f4"`
 

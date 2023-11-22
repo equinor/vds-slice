@@ -151,9 +151,9 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 }
 
 /**
- * The goal of this test is to test that the boundschecking in the horizontal
+ * The goal of this test is to test that the bounds checking in the horizontal
  * plane is correct - i.e. that we correctly populate the output array with
- * fillvalues. To acheive this we create horizons that are based on the VDS's
+ * fillvalues. To achieve this we create horizons that are based on the VDS's
  * bingrid and then translated them in the XY-domain (by moving around the
  * origin of the horizon).
  *

@@ -27,7 +27,7 @@ func httpStatusCode(err error) int {
 /* Call abortOnError on the context in case of an error
  *
  * This function is designed specifically for our endpoint handler functions
- * and aims at making the errorhandling as short and concise as possible.
+ * and aims at making the error handling as short and concise as possible.
  *
  * If err != nil the error will be mapped to an appropriate http status code
  * through the httpStatusCode mapper, and ctx.AbortWithError will be called
@@ -37,7 +37,7 @@ func httpStatusCode(err error) int {
  * If err == nil the ctx is left untouched and this function returns false,
  * indicating that the context was not aborted.
  *
- * The result is a oneline error handling:
+ * The result is a one line error handling:
  *
  *     err, _ := func()
  *     if abortOnError(ctx, err) { return }
