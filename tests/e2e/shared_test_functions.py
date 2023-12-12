@@ -13,7 +13,7 @@ ENDPOINT = os.getenv("ENDPOINT", "http://localhost:8080").rstrip("/")
 CONTAINER = "testdata"
 VDS = "well_known/well_known_default"
 STORAGE_ACCOUNT = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
-VDSURL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
+VDS_URL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
 
 SAMPLES10_URL = f"{STORAGE_ACCOUNT}/{CONTAINER}/10_samples/10_samples_default"
 
@@ -32,7 +32,7 @@ def surface():
     }
 
 
-def slice_payload(vds=VDSURL, direction="inline", lineno=3, sas="sas"):
+def slice_payload(vds=VDS_URL, direction="inline", lineno=3, sas="sas"):
     return {
         "vds": vds,
         "direction": direction,
@@ -41,7 +41,7 @@ def slice_payload(vds=VDSURL, direction="inline", lineno=3, sas="sas"):
     }
 
 
-def fence_payload(vds=VDSURL, coordinate_system="ij", coordinates=[[0, 0]], sas="sas"):
+def fence_payload(vds=VDS_URL, coordinate_system="ij", coordinates=[[0, 0]], sas="sas"):
     return {
         "vds": vds,
         "coordinateSystem": coordinate_system,
@@ -50,7 +50,7 @@ def fence_payload(vds=VDSURL, coordinate_system="ij", coordinates=[[0, 0]], sas=
     }
 
 
-def metadata_payload(vds=VDSURL, sas="sas"):
+def metadata_payload(vds=VDS_URL, sas="sas"):
     return {
         "vds": vds,
         "sas": sas
@@ -143,7 +143,7 @@ def request_metadata(method):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = metadata_payload(VDSURL, sas)
+    payload = metadata_payload(VDS_URL, sas)
     rdata = send_request("metadata", method, payload)
     rdata.raise_for_status()
 
@@ -154,7 +154,7 @@ def request_slice(method, lineno, direction):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = slice_payload(VDSURL, direction, lineno, sas)
+    payload = slice_payload(VDS_URL, direction, lineno, sas)
     response = send_request("slice", method, payload)
     return process_data_response(response)
 
@@ -163,7 +163,7 @@ def request_fence(method, coordinates, coordinate_system):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = fence_payload(VDSURL, coordinate_system, coordinates, sas)
+    payload = fence_payload(VDS_URL, coordinate_system, coordinates, sas)
     response = send_request("fence", method, payload)
     return process_data_response(response)
 

@@ -34,8 +34,8 @@ def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_message
 
 
 @pytest.mark.parametrize("path, payload", [
-    ("slice", slice_payload(vds=VDSURL)),
-    ("fence", fence_payload(vds=VDSURL)),
+    ("slice", slice_payload(vds=VDS_URL)),
+    ("fence", fence_payload(vds=VDS_URL)),
     ("attributes/surface/along", attributes_along_surface_payload()),
     ("attributes/surface/between", attributes_between_surfaces_payload()),
 ])
