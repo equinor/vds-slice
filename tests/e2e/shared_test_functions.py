@@ -129,36 +129,12 @@ def send_request(path, method, payload):
     return data
 
 
-def request_slice(method, lineno, direction):
-    sas = generate_container_signature(
-        STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-
-    payload = make_slice_request(VDSURL, direction, lineno, sas)
-    rdata = send_request("slice", method, payload)
-    rdata.raise_for_status()
-
-    multipart_data = decoder.MultipartDecoder.from_response(rdata)
+def process_data_response(response):
+    response.raise_for_status()
+    multipart_data = decoder.MultipartDecoder.from_response(response)
     assert len(multipart_data.parts) == 2
     metadata = json.loads(multipart_data.parts[0].content)
     data = multipart_data.parts[1].content
-
-    data = np.ndarray(metadata['shape'], metadata['format'], data)
-    return metadata, data
-
-
-def request_fence(method, coordinates, coordinate_system):
-    sas = generate_container_signature(
-        STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-
-    payload = make_fence_request(VDSURL, coordinate_system, coordinates, sas)
-    rdata = send_request("fence", method, payload)
-    rdata.raise_for_status()
-
-    multipart_data = decoder.MultipartDecoder.from_response(rdata)
-    assert len(multipart_data.parts) == 2
-    metadata = json.loads(multipart_data.parts[0].content)
-    data = multipart_data.parts[1].content
-
     data = np.ndarray(metadata['shape'], metadata['format'], data)
     return metadata, data
 
@@ -174,21 +150,31 @@ def request_metadata(method):
     return rdata.json()
 
 
+def request_slice(method, lineno, direction):
+    sas = generate_container_signature(
+        STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
+
+    payload = make_slice_request(VDSURL, direction, lineno, sas)
+    response = send_request("slice", method, payload)
+    return process_data_response(response)
+
+
+def request_fence(method, coordinates, coordinate_system):
+    sas = generate_container_signature(
+        STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
+
+    payload = make_fence_request(VDSURL, coordinate_system, coordinates, sas)
+    response = send_request("fence", method, payload)
+    return process_data_response(response)
+
+
 def request_attributes_along_surface(method, values):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
     payload = make_attributes_along_surface_request(values=values, sas=sas)
-    rdata = send_request("attributes/surface/along", method, payload)
-    rdata.raise_for_status()
-
-    multipart_data = decoder.MultipartDecoder.from_response(rdata)
-    assert len(multipart_data.parts) == 2
-    metadata = json.loads(multipart_data.parts[0].content)
-    data = multipart_data.parts[1].content
-
-    data = np.ndarray(metadata['shape'], metadata['format'], data)
-    return metadata, data
+    response = send_request("attributes/surface/along", method, payload)
+    return process_data_response(response)
 
 
 def request_attributes_between_surfaces(method, primary, secondary):
@@ -197,13 +183,5 @@ def request_attributes_between_surfaces(method, primary, secondary):
 
     payload = make_attributes_between_surfaces_request(
         primary, secondary, sas=sas)
-    rdata = send_request("attributes/surface/between", method, payload)
-    rdata.raise_for_status()
-
-    multipart_data = decoder.MultipartDecoder.from_response(rdata)
-    assert len(multipart_data.parts) == 2
-    metadata = json.loads(multipart_data.parts[0].content)
-    data = multipart_data.parts[1].content
-
-    data = np.ndarray(metadata['shape'], metadata['format'], data)
-    return metadata, data
+    response = send_request("attributes/surface/between", method, payload)
+    return process_data_response(response)
