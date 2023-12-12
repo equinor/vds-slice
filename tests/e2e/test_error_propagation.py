@@ -10,7 +10,7 @@ from shared_test_functions import *
 @pytest.mark.parametrize("path, payload, error_code, error", [
     (
         "slice",
-        make_slice_request(direction="inline", lineno=4),
+        slice_payload(direction="inline", lineno=4),
         http.HTTPStatus.BAD_REQUEST,
         "Invalid lineno: 4, valid range: [1.00:5.00:2.00]"
     ),
@@ -22,19 +22,19 @@ from shared_test_functions import *
     ),
     (
         "metadata",
-        make_metadata_request(vds=f'{STORAGE_ACCOUNT}/{CONTAINER}/notfound'),
+        metadata_payload(vds=f'{STORAGE_ACCOUNT}/{CONTAINER}/notfound'),
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "The specified blob does not exist"
     ),
     (
         "attributes/surface/along",
-        make_attributes_along_surface_request(surface={}),
+        attributes_along_surface_payload(surface={}),
         http.HTTPStatus.BAD_REQUEST,
         "Error:Field validation for"
     ),
     (
         "attributes/surface/between",
-        make_attributes_between_surfaces_request(
+        attributes_between_surfaces_payload(
             primaryValues=[[1]], secondaryValues=[[1], [1, 1]]),
         http.HTTPStatus.BAD_REQUEST,
         "Surface rows are not of the same length"

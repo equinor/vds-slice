@@ -32,7 +32,7 @@ def surface():
     }
 
 
-def make_slice_request(vds=VDSURL, direction="inline", lineno=3, sas="sas"):
+def slice_payload(vds=VDSURL, direction="inline", lineno=3, sas="sas"):
     return {
         "vds": vds,
         "direction": direction,
@@ -41,7 +41,7 @@ def make_slice_request(vds=VDSURL, direction="inline", lineno=3, sas="sas"):
     }
 
 
-def make_fence_request(vds=VDSURL, coordinate_system="ij", coordinates=[[0, 0]], sas="sas"):
+def fence_payload(vds=VDSURL, coordinate_system="ij", coordinates=[[0, 0]], sas="sas"):
     return {
         "vds": vds,
         "coordinateSystem": coordinate_system,
@@ -50,14 +50,14 @@ def make_fence_request(vds=VDSURL, coordinate_system="ij", coordinates=[[0, 0]],
     }
 
 
-def make_metadata_request(vds=VDSURL, sas="sas"):
+def metadata_payload(vds=VDSURL, sas="sas"):
     return {
         "vds": vds,
         "sas": sas
     }
 
 
-def make_attributes_along_surface_request(
+def attributes_along_surface_payload(
     vds=SAMPLES10_URL,
     surface=surface(),
     values=[[20]],
@@ -84,7 +84,7 @@ def make_attributes_along_surface_request(
     return request
 
 
-def make_attributes_between_surfaces_request(
+def attributes_between_surfaces_payload(
     primaryValues=[[20]],
     secondaryValues=[[20]],
     vds=SAMPLES10_URL,
@@ -143,7 +143,7 @@ def request_metadata(method):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = make_metadata_request(VDSURL, sas)
+    payload = metadata_payload(VDSURL, sas)
     rdata = send_request("metadata", method, payload)
     rdata.raise_for_status()
 
@@ -154,7 +154,7 @@ def request_slice(method, lineno, direction):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = make_slice_request(VDSURL, direction, lineno, sas)
+    payload = slice_payload(VDSURL, direction, lineno, sas)
     response = send_request("slice", method, payload)
     return process_data_response(response)
 
@@ -163,7 +163,7 @@ def request_fence(method, coordinates, coordinate_system):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = make_fence_request(VDSURL, coordinate_system, coordinates, sas)
+    payload = fence_payload(VDSURL, coordinate_system, coordinates, sas)
     response = send_request("fence", method, payload)
     return process_data_response(response)
 
@@ -172,7 +172,7 @@ def request_attributes_along_surface(method, values):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = make_attributes_along_surface_request(values=values, sas=sas)
+    payload = attributes_along_surface_payload(values=values, sas=sas)
     response = send_request("attributes/surface/along", method, payload)
     return process_data_response(response)
 
@@ -181,7 +181,7 @@ def request_attributes_between_surfaces(method, primary, secondary):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = make_attributes_between_surfaces_request(
+    payload = attributes_between_surfaces_payload(
         primary, secondary, sas=sas)
     response = send_request("attributes/surface/between", method, payload)
     return process_data_response(response)
