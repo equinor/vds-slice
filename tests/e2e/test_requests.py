@@ -23,6 +23,7 @@ VDSURL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
 
 SAMPLES10_URL = f"{STORAGE_ACCOUNT}/{CONTAINER}/10_samples/10_samples_default"
 
+
 def gen_default_sas():
     return generate_container_signature(STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
@@ -100,18 +101,18 @@ def make_attributes_between_surfaces_request(
 ):
     fillValue = -999.25
     primary = {
-        "values" : primaryValues,
+        "values": primaryValues,
         "fillValue": fillValue
     }
     primary.update(surface)
     secondary = {
-        "values" : secondaryValues,
+        "values": secondaryValues,
         "fillValue": fillValue
     }
     secondary.update(surface)
     request = {
-        "primarySurface" : primary,
-        "secondarySurface" : secondary,
+        "primarySurface": primary,
+        "secondarySurface": secondary,
         "interpolation": "nearest",
         "vds": vds,
         "sas": sas,
@@ -173,25 +174,29 @@ def test_metadata(method):
     metadata = dict(request_metadata(method))
     expected_metadata = {
         "axis": [
-            {"annotation": "Inline",    "max": 5.0,  "min": 1.0,  "samples": 3, "stepsize": 2.0, "unit": "unitless"},
-            {"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples": 2, "stepsize": 1.0, "unit": "unitless"},
-            {"annotation": "Sample",    "max": 16.0, "min": 4.0,  "samples": 4, "stepsize": 4.0, "unit": "ms"}
+            {"annotation": "Inline",    "max": 5.0,  "min": 1.0,
+                "samples": 3, "stepsize": 2.0, "unit": "unitless"},
+            {"annotation": "Crossline", "max": 11.0, "min": 10.0,
+                "samples": 2, "stepsize": 1.0, "unit": "unitless"},
+            {"annotation": "Sample",    "max": 16.0, "min": 4.0,
+                "samples": 4, "stepsize": 4.0, "unit": "ms"}
         ],
         "boundingBox": {
-            "cdp" : [[2,0]  , [14,8] , [12,11] , [0,3] ],
-            "ilxl": [[1,10] , [5,10] , [5,11]  , [1,11]],
-            "ij"  : [[0,0]  , [2,0]  , [2,1]   , [0,1] ]
+            "cdp": [[2, 0], [14, 8], [12, 11], [0, 3]],
+            "ilxl": [[1, 10], [5, 10], [5, 11], [1, 11]],
+            "ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
         },
-        "crs"            : "utmXX",
-        "inputFileName"  : "well_known.segy",
+        "crs": "utmXX",
+        "inputFileName": "well_known.segy",
         "importTimeStamp": "^\\d{4}-\\d{2}-\\d{2}[A-Z]\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[A-Z]$"
     }
 
     expected_import_ts = expected_metadata.get("importTimeStamp")
-    actual_import_ts   = metadata.get("importTimeStamp")
-    assert re.compile(expected_import_ts).match(actual_import_ts), f"Not a valid import Time Stamp {actual_import_ts} in metadata"
+    actual_import_ts = metadata.get("importTimeStamp")
+    assert re.compile(expected_import_ts).match(
+        actual_import_ts), f"Not a valid import Time Stamp {actual_import_ts} in metadata"
     expected_metadata["importTimeStamp"] = "dummy"
-    metadata["importTimeStamp"]          = "dummy"
+    metadata["importTimeStamp"] = "dummy"
     assert expected_metadata == metadata
 
 
@@ -214,6 +219,7 @@ def test_attributes_along_surface():
     """)
     assert meta == expected_meta
 
+
 def test_attributes_between_surfaces():
     primary = [
         [12, 12],
@@ -225,7 +231,8 @@ def test_attributes_between_surfaces():
         [27.5, 29],
         [24,   12]
     ]
-    meta, data = request_attributes_between_surfaces("post", primary, secondary)
+    meta, data = request_attributes_between_surfaces(
+        "post", primary, secondary)
 
     expected = np.array([[1.5, 2.5], [-8.5, 7.5], [18.5, -8.5]])
     assert np.array_equal(data, expected)
@@ -450,11 +457,13 @@ def request_attributes_along_surface(method, values):
     data = np.ndarray(metadata['shape'], metadata['format'], data)
     return metadata, data
 
+
 def request_attributes_between_surfaces(method, primary, secondary):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
-    payload = make_attributes_between_surfaces_request(primary, secondary, sas=sas)
+    payload = make_attributes_between_surfaces_request(
+        primary, secondary, sas=sas)
     rdata = send_request("attributes/surface/between", method, payload)
     rdata.raise_for_status()
 
@@ -467,7 +476,6 @@ def request_attributes_between_surfaces(method, primary, secondary):
     return metadata, data
 
 
-
 @pytest.mark.parametrize("path, payload", [
     ("slice",   make_slice_request()),
     ("fence",   make_fence_request()),
@@ -476,9 +484,9 @@ def request_attributes_between_surfaces(method, primary, secondary):
     ("attributes/surface/between", make_attributes_between_surfaces_request()),
 ])
 @pytest.mark.parametrize("vds, sas, expected", [
-    ( f'{SAMPLES10_URL}?{gen_default_sas()}' , ''                , http.HTTPStatus.OK            ),
-    ( f'{SAMPLES10_URL}?invalid_sas'         , gen_default_sas() , http.HTTPStatus.OK            ),
-    ( SAMPLES10_URL                          , ''                , http.HTTPStatus.BAD_REQUEST   )
+    (f'{SAMPLES10_URL}?{gen_default_sas()}', '', http.HTTPStatus.OK),
+    (f'{SAMPLES10_URL}?invalid_sas', gen_default_sas(), http.HTTPStatus.OK),
+    (SAMPLES10_URL, '', http.HTTPStatus.BAD_REQUEST)
 ])
 def test_sas_token_in_url(path, payload, vds, sas, expected):
     payload.update({
