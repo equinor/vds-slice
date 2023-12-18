@@ -42,7 +42,7 @@ func TestSliceData(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetSlice(
 			testcase.lineno,
@@ -83,7 +83,7 @@ func TestSliceOutOfBounds(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		_, err := handle.GetSlice(
 			testcase.lineno,
@@ -107,7 +107,7 @@ func TestSliceStepSizedLineno(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		_, err := handle.GetSlice(
 			testcase.lineno,
@@ -129,7 +129,7 @@ func TestSliceInvalidAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		_, err := handle.GetSlice(0, testcase.direction, []Bound{})
 
@@ -369,7 +369,7 @@ func TestSliceBounds(t *testing.T) {
 		direction, err := GetAxis(testCase.direction)
 		require.NoError(t, err)
 
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetSlice(
 			testCase.lineno,
@@ -448,7 +448,7 @@ func TestDepthAxis(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		_, err := handle.GetSlice(0, testcase.direction, []Bound{})
 
@@ -468,7 +468,7 @@ func TestSliceMetadata(t *testing.T) {
 		Geospatial: [][]float64{{0, 3}, {12, 11}},
 		Shape:      []int{3, 4},
 	}
-	handle, _ := NewVDSHandle(well_known)
+	handle, _ := NewDSHandle(well_known)
 	defer handle.Close()
 	buf, err := handle.GetSliceMetadata(lineno, direction, []Bound{})
 	require.NoErrorf(t, err, "Failed to retrieve slice metadata, err %v", err)
@@ -529,7 +529,7 @@ func TestSliceMetadataAxisOrdering(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetSliceMetadata(
 			testcase.lineno,
@@ -602,7 +602,7 @@ func TestSliceGeospatial(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		handle, _ := NewVDSHandle(well_known)
+		handle, _ := NewDSHandle(well_known)
 		defer handle.Close()
 		buf, err := handle.GetSliceMetadata(
 			testcase.lineno,

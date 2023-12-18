@@ -78,7 +78,7 @@ func toFloat32(buf []byte) (*[]float32, error) {
 }
 
 func TestOnly3DSupported(t *testing.T) {
-	handle, err := NewVDSHandle(prestack)
+	handle, err := NewDSHandle(prestack)
 	if err != nil {
 		handle.Close()
 	}

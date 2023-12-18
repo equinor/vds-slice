@@ -8,6 +8,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(cppcoretests
   cppapi_test.cpp
+  datasource_test.cpp
   regularsurface_test.cpp
   subvolume_test.cpp
 )
@@ -18,7 +19,13 @@ target_link_libraries(cppcoretests
   PRIVATE GTest::gmock_main
 )
 
-configure_file(../../testdata/10_samples/10_samples_default.vds 10_samples_default.vds COPYONLY)
+configure_file(../../testdata/10_samples/10_samples_default.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_missing_iline.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_missing_samples.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_missing_xline.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_double_value.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_miss_offset.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_miss_stepsize.vds . COPYONLY)
 
 include(GoogleTest)
 gtest_discover_tests(cppcoretests)

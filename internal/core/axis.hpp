@@ -27,6 +27,9 @@ public:
 
     bool inrange(float coordinate) const noexcept(true);
     float to_sample_position(float coordinate) noexcept(false);
+
+    void assert_equal(Axis const& other) noexcept(false);
+
 private:
     int const m_dimension;
     OpenVDS::VolumeDataAxisDescriptor m_axis_descriptor;

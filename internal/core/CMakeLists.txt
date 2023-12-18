@@ -8,6 +8,7 @@ add_library(cppcore
   cppapi_metadata.cpp
   datahandle.hpp
   datahandle.cpp
+  datasource.cpp
   direction.cpp
   metadatahandle.cpp
   regularsurface.cpp

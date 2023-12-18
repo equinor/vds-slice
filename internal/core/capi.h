@@ -41,23 +41,18 @@ const char* errmsg(Context* ctx);
 
 void response_delete(struct response*);
 
-struct DataHandle;
-typedef struct DataHandle DataHandle;
+struct DataSource;
+typedef struct DataSource DataSource;
 
-/** Create a new (VDS) DataHandle instance */
-int datahandle_new(
+int single_datasource_new(
     Context* ctx,
     const char* url,
     const char* credentials,
-    DataHandle** f
+    DataSource** ds_out
 );
 
-/** Free up the handle
- *
- * Closes the attached OpenVDS handle and frees the handle instance
- * itself.
- */
-int datahandle_free(Context* ctx, DataHandle* f);
+
+int datasource_free(Context* ctx, DataSource* f);
 
 struct RegularSurface;
 typedef struct RegularSurface RegularSurface;
@@ -86,7 +81,7 @@ typedef struct SurfaceBoundedSubVolume SurfaceBoundedSubVolume;
 
 int subvolume_new(
     Context* ctx,
-    DataHandle* handle,
+    DataSource* datasource,
     RegularSurface* reference,
     RegularSurface* top,
     RegularSurface* bottom,
@@ -100,13 +95,13 @@ int subvolume_free(
 
 int metadata(
     Context* ctx,
-    DataHandle* handle,
+    DataSource* datasource,
     response* out
 );
 
 int slice(
     Context* ctx,
-    DataHandle* handle,
+    DataSource* datasource,
     int lineno,
     enum axis_name direction,
     struct Bound* bounds,
@@ -116,7 +111,7 @@ int slice(
 
 int slice_metadata(
     Context* ctx,
-    DataHandle* handle,
+    DataSource* datasource,
     int lineno,
     enum axis_name direction,
     struct Bound* bounds,
@@ -126,7 +121,7 @@ int slice_metadata(
 
 int fence(
     Context* ctx,
-    DataHandle* handle,
+    DataSource* datasource,
     enum coordinate_system coordinate_system,
     const float* points,
     size_t npoints,
@@ -137,14 +132,14 @@ int fence(
 
 int fence_metadata(
     Context* ctx,
-    DataHandle* handle,
+    DataSource* datasource,
     size_t npoints,
     response* out
 );
 
 int fetch_subvolume(
     Context* ctx,
-    DataHandle* handle,
+    DataSource* datasource,
     SurfaceBoundedSubVolume* subvolume,
     enum interpolation_method interpolation_method,
     size_t from,
@@ -153,7 +148,7 @@ int fetch_subvolume(
 
 int attribute_metadata(
     Context* ctx,
-    DataHandle* handle,
+    DataSource* datasource,
     size_t nrows,
     size_t ncols,
     response* out
@@ -179,7 +174,7 @@ int attribute_metadata(
 */
 int attribute(
     Context* ctx,
-    DataHandle* handle,
+    DataSource* datasource,
     SurfaceBoundedSubVolume* src_subvolume,
     enum attribute* attributes,
     size_t nattributes,

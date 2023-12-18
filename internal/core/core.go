@@ -378,31 +378,31 @@ func (surface *RegularSurface) toCRegularSurface(cdata []C.float) (cRegularSurfa
 	return cRegularSurface{cSurface: cSurface, cData: cdata}, nil
 }
 
-type VDSHandle struct {
-	handle *C.struct_DataHandle
-	ctx    *C.struct_Context
+type DSHandle struct {
+	dataSource *C.struct_DataSource
+	ctx        *C.struct_Context
 }
 
-func (v VDSHandle) Handle() *C.struct_DataHandle {
-	return v.handle
+func (v DSHandle) DataSource() *C.struct_DataSource {
+	return v.dataSource
 }
 
-func (v VDSHandle) context() *C.struct_Context {
+func (v DSHandle) context() *C.struct_Context {
 	return v.ctx
 }
 
-func (v VDSHandle) Error(status C.int) error {
+func (v DSHandle) Error(status C.int) error {
 	return toError(status, v.context())
 }
 
-func (v VDSHandle) Close() error {
+func (v DSHandle) Close() error {
 	defer C.context_free(v.ctx)
 
-	cerr := C.datahandle_free(v.ctx, v.handle)
+	cerr := C.datasource_free(v.ctx, v.dataSource)
 	return toError(cerr, v.ctx)
 }
 
-func NewVDSHandle(conn Connection) (VDSHandle, error) {
+func NewDSHandle(conn Connection) (DSHandle, error) {
 	curl := C.CString(conn.Url())
 	defer C.free(unsafe.Pointer(curl))
 
@@ -410,21 +410,21 @@ func NewVDSHandle(conn Connection) (VDSHandle, error) {
 	defer C.free(unsafe.Pointer(ccred))
 
 	var cctx = C.context_new()
-	var handle *C.struct_DataHandle
+	var dataSource *C.struct_DataSource
 
-	cerr := C.datahandle_new(cctx, curl, ccred, &handle)
+	cerr := C.single_datasource_new(cctx, curl, ccred, &dataSource)
 
 	if err := toError(cerr, cctx); err != nil {
 		defer C.context_free(cctx)
-		return VDSHandle{}, err
+		return DSHandle{}, err
 	}
 
-	return VDSHandle{handle: handle, ctx: cctx}, nil
+	return DSHandle{dataSource: dataSource, ctx: cctx}, nil
 }
 
-func (v VDSHandle) GetMetadata() ([]byte, error) {
+func (v DSHandle) GetMetadata() ([]byte, error) {
 	var result C.struct_response
-	cerr := C.metadata(v.context(), v.Handle(), &result)
+	cerr := C.metadata(v.context(), v.DataSource(), &result)
 
 	defer C.response_delete(&result)
 
@@ -462,7 +462,7 @@ func newCSliceBounds(bounds []Bound) ([]C.struct_Bound, error) {
 	return cBounds, nil
 }
 
-func (v VDSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, error) {
+func (v DSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, error) {
 	var result C.struct_response
 
 	cBounds, err := newCSliceBounds(bounds)
@@ -477,7 +477,7 @@ func (v VDSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, erro
 
 	cerr := C.slice(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.int(lineno),
 		C.enum_axis_name(direction),
 		bound,
@@ -494,7 +494,7 @@ func (v VDSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, erro
 	return buf, nil
 }
 
-func (v VDSHandle) GetSliceMetadata(
+func (v DSHandle) GetSliceMetadata(
 	lineno int,
 	direction int,
 	bounds []Bound,
@@ -513,7 +513,7 @@ func (v VDSHandle) GetSliceMetadata(
 
 	cerr := C.slice_metadata(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.int(lineno),
 		C.enum_axis_name(direction),
 		bound,
@@ -531,7 +531,7 @@ func (v VDSHandle) GetSliceMetadata(
 	return buf, nil
 }
 
-func (v VDSHandle) GetFence(
+func (v DSHandle) GetFence(
 	coordinateSystem int,
 	coordinates [][]float32,
 	interpolation int,
@@ -558,7 +558,7 @@ func (v VDSHandle) GetFence(
 	var result C.struct_response
 	cerr := C.fence(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.enum_coordinate_system(coordinateSystem),
 		&ccoordinates[0],
 		C.size_t(len(coordinates)),
@@ -577,11 +577,11 @@ func (v VDSHandle) GetFence(
 	return buf, nil
 }
 
-func (v VDSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
+func (v DSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.fence_metadata(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.size_t(len(coordinates)),
 		&result,
 	)
@@ -610,11 +610,11 @@ func max(a, b int) int {
 	return b
 }
 
-func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
+func (v DSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.attribute_metadata(
 		v.context(),
-		v.Handle(),
+		v.DataSource(),
 		C.size_t(len(data)),
 		C.size_t(len(data[0])),
 		&result,
@@ -630,7 +630,7 @@ func (v VDSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	return buf, nil
 }
 
-func (v VDSHandle) GetAttributesAlongSurface(
+func (v DSHandle) GetAttributesAlongSurface(
 	referenceSurface RegularSurface,
 	above float32,
 	below float32,
@@ -699,7 +699,7 @@ func (v VDSHandle) GetAttributesAlongSurface(
 	)
 }
 
-func (v VDSHandle) GetAttributesBetweenSurfaces(
+func (v DSHandle) GetAttributesBetweenSurfaces(
 	primarySurface RegularSurface,
 	secondarySurface RegularSurface,
 	stepsize float32,
@@ -779,7 +779,7 @@ func (v VDSHandle) GetAttributesBetweenSurfaces(
 	)
 }
 
-func (v VDSHandle) getAttributes(
+func (v DSHandle) getAttributes(
 	cReferenceSurface cRegularSurface,
 	cTopSurface cRegularSurface,
 	cBottomSurface cRegularSurface,
@@ -796,7 +796,7 @@ func (v VDSHandle) getAttributes(
 	defer C.context_free(cCtx)
 	cerr := C.subvolume_new(
 		cCtx,
-		v.Handle(),
+		v.DataSource(),
 		cReferenceSurface.get(),
 		cTopSurface.get(),
 		cBottomSurface.get(),
@@ -826,7 +826,7 @@ func (v VDSHandle) getAttributes(
 	)
 }
 
-func (v VDSHandle) normalizeAttributes(
+func (v DSHandle) normalizeAttributes(
 	attributes []string,
 ) ([]int, error) {
 	var targetAttributes []int
@@ -840,12 +840,12 @@ func (v VDSHandle) normalizeAttributes(
 	return targetAttributes, nil
 }
 
-func (v VDSHandle) fetchSubvolume(
+func (v DSHandle) fetchSubvolume(
 	cSubVolume *C.struct_SurfaceBoundedSubVolume,
 	nrows int,
 	ncols int,
 	interpolation int,
-) (error) {
+) error {
 	hsize := nrows * ncols
 
 	// note that it is possible to hit go's own goroutines limit
@@ -876,7 +876,7 @@ func (v VDSHandle) fetchSubvolume(
 
 			cerr := C.fetch_subvolume(
 				cCtx,
-				v.Handle(),
+				v.DataSource(),
 				cSubVolume,
 				C.enum_interpolation_method(interpolation),
 				C.size_t(from),
@@ -907,7 +907,7 @@ func (v VDSHandle) fetchSubvolume(
 	return nil
 }
 
-func (v VDSHandle) calculateAttributes(
+func (v DSHandle) calculateAttributes(
 	cSubVolume *C.struct_SurfaceBoundedSubVolume,
 	hsize int,
 	targetAttributes []int,
@@ -943,7 +943,7 @@ func (v VDSHandle) calculateAttributes(
 
 			cErr := C.attribute(
 				cCtx,
-				v.Handle(),
+				v.DataSource(),
 				cSubVolume,
 				&cAttributes[0],
 				C.size_t(nAttributes),
