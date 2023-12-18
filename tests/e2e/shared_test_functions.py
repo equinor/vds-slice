@@ -34,26 +34,26 @@ def surface():
 
 def slice_payload(vds=VDS_URL, direction="inline", lineno=3, sas="sas"):
     return {
-        "vds": vds,
+        "vds": [vds],
         "direction": direction,
         "lineno": lineno,
-        "sas": sas
+        "sas": [sas]
     }
 
 
 def fence_payload(vds=VDS_URL, coordinate_system="ij", coordinates=[[0, 0]], sas="sas"):
     return {
-        "vds": vds,
+        "vds": [vds],
         "coordinateSystem": coordinate_system,
         "coordinates": coordinates,
-        "sas": sas
+        "sas": [sas]
     }
 
 
 def metadata_payload(vds=VDS_URL, sas="sas"):
     return {
-        "vds": vds,
-        "sas": sas
+        "vds": [vds],
+        "sas": [sas]
     }
 
 
@@ -75,8 +75,8 @@ def attributes_along_surface_payload(
     request = {
         "surface": regular_surface,
         "interpolation": "nearest",
-        "vds": vds,
-        "sas": sas,
+        "vds": [vds],
+        "sas": [sas],
         "above": above,
         "below": below,
         "attributes": attributes
@@ -108,8 +108,8 @@ def attributes_between_surfaces_payload(
         "primarySurface": primary,
         "secondarySurface": secondary,
         "interpolation": "nearest",
-        "vds": vds,
-        "sas": sas,
+        "vds": [vds],
+        "sas": [sas],
         "stepsize": stepsize,
         "attributes": attributes
     }

@@ -25,7 +25,7 @@ from azure.storage import filedatalake
     )
 ])
 def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_messages):
-    payload.update({"sas": sas})
+    payload.update({"sas": [sas]})
     res = send_request(path, "post", payload)
     assert res.status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR
     error_body = json.loads(res.content)['error']
@@ -72,13 +72,13 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
             CONTAINER,
             STORAGE_ACCOUNT_KEY,
             permission=blob.ContainerSasPermissions(read=True))
-        payload.update({"sas": container_sas})
+        payload.update({"sas": [container_sas]})
         res = send_request(path, "post", payload)
         assert res.status_code == http.HTTPStatus.OK
 
     make_caching_call()
 
-    payload.update({"sas": token})
+    payload.update({"sas": [token]})
     res = send_request(path, "post", payload)
     assert res.status_code == status
     if error:
@@ -94,7 +94,7 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
 ])
 def test_assure_only_allowed_storage_accounts(path, payload):
     payload.update({
-        "vds": "https://dummy.blob.core.windows.net/container/blob",
+        "vds": ["https://dummy.blob.core.windows.net/container/blob"],
     })
     res = send_request(path, "post", payload)
     assert res.status_code == http.HTTPStatus.BAD_REQUEST
@@ -116,8 +116,8 @@ def test_assure_only_allowed_storage_accounts(path, payload):
 ])
 def test_sas_token_in_url(path, payload, vds, sas, expected):
     payload.update({
-        "vds": vds,
-        "sas": sas
+        "vds": [vds],
+        "sas": [sas]
     })
     res = send_request(path, "post", payload)
     assert res.status_code == expected

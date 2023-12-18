@@ -20,10 +20,10 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusOK,
 			},
 			testSliceRequest{
-				Vds:       well_known,
+				Vds:       []string{well_known},
 				Direction: "i",
 				Lineno:    0, //side-effect assurance that 0 is accepted
-				Sas:       "n/a",
+				Sas:       []string{"n/a"},
 				Bounds: []testBound{
 					{Direction: "inline", Lower: 1, Upper: 3},
 				},
@@ -36,10 +36,10 @@ func TestSliceHappyHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusOK,
 			},
 			testSliceRequest{
-				Vds:       well_known,
+				Vds:       []string{well_known},
 				Direction: "crossline",
 				Lineno:    10,
-				Sas:       "n/a",
+				Sas:       []string{"n/a"},
 				Bounds: []testBound{
 					{Direction: "inline", Lower: 1, Upper: 3},
 				},
@@ -132,8 +132,8 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters GET request",
 				method: http.MethodGet,
-				jsonRequest: "{\"vds\":\"" + well_known +
-					"\", \"direction\":\"i\", \"sas\": \"n/a\"}",
+				jsonRequest: "{\"vds\":[\"" + well_known +
+					"\"], \"direction\":\"i\", \"sas\": [\"n/a\"]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for 'Lineno'",
 			},
@@ -143,8 +143,8 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters POST Request",
 				method: http.MethodPost,
-				jsonRequest: "{\"vds\":\"" + well_known +
-					"\", \"lineno\":1, \"sas\": \"n/a\"}",
+				jsonRequest: "{\"vds\":[\"" + well_known +
+					"\"], \"lineno\":1, \"sas\": [\"n/a\"]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for 'Direction'",
 			},
@@ -154,8 +154,8 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Incomplete bounds parameters POST Request",
 				method: http.MethodPost,
-				jsonRequest: "{\"vds\":\"" + well_known +
-					"\", \"lineno\":1, \"direction\": \"i\", \"sas\": \"n/a\", " +
+				jsonRequest: "{\"vds\":[\"" + well_known +
+					"\"], \"lineno\":1, \"direction\": \"i\", \"sas\": [\"n/a\"], " +
 					"\"bounds\": [{\"Upper\": 2 }]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for 'Direction'",
@@ -170,10 +170,10 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				expectedError:  "invalid direction 'unknown', valid options are",
 			},
 			testSliceRequest{
-				Vds:       well_known,
+				Vds:       []string{well_known},
 				Direction: "unknown",
 				Lineno:    1,
-				Sas:       "n/a",
+				Sas:       []string{"n/a"},
 			},
 		},
 		sliceTest{
@@ -184,10 +184,10 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				expectedError:  "Invalid lineno: 10, valid range: [0:2:1]",
 			},
 			testSliceRequest{
-				Vds:       well_known,
+				Vds:       []string{well_known},
 				Direction: "i",
 				Lineno:    10,
-				Sas:       "n/a",
+				Sas:       []string{"n/a"},
 			},
 		},
 		sliceTest{
@@ -198,10 +198,10 @@ func TestSliceErrorHTTPResponse(t *testing.T) {
 				expectedError:  "Could not open VDS",
 			},
 			testSliceRequest{
-				Vds:       "unknown",
+				Vds:       []string{"unknown"},
 				Direction: "i",
 				Lineno:    1,
-				Sas:       "n/a",
+				Sas:       []string{"n/a"},
 			},
 		},
 	}
@@ -218,11 +218,11 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 			},
 
 			testFenceRequest{
-				Vds:              well_known,
+				Vds:              []string{well_known},
 				CoordinateSystem: "ilxl",
 				Coordinates:      [][]float32{{3, 11}, {2, 10}},
 				FillValue:        float32(-999.25),
-				Sas:              "n/a",
+				Sas:              []string{"n/a"},
 			},
 		},
 		{
@@ -233,11 +233,11 @@ func TestFenceHappyHTTPResponse(t *testing.T) {
 			},
 
 			testFenceRequest{
-				Vds:              well_known,
+				Vds:              []string{well_known},
 				CoordinateSystem: "ij",
 				Coordinates:      [][]float32{{0, 1}, {1, 1}, {1, 0}},
 				FillValue:        float32(-999.25),
-				Sas:              "n/a",
+				Sas:              []string{"n/a"},
 			},
 		},
 	}
@@ -301,9 +301,10 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters GET request",
 				method: http.MethodGet,
-				jsonRequest: "{\"vds\":\"" + well_known +
-					"\", \"coordinateSystem\":\"ilxl\"," +
+				jsonRequest: "{\"vds\":[\"" + well_known +
+					"\"], \"coordinateSystem\":\"ilxl\"," +
 					"\"fillValue\": -999.25," +
+					"\"sas\": [\"\"], " +
 					"\"coordinates\":[[0, 0]]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "No valid Sas token is found",
@@ -314,10 +315,10 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Missing parameters POST Request",
 				method: http.MethodPost,
-				jsonRequest: "{\"vds\":\"" + well_known +
-					"\", \"coordinateSystem\":\"ilxl\"," +
+				jsonRequest: "{\"vds\":[\"" + well_known +
+					"\"], \"coordinateSystem\":\"ilxl\"," +
 					"\"fillValue\": -999.25," +
-					"\"sas\": \"n/a\"}",
+					"\"sas\": [\"n/a\"]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for 'Coordinates'",
 			},
@@ -331,10 +332,10 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 				expectedError:  "coordinate system not recognized: 'unknown', valid options are",
 			},
 			testFenceRequest{
-				Vds:              well_known,
+				Vds:              []string{well_known},
 				CoordinateSystem: "unknown",
 				Coordinates:      [][]float32{{3, 12}, {2, 10}},
-				Sas:              "n/a",
+				Sas:              []string{"n/a"},
 			},
 		},
 		fenceTest{
@@ -345,10 +346,10 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 				expectedError:  "invalid coordinate [2 10 3 4] at position 2, expected [x y] pair",
 			},
 			testFenceRequest{
-				Vds:              well_known,
+				Vds:              []string{well_known},
 				CoordinateSystem: "cdp",
 				Coordinates:      [][]float32{{3, 1001}, {200, 10}, {2, 10, 3, 4}, {1, 1}},
-				Sas:              "n/a",
+				Sas:              []string{"n/a"},
 			},
 		},
 		fenceTest{
@@ -359,10 +360,10 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 				expectedError:  "Could not open VDS",
 			},
 			testFenceRequest{
-				Vds:              "unknown",
+				Vds:              []string{"unknown"},
 				CoordinateSystem: "ilxl",
 				Coordinates:      [][]float32{{3, 12}, {2, 10}},
-				Sas:              "n/a",
+				Sas:              []string{"n/a"},
 			},
 		},
 	}
@@ -379,8 +380,8 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusOK,
 			},
 			testMetadataRequest{
-				Vds: well_known,
-				Sas: "n/a",
+				Vds: []string{well_known},
+				Sas: []string{"n/a"},
 			},
 		},
 		{
@@ -390,8 +391,8 @@ func TestMetadataHappyHTTPResponse(t *testing.T) {
 				expectedStatus: http.StatusOK,
 			},
 			testMetadataRequest{
-				Vds: well_known,
-				Sas: "n/a",
+				Vds: []string{well_known},
+				Sas: []string{"n/a"},
 			},
 		},
 	}
@@ -470,7 +471,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:           "Missing parameters GET request",
 				method:         http.MethodGet,
-				jsonRequest:    "{\"vds\":\"" + well_known + "\"}",
+				jsonRequest:    "{\"vds\":[\"" + well_known + "\"], \"sas\":[\"\"]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "No valid Sas token is found",
 			}, testMetadataRequest{},
@@ -479,7 +480,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:           "Missing parameters POST Request",
 				method:         http.MethodPost,
-				jsonRequest:    "{\"sas\":\"somevalidsas\"}",
+				jsonRequest:    "{\"sas\":[\"somevalidsas\"]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for 'Vds'",
 			}, testMetadataRequest{},
@@ -493,8 +494,8 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 			},
 
 			testMetadataRequest{
-				Vds: "unknown",
-				Sas: "n/a",
+				Vds: []string{"unknown"},
+				Sas: []string{"n/a"},
 			},
 		},
 	}
@@ -510,9 +511,9 @@ func TestAttributeOutOfBounds(t *testing.T) {
 				expectedStatus: status,
 			},
 			testAttributeAlongSurfaceRequest{
-				Vds:        samples10,
+				Vds:        []string{samples10},
 				Values:     [][]float32{{20}},
-				Sas:        "n/a",
+				Sas:        []string{"n/a"},
 				Above:      above,
 				Below:      below,
 				StepSize:   stepsize,
@@ -546,9 +547,9 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 			},
 
 			testAttributeAlongSurfaceRequest{
-				Vds:        samples10,
+				Vds:        []string{samples10},
 				Values:     [][]float32{{20, 20}, {20, 20}, {20, 20}},
-				Sas:        "n/a",
+				Sas:        []string{"n/a"},
 				Above:      8.0,
 				Below:      4.0,
 				Attributes: []string{"samplevalue"},
@@ -562,10 +563,10 @@ func TestAttributeHappyHTTPResponse(t *testing.T) {
 			},
 
 			testAttributeBetweenSurfacesRequest{
-				Vds:             samples10,
+				Vds:             []string{samples10},
 				ValuesPrimary:   [][]float32{{20, 20}, {20, 20}, {20, 20}},
 				ValuesSecondary: [][]float32{{20, 20}, {20, 20}, {20, 20}},
-				Sas:             "n/a",
+				Sas:             []string{"n/a"},
 				Attributes:      []string{"samplevalue"},
 			},
 		},
@@ -622,8 +623,8 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Along: Missing parameters POST Request",
 				method: http.MethodPost,
-				jsonRequest: "{\"vds\":\"" + well_known +
-					"\", \"interpolation\":\"cubic\", \"sas\": \"n/a\"}",
+				jsonRequest: "{\"vds\":[\"" + well_known +
+					"\"], \"interpolation\":\"cubic\", \"sas\": [\"n/a\"]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for",
 			},
@@ -633,8 +634,8 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 			baseTest{
 				name:   "Between: Missing parameters POST Request",
 				method: http.MethodPost,
-				jsonRequest: "{\"vds\":\"" + well_known +
-					"\", \"interpolation\":\"cubic\", \"sas\": \"n/a\"}",
+				jsonRequest: "{\"vds\":[\"" + well_known +
+					"\"], \"interpolation\":\"cubic\", \"sas\": [\"n/a\"]}",
 				expectedStatus: http.StatusBadRequest,
 				expectedError:  "Error:Field validation for",
 			},
@@ -648,9 +649,9 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				expectedError:  "invalid interpolation method",
 			},
 			testAttributeAlongSurfaceRequest{
-				Vds:           well_known,
+				Vds:           []string{well_known},
 				Values:        [][]float32{{4, 4}, {4, 4}, {4, 4}},
-				Sas:           "n/a",
+				Sas:           []string{"n/a"},
 				Interpolation: "unsupported",
 				Attributes:    []string{"samplevalue"},
 			},
@@ -663,10 +664,10 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				expectedError:  "invalid interpolation method",
 			},
 			testAttributeBetweenSurfacesRequest{
-				Vds:             well_known,
+				Vds:             []string{well_known},
 				ValuesPrimary:   [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				ValuesSecondary: [][]float32{{4, 4}, {4, 4}, {4, 4}},
-				Sas:             "n/a",
+				Sas:             []string{"n/a"},
 				Interpolation:   "unsupported",
 				Attributes:      []string{"samplevalue"},
 			},
@@ -679,9 +680,9 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				expectedError:  "Could not open VDS",
 			},
 			testAttributeAlongSurfaceRequest{
-				Vds:        "unknown",
+				Vds:        []string{"unknown"},
 				Values:     [][]float32{{4, 4}, {4, 4}, {4, 4}},
-				Sas:        "n/a",
+				Sas:        []string{"n/a"},
 				Attributes: []string{"samplevalue"},
 			},
 		},
@@ -693,10 +694,10 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 				expectedError:  "Could not open VDS",
 			},
 			testAttributeBetweenSurfacesRequest{
-				Vds:             "unknown",
+				Vds:             []string{"unknown"},
 				ValuesPrimary:   [][]float32{{4, 4}, {4, 4}, {4, 4}},
 				ValuesSecondary: [][]float32{{4, 4}, {4, 4}, {4, 4}},
-				Sas:             "n/a",
+				Sas:             []string{"n/a"},
 				Attributes:      []string{"samplevalue"},
 			},
 		},
@@ -715,10 +716,10 @@ func TestLogHasNoSas(t *testing.T) {
 				expectedStatus: http.StatusOK,
 			},
 			testSliceRequest{
-				Vds:       well_known,
+				Vds:       []string{well_known},
 				Direction: "crossline",
 				Lineno:    10,
-				Sas:       "SPARTA...T14:43:29Z%26se=2023",
+				Sas:       []string{"SPARTA...T14:43:29Z%26se=2023"},
 			},
 		}
 
@@ -729,8 +730,8 @@ func TestLogHasNoSas(t *testing.T) {
 				expectedStatus: http.StatusInternalServerError,
 			},
 			testMetadataRequest{
-				Vds: "unknown",
-				Sas: "SPARTA...T14:43:29Z%26se=2023...",
+				Vds: []string{"unknown"},
+				Sas: []string{"SPARTA...T14:43:29Z%26se=2023..."},
 			},
 		}
 

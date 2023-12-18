@@ -229,29 +229,29 @@ type testBound struct {
 }
 
 type testSliceRequest struct {
-	Vds       string      `json:"vds"`
+	Vds       []string    `json:"vds"`
 	Direction string      `json:"direction"`
 	Lineno    int         `json:"lineno"`
-	Sas       string      `json:"sas"`
+	Sas       []string    `json:"sas"`
 	Bounds    []testBound `json:"bounds"`
 }
 
 type testFenceRequest struct {
-	Vds              string      `json:"vds"`
+	Vds              []string    `json:"vds"`
 	CoordinateSystem string      `json:"coordinateSystem"`
 	Coordinates      [][]float32 `json:"coordinates"`
 	FillValue        float32     `json:"fillValue"`
-	Sas              string      `json:"sas"`
+	Sas              []string    `json:"sas"`
 }
 
 type testMetadataRequest struct {
-	Vds string `json:"vds"`
-	Sas string `json:"sas"`
+	Vds []string `json:"vds"`
+	Sas []string `json:"sas"`
 }
 
 type testAttributeAlongSurfaceRequest struct {
-	Vds           string
-	Sas           string
+	Vds           []string
+	Sas           []string
 	Values        [][]float32
 	Interpolation string
 	Above         float32
@@ -261,8 +261,8 @@ type testAttributeAlongSurfaceRequest struct {
 }
 
 type testAttributeBetweenSurfacesRequest struct {
-	Vds             string
-	Sas             string
+	Vds             []string
+	Sas             []string
 	ValuesPrimary   [][]float32
 	ValuesSecondary [][]float32
 	Interpolation   string

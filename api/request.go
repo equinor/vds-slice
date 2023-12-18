@@ -28,14 +28,20 @@ type RequestedResource struct {
 	// Warning: We do not expect storage accounts to have snapshots. If your
 	// storage account has any, please contact System Admin, as due to caching
 	// you might end up with incorrect data.
-	Vds string `json:"vds" binding:"required" example:"https://account.blob.core.windows.net/container/blob"`
+	Vds []string `json:"vds" binding:"required" example:"https://account.blob.core.windows.net/container/blob"`
 
 	// A valid sas-token with read access to the container specified in Vds
-	Sas string `json:"sas,omitempty" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
+	Sas []string `json:"sas,omitempty" example:"sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=..."`
+
+	// When two blob URL´s are provided the *binary_operator* defines how data
+	// from these sources are combined. Provided blob A and blob B and the
+	// operation **subtraction** any request returns data from (A - B).
+	// Valid options are: **addition**, **subtraction**, **multiplication** and **division**.
+	Binary_operator string `json:"binary_operator,omitempty" example:"subtraction"`
 }
 
 func (r RequestedResource) credentials() ([]string, []string) {
-	return []string{r.Vds}, []string{r.Sas}
+	return r.Vds, r.Sas
 }
 
 type DataRequest interface {
@@ -54,20 +60,22 @@ type Normalizable interface {
 }
 
 func (r *RequestedResource) NormalizeConnection() error {
-	url, err := url.Parse(r.Vds)
-	if err != nil {
-		return core.NewInvalidArgument(err.Error())
-	}
-	if strings.TrimSpace(r.Sas) == "" {
-		if url.RawQuery == "" {
-			return core.NewInvalidArgument("No valid Sas token is found in the request")
-		}
-		r.Sas = url.RawQuery
-	}
 
-	url.RawQuery = ""
-	url.Host = url.Hostname()
-	r.Vds = url.String()
+	for i, url_req := range r.Vds {
+		url_object, err := url.Parse(url_req)
+		if err != nil {
+			return core.NewInvalidArgument(err.Error())
+		}
+		if strings.TrimSpace(r.Sas[i]) == "" {
+			if url_object.RawQuery == "" {
+				return core.NewInvalidArgument("No valid Sas token is found in the request")
+			}
+			r.Sas[i] = url_object.RawQuery
+		}
+		url_object.RawQuery = ""
+		url_object.Host = url_object.Hostname()
+		r.Vds[i] = url_object.String()
+	}
 	return nil
 }
 
@@ -76,7 +84,7 @@ type MetadataRequest struct {
 } //@name MetadataRequest
 
 func (m MetadataRequest) toString() (string, error) {
-	m.Sas = ""
+	m.Sas = nil
 	out, err := json.Marshal(m)
 	if err != nil {
 		return "", err
@@ -146,7 +154,7 @@ func (f FenceRequest) toString() (string, error) {
  */
 func (f FenceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
-	f.Sas = ""
+	f.Sas = nil
 	return cache.Hash(f)
 }
 
@@ -207,7 +215,7 @@ type SliceRequest struct {
  */
 func (s SliceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
-	s.Sas = ""
+	s.Sas = nil
 	return cache.Hash(s)
 }
 
@@ -216,7 +224,7 @@ func (s SliceRequest) cubeFunction() string {
 }
 
 func (s SliceRequest) toString() (string, error) {
-	s.Sas = ""
+	s.Sas = nil
 	out, err := json.Marshal(s)
 	if err != nil {
 		return "", err
@@ -295,7 +303,7 @@ type AttributeAlongSurfaceRequest struct {
  */
 func (h AttributeAlongSurfaceRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
-	h.Sas = ""
+	h.Sas = nil
 	return cache.Hash(h)
 }
 
@@ -361,7 +369,7 @@ type AttributeBetweenSurfacesRequest struct {
  */
 func (h AttributeBetweenSurfacesRequest) hash() (string, error) {
 	// Strip the sas token before computing hash
-	h.Sas = ""
+	h.Sas = nil
 	return cache.Hash(h)
 }
 

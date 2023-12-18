@@ -65,12 +65,17 @@ func prepareRequestLogging(ctx *gin.Context, request Stringable) {
 
 func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	prepareRequestLogging(ctx, request)
-	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
-	if abortOnError(ctx, err) {
-		return
+	vds_url, sas_key := request.credentials()
+	var conn []core.Connection
+	for i := 0; i < len(vds_url); i++ {
+		conn_t, err := e.MakeVdsConnection(vds_url[i], sas_key[i])
+		conn = append(conn, conn_t)
+		if abortOnError(ctx, err) {
+			return
+		}
 	}
 
-	handle, err := core.NewDSHandle([]core.Connection{conn}, "")
+	handle, err := core.NewDSHandle(conn, "")
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -94,7 +99,7 @@ func (e *Endpoint) makeDataRequest(
 	var conn []core.Connection
 
 	for i := 0; i < len(vds_url); i++ {
-		fmt.Println(vds_url[i])
+		fmt.Println(i, vds_url[i])
 		conn_t, err := e.MakeVdsConnection(vds_url[i], sas_key[i])
 		conn = append(conn, conn_t)
 		if abortOnError(ctx, err) {

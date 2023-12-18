@@ -43,7 +43,7 @@ from shared_test_functions import *
 def test_errors(path, payload, error_code, error):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-    payload.update({"sas": sas})
+    payload.update({"sas": [sas]})
     res = send_request(path, "post", payload)
     assert res.status_code == error_code
 
