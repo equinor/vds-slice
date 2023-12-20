@@ -159,7 +159,7 @@ def request_slice(method, lineno, direction):
     return process_data_response(response)
 
 
-def request_fence(method, coordinates, coordinate_system):
+def request_fence(method, coordinate_system, coordinates):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 

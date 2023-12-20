@@ -68,7 +68,7 @@ def test_slice(method):
     ("post")
 ])
 def test_fence(method):
-    meta, fence = request_fence(method, [[3, 10], [1, 11]], 'ilxl')
+    meta, fence = request_fence(method, 'ilxl', [[3, 10], [1, 11]])
 
     expected = np.array([[108, 109, 110, 111],
                          [104, 105, 106, 107]])
