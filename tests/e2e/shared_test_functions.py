@@ -3,7 +3,7 @@ import numpy as np
 import os
 import json
 import urllib.parse
-from utils.cloud import *
+from utils.cloud import generate_container_signature
 
 from requests_toolbelt.multipart import decoder
 
@@ -14,6 +14,7 @@ CONTAINER = "testdata"
 VDS = "well_known/well_known_default"
 STORAGE_ACCOUNT = f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
 VDS_URL = f"{STORAGE_ACCOUNT}/{CONTAINER}/{VDS}"
+SAS_KEY = "sas"
 
 SAMPLES10_URL = f"{STORAGE_ACCOUNT}/{CONTAINER}/10_samples/10_samples_default"
 
@@ -32,89 +33,88 @@ def surface():
     }
 
 
-def slice_payload(vds=VDS_URL, direction="inline", lineno=3, sas="sas"):
-    return {
-        "vds": [vds],
-        "direction": direction,
-        "lineno": lineno,
-        "sas": [sas]
-    }
+def slice_payload(direction="inline", lineno=3):
+    return {"direction": direction, "lineno": lineno}
 
 
-def fence_payload(vds=VDS_URL, coordinate_system="ij", coordinates=[[0, 0]], sas="sas"):
-    return {
-        "vds": [vds],
-        "coordinateSystem": coordinate_system,
-        "coordinates": coordinates,
-        "sas": [sas]
-    }
+def fence_payload(coordinate_system="ij", coordinates=[[0, 0]]):
+    return {"coordinateSystem": coordinate_system, "coordinates": coordinates}
 
 
-def metadata_payload(vds=VDS_URL, sas="sas"):
-    return {
-        "vds": [vds],
-        "sas": [sas]
-    }
+def connection_payload(vds: list = None, sas: list = None, binary_operator: str = None) -> dict:
+    payload = {}
+    if vds is None:
+        payload["vds"] = [VDS_URL]
+    else:
+        payload["vds"] = vds
+
+    if sas is None:
+        payload["sas"] = [SAS_KEY]
+    else:
+        payload["sas"] = sas
+
+    if len(payload["vds"]) == 1 and binary_operator is not None:
+        payload["vds"].append(payload["vds"][0])
+
+    if len(payload["vds"]) == 2 and len(payload["sas"]) == 1:
+        payload["sas"].append(payload["sas"][0])
+
+    if binary_operator is not None:
+        payload["binary_operator"] = binary_operator
+
+    return payload
+
+
+def payload_merge(connect: dict, specific: dict) -> dict:
+    connect.update(specific)
+    return connect
 
 
 def attributes_along_surface_payload(
-    vds=SAMPLES10_URL,
-    surface=surface(),
-    values=[[20]],
-    above=8,
-    below=8,
-    attributes=["samplevalue"],
-    sas="sas"
-):
+        surface=surface(),
+        values=[[20]],
+        above=8,
+        below=8,
+        attributes=["samplevalue"]):
+
     regular_surface = {
         "values": values,
         "fillValue": -999.25,
     }
     regular_surface.update(surface)
 
-    request = {
-        "surface": regular_surface,
-        "interpolation": "nearest",
-        "vds": [vds],
-        "sas": [sas],
-        "above": above,
-        "below": below,
-        "attributes": attributes
-    }
-    return request
+    return {"surface": regular_surface,
+            "interpolation": "nearest",
+            "above": above,
+            "below": below,
+            "attributes": attributes}
 
 
 def attributes_between_surfaces_payload(
-    primaryValues=[[20]],
-    secondaryValues=[[20]],
-    vds=SAMPLES10_URL,
-    surface=surface(),
-    attributes=["max"],
-    stepsize=8,
-    sas="sas"
-):
+        primaryValues=[[20]],
+        secondaryValues=[[20]],
+        surface=surface(),
+        attributes=["max"],
+        stepsize=8):
+
     fillValue = -999.25
     primary = {
         "values": primaryValues,
         "fillValue": fillValue
     }
     primary.update(surface)
+
     secondary = {
         "values": secondaryValues,
         "fillValue": fillValue
     }
     secondary.update(surface)
-    request = {
-        "primarySurface": primary,
-        "secondarySurface": secondary,
-        "interpolation": "nearest",
-        "vds": [vds],
-        "sas": [sas],
-        "stepsize": stepsize,
-        "attributes": attributes
-    }
-    request.update(surface)
-    return request
+
+    return {"primarySurface": primary,
+            "secondarySurface": secondary,
+            "interpolation": "nearest",
+            "stepsize": stepsize,
+            "attributes": attributes}
 
 
 def send_request(path, method, payload):
@@ -142,28 +142,26 @@ def process_data_response(response):
 def request_metadata(method):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-
-    payload = metadata_payload(VDS_URL, sas)
-    rdata = send_request("metadata", method, payload)
-    rdata.raise_for_status()
-
-    return rdata.json()
+    payload = connection_payload(sas=[sas])
+    response_data = send_request("metadata", method, payload)
+    response_data.raise_for_status()
+    return response_data.json()
 
 
 def request_slice(method, lineno, direction):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-
-    payload = slice_payload(VDS_URL, direction, lineno, sas)
+    payload = connection_payload(sas=[sas])
+    payload.update(slice_payload(direction, lineno))
     response = send_request("slice", method, payload)
     return process_data_response(response)
 
 
-def request_fence(method, coordinates, coordinate_system):
+def request_fence(method: str, coordinate_system: str = "ij", coordinates: list = [[0, 0]]):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-
-    payload = fence_payload(VDS_URL, coordinate_system, coordinates, sas)
+    payload = connection_payload(sas=[sas])
+    payload.update(fence_payload(coordinate_system, coordinates))
     response = send_request("fence", method, payload)
     return process_data_response(response)
 
@@ -171,8 +169,8 @@ def request_fence(method, coordinates, coordinate_system):
 def request_attributes_along_surface(method, values):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-
-    payload = attributes_along_surface_payload(values=values, sas=sas)
+    payload = connection_payload(vds=[SAMPLES10_URL], sas=[sas])
+    payload.update(attributes_along_surface_payload(values=values))
     response = send_request("attributes/surface/along", method, payload)
     return process_data_response(response)
 
@@ -180,8 +178,7 @@ def request_attributes_along_surface(method, values):
 def request_attributes_between_surfaces(method, primary, secondary):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-
-    payload = attributes_between_surfaces_payload(
-        primary, secondary, sas=sas)
+    payload = connection_payload(vds=[SAMPLES10_URL], sas=[sas])
+    payload.update(attributes_between_surfaces_payload(primary, secondary))
     response = send_request("attributes/surface/between", method, payload)
     return process_data_response(response)
