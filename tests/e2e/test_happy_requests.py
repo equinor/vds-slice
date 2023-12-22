@@ -44,12 +44,20 @@ def test_metadata(method):
     ("get"),
     ("post")
 ])
-def test_slice(method):
-    meta, slice = request_slice(method, 5, 'inline')
+@pytest.mark.parametrize("binary_operator", [
+    (None),
+    ("subtraction"),
+    ("addition"),
+    ("multiplication"),
+    ("division"),
+])
+def test_slice(method, binary_operator):
+    meta, data = request_slice(method, 5, 'inline', binary_operator)
 
     expected = np.array([[116, 117, 118, 119],
                          [120, 121, 122, 123]])
-    assert np.array_equal(slice, expected)
+
+    assert_binary_operation(data, expected, binary_operator)
 
     expected_meta = json.loads("""
     {
@@ -67,12 +75,21 @@ def test_slice(method):
     ("get"),
     ("post")
 ])
-def test_fence(method):
-    meta, fence = request_fence(method, 'ilxl', [[3, 10], [1, 11]])
+@pytest.mark.parametrize("binary_operator", [
+    (None),
+    ("subtraction"),
+    ("addition"),
+    ("multiplication"),
+    ("division"),
+])
+def test_fence(method, binary_operator):
+    meta, data = request_fence(
+        method, 'ilxl', [[3, 10], [1, 11]], binary_operator)
 
     expected = np.array([[108, 109, 110, 111],
                          [104, 105, 106, 107]])
-    assert np.array_equal(fence, expected)
+
+    assert_binary_operation(data, expected, binary_operator)
 
     expected_meta = json.loads("""
     {
@@ -83,16 +100,25 @@ def test_fence(method):
     assert meta == expected_meta
 
 
-def test_attributes_along_surface():
+@pytest.mark.parametrize("binary_operator", [
+    (None),
+    ("subtraction"),
+    ("addition"),
+    ("multiplication"),
+    ("division"),
+])
+def test_attributes_along_surface(binary_operator):
     values = [
         [20, 20],
         [20, 20],
         [20, 20]
     ]
-    meta, data = request_attributes_along_surface("post", values)
+    meta, data = request_attributes_along_surface(
+        "post", values, binary_operator)
 
     expected = np.array([[-0.5, 0.5], [-8.5, 6.5], [16.5, -16.5]])
-    assert np.array_equal(data, expected)
+
+    assert_binary_operation(data, expected, binary_operator)
 
     expected_meta = json.loads("""
     {
@@ -103,7 +129,14 @@ def test_attributes_along_surface():
     assert meta == expected_meta
 
 
-def test_attributes_between_surfaces():
+@pytest.mark.parametrize("binary_operator", [
+    (None),
+    ("subtraction"),
+    ("addition"),
+    ("multiplication"),
+    ("division"),
+])
+def test_attributes_between_surfaces(binary_operator):
     primary = [
         [12, 12],
         [12, 14],
@@ -115,10 +148,19 @@ def test_attributes_between_surfaces():
         [24,   12]
     ]
     meta, data = request_attributes_between_surfaces(
-        "post", primary, secondary)
+        "post", primary, secondary, binary_operator)
 
     expected = np.array([[1.5, 2.5], [-8.5, 7.5], [18.5, -8.5]])
-    assert np.array_equal(data, expected)
+
+    # Max attribute behaves weird on multiplication.
+    # Taking the square may changes the max point.
+    if binary_operator == "multiplication":
+
+        expected = np.array([[2.5,  2.5],
+                             [12.5,  7.49850595],
+                             [18.50966912,  8.5]])
+
+    assert_binary_operation(data, expected, binary_operator)
 
     expected_meta = json.loads("""
     {

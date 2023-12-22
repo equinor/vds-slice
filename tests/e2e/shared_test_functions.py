@@ -22,6 +22,17 @@ SAMPLES10_URL = f"{STORAGE_ACCOUNT}/{CONTAINER}/10_samples/10_samples_default"
 def gen_default_sas():
     return generate_container_signature(STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
 
+def assert_binary_operation(data:np.ndarray, expected:np.ndarray, binary_operator:str):
+    if binary_operator == "subtraction":
+        assert np.array_equal(data, np.subtract(expected, expected))
+    elif binary_operator == "addition":
+        assert np.array_equal(data, np.add(expected, expected))
+    elif binary_operator == "multiplication":
+        assert np.allclose(data, np.multiply(expected, expected), rtol=1e-05)
+    elif binary_operator == "division":
+        assert np.array_equal(data, np.divide(expected, expected))
+    else:
+        assert np.array_equal(data, expected)
 
 def surface():
     return {
@@ -148,37 +159,37 @@ def request_metadata(method):
     return response_data.json()
 
 
-def request_slice(method, lineno, direction):
+def request_slice(method, lineno, direction, binary_operator=None):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-    payload = connection_payload(sas=[sas])
+    payload = connection_payload(sas=[sas], binary_operator=binary_operator)
     payload.update(slice_payload(direction, lineno))
     response = send_request("slice", method, payload)
     return process_data_response(response)
 
 
-def request_fence(method: str, coordinate_system: str = "ij", coordinates: list = [[0, 0]]):
+def request_fence(method: str, coordinate_system: str = "ij", coordinates: list = [[0, 0]], binary_operator=None):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-    payload = connection_payload(sas=[sas])
+    payload = connection_payload(sas=[sas], binary_operator=binary_operator)
     payload.update(fence_payload(coordinate_system, coordinates))
     response = send_request("fence", method, payload)
     return process_data_response(response)
 
 
-def request_attributes_along_surface(method, values):
+def request_attributes_along_surface(method, values, binary_operator=None):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-    payload = connection_payload(vds=[SAMPLES10_URL], sas=[sas])
+    payload = connection_payload(vds=[SAMPLES10_URL], sas=[sas], binary_operator=binary_operator)
     payload.update(attributes_along_surface_payload(values=values))
     response = send_request("attributes/surface/along", method, payload)
     return process_data_response(response)
 
 
-def request_attributes_between_surfaces(method, primary, secondary):
+def request_attributes_between_surfaces(method, primary, secondary, binary_operator):
     sas = generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY)
-    payload = connection_payload(vds=[SAMPLES10_URL], sas=[sas])
+    payload = connection_payload(vds=[SAMPLES10_URL], sas=[sas], binary_operator=binary_operator)
     payload.update(attributes_between_surfaces_payload(primary, secondary))
     response = send_request("attributes/surface/between", method, payload)
     return process_data_response(response)
