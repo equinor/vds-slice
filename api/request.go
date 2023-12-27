@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -84,17 +83,10 @@ type MetadataRequest struct {
 } //@name MetadataRequest
 
 func (m MetadataRequest) toString() (string, error) {
-	m.Sas = nil
-	out, err := json.Marshal(m)
-	if err != nil {
-		return "", err
-	}
-	str := string(out)
-	return str, nil
+	return m.RequestedResource.toString(), nil
 }
 
-type FenceRequest struct {
-	RequestedResource
+type GenericFenceRequest struct {
 	// Coordinate system for the requested fence
 	// Supported options are:
 	// ilxl : inline, crossline pairs
@@ -124,7 +116,7 @@ type FenceRequest struct {
 	FillValue *float32 `json:"fillValue"`
 } //@name FenceRequest
 
-func (f FenceRequest) toString() (string, error) {
+func (f GenericFenceRequest) toString() string {
 	coordinates := func() string {
 		var length = len(f.Coordinates)
 		const halfPrintLength = 5
@@ -139,12 +131,11 @@ func (f FenceRequest) toString() (string, error) {
 		}
 	}()
 
-	return fmt.Sprintf("{vds: %s, coordinate system: %s, coordinates: %s, interpolation (optional): %s}",
-		f.Vds,
+	return fmt.Sprintf("{coordinate system: %s, coordinates: %s, interpolation (optional): %s}",
 		f.CoordinateSystem,
 		coordinates,
 		f.Interpolation,
-	), nil
+	)
 }
 
 /** Compute a hash of the request that uniquely identifies the requested fence
@@ -158,15 +149,9 @@ func (f FenceRequest) hash() (string, error) {
 	return cache.Hash(f)
 }
 
-func (f FenceRequest) cubeFunction() string {
-	return ""
-}
-
 // Query for slice endpoints
 // @Description Query payload for slice endpoint /slice.
-type SliceRequest struct {
-	RequestedResource
-
+type GenericSliceRequest struct {
 	// Direction can be specified in two domains
 	// - Annotation. Valid options: Inline, Crossline and Depth/Time/Sample
 	// - Index. Valid options: i, j and k.
@@ -206,7 +191,7 @@ type SliceRequest struct {
 	// Bounds can be set using both annotation and index. You are free to mix
 	// and match as you see fit.
 	Bounds []core.Bound `json:"bounds" binding:"dive"`
-} //@name SliceRequest
+} //@name GenericSliceRequest
 
 /** Compute a hash of the request that uniquely identifies the requested slice
  *
@@ -219,24 +204,28 @@ func (s SliceRequest) hash() (string, error) {
 	return cache.Hash(s)
 }
 
-func (s SliceRequest) cubeFunction() string {
-	return ""
-}
+func (s GenericSliceRequest) toString() string {
 
-func (s SliceRequest) toString() (string, error) {
-	s.Sas = nil
-	out, err := json.Marshal(s)
-	if err != nil {
-		return "", err
-	}
-	str := string(out)
-	return str, nil
+	bounds := func() string {
+		var bounds_all = ""
+		for _, bound := range s.Bounds {
+			if len(bounds_all) > 1 {
+				bounds_all += ", "
+			}
+			bounds_all += fmt.Sprintf("[%s, %d, %d]", *bound.Direction, *bound.Lower, *bound.Upper)
+		}
+		return bounds_all
+	}()
+
+	return fmt.Sprintf("direction: %s, lineno: %d, bounds: %s",
+		s.Direction,
+		*s.Lineno,
+		bounds)
 }
 
 // Query for Attribute endpoints
 // @Description Query payload for attribute endpoint.
 type AttributeRequest struct {
-	RequestedResource
 
 	// Horizontal interpolation method
 	// Supported options are: nearest, linear, cubic, angular and triangular.
@@ -272,7 +261,7 @@ type AttributeRequest struct {
 
 // Query for Attribute along the surface endpoints
 // @Description Query payload for attribute "along" endpoint.
-type AttributeAlongSurfaceRequest struct {
+type AttributeAlongRequest struct {
 	AttributeRequest
 
 	// Surface along which data must be retrieved
@@ -307,37 +296,11 @@ func (h AttributeAlongSurfaceRequest) hash() (string, error) {
 	return cache.Hash(h)
 }
 
-func (s AttributeAlongSurfaceRequest) cubeFunction() string {
-	return ""
-}
-
 func (h AttributeAlongSurfaceRequest) toString() (string, error) {
-	msg := "{vds: %s, Horizon: (ncols: %d, nrows: %d), Rotation: %.2f, " +
-		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f, " +
-		"interpolation: %s, Above: %.2f, Below: %.2f, Stepsize: %.2f, " +
-		"Attributes: %v}"
-	return fmt.Sprintf(
-		msg,
-		h.Vds,
-		len(h.Surface.Values[0]),
-		len(h.Surface.Values),
-		*h.Surface.Rotation,
-		*h.Surface.Xori,
-		*h.Surface.Yori,
-		h.Surface.Xinc,
-		h.Surface.Yinc,
-		*h.Surface.FillValue,
-		h.Interpolation,
-		h.Above,
-		h.Below,
-		h.Stepsize,
-		h.Attributes,
-	), nil
+	return fmt.Sprintf("{%s, %s}", h.RequestedResource.toString(), h.AttributeAlongRequest.toString()), nil
 }
 
-// Query for Attribute between surfaces endpoints
-// @Description Query payload for attribute "between" endpoint.
-type AttributeBetweenSurfacesRequest struct {
+type AttributeBetweenRequest struct {
 	AttributeRequest
 
 	// One of the two surfaces between which data will be retrieved. This value
@@ -373,38 +336,86 @@ func (h AttributeBetweenSurfacesRequest) hash() (string, error) {
 	return cache.Hash(h)
 }
 
-func (s AttributeBetweenSurfacesRequest) cubeFunction() string {
-	return ""
+func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
+	return fmt.Sprintf("{%s, %s}", h.RequestedResource.toString(), h.AttributeBetweenRequest.toString()), nil
 }
 
-func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
-	msg := "{vds: %s, " +
-		"Primary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
-		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
-		"Secondary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
-		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
-		"Interpolation: %s, Stepsize: %.2f, Attributes: %v}"
-	return fmt.Sprintf(
-		msg,
-		h.Vds,
-		len(h.PrimarySurface.Values[0]),
-		len(h.PrimarySurface.Values),
-		*h.PrimarySurface.Rotation,
-		*h.PrimarySurface.Xori,
-		*h.PrimarySurface.Yori,
-		h.PrimarySurface.Xinc,
-		h.PrimarySurface.Yinc,
-		*h.PrimarySurface.FillValue,
-		len(h.SecondarySurface.Values[0]),
-		len(h.SecondarySurface.Values),
-		*h.SecondarySurface.Rotation,
-		*h.SecondarySurface.Xori,
-		*h.SecondarySurface.Yori,
-		h.SecondarySurface.Xinc,
-		h.SecondarySurface.Yinc,
-		*h.SecondarySurface.FillValue,
-		h.Interpolation,
-		h.Stepsize,
-		h.Attributes,
-	), nil
+func (f RequestedResource) toString() string {
+	var vds_all = "["
+	for _, vds := range f.Vds {
+		if len(vds_all) > 1 {
+			vds_all += ", "
+		}
+		vds_all += vds
+	}
+	vds_all += "]"
+	return fmt.Sprintf("vds: %s, binary_operator: %s", vds_all, f.Binary_operator)
 }
+
+func (s RequestedResource) cubeFunction() string {
+	return s.Binary_operator
+}
+
+type SliceRequest struct {
+	RequestedResource
+	GenericSliceRequest
+} //@name SliceRequest
+
+func (s SliceRequest) toString() (string, error) {
+	return fmt.Sprintf("{%s, %s}", s.RequestedResource.toString(), s.GenericSliceRequest.toString()), nil
+}
+
+type FenceRequest struct {
+	RequestedResource
+	GenericFenceRequest
+} //@name FenceRequest
+
+func (f FenceRequest) toString() (string, error) {
+	return fmt.Sprintf("{%s, %s}", f.RequestedResource.toString(), f.GenericFenceRequest.toString()), nil
+}
+
+func (f AttributeRequest) toString() string {
+	return fmt.Sprintf("interpolation: %s, stepsize: %f, attributes: %v",
+		f.Interpolation,
+		f.Stepsize,
+		f.Attributes)
+}
+
+func RegularSurfaceToString(s core.RegularSurface) string {
+	return fmt.Sprintf("values: (ncols: %d, nrows: %d), rotation: %.2f, origin: [%.2f, %.2f], increment: [%.2f, %.2f], fillvalue: %.2f",
+		len(s.Values[0]),
+		len(s.Values),
+		*s.Rotation,
+		*s.Xori,
+		*s.Yori,
+		s.Xinc,
+		s.Yinc,
+		*s.FillValue)
+}
+
+func (f AttributeAlongRequest) toString() string {
+
+	return fmt.Sprintf("%s, surface: %s, above: %f, below: %f",
+		f.AttributeRequest.toString(),
+		RegularSurfaceToString(f.Surface),
+		f.Above,
+		f.Below)
+}
+
+func (f AttributeBetweenRequest) toString() string {
+
+	return fmt.Sprintf("%s, primarySurface: %s, secondarySurface: %s",
+		f.AttributeRequest.toString(),
+		RegularSurfaceToString(f.PrimarySurface),
+		RegularSurfaceToString(f.SecondarySurface))
+}
+
+type AttributeAlongSurfaceRequest struct {
+	RequestedResource
+	AttributeAlongRequest
+} //@name AttributeAlongSurfaceRequest
+
+type AttributeBetweenSurfacesRequest struct {
+	RequestedResource
+	AttributeBetweenRequest
+} //@name AttributeBetweenSurfacesRequest

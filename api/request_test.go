@@ -17,8 +17,10 @@ func newSliceRequest(
 			Vds: []string{vds},
 			Sas: []string{sas},
 		},
-		Direction: direction,
-		Lineno:    &lineno,
+		GenericSliceRequest: GenericSliceRequest{
+			Direction: direction,
+			Lineno:    &lineno,
+		},
 	}
 }
 
@@ -34,9 +36,11 @@ func newFenceRequest(
 			Vds: []string{vds},
 			Sas: []string{sas},
 		},
-		CoordinateSystem: coordinateSystem,
-		Coordinates:      coordinates,
-		Interpolation:    interpolation,
+		GenericFenceRequest: GenericFenceRequest{
+			CoordinateSystem: coordinateSystem,
+			Coordinates:      coordinates,
+			Interpolation:    interpolation,
+		},
 	}
 }
 
