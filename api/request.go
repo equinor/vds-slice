@@ -43,21 +43,6 @@ func (r RequestedResource) credentials() ([]string, []string) {
 	return r.Vds, r.Sas
 }
 
-type DataRequest interface {
-	toString() (string, error)
-	hash() (string, error)
-	credentials() ([]string, []string)
-	execute(handle core.DSHandle) (data [][]byte, metadata []byte, err error)
-	cubeFunction() string
-}
-
-type Stringable interface {
-	toString() (string, error)
-}
-type Normalizable interface {
-	NormalizeConnection() error
-}
-
 func (r *RequestedResource) NormalizeConnection() error {
 
 	for i, url_req := range r.Vds {
@@ -78,12 +63,127 @@ func (r *RequestedResource) NormalizeConnection() error {
 	return nil
 }
 
+func (s RequestedResource) cubeFunction() string {
+	return s.Binary_operator
+}
+
+func (f RequestedResource) toString() string {
+	var vds_all = "["
+	for _, vds := range f.Vds {
+		if len(vds_all) > 1 {
+			vds_all += ", "
+		}
+		vds_all += vds
+	}
+	vds_all += "]"
+	return fmt.Sprintf("vds: %s, binary_operator: %s", vds_all, f.Binary_operator)
+}
+
 type MetadataRequest struct {
 	RequestedResource
 } //@name MetadataRequest
 
 func (m MetadataRequest) toString() (string, error) {
 	return m.RequestedResource.toString(), nil
+}
+
+type DataRequest interface {
+	toString() (string, error)
+	hash() (string, error)
+	credentials() ([]string, []string)
+	execute(handle core.DSHandle) (data [][]byte, metadata []byte, err error)
+	cubeFunction() string
+}
+
+type Normalizable interface {
+	NormalizeConnection() error
+}
+
+type Stringable interface {
+	toString() (string, error)
+}
+
+// Query for slice endpoints
+// @Description Query payload for slice endpoint /slice.
+type GenericSliceRequest struct {
+	// Direction can be specified in two domains
+	// - Annotation. Valid options: Inline, Crossline and Depth/Time/Sample
+	// - Index. Valid options: i, j and k.
+	//
+	// When requesting z-slices using annotation it's recommended to use Depth
+	// or Time as they include validation against the VDS itself. I.e. the
+	// server returns an error if you request a time-slice from a depth cube
+	// and visa-versa. Use Sample if you don't care for such guarantees or as a
+	// fallback if the VDS file is wonky.
+	//
+	// i, j, k are zero-indexed and correspond to Inline, Crossline,
+	// Depth/Time/Sample, respectively.
+	//
+	// All options are case-insensitive.
+	Direction string `json:"direction" binding:"required" example:"inline"`
+
+	// Line number of the slice
+	Lineno *int `json:"lineno" binding:"required" example:"10000"`
+
+	// Restrict the slice in the other dimensions (sub-slicing)
+	//
+	// Bounds can be used to retrieve sub-slices. For example: when requesting
+	// a time slice you can set inline and/or crossline bounds to restrict the
+	// area of the slice.
+	//
+	// Bounds are optional. Not specifying any bounds will produce the requested
+	// slice through the entire volume.
+	//
+	// Any bounds in the same direction as the slice itself are ignored.
+	//
+	// Bounds are applied one after the other. If there are multiple bounds in the
+	// same direction, the last one takes precedence.
+	//
+	// Bounds will throw out-of-bounds error if their range is outside the
+	// cubes dimensions.
+	//
+	// Bounds can be set using both annotation and index. You are free to mix
+	// and match as you see fit.
+	Bounds []core.Bound `json:"bounds" binding:"dive"`
+} //@name GenericSliceRequest
+
+func (s GenericSliceRequest) toString() string {
+
+	bounds := func() string {
+		var bounds_all = ""
+		for _, bound := range s.Bounds {
+			if len(bounds_all) > 1 {
+				bounds_all += ", "
+			}
+			bounds_all += fmt.Sprintf("[%s, %d, %d]", *bound.Direction, *bound.Lower, *bound.Upper)
+		}
+		return bounds_all
+	}()
+
+	return fmt.Sprintf("direction: %s, lineno: %d, bounds: %s",
+		s.Direction,
+		*s.Lineno,
+		bounds)
+}
+
+type SliceRequest struct {
+	RequestedResource
+	GenericSliceRequest
+} //@name SliceRequest
+
+/** Compute a hash of the request that uniquely identifies the requested slice
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (s SliceRequest) hash() (string, error) {
+	// Strip the sas token before computing hash
+	s.Sas = nil
+	return cache.Hash(s)
+}
+
+func (s SliceRequest) toString() (string, error) {
+	return fmt.Sprintf("{%s, %s}", s.RequestedResource.toString(), s.GenericSliceRequest.toString()), nil
 }
 
 type GenericFenceRequest struct {
@@ -138,6 +238,11 @@ func (f GenericFenceRequest) toString() string {
 	)
 }
 
+type FenceRequest struct {
+	RequestedResource
+	GenericFenceRequest
+} //@name FenceRequest
+
 /** Compute a hash of the request that uniquely identifies the requested fence
  *
  * The hash is computed based on all fields that contribute toward a unique response.
@@ -149,78 +254,8 @@ func (f FenceRequest) hash() (string, error) {
 	return cache.Hash(f)
 }
 
-// Query for slice endpoints
-// @Description Query payload for slice endpoint /slice.
-type GenericSliceRequest struct {
-	// Direction can be specified in two domains
-	// - Annotation. Valid options: Inline, Crossline and Depth/Time/Sample
-	// - Index. Valid options: i, j and k.
-	//
-	// When requesting z-slices using annotation it's recommended to use Depth
-	// or Time as they include validation against the VDS itself. I.e. the
-	// server returns an error if you request a time-slice from a depth cube
-	// and visa-versa. Use Sample if you don't care for such guarantees or as a
-	// fallback if the VDS file is wonky.
-	//
-	// i, j, k are zero-indexed and correspond to Inline, Crossline,
-	// Depth/Time/Sample, respectively.
-	//
-	// All options are case-insensitive.
-	Direction string `json:"direction" binding:"required" example:"inline"`
-
-	// Line number of the slice
-	Lineno *int `json:"lineno" binding:"required" example:"10000"`
-
-	// Restrict the slice in the other dimensions (sub-slicing)
-	//
-	// Bounds can be used to retrieve sub-slices. For example: when requesting
-	// a time slice you can set inline and/or crossline bounds to restrict the
-	// area of the slice.
-	//
-	// Bounds are optional. Not specifying any bounds will produce the requested
-	// slice through the entire volume.
-	//
-	// Any bounds in the same direction as the slice itself are ignored.
-	//
-	// Bounds are applied one after the other. If there are multiple bounds in the
-	// same direction, the last one takes precedence.
-	//
-	// Bounds will throw out-of-bounds error if their range is outside the
-	// cubes dimensions.
-	//
-	// Bounds can be set using both annotation and index. You are free to mix
-	// and match as you see fit.
-	Bounds []core.Bound `json:"bounds" binding:"dive"`
-} //@name GenericSliceRequest
-
-/** Compute a hash of the request that uniquely identifies the requested slice
- *
- * The hash is computed based on all fields that contribute toward a unique response.
- * I.e. every field except the sas token.
- */
-func (s SliceRequest) hash() (string, error) {
-	// Strip the sas token before computing hash
-	s.Sas = nil
-	return cache.Hash(s)
-}
-
-func (s GenericSliceRequest) toString() string {
-
-	bounds := func() string {
-		var bounds_all = ""
-		for _, bound := range s.Bounds {
-			if len(bounds_all) > 1 {
-				bounds_all += ", "
-			}
-			bounds_all += fmt.Sprintf("[%s, %d, %d]", *bound.Direction, *bound.Lower, *bound.Upper)
-		}
-		return bounds_all
-	}()
-
-	return fmt.Sprintf("direction: %s, lineno: %d, bounds: %s",
-		s.Direction,
-		*s.Lineno,
-		bounds)
+func (f FenceRequest) toString() (string, error) {
+	return fmt.Sprintf("{%s, %s}", f.RequestedResource.toString(), f.GenericFenceRequest.toString()), nil
 }
 
 // Query for Attribute endpoints
@@ -259,6 +294,13 @@ type AttributeRequest struct {
 	Attributes []string `json:"attributes" binding:"required" swaggertype:"array,string" example:"min,max"`
 } //@name AttributeRequest
 
+func (f AttributeRequest) toString() string {
+	return fmt.Sprintf("interpolation: %s, stepsize: %f, attributes: %v",
+		f.Interpolation,
+		f.Stepsize,
+		f.Attributes)
+}
+
 // Query for Attribute along the surface endpoints
 // @Description Query payload for attribute "along" endpoint.
 type AttributeAlongRequest struct {
@@ -285,19 +327,13 @@ type AttributeAlongRequest struct {
 	Below float32 `json:"below" example:"20.0"`
 } //@name AttributeAlongSurfaceRequest
 
-/** Compute a hash of the request that uniquely identifies the requested attributes
- *
- * The hash is computed based on all fields that contribute toward a unique response.
- * I.e. every field except the sas token.
- */
-func (h AttributeAlongSurfaceRequest) hash() (string, error) {
-	// Strip the sas token before computing hash
-	h.Sas = nil
-	return cache.Hash(h)
-}
+func (f AttributeAlongRequest) toString() string {
 
-func (h AttributeAlongSurfaceRequest) toString() (string, error) {
-	return fmt.Sprintf("{%s, %s}", h.RequestedResource.toString(), h.AttributeAlongRequest.toString()), nil
+	return fmt.Sprintf("%s, surface: %s, above: %f, below: %f",
+		f.AttributeRequest.toString(),
+		RegularSurfaceToString(f.Surface),
+		f.Above,
+		f.Below)
 }
 
 type AttributeBetweenRequest struct {
@@ -325,62 +361,6 @@ type AttributeBetweenRequest struct {
 	SecondarySurface core.RegularSurface `json:"secondarySurface" binding:"required"`
 } //@name AttributeBetweenSurfacesRequest
 
-/** Compute a hash of the request that uniquely identifies the requested attributes
- *
- * The hash is computed based on all fields that contribute toward a unique response.
- * I.e. every field except the sas token.
- */
-func (h AttributeBetweenSurfacesRequest) hash() (string, error) {
-	// Strip the sas token before computing hash
-	h.Sas = nil
-	return cache.Hash(h)
-}
-
-func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
-	return fmt.Sprintf("{%s, %s}", h.RequestedResource.toString(), h.AttributeBetweenRequest.toString()), nil
-}
-
-func (f RequestedResource) toString() string {
-	var vds_all = "["
-	for _, vds := range f.Vds {
-		if len(vds_all) > 1 {
-			vds_all += ", "
-		}
-		vds_all += vds
-	}
-	vds_all += "]"
-	return fmt.Sprintf("vds: %s, binary_operator: %s", vds_all, f.Binary_operator)
-}
-
-func (s RequestedResource) cubeFunction() string {
-	return s.Binary_operator
-}
-
-type SliceRequest struct {
-	RequestedResource
-	GenericSliceRequest
-} //@name SliceRequest
-
-func (s SliceRequest) toString() (string, error) {
-	return fmt.Sprintf("{%s, %s}", s.RequestedResource.toString(), s.GenericSliceRequest.toString()), nil
-}
-
-type FenceRequest struct {
-	RequestedResource
-	GenericFenceRequest
-} //@name FenceRequest
-
-func (f FenceRequest) toString() (string, error) {
-	return fmt.Sprintf("{%s, %s}", f.RequestedResource.toString(), f.GenericFenceRequest.toString()), nil
-}
-
-func (f AttributeRequest) toString() string {
-	return fmt.Sprintf("interpolation: %s, stepsize: %f, attributes: %v",
-		f.Interpolation,
-		f.Stepsize,
-		f.Attributes)
-}
-
 func RegularSurfaceToString(s core.RegularSurface) string {
 	return fmt.Sprintf("values: (ncols: %d, nrows: %d), rotation: %.2f, origin: [%.2f, %.2f], increment: [%.2f, %.2f], fillvalue: %.2f",
 		len(s.Values[0]),
@@ -391,15 +371,6 @@ func RegularSurfaceToString(s core.RegularSurface) string {
 		s.Xinc,
 		s.Yinc,
 		*s.FillValue)
-}
-
-func (f AttributeAlongRequest) toString() string {
-
-	return fmt.Sprintf("%s, surface: %s, above: %f, below: %f",
-		f.AttributeRequest.toString(),
-		RegularSurfaceToString(f.Surface),
-		f.Above,
-		f.Below)
 }
 
 func (f AttributeBetweenRequest) toString() string {
@@ -415,7 +386,37 @@ type AttributeAlongSurfaceRequest struct {
 	AttributeAlongRequest
 } //@name AttributeAlongSurfaceRequest
 
+/** Compute a hash of the request that uniquely identifies the requested attributes
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (h AttributeAlongSurfaceRequest) hash() (string, error) {
+	// Strip the sas token before computing hash
+	h.Sas = nil
+	return cache.Hash(h)
+}
+
+func (h AttributeAlongSurfaceRequest) toString() (string, error) {
+	return fmt.Sprintf("{%s, %s}", h.RequestedResource.toString(), h.AttributeAlongRequest.toString()), nil
+}
+
 type AttributeBetweenSurfacesRequest struct {
 	RequestedResource
 	AttributeBetweenRequest
 } //@name AttributeBetweenSurfacesRequest
+
+/** Compute a hash of the request that uniquely identifies the requested attributes
+ *
+ * The hash is computed based on all fields that contribute toward a unique response.
+ * I.e. every field except the sas token.
+ */
+func (h AttributeBetweenSurfacesRequest) hash() (string, error) {
+	// Strip the sas token before computing hash
+	h.Sas = nil
+	return cache.Hash(h)
+}
+
+func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
+	return fmt.Sprintf("{%s, %s}", h.RequestedResource.toString(), h.AttributeBetweenRequest.toString()), nil
+}
