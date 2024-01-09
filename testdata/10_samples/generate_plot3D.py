@@ -93,6 +93,31 @@ class Edge:
         self.v = e_v
 
 
+def sub_title(coordinate_type, plot_depth, plot_data):
+
+    sub_text = ""
+    if coordinate_type == "Index":
+        sub_text = "Index coordinates (I, J"
+    elif coordinate_type == "Annotated":
+        sub_text = "Annotated coordinates (InLine, CrossLine"
+    elif coordinate_type == "UTM":
+        sub_text = "UTM coordinates (UTM:x, UTM:y"
+
+    if plot_depth:
+        if len(sub_text) > 0:
+            sub_text += ", Depth"
+
+    if len(sub_text) > 0:
+        sub_text += ")"
+
+    if plot_data:
+        if len(sub_text) > 0:
+            sub_text += "\n"
+        sub_text += "Data values"
+
+    return "\nLabel: " + sub_text
+
+
 data = np.array([
     # Traces linear in range [0, len(trace)]
     #  4       8     12     16     20     24     28     32     36     40
@@ -148,7 +173,7 @@ if __name__ == "__main__":
     text_offset_z = -1
 
     coordinate_types = ["Index", "Annotated", "UTM", None]
-    plot_coordinates = coordinate_types[3]
+    plot_coordinates = coordinate_types[1]
     plot_depth_coordinate = True
 
     fig = plt.figure(figsize=(18, 12))
@@ -209,6 +234,8 @@ ax.set_zlabel('Depth')
 ax.invert_zaxis()
 ax.view_init(20, -45, 0)
 
-plt.title(title_text)
+title_text = f"Visualization of: 10_samples_default"
+plt.title(title_text + sub_title(plot_coordinates,
+          plot_depth_coordinate, plot_data_values))
 
 plt.show()
