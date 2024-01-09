@@ -19,7 +19,9 @@ class Coordinate:
         self.x = x
         self.y = y
 
-    def __str__(self) -> str:
+    def __str__(self, depth_value=None) -> str:
+        if depth_value:
+            return f"({round(self.x, 2)}, {round(self.y, 2)}, {round(depth_value,2)})"
         return f"({round(self.x, 2)}, {round(self.y, 2)})"
 
 
@@ -72,13 +74,13 @@ class Vertex:
         index = int((depth_value-self.samples.offset)/self.samples.step_size)
         return self.data[index]
 
-    def coordinate_str(self, coordinate_type):
+    def coordinate_str(self, coordinate_type, depth_value=None):
         if coordinate_type == "Index":
-            coord_str = self.index_coordinates.__str__()
+            coord_str = self.index_coordinates.__str__(depth_value)
         elif coordinate_type == "Annotated":
-            coord_str = self.annotated_coordinates.__str__()
+            coord_str = self.annotated_coordinates.__str__(depth_value)
         elif coordinate_type == "UTM":
-            coord_str = self.utm_coordinates.__str__()
+            coord_str = self.utm_coordinates.__str__(depth_value)
         else:
             coord_str = ""
         return coord_str
@@ -147,6 +149,7 @@ if __name__ == "__main__":
 
     coordinate_types = ["Index", "Annotated", "UTM", None]
     plot_coordinates = coordinate_types[3]
+    plot_depth_coordinate = True
 
     fig = plt.figure(figsize=(18, 12))
     fig.canvas.manager.set_window_title('10_samples_default')
@@ -173,24 +176,31 @@ if __name__ == "__main__":
 
             if plot_coordinates and plot_data_values:
 
-                coord_str = v.coordinate_str(plot_coordinates)
+                if plot_depth_coordinate:
+                    coord_str = v.coordinate_str(plot_coordinates, depth)
+                else:
+                    coord_str = v.coordinate_str(plot_coordinates)
                 data_value_str = v.sample_at_depth(depth).__str__()
                 ax.text(v.utm_coordinates.x, v.utm_coordinates.y, depth + text_offset_z,
                         coord_str + "\n" + data_value_str,
                         size="small", multialignment='center', verticalalignment='center')
             elif plot_coordinates:
-                coord_str = v.coordinate_str(plot_coordinates)
-                ax.text(v.utm_coordinates.x, v.utm_coordinates.y, depth + text_offset_z,
-                        coord_str,
+                if plot_depth_coordinate:
+                    coord_str = v.coordinate_str(plot_coordinates, depth)
+                else:
+                    coord_str = v.coordinate_str(plot_coordinates)
+                ax.text(v.utm_coordinates.x, v.utm_coordinates.y, depth + text_offset_z, coord_str,
                         size="small", multialignment='center', verticalalignment='center')
             elif plot_data_values:
                 value = v.sample_at_depth(depth)
                 if value < 0:
-                    ax.text(v.utm_coordinates.x, v.utm_coordinates.y,
-                            depth + text_offset_z, value, color="red")
+                    ax.text(v.utm_coordinates.x, v.utm_coordinates.y, depth + text_offset_z, value,
+                            size="small", multialignment='center', color="red",
+                            verticalalignment='center')
                 else:
                     ax.text(v.utm_coordinates.x, v.utm_coordinates.y,
-                            depth + text_offset_z, value, color="blue")
+                            depth + text_offset_z, value, color="blue",
+                            size="small", multialignment='center', verticalalignment='center')
 
 
 ax.set_xlabel('X coordinate')
