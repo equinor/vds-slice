@@ -65,12 +65,12 @@ func prepareRequestLogging(ctx *gin.Context, request Stringable) {
 
 func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	prepareRequestLogging(ctx, request)
-	conn, err := e.MakeVdsConnection(request.Vds, request.Sas)
+	connection, err := e.MakeVdsConnection(request.Vds, request.Sas)
 	if abortOnError(ctx, err) {
 		return
 	}
 
-	handle, err := core.NewDSHandle(conn)
+	handle, err := core.NewDSHandle(connection)
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -89,7 +89,7 @@ func (e *Endpoint) makeDataRequest(
 	request DataRequest,
 ) {
 	prepareRequestLogging(ctx, request)
-	conn, err := e.MakeVdsConnection(request.credentials())
+	connection, err := e.MakeVdsConnection(request.credentials())
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -100,13 +100,13 @@ func (e *Endpoint) makeDataRequest(
 	}
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
-	if hit && conn.IsAuthorizedToRead() {
+	if hit && connection.IsAuthorizedToRead() {
 		ctx.Set("cache-hit", true)
 		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
 		return
 	}
 
-	handle, err := core.NewDSHandle(conn)
+	handle, err := core.NewDSHandle(connection)
 	if abortOnError(ctx, err) {
 		return
 	}

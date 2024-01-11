@@ -401,11 +401,11 @@ func (v DSHandle) Close() error {
 	return toError(cerr, v.ctx)
 }
 
-func NewDSHandle(conn Connection) (DSHandle, error) {
-	curl := C.CString(conn.Url())
+func NewDSHandle(connection Connection) (DSHandle, error) {
+	curl := C.CString(connection.Url())
 	defer C.free(unsafe.Pointer(curl))
 
-	ccred := C.CString(conn.ConnectionString())
+	ccred := C.CString(connection.ConnectionString())
 	defer C.free(unsafe.Pointer(ccred))
 
 	var cctx = C.context_new()
