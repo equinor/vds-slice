@@ -32,6 +32,14 @@ const (
 	CoordinateSystemCdp        = C.CDP
 )
 
+const (
+	BinaryOperatorNoOperator     = C.NO_OPERATOR
+	BinaryOperatorAddition       = C.ADDITION
+	BinaryOperatorSubtraction    = C.SUBTRACTION
+	BinaryOperatorMultiplication = C.MULTIPLICATION
+	BinaryOperatorDivision       = C.DIVISION
+)
+
 // @Description Axis description
 type Axis struct {
 	// Name/Annotation of axis
@@ -202,6 +210,25 @@ func GetCoordinateSystem(coordinateSystem string) (int, error) {
 		options := "ij, ilxl, cdp"
 		msg := "coordinate system not recognized: '%s', valid options are: %s"
 		return -1, NewInvalidArgument(fmt.Sprintf(msg, coordinateSystem, options))
+	}
+}
+
+func GetBinaryOperator(binaryOperator string) (uint32, error) {
+	switch strings.ToLower(binaryOperator) {
+	case "":
+		return BinaryOperatorNoOperator, nil
+	case "addition":
+		return BinaryOperatorAddition, nil
+	case "subtraction":
+		return BinaryOperatorSubtraction, nil
+	case "multiplication":
+		return BinaryOperatorMultiplication, nil
+	case "division":
+		return BinaryOperatorDivision, nil
+	default:
+		options := "addition, subtraction, multiplication, division"
+		msg := "binary operator not recognized: '%s', valid options are: %s"
+		return 100, NewInvalidArgument(fmt.Sprintf(msg, binaryOperator, options))
 	}
 }
 
@@ -425,6 +452,33 @@ func NewDSHandle(connection Connection) (DSHandle, error) {
 	var dataSource *C.struct_DataSource
 
 	cerr := C.single_datasource_new(cctx, curl, ccred, &dataSource)
+
+	if err := toError(cerr, cctx); err != nil {
+		defer C.context_free(cctx)
+		return DSHandle{}, err
+	}
+
+	return DSHandle{dataSource: dataSource, ctx: cctx}, nil
+}
+
+func NewDoubleDSHandle(connectionA Connection, connectionB Connection, operator uint32) (DSHandle, error) {
+
+	curlA := C.CString(connectionA.Url())
+	defer C.free(unsafe.Pointer(curlA))
+
+	ccredA := C.CString(connectionA.ConnectionString())
+	defer C.free(unsafe.Pointer(ccredA))
+
+	curlB := C.CString(connectionB.Url())
+	defer C.free(unsafe.Pointer(curlB))
+
+	ccredB := C.CString(connectionB.ConnectionString())
+	defer C.free(unsafe.Pointer(ccredB))
+
+	var cctx = C.context_new()
+	var dataSource *C.struct_DataSource
+
+	cerr := C.double_datasource_new(cctx, curlA, ccredA, curlB, ccredB, operator, &dataSource)
 
 	if err := toError(cerr, cctx); err != nil {
 		defer C.context_free(cctx)
