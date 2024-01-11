@@ -277,7 +277,7 @@ func (request AttributeBetweenSurfacesRequest) execute(
 
 func parseGetRequest(ctx *gin.Context, v Normalizable) error {
 	query, status := ctx.GetQuery("query")
-	if (!status){
+	if !status {
 		return core.NewInvalidArgument(
 			"GET request to specified endpoint requires a 'query' parameter",
 		)
