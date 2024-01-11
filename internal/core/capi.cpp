@@ -67,7 +67,42 @@ int single_datasource_new(
     }
 }
 
-int datasource_free(Context* ctx, DataSource* ds){
+int double_datasource_new(
+    Context* ctx,
+    const char* url_A,
+    const char* credentials_A,
+    const char* url_B,
+    const char* credentials_B,
+    enum binary_operator bin_operator,
+    DataSource** datasource
+) {
+    try {
+        if (not datasource)
+            throw detail::nullptr_error("Invalid datasource pointer");
+
+        std::function<void(float*, const float*, size_t)> binary_operator_function;
+
+        if (bin_operator == NO_OPERATOR)
+            throw detail::bad_request("Invalid function");
+        else if (bin_operator == ADDITION)
+            binary_operator_function = &inplace_addition;
+        else if (bin_operator == SUBTRACTION)
+            binary_operator_function = &inplace_subtraction;
+        else if (bin_operator == MULTIPLICATION)
+            binary_operator_function = &inplace_multiplication;
+        else if (bin_operator == DIVISION)
+            binary_operator_function = &inplace_division;
+        else
+            throw detail::bad_request("Invalid binary_operator string");
+
+        *datasource = make_double_datasource(url_A, credentials_A, url_B, credentials_B, binary_operator_function);
+        return STATUS_OK;
+    } catch (...) {
+        return handle_exception(ctx, std::current_exception());
+    }
+}
+
+int datasource_free(Context* ctx, DataSource* ds) {
     try {
         if (not ds) return STATUS_OK;
 

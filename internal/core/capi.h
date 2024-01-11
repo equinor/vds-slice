@@ -51,6 +51,15 @@ int single_datasource_new(
     DataSource** ds_out
 );
 
+int double_datasource_new(
+    Context* ctx,
+    const char* url_A,
+    const char* credentials_A,
+    const char* url_B,
+    const char* credentials_B,
+    enum binary_operator bin_operator,
+    DataSource** ds_out
+);
 
 int datasource_free(Context* ctx, DataSource* f);
 
