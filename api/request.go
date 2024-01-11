@@ -291,21 +291,13 @@ func (h AttributeAlongSurfaceRequest) hash() (string, error) {
 }
 
 func (h AttributeAlongSurfaceRequest) toString() (string, error) {
-	msg := "{vds: %s, Horizon: (ncols: %d, nrows: %d), Rotation: %.2f, " +
-		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f, " +
+	msg := "{vds: %s, Horizon: %s " +
 		"interpolation: %s, Above: %.2f, Below: %.2f, Stepsize: %.2f, " +
 		"Attributes: %v}"
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
-		len(h.Surface.Values[0]),
-		len(h.Surface.Values),
-		*h.Surface.Rotation,
-		*h.Surface.Xori,
-		*h.Surface.Yori,
-		h.Surface.Xinc,
-		h.Surface.Yinc,
-		*h.Surface.FillValue,
+		h.Surface.ToString(),
 		h.Interpolation,
 		h.Above,
 		h.Below,
@@ -354,30 +346,14 @@ func (h AttributeBetweenSurfacesRequest) hash() (string, error) {
 
 func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
 	msg := "{vds: %s, " +
-		"Primary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
-		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
-		"Secondary surface: Values: (ncols: %d, nrows: %d), Rotation: %.2f, " +
-		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f. " +
+		"Primary surface: %s" +
+		"Secondary surface: %s" +
 		"Interpolation: %s, Stepsize: %.2f, Attributes: %v}"
 	return fmt.Sprintf(
 		msg,
 		h.Vds,
-		len(h.PrimarySurface.Values[0]),
-		len(h.PrimarySurface.Values),
-		*h.PrimarySurface.Rotation,
-		*h.PrimarySurface.Xori,
-		*h.PrimarySurface.Yori,
-		h.PrimarySurface.Xinc,
-		h.PrimarySurface.Yinc,
-		*h.PrimarySurface.FillValue,
-		len(h.SecondarySurface.Values[0]),
-		len(h.SecondarySurface.Values),
-		*h.SecondarySurface.Rotation,
-		*h.SecondarySurface.Xori,
-		*h.SecondarySurface.Yori,
-		h.SecondarySurface.Xinc,
-		h.SecondarySurface.Yinc,
-		*h.SecondarySurface.FillValue,
+		h.PrimarySurface.ToString(),
+		h.SecondarySurface.ToString(),
 		h.Interpolation,
 		h.Stepsize,
 		h.Attributes,

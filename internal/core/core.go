@@ -347,6 +347,19 @@ func (surface *RegularSurface) toCdata(shift float32) ([]C.float, error) {
 	return cdata, nil
 }
 
+func (s *RegularSurface) ToString() string {
+	return fmt.Sprintf("{(ncols: %d, nrows: %d), Rotation: %.2f, "+
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f}, ",
+		len(s.Values[0]),
+		len(s.Values),
+		*s.Rotation,
+		*s.Xori,
+		*s.Yori,
+		s.Xinc,
+		s.Yinc,
+		*s.FillValue)
+}
+
 func (surface *RegularSurface) toCRegularSurface(cdata []C.float) (cRegularSurface, error) {
 	nrows := len(surface.Values)
 	ncols := len(surface.Values[0])
