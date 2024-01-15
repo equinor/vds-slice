@@ -137,6 +137,7 @@ func (h attributeAlongSurfaceTest) requestAsJSON() (string, error) {
 
 	out["vds"] = h.attribute.Vds
 	out["sas"] = h.attribute.Sas
+	out["binary_operator"] = h.attribute.BinaryOperator
 	surface := map[string]interface{}{}
 	surface["values"] = h.attribute.Values
 	surface["rotation"] = 33.69
@@ -184,6 +185,7 @@ func (h attributeBetweenSurfacesTest) requestAsJSON() (string, error) {
 
 	out["vds"] = h.attribute.Vds
 	out["sas"] = h.attribute.Sas
+	out["binary_operator"] = h.attribute.BinaryOperator
 
 	primary := map[string]interface{}{}
 	primary["values"] = h.attribute.ValuesPrimary
@@ -229,40 +231,44 @@ type testBound struct {
 }
 
 type testSliceRequest struct {
-	Vds       string      `json:"vds"`
-	Direction string      `json:"direction"`
-	Lineno    int         `json:"lineno"`
-	Sas       string      `json:"sas"`
-	Bounds    []testBound `json:"bounds"`
+	Vds            []string    `json:"vds"`
+	Direction      string      `json:"direction"`
+	Lineno         int         `json:"lineno"`
+	Sas            []string    `json:"sas"`
+	BinaryOperator string      `json:"binary_operator"`
+	Bounds         []testBound `json:"bounds"`
 }
 
 type testFenceRequest struct {
-	Vds              string      `json:"vds"`
+	Vds              []string    `json:"vds"`
 	CoordinateSystem string      `json:"coordinateSystem"`
 	Coordinates      [][]float32 `json:"coordinates"`
 	FillValue        float32     `json:"fillValue"`
-	Sas              string      `json:"sas"`
+	Sas              []string    `json:"sas"`
+	BinaryOperator   string      `json:"binary_operator"`
 }
 
 type testMetadataRequest struct {
-	Vds string `json:"vds"`
-	Sas string `json:"sas"`
+	Vds []string `json:"vds"`
+	Sas []string `json:"sas"`
 }
 
 type testAttributeAlongSurfaceRequest struct {
-	Vds           string
-	Sas           string
-	Values        [][]float32
-	Interpolation string
-	Above         float32
-	Below         float32
-	StepSize      float32
-	Attributes    []string
+	Vds            []string
+	Sas            []string
+	BinaryOperator string
+	Values         [][]float32
+	Interpolation  string
+	Above          float32
+	Below          float32
+	StepSize       float32
+	Attributes     []string
 }
 
 type testAttributeBetweenSurfacesRequest struct {
-	Vds             string
-	Sas             string
+	Vds             []string
+	Sas             []string
+	BinaryOperator  string
 	ValuesPrimary   [][]float32
 	ValuesSecondary [][]float32
 	Interpolation   string
