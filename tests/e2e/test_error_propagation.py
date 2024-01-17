@@ -10,7 +10,7 @@ from shared_test_functions import *
 @pytest.mark.parametrize("path, payload, error_code, error", [
     (
         "slice",
-        slice_payload(direction="inline", lineno=4),
+        payload_merge(connection_payload(vds=[VDS_URL], sas=[DUMMY_SAS]), slice_payload(direction="inline", lineno=4)),
         http.HTTPStatus.BAD_REQUEST,
         "Invalid lineno: 4, valid range: [1.00:5.00:2.00]"
     ),
@@ -22,20 +22,20 @@ from shared_test_functions import *
     ),
     (
         "metadata",
-        metadata_payload(vds=f'{STORAGE_ACCOUNT}/{CONTAINER}/notfound'),
+        connection_payload(vds=[f'{STORAGE_ACCOUNT}/{CONTAINER}/notfound'], sas=[DUMMY_SAS]),
         http.HTTPStatus.INTERNAL_SERVER_ERROR,
         "The specified blob does not exist"
     ),
     (
         "attributes/surface/along",
-        attributes_along_surface_payload(surface={}),
+        payload_merge(connection_payload(vds=[VDS_URL], sas=[DUMMY_SAS]), attributes_along_surface_payload(surface={})),
         http.HTTPStatus.BAD_REQUEST,
         "Error:Field validation for"
     ),
     (
         "attributes/surface/between",
-        attributes_between_surfaces_payload(
-            primaryValues=[[1]], secondaryValues=[[1], [1, 1]]),
+        payload_merge(connection_payload(vds=[VDS_URL], sas=[DUMMY_SAS]), attributes_between_surfaces_payload(
+            primaryValues=[[1]], secondaryValues=[[1], [1, 1]])),
         http.HTTPStatus.BAD_REQUEST,
         "Surface rows are not of the same length"
     ),

@@ -9,11 +9,11 @@ from azure.storage import filedatalake
 
 
 @pytest.mark.parametrize("path, payload", [
-    ("slice", slice_payload()),
-    ("fence", fence_payload()),
-    ("metadata", metadata_payload()),
-    ("attributes/surface/along", attributes_along_surface_payload()),
-    ("attributes/surface/between", attributes_between_surfaces_payload()),
+    ("slice", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), slice_payload())),
+    ("fence", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), fence_payload())),
+    ("metadata", connection_payload(VDS_URL, DUMMY_SAS)),
+    ("attributes/surface/along", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), attributes_along_surface_payload())),
+    ("attributes/surface/between", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), attributes_between_surfaces_payload())),
 ])
 @pytest.mark.parametrize("sas, allowed_error_messages", [
     (
@@ -34,10 +34,10 @@ def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_message
 
 
 @pytest.mark.parametrize("path, payload", [
-    ("slice", slice_payload(vds=VDS_URL)),
-    ("fence", fence_payload(vds=VDS_URL)),
-    ("attributes/surface/along", attributes_along_surface_payload()),
-    ("attributes/surface/between", attributes_between_surfaces_payload()),
+    ("slice", payload_merge(connection_payload(vds=[VDS_URL], sas=[DUMMY_SAS]), slice_payload())),
+    ("fence", payload_merge(connection_payload(vds=[VDS_URL], sas=[DUMMY_SAS]), fence_payload())),
+    ("attributes/surface/along", payload_merge(connection_payload([SAMPLES10_URL], sas=[DUMMY_SAS]), attributes_along_surface_payload())),
+    ("attributes/surface/between", payload_merge(connection_payload([SAMPLES10_URL], sas=[DUMMY_SAS]), attributes_between_surfaces_payload())),
 ])
 @pytest.mark.parametrize("token, status, error", [
     (generate_container_signature(
@@ -86,11 +86,11 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
 
 
 @pytest.mark.parametrize("path, payload", [
-    ("slice", slice_payload()),
-    ("fence", fence_payload()),
-    ("metadata", metadata_payload()),
-    ("attributes/surface/along", attributes_along_surface_payload()),
-    ("attributes/surface/between", attributes_between_surfaces_payload()),
+    ("slice",payload_merge(connection_payload(VDS_URL, DUMMY_SAS), slice_payload())),
+    ("fence", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), fence_payload())),
+    ("metadata", connection_payload(VDS_URL, DUMMY_SAS)),
+    ("attributes/surface/along", payload_merge(connection_payload([SAMPLES10_URL], [DUMMY_SAS] ), attributes_along_surface_payload())),
+    ("attributes/surface/between", payload_merge(connection_payload([SAMPLES10_URL], [DUMMY_SAS]), attributes_between_surfaces_payload())),
 ])
 def test_assure_only_allowed_storage_accounts(path, payload):
     payload.update({
@@ -103,11 +103,11 @@ def test_assure_only_allowed_storage_accounts(path, payload):
 
 
 @pytest.mark.parametrize("path, payload", [
-    ("slice",   slice_payload()),
-    ("fence",   fence_payload()),
-    ("metadata",   metadata_payload()),
-    ("attributes/surface/along", attributes_along_surface_payload()),
-    ("attributes/surface/between", attributes_between_surfaces_payload()),
+    ("slice", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), slice_payload())),
+    ("fence",   payload_merge(connection_payload(VDS_URL, DUMMY_SAS), fence_payload())),
+    ("metadata",   connection_payload(VDS_URL, DUMMY_SAS)),
+    ("attributes/surface/along", payload_merge(connection_payload([SAMPLES10_URL], [DUMMY_SAS] ), attributes_along_surface_payload())),
+    ("attributes/surface/between", payload_merge(connection_payload([SAMPLES10_URL], [DUMMY_SAS] ), attributes_between_surfaces_payload())),
 ])
 @pytest.mark.parametrize("vds, sas, expected", [
     (f'{SAMPLES10_URL}?{gen_default_sas()}', '', http.HTTPStatus.OK),
