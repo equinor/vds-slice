@@ -29,6 +29,6 @@ jobs:
     - name: Add Docker container to monitoring
       run: |
         docker image ls
-        snyk container monitor --file=Dockerfile --severity-threshold=high oneseismic-container
+        snyk container monitor -d --file=Dockerfile --severity-threshold=high oneseismic-container --project-name=ci-testing
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
