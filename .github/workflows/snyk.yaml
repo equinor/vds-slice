@@ -1,5 +1,5 @@
 name: Snyk test Docker image
-on: 
+on:
   push:
     branches: [master, radix, snyk_docker]
   pull_request:
@@ -18,7 +18,7 @@ jobs:
 
     - name: Build docker image
       run: |
-        tag=snyk
+        tag=oneseismic-container
         docker build \
         -f Dockerfile \
         --build-arg OPENVDS_IMAGE=${{ env.OPENVDS_IMAGE_TAG }} \
@@ -32,6 +32,6 @@ jobs:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         command: monitor
-        image: snyk
+        image: oneseismic-container
         args: --file=Dockerfile
           --severity-threshold=high
