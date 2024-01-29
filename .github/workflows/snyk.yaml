@@ -25,13 +25,15 @@ jobs:
         --tag $tag \
         .
 
-    - name: Run Snyk to check Docker image for vulnerabilities
-      id: docker-image-scan
-      uses: snyk/actions/docker@master
+    - uses: snyk/actions/setup@master
+    - name: Authenticate snyk
+      run: |
+        snyk auth
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        command: monitor
-        image: oneseismic-container
-        args: --file=Dockerfile
-          --severity-threshold=high
+    - name: Add Docker container to monitoring
+      run: |
+        docker image ls
+        snyk container monitor --file=Dockerfile --severity-threshold=high oneseismic-container
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
