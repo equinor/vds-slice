@@ -26,11 +26,6 @@ jobs:
         .
 
     - uses: snyk/actions/setup@master
-    - name: Authenticate snyk
-      run: |
-        snyk auth
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     - name: Add Docker container to monitoring
       run: |
         docker image ls
