@@ -45,7 +45,7 @@ jobs:
           echo "::add-mask::$secret_storage_account"
           echo VDS="$vds" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Run "${{ inputs.filepath }}" performance tests for "${{ env.VDS }}"
         env:
           LOGPATH: "/out"
