@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -36,6 +35,10 @@ type RequestedResource struct {
 
 func (r RequestedResource) credentials() (string, string) {
 	return r.Vds, r.Sas
+}
+
+func (r RequestedResource) toString() string {
+	return fmt.Sprintf("vds: %s", r.Vds)
 }
 
 type DataRequest interface {
@@ -75,13 +78,9 @@ type MetadataRequest struct {
 } //@name MetadataRequest
 
 func (m MetadataRequest) toString() (string, error) {
-	m.Sas = ""
-	out, err := json.Marshal(m)
-	if err != nil {
-		return "", err
-	}
-	str := string(out)
-	return str, nil
+	return fmt.Sprintf("{%s}",
+		m.RequestedResource.toString(),
+	), nil
 }
 
 type FenceRequest struct {
@@ -130,8 +129,8 @@ func (f FenceRequest) toString() (string, error) {
 		}
 	}()
 
-	return fmt.Sprintf("{vds: %s, coordinate system: %s, coordinates: %s, interpolation (optional): %s}",
-		f.Vds,
+	return fmt.Sprintf("{%s, coordinate system: %s, coordinates: %s, interpolation (optional): %s}",
+		f.RequestedResource.toString(),
 		f.CoordinateSystem,
 		coordinates,
 		f.Interpolation,
@@ -207,13 +206,21 @@ func (s SliceRequest) hash() (string, error) {
 }
 
 func (s SliceRequest) toString() (string, error) {
-	s.Sas = ""
-	out, err := json.Marshal(s)
-	if err != nil {
-		return "", err
-	}
-	str := string(out)
-	return str, nil
+
+	bounds := func() string {
+		var allBounds []string
+		for _, bound := range s.Bounds {
+			allBounds = append(allBounds,
+				fmt.Sprintf("%s: [%d, %d]", *bound.Direction, *bound.Lower, *bound.Upper))
+		}
+		return strings.Join(allBounds, ", ")
+	}()
+
+	return fmt.Sprintf("{%s, direction: %s, lineno: %d, bounds: %s}",
+		s.RequestedResource.toString(),
+		s.Direction,
+		*s.Lineno,
+		bounds), nil
 }
 
 // Query for Attribute endpoints
@@ -291,12 +298,12 @@ func (h AttributeAlongSurfaceRequest) hash() (string, error) {
 }
 
 func (h AttributeAlongSurfaceRequest) toString() (string, error) {
-	msg := "{vds: %s, Horizon: %s " +
+	msg := "{%s, Horizon: %s " +
 		"interpolation: %s, Above: %.2f, Below: %.2f, Stepsize: %.2f, " +
 		"Attributes: %v}"
 	return fmt.Sprintf(
 		msg,
-		h.Vds,
+		h.RequestedResource.toString(),
 		h.Surface.ToString(),
 		h.Interpolation,
 		h.Above,
@@ -351,7 +358,7 @@ func (h AttributeBetweenSurfacesRequest) toString() (string, error) {
 		"Interpolation: %s, Stepsize: %.2f, Attributes: %v}"
 	return fmt.Sprintf(
 		msg,
-		h.Vds,
+		h.RequestedResource.toString(),
 		h.PrimarySurface.ToString(),
 		h.SecondarySurface.ToString(),
 		h.Interpolation,
