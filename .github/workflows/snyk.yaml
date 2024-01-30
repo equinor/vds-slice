@@ -31,6 +31,7 @@ jobs:
     - name: Add Docker container to monitoring
       run: |
         docker image ls
+        [[ -z $SNYK_TOKEN ]] && echo "SNYK_TOKEN is empty"
         snyk container monitor -d --file=Dockerfile --severity-threshold=high oneseismic-container --project-name=ci-testing
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
