@@ -32,6 +32,8 @@ jobs:
       run: |
         docker image ls
         [[ -z $SNYK_TOKEN ]] && echo "SNYK_TOKEN is empty"
+        [[ -z $ALEXS_TOKEN ]] && echo "ALEXS_TOKEN is empty"
         snyk container monitor -d --file=Dockerfile --severity-threshold=high oneseismic-container --project-name=ci-testing
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        ALEXS_TOKEN: ${{ secrets.ALEXS_SNYK_TOKEN_TEST }}
