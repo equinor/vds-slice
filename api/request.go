@@ -16,8 +16,8 @@ type RequestedResource struct {
 	//
 	// - https://account.blob.core.windows.net/container/blob?sp=r&st=2022-09-12T09:44:17Z&se=2022-09-12T17:44:17Z&spr=https&sv=2021-06-08&sr=c&sig=...
 	//	  Instead of passing the sas-token explicitly in the sas field, you can
-	//	  pass an sign url. If the sas-token is provided in both fields, the
-	//	  sas-token in the sas field is prioritized.
+	//	  pass an sign url. In this case the sas-token must be assigned the empty
+	//    string ("") or be unassigned.
 	//
 	// Note that your whole query string will be passed further down to
 	// openvds. We expect query parameters to contain sas-token and sas-token
@@ -60,14 +60,21 @@ func (r *RequestedResource) NormalizeConnection() error {
 	if err != nil {
 		return core.NewInvalidArgument(err.Error())
 	}
-	if strings.TrimSpace(r.Sas) == "" {
-		if url.RawQuery == "" {
-			return core.NewInvalidArgument("No valid Sas token is found in the request")
-		}
-		r.Sas = url.RawQuery
+
+	// If r.Sas is not defined in the request it is assigned ""
+	if r.Sas == "" && url.RawQuery == "" {
+		return core.NewInvalidArgument("No valid Sas token is found in the request")
 	}
 
-	url.RawQuery = ""
+	if r.Sas != "" && url.RawQuery != "" {
+		return core.NewInvalidArgument("Two sas tokens provided, only one sas token is allowed")
+	}
+
+	if r.Sas == "" {
+		r.Sas = url.RawQuery
+		url.RawQuery = ""
+	}
+
 	url.Host = url.Hostname()
 	r.Vds = url.String()
 	return nil

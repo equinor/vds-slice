@@ -111,7 +111,7 @@ def test_assure_only_allowed_storage_accounts(path, payload):
 ])
 @pytest.mark.parametrize("vds, sas, expected", [
     (f'{SAMPLES10_URL}?{gen_default_sas()}', '', http.HTTPStatus.OK),
-    (f'{SAMPLES10_URL}?invalid_sas', gen_default_sas(), http.HTTPStatus.OK),
+    (f'{SAMPLES10_URL}?invalid_sas', gen_default_sas(), http.HTTPStatus.BAD_REQUEST),
     (SAMPLES10_URL, '', http.HTTPStatus.BAD_REQUEST)
 ])
 def test_sas_token_in_url(path, payload, vds, sas, expected):

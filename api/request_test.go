@@ -214,8 +214,8 @@ func TestExtractSasFromUrl(t *testing.T) {
 				"../../testdata/well_known/well_known_default.vds?sastoken2",
 				"sastoken1",
 			),
-			expected:    "sastoken1",
-			shouldError: false,
+			expected:    "Two sas tokens provided, only one sas token is allowed",
+			shouldError: true,
 		},
 		{
 			request: newRequestedResource(
