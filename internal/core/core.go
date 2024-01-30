@@ -227,7 +227,7 @@ func GetBinaryOperator(binaryOperator string) (uint32, error) {
 		return BinaryOperatorDivision, nil
 	default:
 		options := "addition, subtraction, multiplication, division"
-		msg := "binary operator not recognized: '%s', valid options are: %s"
+		msg := "Binary operator not recognized: '%s', valid options are: %s"
 		return 100, NewInvalidArgument(fmt.Sprintf(msg, binaryOperator, options))
 	}
 }
@@ -442,43 +442,45 @@ func (v DSHandle) Close() error {
 }
 
 func NewDSHandle(connection Connection) (DSHandle, error) {
-	curl := C.CString(connection.Url())
-	defer C.free(unsafe.Pointer(curl))
-
-	ccred := C.CString(connection.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
-
-	var cctx = C.context_new()
-	var dataSource *C.struct_DataSource
-
-	cerr := C.single_datasource_new(cctx, curl, ccred, &dataSource)
-
-	if err := toError(cerr, cctx); err != nil {
-		defer C.context_free(cctx)
-		return DSHandle{}, err
-	}
-
-	return DSHandle{dataSource: dataSource, ctx: cctx}, nil
+	return CreateDSHandle([]Connection{connection}, BinaryOperatorNoOperator)
 }
 
-func NewDoubleDSHandle(connectionA Connection, connectionB Connection, operator uint32) (DSHandle, error) {
+func contains(elems []string, v string) bool {
+	for _, s := range elems {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
 
-	curlA := C.CString(connectionA.Url())
-	defer C.free(unsafe.Pointer(curlA))
+func CreateDSHandle(connections []Connection, operator uint32) (DSHandle, error) {
 
-	ccredA := C.CString(connectionA.ConnectionString())
-	defer C.free(unsafe.Pointer(ccredA))
-
-	curlB := C.CString(connectionB.Url())
-	defer C.free(unsafe.Pointer(curlB))
-
-	ccredB := C.CString(connectionB.ConnectionString())
-	defer C.free(unsafe.Pointer(ccredB))
+	if len(connections) == 0 || len(connections) > 2 {
+		return DSHandle{}, NewInvalidArgument("Invalid number of connections provided")
+	}
 
 	var cctx = C.context_new()
 	var dataSource *C.struct_DataSource
+	var cerr C.int
 
-	cerr := C.double_datasource_new(cctx, curlA, ccredA, curlB, ccredB, operator, &dataSource)
+	curlA := C.CString(connections[0].Url())
+	defer C.free(unsafe.Pointer(curlA))
+
+	ccredA := C.CString(connections[0].ConnectionString())
+	defer C.free(unsafe.Pointer(ccredA))
+
+	if len(connections) == 1 {
+		cerr = C.single_datasource_new(cctx, curlA, ccredA, &dataSource)
+	} else if len(connections) == 2 {
+		curlB := C.CString(connections[1].Url())
+		defer C.free(unsafe.Pointer(curlB))
+
+		ccredB := C.CString(connections[1].ConnectionString())
+		defer C.free(unsafe.Pointer(ccredB))
+
+		cerr = C.double_datasource_new(cctx, curlA, ccredA, curlB, ccredB, operator, &dataSource)
+	}
 
 	if err := toError(cerr, cctx); err != nil {
 		defer C.context_free(cctx)

@@ -65,7 +65,23 @@ func prepareRequestLogging(ctx *gin.Context, request Stringable) {
 
 func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	prepareRequestLogging(ctx, request)
-	connection, err := e.MakeVdsConnection(request.Vds, request.Sas)
+
+	if len(request.Vds) != 1 || len(request.Sas) != 1 {
+		err := core.NewInvalidArgument("Metadata requests only accepts one VDS url and one sas token")
+		if abortOnError(ctx, err) {
+			return
+		}
+	}
+
+	if request.BinaryOperator != "" {
+		err := core.NewInvalidArgument("Metadata request does not accept binary_operator key. " +
+			"The binary_operator key must be undefined or be the empty string")
+		if abortOnError(ctx, err) {
+			return
+		}
+	}
+
+	connection, err := e.MakeVdsConnection(request.Vds[0], request.Sas[0])
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -89,9 +105,39 @@ func (e *Endpoint) makeDataRequest(
 	request DataRequest,
 ) {
 	prepareRequestLogging(ctx, request)
-	connection, err := e.MakeVdsConnection(request.credentials())
+
+	vdsUrls, sasTokens, binaryOperatorString := request.credentials()
+
+	binaryOperator, err := core.GetBinaryOperator(binaryOperatorString)
 	if abortOnError(ctx, err) {
 		return
+	}
+
+	var connections []core.Connection
+
+	if len(vdsUrls) == 1 && binaryOperator != core.BinaryOperatorNoOperator {
+		err := core.NewInvalidArgument("Binary operator must be empty when a single VDS url is provided")
+		if abortOnError(ctx, err) {
+			return
+		}
+	} else if len(vdsUrls) == 2 && binaryOperator == core.BinaryOperatorNoOperator {
+		err := core.NewInvalidArgument("Binary operator must be provided when two VDS urls are provided")
+		if abortOnError(ctx, err) {
+			return
+		}
+	} else if len(vdsUrls) > 2 {
+		err := core.NewInvalidArgument("No endpoint accepts more than two vds urls.")
+		if abortOnError(ctx, err) {
+			return
+		}
+	}
+
+	for i := 0; i < len(vdsUrls); i++ {
+		vdsConn, err := e.MakeVdsConnection(vdsUrls[i], sasTokens[i])
+		if abortOnError(ctx, err) {
+			return
+		}
+		connections = append(connections, vdsConn)
 	}
 
 	cacheKey, err := request.hash()
@@ -100,13 +146,21 @@ func (e *Endpoint) makeDataRequest(
 	}
 
 	cacheEntry, hit := e.Cache.Get(cacheKey)
-	if hit && connection.IsAuthorizedToRead() {
-		ctx.Set("cache-hit", true)
-		writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
-		return
+	if hit {
+		var isAuthorizedToRead = true
+		for i := 0; i < len(connections); i++ {
+			if !connections[i].IsAuthorizedToRead() {
+				isAuthorizedToRead = false
+			}
+		}
+		if isAuthorizedToRead {
+			ctx.Set("cache-hit", true)
+			writeResponse(ctx, cacheEntry.Metadata(), cacheEntry.Data())
+			return
+		}
 	}
 
-	handle, err := core.NewDSHandle(connection)
+	handle, err := core.CreateDSHandle(connections, binaryOperator)
 	if abortOnError(ctx, err) {
 		return
 	}

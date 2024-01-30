@@ -306,7 +306,7 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 					"\"fillValue\": -999.25," +
 					"\"coordinates\":[[0, 0]]}",
 				expectedStatus: http.StatusBadRequest,
-				expectedError:  "No valid Sas token is found",
+				expectedError:  "No valid Sas token found at the end of vds url nr 1",
 			},
 			testFenceRequest{},
 		},
@@ -472,7 +472,7 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 				method:         http.MethodGet,
 				jsonRequest:    "{\"vds\":\"" + well_known + "\"}",
 				expectedStatus: http.StatusBadRequest,
-				expectedError:  "No valid Sas token is found",
+				expectedError:  "No valid Sas token found at the end of vds url nr 1",
 			}, testMetadataRequest{},
 		},
 		metadataTest{
