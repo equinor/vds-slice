@@ -1,0 +1,42 @@
+name: Snyk test Docker image
+on: 
+  push:
+    branches: [master, radix]
+  workflow_dispatch:
+
+jobs:
+  snyk_test:
+    name: Snyk test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Load openvds image
+      uses: "./.github/actions/load_openvds_image"
+
+    - name: Set docker image tag name for snyk testing
+      id: set_tag
+      run: |
+        tag=$(echo "${{ github.repository }}/docker-image-${{ github.ref_name }}" \
+         | tr '[:upper:]' '[:lower:]')
+        echo "DOCKER_IMAGE_TAG=$tag" >> "$GITHUB_ENV"
+
+    - name: Build docker image
+      run: |
+        docker build \
+        -f Dockerfile \
+        --build-arg OPENVDS_IMAGE=${{ env.OPENVDS_IMAGE_TAG }} \
+        --tag $DOCKER_IMAGE_TAG \
+        .
+
+    - name: Run Snyk to check Docker image for vulnerabilities
+      id: docker-image-scan
+      uses: snyk/actions/docker@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        command: monitor
+        image: $DOCKER_IMAGE_TAG
+        args:
+         --file=Dockerfile
+         --severity-threshold=high
