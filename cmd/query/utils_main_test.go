@@ -249,8 +249,9 @@ type testFenceRequest struct {
 }
 
 type testMetadataRequest struct {
-	Vds []string `json:"vds"`
-	Sas []string `json:"sas"`
+	Vds            []string `json:"vds"`
+	Sas            []string `json:"sas"`
+	BinaryOperator string   `json:"binary_operator"`
 }
 
 type testAttributeAlongSurfaceRequest struct {
