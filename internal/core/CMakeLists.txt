@@ -23,3 +23,8 @@ target_include_directories(cppcore
 target_link_libraries(cppcore
   PUBLIC openvds::openvds
 )
+
+find_package(Boost REQUIRED)
+target_include_directories(cppcore
+  PRIVATE ${Boost_INCLUDE_DIRS}
+)
