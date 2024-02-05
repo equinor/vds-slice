@@ -25,6 +25,14 @@ enum coordinate_system {
     CDP        = 2,
 };
 
+enum binary_operator {
+    NO_OPERATOR    = 0,
+    ADDITION       = 1,
+    SUBTRACTION    = 2,
+    MULTIPLICATION = 3,
+    DIVISION       = 4,
+};
+
 enum interpolation_method {
     NEAREST,
     LINEAR,

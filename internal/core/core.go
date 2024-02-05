@@ -32,6 +32,14 @@ const (
 	CoordinateSystemCdp        = C.CDP
 )
 
+const (
+	BinaryOperatorNoOperator     = C.NO_OPERATOR
+	BinaryOperatorAddition       = C.ADDITION
+	BinaryOperatorSubtraction    = C.SUBTRACTION
+	BinaryOperatorMultiplication = C.MULTIPLICATION
+	BinaryOperatorDivision       = C.DIVISION
+)
+
 // @Description Axis description
 type Axis struct {
 	// Name/Annotation of axis
@@ -53,7 +61,7 @@ type Axis struct {
 	Unit string `json:"unit" example:"ms"`
 } // @name Axis
 
-// @Description Geometrical plane with depth/time datapoints
+// @Description Geometrical plane with depth/time data points
 type RegularSurface struct {
 	// Values / height-map
 	Values [][]float32 `json:"values" binding:"required"`
@@ -93,7 +101,7 @@ type BoundingBox struct {
 } //@name BoundingBox
 
 type Array struct {
-	// Data format is represented by numpy-style formatcodes. Currently the
+	// Data format is represented by numpy-style format codes. Currently the
 	// format is always 4-byte floats, little endian (<f4).
 	Format string `json:"format" example:"<f4"`
 
@@ -202,6 +210,25 @@ func GetCoordinateSystem(coordinateSystem string) (int, error) {
 		options := "ij, ilxl, cdp"
 		msg := "coordinate system not recognized: '%s', valid options are: %s"
 		return -1, NewInvalidArgument(fmt.Sprintf(msg, coordinateSystem, options))
+	}
+}
+
+func GetBinaryOperator(binaryOperator string) (uint32, error) {
+	switch strings.ToLower(binaryOperator) {
+	case "":
+		return BinaryOperatorNoOperator, nil
+	case "addition":
+		return BinaryOperatorAddition, nil
+	case "subtraction":
+		return BinaryOperatorSubtraction, nil
+	case "multiplication":
+		return BinaryOperatorMultiplication, nil
+	case "division":
+		return BinaryOperatorDivision, nil
+	default:
+		options := "addition, subtraction, multiplication, division"
+		msg := "Binary operator not recognized: '%s', valid options are: %s"
+		return 100, NewInvalidArgument(fmt.Sprintf(msg, binaryOperator, options))
 	}
 }
 
@@ -347,6 +374,19 @@ func (surface *RegularSurface) toCdata(shift float32) ([]C.float, error) {
 	return cdata, nil
 }
 
+func (s *RegularSurface) ToString() string {
+	return fmt.Sprintf("{(ncols: %d, nrows: %d), Rotation: %.2f, "+
+		"Origin: [%.2f, %.2f], Increment: [%.2f, %.2f], FillValue: %.2f}, ",
+		len(s.Values[0]),
+		len(s.Values),
+		*s.Rotation,
+		*s.Xori,
+		*s.Yori,
+		s.Xinc,
+		s.Yinc,
+		*s.FillValue)
+}
+
 func (surface *RegularSurface) toCRegularSurface(cdata []C.float) (cRegularSurface, error) {
 	nrows := len(surface.Values)
 	ncols := len(surface.Values[0])
@@ -401,17 +441,46 @@ func (v DSHandle) Close() error {
 	return toError(cerr, v.ctx)
 }
 
-func NewDSHandle(conn Connection) (DSHandle, error) {
-	curl := C.CString(conn.Url())
-	defer C.free(unsafe.Pointer(curl))
+func NewDSHandle(connection Connection) (DSHandle, error) {
+	return CreateDSHandle([]Connection{connection}, BinaryOperatorNoOperator)
+}
 
-	ccred := C.CString(conn.ConnectionString())
-	defer C.free(unsafe.Pointer(ccred))
+func contains(elems []string, v string) bool {
+	for _, s := range elems {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func CreateDSHandle(connections []Connection, operator uint32) (DSHandle, error) {
+
+	if len(connections) == 0 || len(connections) > 2 {
+		return DSHandle{}, NewInvalidArgument("Invalid number of connections provided")
+	}
 
 	var cctx = C.context_new()
 	var dataSource *C.struct_DataSource
+	var cerr C.int
 
-	cerr := C.single_datasource_new(cctx, curl, ccred, &dataSource)
+	curlA := C.CString(connections[0].Url())
+	defer C.free(unsafe.Pointer(curlA))
+
+	ccredA := C.CString(connections[0].ConnectionString())
+	defer C.free(unsafe.Pointer(ccredA))
+
+	if len(connections) == 1 {
+		cerr = C.single_datasource_new(cctx, curlA, ccredA, &dataSource)
+	} else if len(connections) == 2 {
+		curlB := C.CString(connections[1].Url())
+		defer C.free(unsafe.Pointer(curlB))
+
+		ccredB := C.CString(connections[1].ConnectionString())
+		defer C.free(unsafe.Pointer(ccredB))
+
+		cerr = C.double_datasource_new(cctx, curlA, ccredA, curlB, ccredB, operator, &dataSource)
+	}
 
 	if err := toError(cerr, cctx); err != nil {
 		defer C.context_free(cctx)

@@ -19,7 +19,7 @@ enum status_code {
  *
  * Any function that accepts a context as one of its input parameters can use
  * it to write additional information that might be of use to the caller. This
- * includes, but is not limited, to writting error messages into the context if
+ * includes, but is not limited, to writing error messages into the context if
  * the function should fail. In that case the caller can call errmsg(Context*
  * ctx) to retrieve the error message.
  */
@@ -51,6 +51,15 @@ int single_datasource_new(
     DataSource** ds_out
 );
 
+int double_datasource_new(
+    Context* ctx,
+    const char* url_A,
+    const char* credentials_A,
+    const char* url_B,
+    const char* credentials_B,
+    enum binary_operator bin_operator,
+    DataSource** ds_out
+);
 
 int datasource_free(Context* ctx, DataSource* f);
 

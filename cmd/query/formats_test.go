@@ -29,10 +29,10 @@ func TestSupportedFormats(t *testing.T) {
 				expectedStatus: http.StatusOK,
 			},
 			testSliceRequest{
-				Vds:       fmt.Sprintf(formatFile, format),
+				Vds:       []string{fmt.Sprintf(formatFile, format)},
 				Direction: "i",
 				Lineno:    1,
-				Sas:       "n/a",
+				Sas:       []string{"n/a"},
 			},
 		}
 		fenceTest := fenceTest{
@@ -43,10 +43,10 @@ func TestSupportedFormats(t *testing.T) {
 			},
 
 			testFenceRequest{
-				Vds:              fmt.Sprintf(formatFile, format),
+				Vds:              []string{fmt.Sprintf(formatFile, format)},
 				CoordinateSystem: "ij",
 				Coordinates:      [][]float32{{1, 0}, {1, 1}},
-				Sas:              "n/a",
+				Sas:              []string{"n/a"},
 			},
 		}
 
@@ -103,9 +103,9 @@ func TestSupportedFormatsHorizon(t *testing.T) {
 			},
 
 			testAttributeAlongSurfaceRequest{
-				Vds:        fmt.Sprintf(formatFile, format),
+				Vds:        []string{fmt.Sprintf(formatFile, format)},
 				Values:     [][]float32{{20}},
-				Sas:        "n/a",
+				Sas:        []string{"n/a"},
 				Above:      8.0,
 				Below:      8.0,
 				Attributes: []string{"samplevalue", "min", "max"},
