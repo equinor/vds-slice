@@ -1,0 +1,45 @@
+apiVersion: radix.equinor.com/v1
+kind: RadixApplication
+metadata:
+  name: oneseismictest
+spec:
+  environments:
+    - name: test
+      build:
+        from: radix_playground
+  components:
+    - name: server
+      dockerfileName: Dockerfile
+      ports:
+        - name: http
+          port: 8080
+        - name: metrics
+          port: 8081
+      publicPort: http
+      monitoringConfig:
+        portName: metrics
+      identity:
+        azure:
+          clientId: fd162526-89a0-448a-979f-655c0717db52
+      environmentConfig:
+        - environment: test
+          variables:
+            VDSSLICE_PORT: 8080
+            VDSSLICE_CACHE_SIZE: 0 # MB
+            VDSSLICE_METRICS: true
+            VDSSLICE_METRICS_PORT: 8081
+          secretRefs:
+            azureKeyVaults:
+              - name: S067-RadixKeyvault
+                useAzureIdentity: true
+                items:
+                  - name: playground-test-allowlist
+                    envVar: VDSSLICE_STORAGE_ACCOUNTS
+          monitoring: true
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "200m"
+          horizontalScaling:
+            minReplicas: 1
+            maxReplicas: 1
