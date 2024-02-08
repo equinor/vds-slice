@@ -1,15 +1,19 @@
+#radixconfig production
 apiVersion: radix.equinor.com/v1
 kind: RadixApplication
 metadata:
-  name: oneseismictest
+  name: oneseismic
 spec:
   environments:
-    - name: dev
+    # stable production branch users are supposed to use
+    - name: prod
       build:
         from: radix
+    # environment that can be used for performance testing
+    # environment must be stopped when not needed
     - name: test
       build:
-        from: test
+        from: radix_test
   components:
     - name: server
       dockerfileName: Dockerfile
@@ -25,7 +29,7 @@ spec:
         azure:
           clientId: fd162526-89a0-448a-979f-655c0717db52
       environmentConfig:
-        - environment: dev
+        - environment: prod
           variables:
             VDSSLICE_PORT: 8080
             VDSSLICE_CACHE_SIZE: 512 # MB
@@ -36,20 +40,21 @@ spec:
               - name: S067-RadixKeyvault
                 useAzureIdentity: true
                 items:
-                  - name: playground-dev-allowlist
+                  - name: prod-allowlist
                     envVar: VDSSLICE_STORAGE_ACCOUNTS
           monitoring: true
           resources:
             requests:
-              memory: "6144Mi"
-              cpu: "4000m"
+              memory: "8192Mi"
+              cpu: "2000m"
           horizontalScaling:
             minReplicas: 1
-            maxReplicas: 3
+            maxReplicas: 1
         - environment: test
+          replicas: 0
           variables:
             VDSSLICE_PORT: 8080
-            VDSSLICE_CACHE_SIZE: 256 # MB
+            VDSSLICE_CACHE_SIZE: 0 # MB
             VDSSLICE_METRICS: true
             VDSSLICE_METRICS_PORT: 8081
           secretRefs:
@@ -57,13 +62,13 @@ spec:
               - name: S067-RadixKeyvault
                 useAzureIdentity: true
                 items:
-                  - name: playground-test-allowlist
+                  - name: test-allowlist
                     envVar: VDSSLICE_STORAGE_ACCOUNTS
           monitoring: true
           resources:
             requests:
-              memory: "6144Mi"
+              memory: "8192Mi"
               cpu: "2000m"
           horizontalScaling:
             minReplicas: 1
-            maxReplicas: 3
+            maxReplicas: 1
