@@ -1,3 +1,5 @@
+#include <functional>
+
 #include "ctypes.h"
 #include "capi.h"
 

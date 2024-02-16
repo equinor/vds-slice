@@ -1,5 +1,5 @@
 ARG OPENVDS_IMAGE=openvds
-ARG VDSSLICE_BASEIMAGE=golang:1.20-alpine3.16
+ARG VDSSLICE_BASEIMAGE=golang:1.20-alpine3.17
 FROM ${VDSSLICE_BASEIMAGE} as openvds
 RUN apk --no-cache add \
     curl \
@@ -88,7 +88,8 @@ RUN apk --no-cache add \
     libcurl \
     libxml2 \
     libuuid \
-    boost-log
+    boost-log \
+    jemalloc-dev
 
 WORKDIR /server
 COPY --from=installer /open-vds/Dist/OpenVDS/lib/* /open-vds/
@@ -101,4 +102,5 @@ USER 1001
 
 ENV LD_LIBRARY_PATH=/open-vds:$LD_LIBRARY_PATH
 ENV OPENVDS_AZURESDKFORCPP=1
+ENV LD_PRELOAD=/usr/lib/libjemalloc.so
 ENTRYPOINT [ "/server/query" ]
