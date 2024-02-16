@@ -12,12 +12,13 @@ RUN apk --no-cache add \
     boost-dev \
     libxml2-dev \
     libuv-dev \
-    util-linux-dev
+    util-linux-dev \
+    perl
 
 WORKDIR /
 RUN git clone https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds.git
 WORKDIR /open-vds
-RUN git checkout cbcd7b6163768118805dbcd080a5b0e386b82a6a
+RUN git checkout 3.3.3
 
 RUN cmake -S . \
     -B build \
