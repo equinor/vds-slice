@@ -1,5 +1,5 @@
 ARG OPENVDS_IMAGE=openvds
-ARG VDSSLICE_BASEIMAGE=golang:1.20-alpine3.17
+ARG VDSSLICE_BASEIMAGE=golang:1.22-alpine3.18
 FROM ${VDSSLICE_BASEIMAGE} as openvds
 RUN apk --no-cache add \
     git \
@@ -61,7 +61,7 @@ RUN go test -race ./...
 FROM builder as static_analyzer
 ARG CGO_CPPFLAGS="-I/open-vds/Dist/OpenVDS/include"
 ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
-ARG STATICCHECK_VERSION="2023.1.2"
+ARG STATICCHECK_VERSION="2023.1.7"
 ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
 RUN apk --no-cache add curl
 RUN curl \
