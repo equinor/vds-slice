@@ -2,16 +2,12 @@ ARG OPENVDS_IMAGE=openvds
 ARG VDSSLICE_BASEIMAGE=golang:1.20-alpine3.17
 FROM ${VDSSLICE_BASEIMAGE} as openvds
 RUN apk --no-cache add \
-    curl \
     git \
     g++ \
     gcc \
     make \
     cmake \
-    curl-dev \
     boost-dev \
-    libxml2-dev \
-    libuv-dev \
     util-linux-dev \
     perl
 
@@ -67,6 +63,7 @@ ARG CGO_CPPFLAGS="-I/open-vds/Dist/OpenVDS/include"
 ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
 ARG STATICCHECK_VERSION="2023.1.2"
 ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
+RUN apk --no-cache add curl
 RUN curl \
     -L https://github.com/dominikh/go-tools/releases/download/${STATICCHECK_VERSION}/staticcheck_linux_amd64.tar.gz \
     -o staticcheck-${STATICCHECK_VERSION}.tar.gz
@@ -82,13 +79,6 @@ RUN GOBIN=/server go install -a ./...
 
 FROM ${VDSSLICE_BASEIMAGE} as runner
 RUN apk --no-cache add \
-    g++ \
-    gcc \
-    libuv \
-    libcurl \
-    libxml2 \
-    libuuid \
-    boost-log \
     jemalloc-dev
 
 WORKDIR /server
