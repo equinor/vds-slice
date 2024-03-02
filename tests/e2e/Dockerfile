@@ -1,4 +1,4 @@
-FROM python:3.9-slim AS e2etest
+FROM python:3.13.0a4-slim AS e2etest
 
 COPY ./tests/e2e/requirements-dev.txt /tests/e2e/requirements-dev.txt
 RUN python -m pip install --upgrade pip
