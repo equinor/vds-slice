@@ -5,7 +5,7 @@ import { createSummary, thresholds, summaryTrendStats } from "./helpers/report-h
 
 export const options = {
   scenarios: {
-    constantSlice: {
+    constantFence: {
       executor: "constant-vus",
       vus: 1,
       duration: "1m",

@@ -11,7 +11,7 @@ import exec from "k6/execution";
 
 export const options = {
   scenarios: {
-    constantSlice: {
+    sequentialInlineSlice: {
       executor: "constant-vus",
       vus: 1,
       duration: "2m",
