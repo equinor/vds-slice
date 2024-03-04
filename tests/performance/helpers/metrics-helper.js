@@ -2,7 +2,7 @@ import { Trend } from "k6/metrics";
 
 export const responseLengthTrend = new Trend("response_length");
 export const requestTimeTrend = new Trend(
-  `request_time_med_${request_time_med_threshold()}_p95_${request_time_p95_threshold()}`,
+  `request_time_${__ENV.TEST_NAME.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 127)}`,
   true
 );
 
