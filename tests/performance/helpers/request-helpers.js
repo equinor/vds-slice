@@ -76,7 +76,7 @@ export function sendRequest(path, payload) {
     {
       "query response: status must be 200": (r) => r.status === 200,
     },
-    { "status checks": "query" }
+    { "status_checks": "query" }
   );
   if (!queryResStatusCheck) {
     fail(`Wrong 'query' response status: ${res.status}`);
