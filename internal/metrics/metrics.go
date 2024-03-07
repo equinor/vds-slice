@@ -49,7 +49,7 @@ func NewMetrics() *Metrics {
 		}, []string{"path", "status"}),
 
 		requestCount: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "vdsslice_number_of_requests",
+			Name: "vdsslice_requests_count",
 			Help: "VDSslice number of requests.",
 		}, []string{"method", "path"}),
 	}
