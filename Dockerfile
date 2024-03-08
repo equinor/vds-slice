@@ -1,24 +1,20 @@
 ARG OPENVDS_IMAGE=openvds
-ARG VDSSLICE_BASEIMAGE=golang:1.20-alpine3.17
+ARG VDSSLICE_BASEIMAGE=golang:1.22-alpine3.18
 FROM ${VDSSLICE_BASEIMAGE} as openvds
 RUN apk --no-cache add \
-    curl \
     git \
     g++ \
     gcc \
     make \
     cmake \
-    curl-dev \
     boost-dev \
-    libxml2-dev \
-    libuv-dev \
     util-linux-dev \
     perl
 
+ARG OPENVDS_VERSION=3.3.3
 WORKDIR /
-RUN git clone https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds.git
+RUN git clone --depth 1 --branch ${OPENVDS_VERSION} https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds.git
 WORKDIR /open-vds
-RUN git checkout 3.3.3
 
 RUN cmake -S . \
     -B build \
@@ -44,7 +40,7 @@ COPY . .
 ARG CGO_CPPFLAGS="-I/open-vds/Dist/OpenVDS/include"
 ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
 RUN go build -a ./...
-RUN GOBIN=/tools go install github.com/swaggo/swag/cmd/swag@v1.16.2
+RUN GOBIN=/tools go install github.com/swaggo/swag/cmd/swag@v1.16.3
 RUN /tools/swag init --dir cmd/query,api,internal/core -g main.go --md docs
 
 
@@ -65,8 +61,9 @@ RUN go test -race ./...
 FROM builder as static_analyzer
 ARG CGO_CPPFLAGS="-I/open-vds/Dist/OpenVDS/include"
 ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
-ARG STATICCHECK_VERSION="2023.1.2"
+ARG STATICCHECK_VERSION="2023.1.7"
 ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
+RUN apk --no-cache add curl
 RUN curl \
     -L https://github.com/dominikh/go-tools/releases/download/${STATICCHECK_VERSION}/staticcheck_linux_amd64.tar.gz \
     -o staticcheck-${STATICCHECK_VERSION}.tar.gz
@@ -82,13 +79,6 @@ RUN GOBIN=/server go install -a ./...
 
 FROM ${VDSSLICE_BASEIMAGE} as runner
 RUN apk --no-cache add \
-    g++ \
-    gcc \
-    libuv \
-    libcurl \
-    libxml2 \
-    libuuid \
-    boost-log \
     jemalloc-dev
 
 WORKDIR /server
