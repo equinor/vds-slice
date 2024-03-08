@@ -63,8 +63,16 @@ func prepareRequestLogging(ctx *gin.Context, request Stringable) {
 	ctx.Set("request", requestString)
 }
 
+func prepareMetricsLogging(ctx *gin.Context, request interface {
+	credentials() ([]string, []string, string)
+}) {
+	vds, _, _ := request.credentials()
+	ctx.Set("vds", vds)
+}
+
 func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	prepareRequestLogging(ctx, request)
+	prepareMetricsLogging(ctx, request.RequestedResource)
 
 	if len(request.Vds) != 1 || len(request.Sas) != 1 {
 		err := core.NewInvalidArgument("Metadata requests only accepts one VDS url and one sas token")
@@ -105,6 +113,7 @@ func (e *Endpoint) makeDataRequest(
 	request DataRequest,
 ) {
 	prepareRequestLogging(ctx, request)
+	prepareMetricsLogging(ctx, request)
 
 	vdsUrls, sasTokens, binaryOperatorString := request.credentials()
 
