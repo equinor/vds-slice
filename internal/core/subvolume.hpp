@@ -40,7 +40,7 @@ public:
      * @param margin Maximum number of samples silently added to the segment
      * from above and below.
      */
-    SegmentBlueprint(float stepsize, std::size_t margin)
+    SegmentBlueprint(float stepsize, const std::uint8_t margin)
         : m_stepsize(stepsize), m_margin(margin) {
         if (stepsize <= 0) {
             throw std::runtime_error("Stepsize must be positive");
@@ -91,10 +91,10 @@ protected:
         return ceil_with_tolerance((position - sample_offset) / this->stepsize()) - this->margin();
     }
 
-    std::size_t margin() const { return m_margin; }
+    std::uint8_t margin() const { return m_margin; }
 
     float m_stepsize;
-    std::size_t m_margin;
+    const std::uint8_t m_margin;
 };
 
 /**
