@@ -1,9 +1,10 @@
 package metrics
 
-
 import (
-	"time"
+	"net/url"
+	"slices"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
@@ -49,9 +50,9 @@ func NewMetrics() *Metrics {
 		}, []string{"path", "status"}),
 
 		requestCount: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "vdsslice_number_of_requests",
+			Name: "vdsslice_requests_count",
 			Help: "VDSslice number of requests.",
-		}, []string{"method", "path"}),
+		}, []string{"method", "path", "storage_account"}),
 	}
 
 	registry.MustRegister(metrics.requestDurations)
@@ -70,6 +71,7 @@ func NewGinMiddleware(metrics *Metrics) gin.HandlerFunc {
 		go func() {
 			path     := ctx.Request.URL.Path
 			method   := ctx.Request.Method
+			vdsURLs  := ctx.GetStringSlice("vds")
 			status   := strconv.Itoa(ctx.Writer.Status())
 			size     := float64(ctx.Writer.Size())
 			cachehit := strconv.FormatBool(ctx.GetBool("cache-hit"))
@@ -82,8 +84,32 @@ func NewGinMiddleware(metrics *Metrics) gin.HandlerFunc {
 			).Observe(duration)
 
 			metrics.responseSizes.WithLabelValues(path, status).Observe(size)
-			metrics.requestCount.WithLabelValues(method, path).Inc()
+			metrics.updateRequestCountMetric(method, path, vdsURLs)
 		}()
+	}
+}
+
+func extractStorageAccounts(vdsURLs []string) []string{
+	var storageAccounts []string
+	for _, vdsURL := range vdsURLs {
+		parsedURL, err := url.Parse(vdsURL)
+		if err != nil {
+			storageAccounts = append(storageAccounts, vdsURL)
+			continue
+		}
+		storageAccounts = append(storageAccounts, parsedURL.Hostname())
+	}
+
+	slices.Sort(storageAccounts)
+	storageAccounts = slices.Compact(storageAccounts)
+	return storageAccounts
+}
+
+func (metrics *Metrics) updateRequestCountMetric(method string, path string, vdsURLs []string) {
+	storageAccounts := extractStorageAccounts(vdsURLs)
+
+	for _, storageAccount := range storageAccounts {
+		metrics.requestCount.WithLabelValues(method, path, storageAccount).Inc()
 	}
 }
 
