@@ -93,7 +93,7 @@ SurfaceBoundedSubVolume* make_subvolume(
         auto const cdp = horizontal_grid.to_cdp(i);
         auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 
-        if (not iline.inrange(ij[0]) or not xline.inrange(ij[1])) {
+        if (not iline.inrange_with_margin(ij[0]) or not xline.inrange_with_margin(ij[1])) {
             subvolume->m_segment_offsets[i + 1] = subvolume->m_segment_offsets[i];
             continue;
         }

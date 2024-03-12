@@ -201,7 +201,7 @@ void fence(
         auto coordinate = transform_coordinate(x, y);
 
         auto validate_boundary = [&] (const int voxel, Axis const& axis) {
-            if (!axis.inrange(coordinate[voxel])) {
+            if (!axis.inrange_with_margin(coordinate[voxel])) {
                 if (fillValue == nullptr) {
                     const std::string coordinate_str =
                         "(" +utils::to_string_with_precision(x, 6) + "," +
@@ -276,8 +276,8 @@ void fetch_subvolume(
         double top_sample_depth    = segment.top_sample_position();
         double bottom_sample_depth = segment.bottom_sample_position();
 
-        if (not sample.inrange(top_sample_depth) or
-            not sample.inrange(bottom_sample_depth))
+        if (not sample.inrange_with_margin(top_sample_depth) or
+            not sample.inrange_with_margin(bottom_sample_depth))
         {
             auto row = horizontal_grid.row(i);
             auto col = horizontal_grid.col(i);
