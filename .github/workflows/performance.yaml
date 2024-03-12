@@ -92,6 +92,7 @@ jobs:
 
       - name: Run "${{ matrix.name }}" test
         env:
+          TEST_NAME: ${{ matrix.name }}
           VDS: https://${{ secrets.STORAGE_ACCOUNT_NAME }}.blob.core.windows.net/${{ matrix.vds }}
           ENDPOINT: ${{ secrets.ENDPOINT }}
           STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
@@ -100,9 +101,16 @@ jobs:
           LOGPATH: "/out"
           MEDTIME: ${{ matrix.medtime }}
           MAXTIME: ${{ matrix.maxtime }}
+          K6_PROMETHEUS_RW_SERVER_URL: "http://127.0.0.1:9090/api/v1/write"
+          K6_REMOTE_RW_URL: ${{secrets.K6_REMOTE_RW_URL}}
+          TENANT_ID: ${{secrets.TENANT_ID}}
+          K6_REMOTE_RW_CLIENT_ID: ${{secrets.K6_REMOTE_RW_CLIENT_ID}}
+          K6_REMOTE_RW_CLIENT_SECRET: ${{secrets.K6_REMOTE_RW_CLIENT_SECRET}}
+          K6_PROMETHEUS_RW_PUSH_INTERVAL: "15s"
         run: |
           tag=performance_tests
           docker run \
+            -e TEST_NAME \
             -e STORAGE_ACCOUNT_NAME \
             -e STORAGE_ACCOUNT_KEY \
             -e ENDPOINT \
@@ -111,9 +119,15 @@ jobs:
             -e MEDTIME \
             -e MAXTIME \
             -e LOGPATH \
+            -e K6_PROMETHEUS_RW_SERVER_URL \
+            -e K6_REMOTE_RW_URL \
+            -e TENANT_ID \
+            -e K6_REMOTE_RW_CLIENT_ID \
+            -e K6_REMOTE_RW_CLIENT_SECRET \
+            -e K6_PROMETHEUS_RW_PUSH_INTERVAL \
             -v $(pwd)/out:/out \
             $tag \
-            /bin/sh -c 'python /tests/performance/performance.py ${{ matrix.filepath }}'
+            /bin/bash -c '/tests/performance/execute.sh ${{ matrix.filepath }}'
 
       - name: Print stderr
         if: always()

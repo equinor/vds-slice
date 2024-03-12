@@ -1,0 +1,23 @@
+global:
+  scrape_interval: "${K6_PROMETHEUS_RW_PUSH_INTERVAL}"
+  evaluation_interval: "${K6_PROMETHEUS_RW_PUSH_INTERVAL}"
+
+scrape_configs:
+  - job_name: "vdsslice_performance"
+    track_timestamps_staleness: true
+    static_configs:
+      - targets: ["localhost:9090"]
+
+remote_write:
+- name: "azure_monitor"
+  url: "${K6_REMOTE_RW_URL}"
+  azuread:
+    cloud: 'AzurePublic'
+    oauth:
+      client_id: "${K6_REMOTE_RW_CLIENT_ID}"
+      client_secret: "${K6_REMOTE_RW_CLIENT_SECRET}"
+      tenant_id: "${TENANT_ID}"
+
+  metadata_config:
+    send_interval: "${K6_PROMETHEUS_RW_PUSH_INTERVAL}"
+

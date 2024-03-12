@@ -2,7 +2,7 @@ import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.1/index.js";
 import * as metrics from "./metrics-helper.js";
 
 const basicThresholds = {
-  "checks{status checks:query}": [{ threshold: "rate == 1.00" }],
+  "checks{status_checks:query}": [{ threshold: "rate == 1.00" }],
 };
 
 export function thresholds() {

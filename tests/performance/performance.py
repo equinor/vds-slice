@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+from datetime import datetime
 from utils.cloud import generate_account_signature
 
 
@@ -19,15 +20,32 @@ def runPerformanceTests(filepath):
     stdoutname = "{}/stdout.txt".format(logpath)
     stderrname = "{}/stderr.txt".format(logpath)
 
+    command = ["k6", "run"]
+
+    if os.getenv("K6_PROMETHEUS_RW_SERVER_URL"):
+        # expected environment variables
+        # - K6_REMOTE_RW_URL
+        # - TENANT_ID
+        # - K6_REMOTE_RW_CLIENT_ID
+        # - K6_REMOTE_RW_CLIENT_SECRET
+        # - K6_PROMETHEUS_RW_PUSH_INTERVAL
+
+        os.environ["K6_PROMETHEUS_RW_TREND_STATS"] = "max,med"
+        os.environ["K6_PROMETHEUS_RW_STALE_MARKERS"] = "true"
+
+        date_tag = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        endpoint = os.environ.get('ENDPOINT', '')
+        if endpoint.endswith('/'):
+            endpoint = endpoint[:-1]
+
+        command += ["--out", "experimental-prometheus-rw", "--tag",
+                    "testid="+date_tag, "--tag", "environment="+endpoint]
+
+    command += ["--console-output", logname, filepath]
+
     performance = subprocess.run(
-        [
-            "k6",
-            "run",
-            "--console-output",
-            logname,
-            filepath
-        ],
-        encoding="utf-8", capture_output=True)
+        command, encoding="utf-8", capture_output=True)
 
     with open(stdoutname, "w") as text_file:
         text_file.write(performance.stdout)
