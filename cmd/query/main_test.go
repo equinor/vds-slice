@@ -716,10 +716,10 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 		},
 		metadataTest{
 			baseTest{
-				name:           "Two urls to metadata request",
+				name:           "Two urls and no binary operator",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusBadRequest,
-				expectedError:  "Metadata requests only accepts one VDS url and one sas token",
+				expectedError:  "Binary operator must be provided when two VDS urls are provided",
 			},
 
 			testMetadataRequest{
@@ -729,11 +729,10 @@ func TestMetadataErrorHTTPResponse(t *testing.T) {
 		},
 		metadataTest{
 			baseTest{
-				name:           "Metadata request with binary operator",
+				name:           "Single metadata request with binary operator",
 				method:         http.MethodPost,
 				expectedStatus: http.StatusBadRequest,
-				expectedError: "Metadata request does not accept binary_operator key. " +
-					"The binary_operator key must be undefined or be the empty string",
+				expectedError:  "Binary operator must be empty when a single VDS url is provided",
 			},
 
 			testMetadataRequest{
