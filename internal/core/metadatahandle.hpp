@@ -84,6 +84,5 @@ private:
     MetadataHandle const* m_handle_B;
 
     int get_dimension(std::vector<std::string> const& names) const;
-    void validate_metadata() const noexcept(false);
 };
 #endif /* VDS_SLICE_METADATAHANDLE_HPP */

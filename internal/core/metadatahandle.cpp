@@ -98,21 +98,17 @@ DoubleMetadataHandle::DoubleMetadataHandle(
 )
     : m_handle_A(&handle_A),
       m_handle_B(&handle_B) {
-    this->validate_metadata();
 }
 
 Axis DoubleMetadataHandle::iline() const noexcept(true) {
-    // Axis iline in handle A and B are identical by validate_metadata()
     return this->m_handle_A->iline();
 }
 
 Axis DoubleMetadataHandle::xline() const noexcept(true) {
-    // Axis xline in handle A and B are identical by validate_metadata()
     return this->m_handle_A->xline();
 }
 
 Axis DoubleMetadataHandle::sample() const noexcept(true) {
-    // Axis sample in handle A and B are identical by validate_metadata()
     return this->m_handle_A->sample();
 }
 
@@ -152,13 +148,6 @@ OpenVDS::IJKCoordinateTransformer DoubleMetadataHandle::coordinate_transformer()
 void DoubleMetadataHandle::dimension_validation() const {
     this->m_handle_A->dimension_validation();
     this->m_handle_B->dimension_validation();
-}
-
-void DoubleMetadataHandle::validate_metadata() const noexcept(false) {
-    this->dimension_validation();
-    this->m_handle_A->iline().assert_equal(this->m_handle_B->iline());
-    this->m_handle_A->xline().assert_equal(this->m_handle_B->xline());
-    this->m_handle_A->sample().assert_equal(this->m_handle_B->sample());
 }
 
 int DoubleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
