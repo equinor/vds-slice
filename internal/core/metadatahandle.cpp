@@ -160,3 +160,7 @@ void DoubleMetadataHandle::validate_metadata() const noexcept(false) {
     this->m_handle_A->xline().assert_equal(this->m_handle_B->xline());
     this->m_handle_A->sample().assert_equal(this->m_handle_B->sample());
 }
+
+int DoubleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
+    throw std::runtime_error("Not implemented");
+}
