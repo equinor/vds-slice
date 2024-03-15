@@ -74,27 +74,13 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	prepareRequestLogging(ctx, request)
 	prepareMetricsLogging(ctx, request.RequestedResource)
 
-	if len(request.Vds) != 1 || len(request.Sas) != 1 {
-		err := core.NewInvalidArgument("Metadata requests only accepts one VDS url and one sas token")
-		if abortOnError(ctx, err) {
-			return
-		}
-	}
+	connections, binaryOperator, err := e.readConnectionParameters(ctx, request.RequestedResource)
 
-	if request.BinaryOperator != "" {
-		err := core.NewInvalidArgument("Metadata request does not accept binary_operator key. " +
-			"The binary_operator key must be undefined or be the empty string")
-		if abortOnError(ctx, err) {
-			return
-		}
-	}
-
-	connection, err := e.MakeVdsConnection(request.Vds[0], request.Sas[0])
-	if abortOnError(ctx, err) {
+	if err != nil {
 		return
 	}
 
-	handle, err := core.NewDSHandle(connection)
+	handle, err := core.CreateDSHandle(connections, binaryOperator)
 	if abortOnError(ctx, err) {
 		return
 	}
@@ -108,18 +94,16 @@ func (e *Endpoint) metadata(ctx *gin.Context, request MetadataRequest) {
 	ctx.Data(http.StatusOK, "application/json", buffer)
 }
 
-func (e *Endpoint) makeDataRequest(
+func (e *Endpoint) readConnectionParameters(
 	ctx *gin.Context,
-	request DataRequest,
-) {
-	prepareRequestLogging(ctx, request)
-	prepareMetricsLogging(ctx, request)
+	request RequestedResource,
+) ([]core.Connection, uint32, error) {
 
 	vdsUrls, sasTokens, binaryOperatorString := request.credentials()
 
 	binaryOperator, err := core.GetBinaryOperator(binaryOperatorString)
 	if abortOnError(ctx, err) {
-		return
+		return nil, 100, err
 	}
 
 	var connections []core.Connection
@@ -127,26 +111,40 @@ func (e *Endpoint) makeDataRequest(
 	if len(vdsUrls) == 1 && binaryOperator != core.BinaryOperatorNoOperator {
 		err := core.NewInvalidArgument("Binary operator must be empty when a single VDS url is provided")
 		if abortOnError(ctx, err) {
-			return
+			return nil, 100, err
 		}
 	} else if len(vdsUrls) == 2 && binaryOperator == core.BinaryOperatorNoOperator {
 		err := core.NewInvalidArgument("Binary operator must be provided when two VDS urls are provided")
 		if abortOnError(ctx, err) {
-			return
+			return nil, 100, err
 		}
 	} else if len(vdsUrls) > 2 {
 		err := core.NewInvalidArgument("No endpoint accepts more than two vds urls.")
 		if abortOnError(ctx, err) {
-			return
+			return nil, 100, err
 		}
 	}
 
 	for i := 0; i < len(vdsUrls); i++ {
 		vdsConn, err := e.MakeVdsConnection(vdsUrls[i], sasTokens[i])
 		if abortOnError(ctx, err) {
-			return
+			return nil, 100, err
 		}
 		connections = append(connections, vdsConn)
+	}
+
+	return connections, binaryOperator, nil
+}
+
+func (e *Endpoint) makeDataRequest(
+	ctx *gin.Context,
+	request DataRequest,
+) {
+	prepareRequestLogging(ctx, request)
+
+	connections, binaryOperator, err := e.readConnectionParameters(ctx, request.getRequestedResource())
+	if err != nil {
+		return
 	}
 
 	cacheKey, err := request.hash()

@@ -1,9 +1,9 @@
-#include "exceptions.hpp"
 #include "datasource.hpp"
 #include "datahandle.hpp"
+#include "exceptions.hpp"
 
 SingleDataSource::SingleDataSource(const char* url, const char* credentials) {
-    this->handle = make_datahandle(url, credentials);
+    this->handle = make_single_datahandle(url, credentials);
 }
 
 SingleDataSource::~SingleDataSource() {
@@ -73,10 +73,9 @@ DoubleDataSource::DoubleDataSource(
     this->handle_A = make_single_datasource(url_A, credentials_A);
     this->handle_B = make_single_datasource(url_B, credentials_B);
     this->binary_operator = binary_operator;
-    this->metadata = new DoubleMetadataHandle(
-        this->handle_A->get_metadata(),
-        this->handle_B->get_metadata()
-    );
+    this->handle = make_double_datahandle(url_A, credentials_A, url_B, credentials_B, binary_operator);
+    this->metadata = &(this->handle->get_metadata());
+
 }
 
 DoubleDataSource::~DoubleDataSource() {
@@ -91,7 +90,7 @@ DoubleDataSource::~DoubleDataSource() {
 }
 
 MetadataHandle const& DoubleDataSource::get_metadata() const noexcept(true) {
-    return this->handle_A->get_metadata();
+    return (MetadataHandle const&)*(this->metadata);
 }
 
 std::int64_t DoubleDataSource::samples_buffer_size(std::size_t const nsamples) noexcept(false) {
@@ -112,12 +111,8 @@ void DoubleDataSource::read_samples(
     interpolation_method const interpolation_method
 ) noexcept(false) {
 
-    std::vector<float> buffer_B(nsamples);
+    return this->handle->read_samples(buffer, size, samples, nsamples, interpolation_method);
 
-    this->handle_A->read_samples((float*)buffer, size, samples, nsamples, interpolation_method);
-    this->handle_B->read_samples(buffer_B.data(), size, samples, nsamples, interpolation_method);
-
-    this->binary_operator((float*)buffer, buffer_B.data(), nsamples);
 }
 
 std::int64_t DoubleDataSource::subcube_buffer_size(SubCube const& subcube) noexcept(false) {
@@ -135,23 +130,13 @@ void DoubleDataSource::read_subcube(
     std::int64_t size,
     SubCube const& subcube
 ) noexcept(false) {
-    std::vector<float> buffer_B((int)size / sizeof(float));
-    this->handle_A->read_subcube((float*)buffer, size, subcube);
-    this->handle_B->read_subcube(buffer_B.data(), size, subcube);
-
-    this->binary_operator((float*)buffer, buffer_B.data(), (int)size / sizeof(float));
+    this->handle->read_subcube((float*)buffer, size, subcube);
 }
 
 std::int64_t DoubleDataSource::traces_buffer_size(
     std::size_t const ntraces
 ) noexcept(false) {
-    // Be aware that asking both sources may cost some time
-    std::int64_t size_a = this->handle_A->traces_buffer_size(ntraces);
-    std::int64_t size_b = this->handle_B->traces_buffer_size(ntraces);
-    if (size_a != size_b) {
-        throw detail::bad_request("Mismatch in trace buffer size");
-    }
-    return size_a;
+    return this->handle->traces_buffer_size(ntraces);
 }
 
 void DoubleDataSource::read_traces(
@@ -162,15 +147,9 @@ void DoubleDataSource::read_traces(
     interpolation_method const interpolation_method
 ) noexcept(false) {
 
-    std::vector<float> buffer_B((int)size / sizeof(float));
+    this->handle->read_traces((float*)buffer, size, coordinates, ntraces, interpolation_method);
 
-    this->handle_A->read_traces((float*)buffer, size, coordinates, ntraces, interpolation_method);
-    this->handle_B->read_traces(buffer_B.data(), size, coordinates, ntraces, interpolation_method);
-
-    this->binary_operator((float*)buffer, buffer_B.data(), (int)size / sizeof(float));
 }
-
-
 
 DoubleDataSource* make_double_datasource(
     const char* url_A,

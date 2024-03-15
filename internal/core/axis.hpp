@@ -9,7 +9,7 @@
 class Axis {
 public:
     Axis(
-        OpenVDS::VolumeDataLayout const * const layout,
+        OpenVDS::VolumeDataLayout const* const layout,
         int const dimension
     );
 
@@ -18,12 +18,12 @@ public:
     float min() const noexcept(true);
     float max() const noexcept(true);
 
-    float stepsize() const noexcept (true);
+    float stepsize() const noexcept(true);
 
     std::string unit() const noexcept(true);
     int dimension() const noexcept(true);
 
-    std::string name() const noexcept (true);
+    std::string name() const noexcept(true);
 
     bool inrange(float coordinate) const noexcept(true);
     float to_sample_position(float coordinate) noexcept(false);

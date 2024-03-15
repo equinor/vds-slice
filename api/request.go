@@ -83,11 +83,16 @@ func (f RequestedResource) toString() string {
 	return fmt.Sprintf("vds: %s, binary_operator: %s", allVds, f.BinaryOperator)
 }
 
+func (r RequestedResource) getRequestedResource() RequestedResource {
+	return r
+}
+
 type DataRequest interface {
 	toString() (string, error)
 	hash() (string, error)
 	credentials() ([]string, []string, string)
 	execute(handle core.DSHandle) (data [][]byte, metadata []byte, err error)
+	getRequestedResource() RequestedResource
 }
 
 type Stringable interface {
