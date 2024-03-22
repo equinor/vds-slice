@@ -35,8 +35,11 @@ int Axis::dimension() const noexcept(true) {
     return this->m_dimension;
 }
 
-float Axis::stepsize() const noexcept (true) {
-    return (this->max() - this->min()) / (this->nsamples() - 1);
+float Axis::stepsize() const noexcept(true) {
+    if (this->nsamples() == 1)
+        return 1;
+    else
+        return (this->max() - this->min()) / (this->nsamples() - 1);
 }
 
 std::string Axis::name() const noexcept(true) {
