@@ -140,17 +140,17 @@ public:
     ResampledSegmentBlueprint(float stepsize) : SegmentBlueprint(stepsize, 0) {}
 
     std::size_t size(float reference, float top_boundary, float bottom_boundary) const noexcept {
-        float sample_offset = fmod_with_tolerance(reference, this->stepsize());
+        float sample_offset = this->zero_sample_offset(reference);
         return SegmentBlueprint::size(sample_offset, top_boundary, bottom_boundary);
     }
 
     float top_sample_position(float reference, float top_boundary) const noexcept {
-        float sample_offset = fmod_with_tolerance(reference, this->stepsize());
+        float sample_offset = this->zero_sample_offset(reference);
         return SegmentBlueprint::top_sample_position(sample_offset, top_boundary);
     }
 
     float bottom_sample_position(float reference, float bottom_boundary) const noexcept {
-        float sample_offset = fmod_with_tolerance(reference, this->stepsize());
+        float sample_offset = this->zero_sample_offset(reference);
         return SegmentBlueprint::bottom_sample_position(sample_offset, bottom_boundary);
     }
 
@@ -159,10 +159,18 @@ public:
      * It is expected that reference >= top_boundary.
      */
     std::size_t nsamples_above(float reference, float top_boundary) const noexcept {
-        float sample_offset = fmod_with_tolerance(reference, this->stepsize());
+        float sample_offset = this->zero_sample_offset(reference);
         std::size_t top_sample_number = to_above_sample_number(sample_offset, top_boundary);
         std::size_t reference_sample_number = std::round((reference - sample_offset) / this->stepsize());
         return reference_sample_number - top_sample_number;
+    }
+private:
+    /**
+     * In resampled data reference points by definition fall onto samples. Thus
+     * zero sample offset is calculated from reference itself.
+     */
+    float zero_sample_offset(float reference) const {
+        return fmod_with_tolerance(reference, this->stepsize());
     }
 
 };
