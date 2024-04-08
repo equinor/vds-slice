@@ -189,8 +189,6 @@ public:
 
     virtual float top_sample_position() const noexcept = 0;
 
-    virtual float bottom_sample_position() const noexcept = 0;
-
     /**
      * All positions of samples in the segment
      */
@@ -287,9 +285,6 @@ public:
     float top_sample_position() const noexcept {
         return this->m_blueprint->top_sample_position(m_top_boundary, m_top_margin);
     }
-    float bottom_sample_position() const noexcept {
-        return this->m_blueprint->bottom_sample_position(m_bottom_boundary, m_bottom_margin);
-    }
 
     std::vector<float>::const_iterator begin() const noexcept { return m_data_begin; }
     std::vector<float>::const_iterator end() const noexcept { return m_data_end; }
@@ -346,9 +341,6 @@ public:
 
     float top_sample_position() const noexcept {
         return this->m_blueprint->top_sample_position(m_reference, m_top_boundary);
-    }
-    float bottom_sample_position() const noexcept {
-        return this->m_blueprint->bottom_sample_position(m_reference, m_bottom_boundary);
     }
 
     std::size_t reference_index() const noexcept {
