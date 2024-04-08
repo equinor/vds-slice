@@ -66,22 +66,6 @@ public:
                this->to_round_up_sample_number(zero_sample_offset, top_boundary) + 1;
     }
 
-    /**
-     * Position of the sample that is closest to the top boundary but is not outside of the segment.
-     * zero_sample_offset must be < stepsize.
-     */
-    float top_sample_position(float zero_sample_offset, float top_boundary) const noexcept {
-        return to_round_up_sample_number(zero_sample_offset, top_boundary) * this->stepsize() + zero_sample_offset;
-    }
-
-    /**
-     * Position of the sample that is closest to the bottom boundary but is not outside of the segment.
-     * zero_sample_offset must be < stepsize.
-     */
-    float bottom_sample_position(float zero_sample_offset, float bottom_boundary) const noexcept {
-        return to_round_down_sample_number(zero_sample_offset, bottom_boundary) * this->stepsize() + zero_sample_offset;
-    }
-
     float stepsize() const { return m_stepsize; }
 protected:
 
@@ -126,11 +110,13 @@ public:
     }
 
     float top_sample_position(float top_boundary) const noexcept {
-        return SegmentBlueprint::top_sample_position(m_zero_sample_offset, top_boundary);
+        auto top_sample_number = this->to_round_up_sample_number(m_zero_sample_offset, top_boundary);
+        return sample_position_at(top_sample_number, m_zero_sample_offset);
     }
 
     float bottom_sample_position(float bottom_boundary) const noexcept {
-        return SegmentBlueprint::bottom_sample_position(m_zero_sample_offset, bottom_boundary);
+        auto bottom_sample_number = this->to_round_down_sample_number(m_zero_sample_offset, bottom_boundary);
+        return sample_position_at(bottom_sample_number, m_zero_sample_offset);
     }
 
 private:
@@ -156,12 +142,14 @@ public:
 
     float top_sample_position(float reference, float top_boundary) const noexcept {
         float zero_sample_offset = this->zero_sample_offset(reference);
-        return SegmentBlueprint::top_sample_position(zero_sample_offset, top_boundary);
+        auto top_sample_number = this->to_round_up_sample_number(zero_sample_offset, top_boundary);
+        return sample_position_at(top_sample_number, zero_sample_offset);
     }
 
     float bottom_sample_position(float reference, float bottom_boundary) const noexcept {
         float zero_sample_offset = this->zero_sample_offset(reference);
-        return SegmentBlueprint::bottom_sample_position(zero_sample_offset, bottom_boundary);
+        auto bottom_sample_number = this->to_round_down_sample_number(zero_sample_offset, bottom_boundary);
+        return sample_position_at(bottom_sample_number, zero_sample_offset);
     }
 
     /**
