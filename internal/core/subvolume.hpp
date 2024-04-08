@@ -62,7 +62,8 @@ public:
      * zero_sample_offset must be < stepsize.
      */
     std::size_t size(float zero_sample_offset, float top_boundary, float bottom_boundary) const noexcept {
-        return to_below_sample_number(zero_sample_offset, bottom_boundary) - to_above_sample_number(zero_sample_offset, top_boundary) + 1;
+        return this->to_round_down_sample_number(zero_sample_offset, bottom_boundary) -
+               this->to_round_up_sample_number(zero_sample_offset, top_boundary) + 1;
     }
 
     /**
@@ -70,7 +71,7 @@ public:
      * zero_sample_offset must be < stepsize.
      */
     float top_sample_position(float zero_sample_offset, float top_boundary) const noexcept {
-        return to_above_sample_number(zero_sample_offset, top_boundary) * this->stepsize() + zero_sample_offset;
+        return to_round_up_sample_number(zero_sample_offset, top_boundary) * this->stepsize() + zero_sample_offset;
     }
 
     /**
@@ -78,7 +79,7 @@ public:
      * zero_sample_offset must be < stepsize.
      */
     float bottom_sample_position(float zero_sample_offset, float bottom_boundary) const noexcept {
-        return to_below_sample_number(zero_sample_offset, bottom_boundary) * this->stepsize() + zero_sample_offset;
+        return to_round_down_sample_number(zero_sample_offset, bottom_boundary) * this->stepsize() + zero_sample_offset;
     }
 
     float stepsize() const { return m_stepsize; }
@@ -88,7 +89,7 @@ protected:
      * Sequence number of the closest sample that is <= position
      * zero_sample_offset must be < stepsize.
      */
-    int to_below_sample_number(float zero_sample_offset, float position) const noexcept {
+    int to_round_down_sample_number(float zero_sample_offset, float position) const noexcept {
         return floor_with_tolerance((position - zero_sample_offset) / this->stepsize()) + this->margin();
     }
 
@@ -96,7 +97,7 @@ protected:
      * Sequence number of the closest sample that is >= position
      * zero_sample_offset must be < stepsize.
      */
-    int to_above_sample_number(float zero_sample_offset, float position) const noexcept {
+    int to_round_up_sample_number(float zero_sample_offset, float position) const noexcept {
         return ceil_with_tolerance((position - zero_sample_offset) / this->stepsize()) - this->margin();
     }
 
@@ -169,7 +170,7 @@ public:
      */
     std::size_t nsamples_above(float reference, float top_boundary) const noexcept {
         float zero_sample_offset = this->zero_sample_offset(reference);
-        std::size_t top_sample_number = to_above_sample_number(zero_sample_offset, top_boundary);
+        std::size_t top_sample_number = this->to_round_up_sample_number(zero_sample_offset, top_boundary);
         std::size_t reference_sample_number = std::round((reference - zero_sample_offset) / this->stepsize());
         return reference_sample_number - top_sample_number;
     }
