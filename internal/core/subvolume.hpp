@@ -36,6 +36,15 @@ float ceil_with_tolerance(float x);
 class SegmentBlueprint {
 public:
     /**
+     * Calculates sample position at provided index.
+     *
+     * @param index
+     * @param zero_index_sample_position Sample position at index 0
+     */
+    float sample_position_at(int index, float zero_index_sample_position) const noexcept{
+        return zero_index_sample_position + this->stepsize() * index;
+    }
+    /**
      * @param stepsize Distance between sequential samples
      * @param margin Maximum number of samples silently added to the segment
      * from above and below.
@@ -195,7 +204,7 @@ public:
         positions.reserve(size);
         float top_sample_position = this->top_sample_position();
         for (int index = 0; index < size; ++index) {
-            positions.push_back(this->sample_position_at(index, top_sample_position));
+            positions.push_back(this->blueprint()->sample_position_at(index, top_sample_position));
         }
         return positions;
     }
@@ -204,7 +213,7 @@ public:
      * Position of sample at provided index, given that top sample is at position 0
      */
     float sample_position_at(std::size_t index) const noexcept{
-        return Segment::sample_position_at(index, this->top_sample_position());
+        return this->blueprint()->sample_position_at(index, this->top_sample_position());
     }
 
 protected:
@@ -215,14 +224,6 @@ protected:
     )
         : m_reference(reference), m_top_boundary(top_boundary),
           m_bottom_boundary(bottom_boundary) {}
-
-    /**
-     * Position of sample at provided index, given position of the top sample at index 0
-     * Note: top_sample_position is not calculated but provided so that it could be cached
-     */
-    float sample_position_at(std::size_t index, float top_sample_position) const noexcept{
-        return top_sample_position + this->blueprint()->stepsize() * index;
-    }
 
     /*
       Re-initialization functions are introduced for performance reason only. In
