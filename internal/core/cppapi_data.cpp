@@ -273,32 +273,13 @@ void fetch_subvolume(
 
         auto segment = subvolume.vertical_segment(i);
 
-        double top_sample_depth    = segment.top_sample_position();
-        double bottom_sample_depth = segment.bottom_sample_position();
-
-        if (not sample.inrange(top_sample_depth) or
-            not sample.inrange(bottom_sample_depth))
-        {
-            auto row = horizontal_grid.row(i);
-            auto col = horizontal_grid.col(i);
-            throw std::runtime_error(
-                "Vertical window is out of vertical bounds at"
-                " row: " + std::to_string(row) +
-                " col:" + std::to_string(col) +
-                ". Request: [" + utils::to_string_with_precision(top_sample_depth) +
-                ", " + utils::to_string_with_precision(bottom_sample_depth) +
-                "]. Seismic bounds: [" + utils::to_string_with_precision(sample.min())
-                + ", " + utils::to_string_with_precision(sample.max()) + "]"
-            );
-        }
-
         auto const cdp = horizontal_grid.to_cdp(i);
         auto ij = transform.WorldToAnnotation({cdp.x, cdp.y, 0});
 
         ij[0]  = iline.to_sample_position(ij[0]);
         ij[1]  = xline.to_sample_position(ij[1]);
 
-        double k = sample.to_sample_position(top_sample_depth);
+        double k = sample.to_sample_position(segment.top_sample_position());
         for (int idx = 0; idx < segment.size(); ++idx) {
             samples[cur][  iline.dimension() ] = ij[0];
             samples[cur][  xline.dimension() ] = ij[1];

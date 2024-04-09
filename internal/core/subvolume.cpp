@@ -3,6 +3,7 @@
 
 #include "axis.hpp"
 #include "subvolume.hpp"
+#include "utils.hpp"
 
 #include <boost/math/interpolators/makima.hpp>
 using boost::math::interpolators::makima;
@@ -100,6 +101,25 @@ SurfaceBoundedSubVolume* make_subvolume(
 
         std::int8_t top_margin = segment_blueprint.preferred_margin();
         std::int8_t bottom_margin = segment_blueprint.preferred_margin();
+
+        double top_sample_depth    = segment_blueprint.top_sample_position(top_depth, top_margin);
+        double bottom_sample_depth = segment_blueprint.bottom_sample_position(bottom_depth, bottom_margin);
+
+        if (not sample.inrange(top_sample_depth) or
+            not sample.inrange(bottom_sample_depth))
+        {
+            auto row = horizontal_grid.row(i);
+            auto col = horizontal_grid.col(i);
+            throw std::runtime_error(
+                "Vertical window is out of vertical bounds at"
+                " row: " + std::to_string(row) +
+                " col:" + std::to_string(col) +
+                ". Request: [" + utils::to_string_with_precision(top_sample_depth) +
+                ", " + utils::to_string_with_precision(bottom_sample_depth) +
+                "]. Seismic bounds: [" + utils::to_string_with_precision(sample.min())
+                + ", " + utils::to_string_with_precision(sample.max()) + "]"
+            );
+        }
 
         subvolume->m_segment_offsets[i + 1] =
             subvolume->m_segment_offsets[i] + segment_blueprint.size(top_depth, bottom_depth, top_margin, bottom_margin);
