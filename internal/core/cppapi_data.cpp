@@ -276,8 +276,8 @@ void fetch_subvolume(
         double top_sample_depth    = segment.top_sample_position();
         double bottom_sample_depth = segment.bottom_sample_position();
 
-        if (not sample.inrange_with_margin(top_sample_depth) or
-            not sample.inrange_with_margin(bottom_sample_depth))
+        if (not sample.inrange(top_sample_depth) or
+            not sample.inrange(bottom_sample_depth))
         {
             auto row = horizontal_grid.row(i);
             auto col = horizontal_grid.col(i);
