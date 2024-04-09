@@ -1,5 +1,5 @@
 ARG OPENVDS_IMAGE=openvds
-ARG VDSSLICE_BASEIMAGE=golang:1.22-alpine3.18
+ARG VDSSLICE_BASEIMAGE=golang:1.22-alpine
 FROM ${VDSSLICE_BASEIMAGE} as openvds
 RUN apk --no-cache add \
     git \
@@ -11,7 +11,7 @@ RUN apk --no-cache add \
     util-linux-dev \
     perl
 
-ARG OPENVDS_VERSION=3.3.3
+ARG OPENVDS_VERSION=3.4.1
 WORKDIR /
 RUN git clone --depth 1 --branch ${OPENVDS_VERSION} https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds.git
 WORKDIR /open-vds
