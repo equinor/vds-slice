@@ -264,6 +264,121 @@ TEST_F(SubvolumeTest, ManyFills)
 }
 
 
+TEST_F(SubvolumeTest, LargestPossibleMarginRetrievedNearTraceTopBoundary)
+{
+    static constexpr int nrows = 3;
+    static constexpr int ncols = 2;
+    static constexpr std::size_t size = nrows * ncols;
+
+    std::array<float, size> primary_surface_data = {
+        20, 20,
+        20, 20,
+        20, 19,
+    };
+
+    std::array<float, size> top_surface_data = {
+        12, 12,
+        11, 8,
+        7, 4,
+    };
+
+    std::array<float, size> bottom_surface_data = {
+        20, 20,
+        20, 20,
+        20, 20,
+    };
+
+    std::array expected_positions{
+        4.0f, 8.0f, 12.0f, 16.0f, 20.0f, 24.0f, 28.0f
+    };
+
+    const std::size_t expected_fetched_size = expected_positions.size();
+
+    RegularSurface primary_surface =
+        RegularSurface(primary_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    RegularSurface top_surface =
+        RegularSurface(top_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    RegularSurface bottom_surface =
+        RegularSurface(bottom_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    SurfaceBoundedSubVolume* subvolume = make_subvolume(
+        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+    );
+
+    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
+    for (int i = 0; i < size; ++i)
+    {
+        auto segment = subvolume->vertical_segment(i);
+        EXPECT_EQ(expected_fetched_size, segment.size())
+            << "Retrieved segment size not as expected at position " << i;
+        EXPECT_EQ(expected_fetched_size, segment.sample_positions().size())
+            << "Retrieved sample positions size not as expected at position " << i;
+        ASSERT_THAT(segment.sample_positions(), ::testing::ElementsAreArray(expected_positions));
+    }
+
+    delete subvolume;
+}
+
+TEST_F(SubvolumeTest, LargestPossibleMarginRetrievedNearTraceBottomBoundary)
+{
+    static constexpr int nrows = 3;
+    static constexpr int ncols = 2;
+    static constexpr std::size_t size = nrows * ncols;
+
+    std::array<float, size> primary_surface_data = {
+        24, 24,
+        24, 24,
+        24, 23,
+    };
+
+    std::array<float, size> top_surface_data = {
+        20, 20,
+        20, 20,
+        20, 20,
+    };
+
+    std::array<float, size> bottom_surface_data = {
+        40, 39,
+        36, 35,
+        32, 32,
+    };
+
+    std::array expected_positions{
+        12, 16, 20, 24, 28, 32, 36, 40
+    };
+
+    const std::size_t expected_fetched_size = expected_positions.size();
+
+    RegularSurface primary_surface =
+        RegularSurface(primary_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    RegularSurface top_surface =
+        RegularSurface(top_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    RegularSurface bottom_surface =
+        RegularSurface(bottom_surface_data.data(), nrows, ncols, samples_10_grid, fill);
+
+    SurfaceBoundedSubVolume* subvolume = make_subvolume(
+        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+    );
+
+    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
+    for (int i = 0; i < size; ++i)
+    {
+        auto segment = subvolume->vertical_segment(i);
+        EXPECT_EQ(expected_fetched_size, segment.size())
+            << "Retrieved segment size not as expected at position " << i;
+        EXPECT_EQ(expected_fetched_size, segment.sample_positions().size())
+            << "Retrieved sample positions size not as expected at position " << i;
+        ASSERT_THAT(segment.sample_positions(), ::testing::ElementsAreArray(expected_positions));
+    }
+
+    delete subvolume;
+}
+
+
 class SurfaceAlignmentTest : public ::testing::Test
 {
   protected:

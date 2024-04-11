@@ -37,6 +37,11 @@ float ceil_with_tolerance(float x) {
     return std::ceil(x);
 }
 
+enum class Border {
+    Top,
+    Bottom
+};
+
 SurfaceBoundedSubVolume* make_subvolume(
     MetadataHandle const& metadata,
     RegularSurface const& reference,
@@ -99,14 +104,8 @@ SurfaceBoundedSubVolume* make_subvolume(
             continue;
         }
 
-        std::int8_t top_margin = segment_blueprint.preferred_margin();
-        std::int8_t bottom_margin = segment_blueprint.preferred_margin();
-
-        double top_sample_depth    = segment_blueprint.top_sample_position(top_depth, top_margin);
-        double bottom_sample_depth = segment_blueprint.bottom_sample_position(bottom_depth, bottom_margin);
-
-        if (not sample.inrange(top_sample_depth) or
-            not sample.inrange(bottom_sample_depth))
+        if (not sample.inrange(top_depth) or
+            not sample.inrange(bottom_depth))
         {
             auto row = horizontal_grid.row(i);
             auto col = horizontal_grid.col(i);
@@ -114,11 +113,39 @@ SurfaceBoundedSubVolume* make_subvolume(
                 "Vertical window is out of vertical bounds at"
                 " row: " + std::to_string(row) +
                 " col:" + std::to_string(col) +
-                ". Request: [" + utils::to_string_with_precision(top_sample_depth) +
-                ", " + utils::to_string_with_precision(bottom_sample_depth) +
+                ". Request: [" + utils::to_string_with_precision(top_depth) +
+                ", " + utils::to_string_with_precision(bottom_depth) +
                 "]. Seismic bounds: [" + utils::to_string_with_precision(sample.min())
                 + ", " + utils::to_string_with_precision(sample.max()) + "]"
             );
+        }
+
+        auto calculate_margin = [&](Border border) {
+            std::int8_t margin = segment_blueprint.preferred_margin();
+            while (margin > 0) {
+                float sample_position;
+                if (border == Border::Top) {
+                    sample_position = segment_blueprint.top_sample_position(top_depth, margin);
+                } else {
+                    sample_position = segment_blueprint.bottom_sample_position(bottom_depth, margin);
+                }
+                if (sample.inrange(sample_position)) {
+                    return margin;
+                }
+                --margin;
+            }
+            return margin;
+
+        };
+
+        std::int8_t top_margin = calculate_margin(Border::Top);
+        if (top_margin != segment_blueprint.preferred_margin()) {
+            subvolume->m_segment_top_margins.emplace(i, top_margin);
+        }
+
+        std::int8_t bottom_margin = calculate_margin(Border::Bottom);
+        if (bottom_margin != segment_blueprint.preferred_margin()) {
+            subvolume->m_segment_bottom_margins.emplace(i, bottom_margin);
         }
 
         subvolume->m_segment_offsets[i + 1] =
@@ -164,6 +191,13 @@ void resample(RawSegment const& src_segment, ResampledSegment& dst_segment) {
 
     std::vector<double> src_data(src_segment.begin(), src_segment.end());
 
+    /*
+     * Regarding use of data at the array edge: in majority of cases
+     * interpolated area near the edges won't be used as segment samples.
+     * Exception are cases where user requested data near trace border. Here we
+     * allow algorithm to choose spline itself. Supplying additional edge
+     * samples with arbitrary value seems unnecessary.
+     */
     auto spline = makima<std::vector<double>>(std::move(src_points), std::move(src_data));
 
     auto dst = dst_segment.begin();
