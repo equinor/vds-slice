@@ -43,16 +43,17 @@ TEST(SegmentBlueprintTest, BoundariesOnSamples) {
     float reference = 18;
     float top_boundary = 10;
     float bottom_boundary = 26;
+    std::uint8_t margin = raw.preferred_margin();
 
     EXPECT_EQ(2, resampled.nsamples_above(reference, top_boundary));
 
-    EXPECT_EQ(2, raw.top_sample_position(top_boundary));
+    EXPECT_EQ(2, raw.top_sample_position(top_boundary, margin));
     EXPECT_EQ(10, resampled.top_sample_position(reference, top_boundary));
 
-    EXPECT_EQ(34, raw.bottom_sample_position(bottom_boundary));
+    EXPECT_EQ(34, raw.bottom_sample_position(bottom_boundary, margin));
     EXPECT_EQ(26, resampled.bottom_sample_position(reference, bottom_boundary));
 
-    EXPECT_EQ(9, raw.size(top_boundary, bottom_boundary));
+    EXPECT_EQ(9, raw.size(top_boundary, bottom_boundary, margin, margin));
     EXPECT_EQ(5, resampled.size(reference, top_boundary, bottom_boundary));
 }
 
@@ -70,16 +71,17 @@ TEST(SegmentBlueprintTest, TopBoundaryOnSample) {
     float reference = 18;
     float top_boundary = 10;
     float bottom_boundary = 25;
+    std::uint8_t margin = raw.preferred_margin();
 
     EXPECT_EQ(2, resampled.nsamples_above(reference, top_boundary));
 
-    EXPECT_EQ(2, raw.top_sample_position(top_boundary));
+    EXPECT_EQ(2, raw.top_sample_position(top_boundary, margin));
     EXPECT_EQ(10, resampled.top_sample_position(reference, top_boundary));
 
-    EXPECT_EQ(30, raw.bottom_sample_position(bottom_boundary));
+    EXPECT_EQ(30, raw.bottom_sample_position(bottom_boundary, margin));
     EXPECT_EQ(22, resampled.bottom_sample_position(reference, bottom_boundary));
 
-    EXPECT_EQ(8, raw.size(top_boundary, bottom_boundary));
+    EXPECT_EQ(8, raw.size(top_boundary, bottom_boundary, margin, margin));
     EXPECT_EQ(4, resampled.size(reference, top_boundary, bottom_boundary));
 }
 
@@ -97,16 +99,17 @@ TEST(SegmentBlueprintTest, BottomBoundaryOnSample) {
     float reference = 18;
     float top_boundary = 11;
     float bottom_boundary = 26;
+    std::uint8_t margin = raw.preferred_margin();
 
     EXPECT_EQ(1, resampled.nsamples_above(reference, top_boundary));
 
-    EXPECT_EQ(6, raw.top_sample_position(top_boundary));
+    EXPECT_EQ(6, raw.top_sample_position(top_boundary, margin));
     EXPECT_EQ(14, resampled.top_sample_position(reference, top_boundary));
 
-    EXPECT_EQ(34, raw.bottom_sample_position(bottom_boundary));
+    EXPECT_EQ(34, raw.bottom_sample_position(bottom_boundary, margin));
     EXPECT_EQ(26, resampled.bottom_sample_position(reference, bottom_boundary));
 
-    EXPECT_EQ(8, raw.size(top_boundary, bottom_boundary));
+    EXPECT_EQ(8, raw.size(top_boundary, bottom_boundary, margin, margin));
     EXPECT_EQ(4, resampled.size(reference, top_boundary, bottom_boundary));
 }
 
@@ -124,16 +127,17 @@ TEST(SegmentBlueprintTest, NoBoundaryOnSample) {
     float reference = 18;
     float top_boundary = 11;
     float bottom_boundary = 25;
+    std::uint8_t margin = raw.preferred_margin();
 
     EXPECT_EQ(1, resampled.nsamples_above(reference, top_boundary));
 
-    EXPECT_EQ(6, raw.top_sample_position(top_boundary));
+    EXPECT_EQ(6, raw.top_sample_position(top_boundary, margin));
     EXPECT_EQ(14, resampled.top_sample_position(reference, top_boundary));
 
-    EXPECT_EQ(30, raw.bottom_sample_position(bottom_boundary));
+    EXPECT_EQ(30, raw.bottom_sample_position(bottom_boundary, margin));
     EXPECT_EQ(22, resampled.bottom_sample_position(reference, bottom_boundary));
 
-    EXPECT_EQ(7, raw.size(top_boundary, bottom_boundary));
+    EXPECT_EQ(7, raw.size(top_boundary, bottom_boundary, margin, margin));
     EXPECT_EQ(3, resampled.size(reference, top_boundary, bottom_boundary));
 }
 
@@ -144,16 +148,16 @@ TEST(SegmentBlueprintTest, ReferenceOutsideSample) {
      *           |      |        |
      *          top  reference bottom
      */
-
     RawSegmentBlueprint raw = RawSegmentBlueprint(4, 2);
 
     float reference = 17;
     float top_boundary = 10;
     float bottom_boundary = 26;
+    std::uint8_t margin = raw.preferred_margin();
 
-    EXPECT_EQ(2, raw.top_sample_position(top_boundary));
-    EXPECT_EQ(34, raw.bottom_sample_position(bottom_boundary));
-    EXPECT_EQ(9, raw.size(top_boundary, bottom_boundary));
+    EXPECT_EQ(2, raw.top_sample_position(top_boundary, margin));
+    EXPECT_EQ(34, raw.bottom_sample_position(bottom_boundary, margin));
+    EXPECT_EQ(9, raw.size(top_boundary, bottom_boundary, margin, margin));
 }
 
 TEST(SegmentBlueprintTest, Subsampling01) {

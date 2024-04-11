@@ -98,8 +98,11 @@ SurfaceBoundedSubVolume* make_subvolume(
             continue;
         }
 
+        std::int8_t top_margin = segment_blueprint.preferred_margin();
+        std::int8_t bottom_margin = segment_blueprint.preferred_margin();
+
         subvolume->m_segment_offsets[i + 1] =
-            subvolume->m_segment_offsets[i] + segment_blueprint.size(top_depth, bottom_depth);
+            subvolume->m_segment_offsets[i] + segment_blueprint.size(top_depth, bottom_depth, top_margin, bottom_margin);
     }
     subvolume->m_data.reserve(subvolume->m_segment_offsets[horizontal_grid.size()]);
 
@@ -112,6 +115,7 @@ void SurfaceBoundedSubVolume::reinitialize(
 ) const {
     segment.reinitialize(
         m_ref[index], m_top[index], m_bottom[index],
+        top_margin(index), bottom_margin(index),
         m_data.begin() + m_segment_offsets[index], m_data.begin() + m_segment_offsets[index + 1]
     );
 }
