@@ -26,6 +26,11 @@ public:
     std::string name() const noexcept (true);
 
     /**
+     * Checks if coordinate falls inside axis range
+     */
+    bool inrange(float coordinate) const noexcept(true);
+
+    /**
      * Checks if coordinate falls inside axis or is inside half a sample
      * outside the boundary with inclusivity as
      *

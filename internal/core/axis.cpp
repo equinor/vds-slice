@@ -43,6 +43,10 @@ std::string Axis::name() const noexcept(true) {
     return this->m_axis_descriptor.GetName();
 }
 
+bool Axis::inrange(float coordinate) const noexcept(true) {
+    return this->min() <= coordinate && this->max() >=  coordinate;
+}
+
 bool Axis::inrange_with_margin(float coordinate) const noexcept(true) {
     return (this->min() - 0.5 * this->stepsize()) <= coordinate &&
            (this->max() + 0.5 * this->stepsize()) >  coordinate;
