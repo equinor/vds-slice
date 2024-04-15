@@ -16,6 +16,23 @@ cached_data_paths_payloads = [
     ("attributes/surface/between", payload_merge(connection_payload([SAMPLES10_URL], sas=[DUMMY_SAS]), attributes_between_surfaces_payload())),
 ]
 
+
+def make_caching_call(payload, path, sas=None):
+    """
+    makes a payload call to path.
+    used as a payload caching call
+    """
+    if sas == None:
+        sas = generate_container_signature(
+            STORAGE_ACCOUNT_NAME,
+            CONTAINER,
+            STORAGE_ACCOUNT_KEY,
+            permission=blob.ContainerSasPermissions(read=True))
+    payload.update({"sas": sas})
+    res = send_request(path, "post", payload)
+    assert res.status_code == http.HTTPStatus.OK
+
+
 @pytest.mark.parametrize("path, payload", cached_data_paths_payloads)
 @pytest.mark.parametrize("token, status, error", [
     (generate_container_signature(
@@ -42,18 +59,7 @@ cached_data_paths_payloads = [
     ),
 ])
 def test_cached_data_access_with_various_sas(path, payload, token, status, error):
-
-    def make_caching_call():
-        container_sas = generate_container_signature(
-            STORAGE_ACCOUNT_NAME,
-            CONTAINER,
-            STORAGE_ACCOUNT_KEY,
-            permission=blob.ContainerSasPermissions(read=True))
-        payload.update({"sas": container_sas})
-        res = send_request(path, "post", payload)
-        assert res.status_code == http.HTTPStatus.OK
-
-    make_caching_call()
+    make_caching_call(payload, path)
 
     payload.update({"sas": token})
     res = send_request(path, "post", payload)
