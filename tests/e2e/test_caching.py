@@ -1,5 +1,6 @@
 import http
 import pytest
+import time
 import json
 from utils.cloud import *
 from shared_test_functions import *
@@ -66,3 +67,23 @@ def test_cached_data_access_with_various_sas(path, payload, token, status, error
     assert res.status_code == status
     if error:
         assert error in json.loads(res.content)['error']
+
+
+@pytest.mark.parametrize("path, payload", cached_data_paths_payloads)
+def test_cache_request_with_expired_token(path, payload):
+    expire_time = 2
+    sas = generate_container_signature(
+        STORAGE_ACCOUNT_NAME,
+        CONTAINER,
+        STORAGE_ACCOUNT_KEY,
+        lifespan=expire_time,
+        permission=blob.ContainerSasPermissions(read=True))
+
+    make_caching_call(payload, path, sas)
+    time.sleep(expire_time + 1)
+
+    payload.update({"sas": sas})
+    res = send_request(path, "post", payload)
+    assert res.status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR
+    assert "403 Server failed to authenticate the request" in json.loads(res.content)[
+        'error']
