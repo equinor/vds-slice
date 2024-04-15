@@ -9,12 +9,14 @@ from azure.storage import filedatalake
 
 # tests here make sense if caching is enabled on the endpoint server
 
-@pytest.mark.parametrize("path, payload", [
+cached_data_paths_payloads = [
     ("slice", payload_merge(connection_payload(vds=[VDS_URL], sas=[DUMMY_SAS]), slice_payload())),
     ("fence", payload_merge(connection_payload(vds=[VDS_URL], sas=[DUMMY_SAS]), fence_payload())),
     ("attributes/surface/along", payload_merge(connection_payload([SAMPLES10_URL], sas=[DUMMY_SAS]), attributes_along_surface_payload())),
     ("attributes/surface/between", payload_merge(connection_payload([SAMPLES10_URL], sas=[DUMMY_SAS]), attributes_between_surfaces_payload())),
-])
+]
+
+@pytest.mark.parametrize("path, payload", cached_data_paths_payloads)
 @pytest.mark.parametrize("token, status, error", [
     (generate_container_signature(
         STORAGE_ACCOUNT_NAME, CONTAINER, STORAGE_ACCOUNT_KEY,

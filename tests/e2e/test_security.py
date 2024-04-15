@@ -4,14 +4,15 @@ import json
 from utils.cloud import *
 from shared_test_functions import *
 
-
-@pytest.mark.parametrize("path, payload", [
-    ("slice", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), slice_payload())),
-    ("fence", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), fence_payload())),
+all_paths_payloads = [
+    ("slice", payload_merge(connection_payload(vds=[VDS_URL], sas=[DUMMY_SAS]), slice_payload())),
+    ("fence", payload_merge(connection_payload(vds=[VDS_URL], sas=[DUMMY_SAS]), fence_payload())),
     ("metadata", connection_payload(VDS_URL, DUMMY_SAS)),
-    ("attributes/surface/along", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), attributes_along_surface_payload())),
-    ("attributes/surface/between", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), attributes_between_surfaces_payload())),
-])
+    ("attributes/surface/along", payload_merge(connection_payload([SAMPLES10_URL], sas=[DUMMY_SAS]), attributes_along_surface_payload())),
+    ("attributes/surface/between", payload_merge(connection_payload([SAMPLES10_URL], sas=[DUMMY_SAS]), attributes_between_surfaces_payload())),
+]
+
+@pytest.mark.parametrize("path, payload", all_paths_payloads)
 @pytest.mark.parametrize("sas, allowed_error_messages", [
     (
         "something_not_sassy",
@@ -30,13 +31,7 @@ def test_assure_no_unauthorized_access(path, payload, sas, allowed_error_message
         f'error body \'{error_body}\' does not contain any of the valid errors {allowed_error_messages}'
 
 
-@pytest.mark.parametrize("path, payload", [
-    ("slice",payload_merge(connection_payload(VDS_URL, DUMMY_SAS), slice_payload())),
-    ("fence", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), fence_payload())),
-    ("metadata", connection_payload(VDS_URL, DUMMY_SAS)),
-    ("attributes/surface/along", payload_merge(connection_payload([SAMPLES10_URL], [DUMMY_SAS] ), attributes_along_surface_payload())),
-    ("attributes/surface/between", payload_merge(connection_payload([SAMPLES10_URL], [DUMMY_SAS]), attributes_between_surfaces_payload())),
-])
+@pytest.mark.parametrize("path, payload", all_paths_payloads)
 def test_assure_only_allowed_storage_accounts(path, payload):
     payload.update({
         "vds": "https://dummy.blob.core.windows.net/container/blob",
@@ -47,13 +42,7 @@ def test_assure_only_allowed_storage_accounts(path, payload):
     assert "unsupported storage account" in body['error']
 
 
-@pytest.mark.parametrize("path, payload", [
-    ("slice", payload_merge(connection_payload(VDS_URL, DUMMY_SAS), slice_payload())),
-    ("fence",   payload_merge(connection_payload(VDS_URL, DUMMY_SAS), fence_payload())),
-    ("metadata",   connection_payload(VDS_URL, DUMMY_SAS)),
-    ("attributes/surface/along", payload_merge(connection_payload([SAMPLES10_URL], [DUMMY_SAS] ), attributes_along_surface_payload())),
-    ("attributes/surface/between", payload_merge(connection_payload([SAMPLES10_URL], [DUMMY_SAS] ), attributes_between_surfaces_payload())),
-])
+@pytest.mark.parametrize("path, payload", all_paths_payloads)
 @pytest.mark.parametrize("vds, sas, expected", [
     (f'{SAMPLES10_URL}?{gen_default_sas()}', '', http.HTTPStatus.OK),
     (f'{SAMPLES10_URL}?{gen_default_sas()}', None, http.HTTPStatus.OK),
