@@ -37,10 +37,12 @@ float ceil_with_tolerance(float x);
 class SegmentBlueprint {
 public:
     /**
-     * Calculates sample position at provided index.
+     * Calculates sample position (in annotated coordinates of samples axis) at
+     * provided index.
      *
      * @param index
-     * @param zero_index_sample_position Sample position at index 0
+     * @param zero_index_sample_position Sample position (in annotated
+     * coordinates of samples axis) at index 0
      */
     float sample_position_at(int index, float zero_index_sample_position) const noexcept{
         return zero_index_sample_position + this->stepsize() * index;
@@ -60,17 +62,32 @@ protected:
      * Segment size in number of samples
      * It is expected that top_boundary <= bottom_boundary.
      * zero_sample_offset must be < stepsize.
+     *
+     * @param zero_sample_offset Offset (in annotated coordinate system of
+     * samples axis) of sample with number 0
+     * @param top_boundary Top boundary position (in annotated coordinates of
+     * samples axis)
+     * @param bottom_boundary Bottom boundary position (in annotated coordinates
+     * of samples axis)
      */
     std::size_t size(float zero_sample_offset, float top_boundary, float bottom_boundary) const noexcept {
         return this->to_round_down_sample_number(zero_sample_offset, bottom_boundary) -
                this->to_round_up_sample_number(zero_sample_offset, top_boundary) + 1;
     }
 
+    /**
+     * Distance between sequential samples (in annotated coordinate system of
+     * samples axis)
+     */
     float stepsize() const { return m_stepsize; }
 
     /**
      * Sequence number of the closest sample that is <= position
      * zero_sample_offset must be < stepsize.
+     *
+     * @param zero_sample_offset Offset (in annotated coordinate system of
+     * samples axis) of sample with number 0
+     * @param position Position (in annotated coordinates of samples axis)
      */
     int to_round_down_sample_number(float zero_sample_offset, float position) const noexcept {
         return floor_with_tolerance((position - zero_sample_offset) / this->stepsize());
@@ -79,6 +96,10 @@ protected:
     /**
      * Sequence number of the closest sample that is >= position
      * zero_sample_offset must be < stepsize.
+     *
+     * @param zero_sample_offset Offset (in annotated coordinate system of
+     * samples axis) of sample with number 0
+     * @param position Position (in annotated coordinates of samples axis)
      */
     int to_round_up_sample_number(float zero_sample_offset, float position) const noexcept {
         return ceil_with_tolerance((position - zero_sample_offset) / this->stepsize());
@@ -102,6 +123,17 @@ public:
         m_zero_sample_offset = fmod_with_tolerance(sample_position, this->stepsize());
     }
 
+    /**
+     * Blueprint size in number of samples.
+     * It is expected that top_boundary <= bottom_boundary.
+     *
+     * @param top_boundary Top boundary position (in annotated coordinates of
+     * samples axis)
+     * @param bottom_boundary Bottom boundary position (in annotated coordinates
+     * of samples axis)
+     * @param top_margin Number of additional samples on the top
+     * @param bottom_margin Number of additional samples on the bottom
+     */
     std::size_t size(
         float top_boundary, float bottom_boundary,
         std::uint8_t top_margin, std::uint8_t bottom_margin
@@ -109,12 +141,28 @@ public:
         return SegmentBlueprint::size(m_zero_sample_offset, top_boundary, bottom_boundary) + top_margin + bottom_margin;
     }
 
+    /**
+     * Calculates blueprint's top sample position (in annotated coordinates of
+     * samples axis).
+     *
+     * @param top_boundary Top boundary position (in annotated coordinates of
+     * samples axis)
+     * @param top_margin Number of additional samples on the top
+     */
     float top_sample_position(float top_boundary, std::uint8_t top_margin) const noexcept {
         auto top_sample_number = this->to_round_up_sample_number(m_zero_sample_offset, top_boundary);
         auto top_margin_sample_number = top_sample_number - top_margin;
         return sample_position_at(top_margin_sample_number, m_zero_sample_offset);
     }
 
+    /**
+     * Calculates blueprint's bottom sample position (in annotated coordinates of
+     * samples axis).
+     *
+     * @param bottom_boundary Bottom boundary position (in annotated coordinates
+     * of samples axis)
+     * @param bottom_margin Number of additional samples on the bottom
+     */
     float bottom_sample_position(float bottom_boundary, std::uint8_t bottom_margin) const noexcept {
         auto bottom_sample_number = this->to_round_down_sample_number(m_zero_sample_offset, bottom_boundary);
         auto bottom_margin_sample_number = bottom_sample_number + bottom_margin;
@@ -142,17 +190,46 @@ class ResampledSegmentBlueprint : public SegmentBlueprint {
 public:
     ResampledSegmentBlueprint(float stepsize) : SegmentBlueprint(stepsize) {}
 
+    /**
+     * Blueprint size in number of samples.
+     * It is expected that top_boundary <= bottom_boundary.
+     *
+     * @param reference Position (in annotated coordinates of samples axis) of
+     * some known sample
+     * @param top_boundary Top boundary position (in annotated coordinates of
+     * samples axis)
+     * @param bottom_boundary Bottom boundary position (in annotated coordinates
+     * of samples axis)
+     */
     std::size_t size(float reference, float top_boundary, float bottom_boundary) const noexcept {
         float zero_sample_offset = this->zero_sample_offset(reference);
         return SegmentBlueprint::size(zero_sample_offset, top_boundary, bottom_boundary);
     }
 
+    /**
+     * Calculates blueprint's top sample position (in annotated coordinates of
+     * samples axis).
+     *
+     * @param reference Position (in annotated coordinates of samples axis) of
+     * some known sample
+     * @param top_boundary Top boundary position (in annotated coordinates of
+     * samples axis)
+     */
     float top_sample_position(float reference, float top_boundary) const noexcept {
         float zero_sample_offset = this->zero_sample_offset(reference);
         auto top_sample_number = this->to_round_up_sample_number(zero_sample_offset, top_boundary);
         return sample_position_at(top_sample_number, zero_sample_offset);
     }
 
+    /**
+     * Calculates blueprint's bottom sample position (in annotated coordinates of
+     * samples axis).
+     *
+     * @param reference Position (in annotated coordinates of samples axis) of
+     * some known sample
+     * @param bottom_boundary Bottom boundary position (in annotated coordinates of
+     * samples axis)
+     */
     float bottom_sample_position(float reference, float bottom_boundary) const noexcept {
         float zero_sample_offset = this->zero_sample_offset(reference);
         auto bottom_sample_number = this->to_round_down_sample_number(zero_sample_offset, bottom_boundary);
@@ -162,6 +239,11 @@ public:
     /**
      * Number of samples that fits into a segment from reference to top boundary.
      * It is expected that reference >= top_boundary.
+     *
+     * @param reference Position (in annotated coordinates of samples axis) of
+     * the sample of interest
+     * @param top_boundary Top boundary position (in annotated coordinates of
+     * samples axis)
      */
     std::size_t nsamples_above(float reference, float top_boundary) const noexcept {
         float zero_sample_offset = this->zero_sample_offset(reference);
@@ -172,7 +254,11 @@ public:
 private:
     /**
      * In resampled data reference points by definition fall onto samples. Thus
-     * zero sample offset is calculated from reference itself.
+     * zero sample offset (in annotated coordinate system of samples axis) is
+     * calculated from reference itself.
+     *
+     * @param reference Position (in annotated coordinates of samples axis) of
+     * some known sample
      */
     float zero_sample_offset(float reference) const {
         return fmod_with_tolerance(reference, this->stepsize());
@@ -185,12 +271,19 @@ private:
  */
 class Segment {
 public:
+    /**
+     * Segment size in number of samples
+     */
     virtual std::size_t size() const noexcept = 0;
 
+    /**
+     * Position (in annotated coordinates of samples axis) of the top sample.
+     */
     virtual float top_sample_position() const noexcept = 0;
 
     /**
-     * All positions of samples in the segment
+     * All positions (in annotated coordinates of samples axis) of samples in
+     * the segment
      */
     std::vector<double> sample_positions() const {
         std::size_t size = this->size();
@@ -204,7 +297,8 @@ public:
     }
 
     /**
-     * Position of sample at provided index, given that top sample is at position 0
+     * Position of sample (in annotated coordinates of samples axis) at provided
+     * index, given that top sample is at position 0
      */
     float sample_position_at(std::size_t index) const noexcept{
         return this->blueprint()->sample_position_at(index, this->top_sample_position());
@@ -278,10 +372,16 @@ public:
         this->m_data_end = data_end;
     }
 
+    /**
+     * Segment size in number of samples
+     */
     std::size_t size() const noexcept {
         return this->m_blueprint->size(m_top_boundary, m_bottom_boundary, m_top_margin, m_bottom_margin);
     }
 
+    /**
+     * Position (in annotated coordinates of samples axis) of the top sample.
+     */
     float top_sample_position() const noexcept {
         return this->m_blueprint->top_sample_position(m_top_boundary, m_top_margin);
     }
@@ -335,14 +435,24 @@ public:
     std::vector<double>::const_iterator begin() const noexcept { return m_data.begin(); }
     std::vector<double>::const_iterator end() const noexcept { return m_data.end(); }
 
+    /**
+     * Segment size in number of samples
+     */
     std::size_t size() const noexcept {
         return this->m_blueprint->size(m_reference, m_top_boundary, m_bottom_boundary);
     }
 
+    /**
+     * Position (in annotated coordinates of samples axis) of the top sample.
+     */
     float top_sample_position() const noexcept {
         return this->m_blueprint->top_sample_position(m_reference, m_top_boundary);
     }
 
+    /**
+     * Index of the reference sample starting from the top sample (which has
+     * index 0).
+     */
     std::size_t reference_index() const noexcept {
         return this->m_blueprint->nsamples_above(m_reference, m_top_boundary);
     }
