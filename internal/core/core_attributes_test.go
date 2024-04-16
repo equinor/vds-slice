@@ -67,54 +67,112 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 	testcases := []struct {
 		name     string
 		values   [][]float32
+		below    float32
+		above    float32
 		inbounds bool
 	}{
-		// 2 samples is the margin needed for interpolation
+		// top boundary at 4.0, bottom boundary at 40.0
 		{
-			name:     "Top boundary is on sample 2 samples away from first depth recording",
-			values:   [][]float32{{16.00}},
-			inbounds: true,
-		},
-		{
-			name:     "Top boundary snaps to sample 2 samples away from the top",
-			values:   [][]float32{{13.00}},
-			inbounds: true,
-		},
-		{
-			name:     "Top sample is less than 2 samples from the top",
+			name:     "value - above is 2 samples away from the first existing sample",
 			values:   [][]float32{{12.00}},
+			above:    0,
+			below:    12,
+			inbounds: true,
+		},
+		{
+			name:     "value - above snaps to sample which is 2 samples away from the first existing sample",
+			values:   [][]float32{{9.00}},
+			above:    0,
+			below:    12,
+			inbounds: true,
+		},
+		{
+			name:     "value - above is 1 sample away from the first existing sample",
+			values:   [][]float32{{8.00}},
+			above:    0,
+			below:    12,
+			inbounds: true,
+		},
+		{
+			name:     "value - above snaps to sample which is 1 sample away from the first existing sample",
+			values:   [][]float32{{7.00}},
+			above:    0,
+			below:    12,
+			inbounds: true,
+		},
+		{
+			name:     "value - above is on the first existing sample",
+			values:   [][]float32{{4.00}},
+			above:    0,
+			below:    12,
+			inbounds: true,
+		},
+		{
+			name:     "value - above is less than first existing sample",
+			values:   [][]float32{{3.00}},
+			above:    0,
+			below:    12,
 			inbounds: false,
 		},
 		{
-			name:     "Bottom boundary is on sample 2 samples away from last depth recording",
-			values:   [][]float32{{28.00}},
-			inbounds: true,
-		},
-		{
-			name:     "Bottom boundary snaps to sample 2 samples away from last depth recording",
-			values:   [][]float32{{31.00}},
-			inbounds: true,
-		},
-		{
-			name:     "Bottom sample is less than 2 samples from last depth recording",
+			name:     "value + below is 2 samples away from the last existing sample",
 			values:   [][]float32{{32.00}},
+			above:    12,
+			below:    0,
+			inbounds: true,
+		},
+		{
+			name:     "value + below snaps to sample which is 2 samples away from the last existing sample",
+			values:   [][]float32{{35.00}},
+			above:    12,
+			below:    0,
+			inbounds: true,
+		},
+		{
+			name:     "value + below is 1 sample away from the last existing sample",
+			values:   [][]float32{{36.00}},
+			above:    12,
+			below:    0,
+			inbounds: true,
+		},
+		{
+			name:     "value + below snaps to sample which is 1 sample away from the last existing sample",
+			values:   [][]float32{{38.00}},
+			above:    12,
+			below:    0,
+			inbounds: true,
+		},
+		{
+			name:     "value + below is on the last existing sample",
+			values:   [][]float32{{40.00}},
+			above:    12,
+			below:    0,
+			inbounds: true,
+		},
+		{
+			name:     "value + below is greater than last existing sample",
+			values:   [][]float32{{41.00}},
+			above:    12,
+			below:    0,
 			inbounds: false,
 		},
 		{
 			name:     "Some values inbounds, some out of bounds",
-			values:   [][]float32{{22.00, 32.00, 12.00}, {18.00, 31.00, 28.00}, {16.00, 15.00, 11.00}},
+			values:   [][]float32{{22.00, 40.00, 8.00}, {41.00, 35.00, 32.00}, {12.00, 11.00, 7.00}},
+			above:    4,
+			below:    4,
 			inbounds: false,
 		},
 		{
-			name:     "Fillvalue should not be bounds checked",
+			name:     "For attributes fillvalue means 'ignore trace' and should not be bounds checked",
 			values:   [][]float32{{-999.25}},
+			above:    4,
+			below:    4,
 			inbounds: true,
 		},
 	}
 
 	targetAttributes := []string{"min", "samplevalue"}
-	const above = float32(4.0)
-	const below = float32(4.0)
 	const stepsize = float32(4.0)
 
 	for _, testcase := range testcases {
@@ -124,8 +182,8 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 		defer handle.Close()
 		_, boundsErr := handle.GetAttributesAlongSurface(
 			surface,
-			above,
-			below,
+			testcase.above,
+			testcase.below,
 			stepsize,
 			targetAttributes,
 			interpolationMethod,
@@ -142,9 +200,9 @@ func TestSurfaceWindowVerticalBounds(t *testing.T) {
 		if !testcase.inbounds {
 			require.ErrorContainsf(t, boundsErr,
 				"out of vertical bound",
-				"[%s] Expected horizon value %f to throw out of bound",
+				"[%s] Expected horizon value %v to throw out of bound",
 				testcase.name,
-				testcase.values[0][0],
+				testcase.values,
 			)
 		}
 	}
@@ -1196,5 +1254,42 @@ func TestAttributesAllFill(t *testing.T) {
 
 		require.Equalf(t, expected, *along, "[%v]", attr)
 		require.Equalf(t, expected, *between, "[%v]", attr)
+	}
+}
+
+func TestAttributesOnSamplesNearTraceBoundary(t *testing.T) {
+	const stepsize = float32(4)
+	targetAttributes := []string{"mean"}
+	interpolationMethod, _ := GetInterpolationMethod("nearest")
+
+	topSurfaceValues := [][]float32{{8, 4}, {4, 32}, {36, 36}}
+	bottomSurfaceValues := [][]float32{{12, 12}, {8, 36}, {40, 40}}
+
+	topSurface := samples10Surface(topSurfaceValues)
+	bottomSurface := samples10Surface(bottomSurfaceValues)
+
+	expected := []float32{-3, 3.5, 5.5, 13.5, 12.5, -12.5}
+
+	handle, _ := NewDSHandle(samples10)
+	defer handle.Close()
+
+	buf, err := handle.GetAttributesBetweenSurfaces(
+		topSurface,
+		bottomSurface,
+		stepsize,
+		targetAttributes,
+		interpolationMethod,
+	)
+	require.NoErrorf(t, err,
+		"Failed to calculate attributes, err: %v",
+		err,
+	)
+
+	require.Len(t, buf, len(targetAttributes), "Wrong number of attributes")
+
+	for i, attr := range targetAttributes {
+		value, err := toFloat32(buf[i])
+		require.NoErrorf(t, err, "Couldn't convert to float32")
+		require.Equalf(t, expected, *value, "[%v]", attr)
 	}
 }

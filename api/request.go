@@ -351,11 +351,17 @@ type AttributeAlongSurfaceRequest struct {
 	// calculation will include samples 4, 8, 12, 16 and 20ms above the
 	// horizon, while the sample at 24ms is excluded.
 	//
+	// For each point of the surface (sample_value - above) should be in range
+	// of vertical axis.
+	//
 	// Defaults to zero
 	Above float32 `json:"above" example:"20.0"`
 
 	// Samples interval below the horizon to include in attribute calculation.
 	// Implements the same behavior as 'above'.
+	//
+	// For each point of the surface (sample_value + below) should be in range
+	// of vertical axis.
 	//
 	// Defaults to zero
 	Below float32 `json:"below" example:"20.0"`
