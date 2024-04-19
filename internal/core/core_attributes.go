@@ -8,7 +8,6 @@ package core
 import "C"
 import (
 	"fmt"
-	"math"
 	"unsafe"
 )
 
@@ -238,31 +237,14 @@ func (v DSHandle) getAttributes(
 	}
 	defer C.subvolume_free(cCtx, cSubVolume)
 
-	err := v.fetchSubvolume(
-		cSubVolume,
-		nrows,
-		ncols,
-		interpolation,
-	)
-	if err != nil {
-		return nil, err
+	cAttributes := make([]C.enum_attribute, len(targetAttributes))
+	for i := range targetAttributes {
+		cAttributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
-	return v.calculateAttributes(
-		cSubVolume,
-		hsize,
-		targetAttributes,
-		stepsize,
-	)
-}
-
-func (v DSHandle) fetchSubvolume(
-	cSubVolume *C.struct_SurfaceBoundedSubVolume,
-	nrows int,
-	ncols int,
-	interpolation int,
-) error {
-	hsize := nrows * ncols
+	nAttributes := len(cAttributes)
+	var mapsize = hsize * 4
+	buffer := make([]byte, mapsize*nAttributes)
 
 	// note that it is possible to hit go's own goroutines limit
 	// but we do not deal with it here
@@ -281,25 +263,44 @@ func (v DSHandle) fetchSubvolume(
 	from := 0
 	to := from + chunkSize
 
-	errs := make(chan error, hsize/chunkSize+1)
+	errs_subvolume := make(chan error, hsize/chunkSize+1)
+	errs_attributes := make(chan error, hsize/chunkSize+1)
 	nRoutines := 0
 
 	for from < hsize {
 		guard <- struct{}{} // block if guard channel is filled
 		go func(from, to int) {
-			var cCtx = C.context_new()
-			defer C.context_free(cCtx)
+			var cCtx_subvolume = C.context_new()
+			defer C.context_free(cCtx_subvolume)
 
-			cerr := C.fetch_subvolume(
-				cCtx,
+			cerr_subvolume := C.fetch_subvolume(
+				cCtx_subvolume,
 				v.DataSource(),
 				cSubVolume,
 				C.enum_interpolation_method(interpolation),
 				C.size_t(from),
 				C.size_t(to),
 			)
-			errs <- toError(cerr, cCtx)
+			errs_subvolume <- toError(cerr_subvolume, cCtx_subvolume)
+
+			var cCtx_attributes = C.context_new()
+			defer C.context_free(cCtx_attributes)
+
+			cerr_attributes := C.attribute(
+				cCtx_attributes,
+				v.DataSource(),
+				cSubVolume,
+				&cAttributes[0],
+				C.size_t(nAttributes),
+				C.float(stepsize),
+				C.size_t(from),
+				C.size_t(to),
+				unsafe.Pointer(&buffer[0]),
+			)
+
+			errs_attributes <- toError(cerr_attributes, cCtx_attributes)
 			<-guard
+
 		}(from, to)
 
 		nRoutines += 1
@@ -311,75 +312,13 @@ func (v DSHandle) fetchSubvolume(
 	// Wait for all gorutines to finish and collect any errors
 	var computeErrors []error
 	for i := 0; i < nRoutines; i++ {
-		err := <-errs
+		err := <-errs_subvolume
 		if err != nil {
 			computeErrors = append(computeErrors, err)
 		}
 	}
-
-	if len(computeErrors) > 0 {
-		return computeErrors[0]
-	}
-	return nil
-}
-
-func (v DSHandle) calculateAttributes(
-	cSubVolume *C.struct_SurfaceBoundedSubVolume,
-	hsize int,
-	targetAttributes []int,
-	stepsize float32,
-) ([][]byte, error) {
-
-	cAttributes := make([]C.enum_attribute, len(targetAttributes))
-	for i := range targetAttributes {
-		cAttributes[i] = C.enum_attribute(targetAttributes[i])
-	}
-
-	nAttributes := len(cAttributes)
-	var mapsize = hsize * 4
-	buffer := make([]byte, mapsize*nAttributes)
-
-	maxConcurrency := 32
-	windowsPerRoutine := int(math.Ceil(float64(hsize) / float64(maxConcurrency)))
-
-	errs := make(chan error, maxConcurrency)
-
-	from := 0
-	remaining := hsize
-	nRoutines := 0
-	for remaining > 0 {
-		nRoutines++
-
-		size := min(windowsPerRoutine, remaining)
-		to := from + size
-
-		go func(from, to int) {
-			var cCtx = C.context_new()
-			defer C.context_free(cCtx)
-
-			cErr := C.attribute(
-				cCtx,
-				v.DataSource(),
-				cSubVolume,
-				&cAttributes[0],
-				C.size_t(nAttributes),
-				C.float(stepsize),
-				C.size_t(from),
-				C.size_t(to),
-				unsafe.Pointer(&buffer[0]),
-			)
-
-			errs <- toError(cErr, cCtx)
-		}(from, to)
-
-		from = to
-		remaining -= size
-	}
-
-	// Wait for all gorutines to finish and collect any errors
-	var computeErrors []error
 	for i := 0; i < nRoutines; i++ {
-		err := <-errs
+		err := <-errs_attributes
 		if err != nil {
 			computeErrors = append(computeErrors, err)
 		}
