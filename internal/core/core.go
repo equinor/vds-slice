@@ -33,11 +33,12 @@ const (
 )
 
 const (
-	BinaryOperatorNoOperator     = C.NO_OPERATOR
-	BinaryOperatorAddition       = C.ADDITION
-	BinaryOperatorSubtraction    = C.SUBTRACTION
-	BinaryOperatorMultiplication = C.MULTIPLICATION
-	BinaryOperatorDivision       = C.DIVISION
+	BinaryOperatorInvalidOperator = C.INVALID_OPERATOR
+	BinaryOperatorNoOperator      = C.NO_OPERATOR
+	BinaryOperatorAddition        = C.ADDITION
+	BinaryOperatorSubtraction     = C.SUBTRACTION
+	BinaryOperatorMultiplication  = C.MULTIPLICATION
+	BinaryOperatorDivision        = C.DIVISION
 )
 
 // @Description Axis description
@@ -228,7 +229,7 @@ func GetBinaryOperator(binaryOperator string) (uint32, error) {
 	default:
 		options := "addition, subtraction, multiplication, division"
 		msg := "Binary operator not recognized: '%s', valid options are: %s"
-		return 100, NewInvalidArgument(fmt.Sprintf(msg, binaryOperator, options))
+		return BinaryOperatorNoOperator, NewInvalidArgument(fmt.Sprintf(msg, binaryOperator, options))
 	}
 }
 

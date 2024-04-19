@@ -151,7 +151,7 @@ func (e *Endpoint) readConnectionParameters(
 
 	binaryOperator, err := core.GetBinaryOperator(binaryOperatorString)
 	if abortOnError(ctx, err) {
-		return nil, 100, err
+		return nil, core.BinaryOperatorInvalidOperator, err
 	}
 
 	var connections []core.Connection
@@ -159,24 +159,24 @@ func (e *Endpoint) readConnectionParameters(
 	if len(vdsUrls) == 1 && binaryOperator != core.BinaryOperatorNoOperator {
 		err := core.NewInvalidArgument("Binary operator must be empty when a single VDS url is provided")
 		if abortOnError(ctx, err) {
-			return nil, 100, err
+			return nil, core.BinaryOperatorInvalidOperator, err
 		}
 	} else if len(vdsUrls) == 2 && binaryOperator == core.BinaryOperatorNoOperator {
 		err := core.NewInvalidArgument("Binary operator must be provided when two VDS urls are provided")
 		if abortOnError(ctx, err) {
-			return nil, 100, err
+			return nil, core.BinaryOperatorInvalidOperator, err
 		}
 	} else if len(vdsUrls) > 2 {
 		err := core.NewInvalidArgument("No endpoint accepts more than two vds urls.")
 		if abortOnError(ctx, err) {
-			return nil, 100, err
+			return nil, core.BinaryOperatorInvalidOperator, err
 		}
 	}
 
 	for i := 0; i < len(vdsUrls); i++ {
 		vdsConn, err := e.MakeVdsConnection(vdsUrls[i], sasTokens[i])
 		if abortOnError(ctx, err) {
-			return nil, 100, err
+			return nil, core.BinaryOperatorInvalidOperator, err
 		}
 		connections = append(connections, vdsConn)
 	}

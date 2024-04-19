@@ -26,11 +26,12 @@ enum coordinate_system {
 };
 
 enum binary_operator {
-    NO_OPERATOR    = 0,
-    ADDITION       = 1,
-    SUBTRACTION    = 2,
-    MULTIPLICATION = 3,
-    DIVISION       = 4,
+    INVALID_OPERATOR = 0,
+    NO_OPERATOR      = 1,
+    ADDITION         = 2,
+    SUBTRACTION      = 3,
+    MULTIPLICATION   = 4,
+    DIVISION         = 5,
 };
 
 enum interpolation_method {
