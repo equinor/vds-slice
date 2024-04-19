@@ -12,7 +12,6 @@ import (
 	"unsafe"
 )
 
-
 func (v DSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.attribute_metadata(
@@ -182,6 +181,34 @@ func (v DSHandle) GetAttributesBetweenSurfaces(
 	)
 }
 
+func (v DSHandle) normalizeAttributes(
+	attributes []string,
+) ([]int, error) {
+	var targetAttributes []int
+	for _, attr := range attributes {
+		id, err := GetAttributeType(attr)
+		if err != nil {
+			return nil, err
+		}
+		targetAttributes = append(targetAttributes, id)
+	}
+	return targetAttributes, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func (v DSHandle) getAttributes(
 	cReferenceSurface cRegularSurface,
 	cTopSurface cRegularSurface,
@@ -227,34 +254,6 @@ func (v DSHandle) getAttributes(
 		targetAttributes,
 		stepsize,
 	)
-}
-
-func (v DSHandle) normalizeAttributes(
-	attributes []string,
-) ([]int, error) {
-	var targetAttributes []int
-	for _, attr := range attributes {
-		id, err := GetAttributeType(attr)
-		if err != nil {
-			return nil, err
-		}
-		targetAttributes = append(targetAttributes, id)
-	}
-	return targetAttributes, nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 func (v DSHandle) fetchSubvolume(
