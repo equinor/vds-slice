@@ -263,33 +263,20 @@ func (v DSHandle) getAttributes(
 	from := 0
 	to := from + chunkSize
 
-	errs_subvolume := make(chan error, hsize/chunkSize+1)
-	errs_attributes := make(chan error, hsize/chunkSize+1)
+	errs := make(chan error, hsize/chunkSize+1)
 	nRoutines := 0
 
 	for from < hsize {
 		guard <- struct{}{} // block if guard channel is filled
 		go func(from, to int) {
-			var cCtx_subvolume = C.context_new()
-			defer C.context_free(cCtx_subvolume)
+			var cCtx = C.context_new()
+			defer C.context_free(cCtx)
 
-			cerr_subvolume := C.fetch_subvolume(
-				cCtx_subvolume,
+			cerr_attributes := C.attribute(
+				cCtx,
 				v.DataSource(),
 				cSubVolume,
 				C.enum_interpolation_method(interpolation),
-				C.size_t(from),
-				C.size_t(to),
-			)
-			errs_subvolume <- toError(cerr_subvolume, cCtx_subvolume)
-
-			var cCtx_attributes = C.context_new()
-			defer C.context_free(cCtx_attributes)
-
-			cerr_attributes := C.attribute(
-				cCtx_attributes,
-				v.DataSource(),
-				cSubVolume,
 				&cAttributes[0],
 				C.size_t(nAttributes),
 				C.float(stepsize),
@@ -298,7 +285,7 @@ func (v DSHandle) getAttributes(
 				unsafe.Pointer(&buffer[0]),
 			)
 
-			errs_attributes <- toError(cerr_attributes, cCtx_attributes)
+			errs <- toError(cerr_attributes, cCtx)
 			<-guard
 
 		}(from, to)
@@ -312,13 +299,7 @@ func (v DSHandle) getAttributes(
 	// Wait for all gorutines to finish and collect any errors
 	var computeErrors []error
 	for i := 0; i < nRoutines; i++ {
-		err := <-errs_subvolume
-		if err != nil {
-			computeErrors = append(computeErrors, err)
-		}
-	}
-	for i := 0; i < nRoutines; i++ {
-		err := <-errs_attributes
+		err := <-errs
 		if err != nil {
 			computeErrors = append(computeErrors, err)
 		}

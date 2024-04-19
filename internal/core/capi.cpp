@@ -322,31 +322,6 @@ int metadata(
     }
 }
 
-int fetch_subvolume(
-    Context* ctx,
-    DataSource* datasource,
-    SurfaceBoundedSubVolume* subvolume,
-    enum interpolation_method interpolation,
-    size_t from,
-    size_t to
-) {
-    try {
-        if (not datasource) throw detail::nullptr_error("Invalid datasource");
-        if (not subvolume)  throw detail::nullptr_error("Invalid subvolume");
-
-        cppapi::fetch_subvolume(
-            *datasource,
-            *subvolume,
-            interpolation,
-            from,
-            to
-        );
-        return STATUS_OK;
-    } catch (...) {
-        return handle_exception(ctx, std::current_exception());
-    }
-}
-
 int attribute_metadata(
     Context* ctx,
     DataSource* datasource,
@@ -369,6 +344,7 @@ int attribute(
     Context* ctx,
     DataSource* datasource,
     SurfaceBoundedSubVolume* src_subvolume,
+    enum interpolation_method interpolation_method,
     enum attribute* attributes,
     size_t nattributes,
     float stepsize,
@@ -397,6 +373,14 @@ int attribute(
             auto offset = src_subvolume->horizontal_grid().size() * sizeof(float) * i;
             outs[i] = static_cast< char* >(out) + offset;
         }
+
+        cppapi::fetch_subvolume(
+            *datasource,
+            *src_subvolume,
+            interpolation_method,
+            from,
+            to
+        );
 
         cppapi::attributes(
             *src_subvolume,
