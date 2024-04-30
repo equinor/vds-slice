@@ -146,15 +146,6 @@ int fence_metadata(
     response* out
 );
 
-int fetch_subvolume(
-    Context* ctx,
-    DataSource* datasource,
-    SurfaceBoundedSubVolume* subvolume,
-    enum interpolation_method interpolation_method,
-    size_t from,
-    size_t to
-);
-
 int attribute_metadata(
     Context* ctx,
     DataSource* datasource,
@@ -185,6 +176,7 @@ int attribute(
     Context* ctx,
     DataSource* datasource,
     SurfaceBoundedSubVolume* src_subvolume,
+    enum interpolation_method interpolation_method,
     enum attribute* attributes,
     size_t nattributes,
     float stepsize,

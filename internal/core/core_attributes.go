@@ -8,10 +8,8 @@ package core
 import "C"
 import (
 	"fmt"
-	"math"
 	"unsafe"
 )
-
 
 func (v DSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
@@ -182,6 +180,34 @@ func (v DSHandle) GetAttributesBetweenSurfaces(
 	)
 }
 
+func (v DSHandle) normalizeAttributes(
+	attributes []string,
+) ([]int, error) {
+	var targetAttributes []int
+	for _, attr := range attributes {
+		id, err := GetAttributeType(attr)
+		if err != nil {
+			return nil, err
+		}
+		targetAttributes = append(targetAttributes, id)
+	}
+	return targetAttributes, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func (v DSHandle) getAttributes(
 	cReferenceSurface cRegularSurface,
 	cTopSurface cRegularSurface,
@@ -211,59 +237,14 @@ func (v DSHandle) getAttributes(
 	}
 	defer C.subvolume_free(cCtx, cSubVolume)
 
-	err := v.fetchSubvolume(
-		cSubVolume,
-		nrows,
-		ncols,
-		interpolation,
-	)
-	if err != nil {
-		return nil, err
+	cAttributes := make([]C.enum_attribute, len(targetAttributes))
+	for i := range targetAttributes {
+		cAttributes[i] = C.enum_attribute(targetAttributes[i])
 	}
 
-	return v.calculateAttributes(
-		cSubVolume,
-		hsize,
-		targetAttributes,
-		stepsize,
-	)
-}
-
-func (v DSHandle) normalizeAttributes(
-	attributes []string,
-) ([]int, error) {
-	var targetAttributes []int
-	for _, attr := range attributes {
-		id, err := GetAttributeType(attr)
-		if err != nil {
-			return nil, err
-		}
-		targetAttributes = append(targetAttributes, id)
-	}
-	return targetAttributes, nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func (v DSHandle) fetchSubvolume(
-	cSubVolume *C.struct_SurfaceBoundedSubVolume,
-	nrows int,
-	ncols int,
-	interpolation int,
-) error {
-	hsize := nrows * ncols
+	nAttributes := len(cAttributes)
+	var mapsize = hsize * 4
+	buffer := make([]byte, mapsize*nAttributes)
 
 	// note that it is possible to hit go's own goroutines limit
 	// but we do not deal with it here
@@ -291,77 +272,11 @@ func (v DSHandle) fetchSubvolume(
 			var cCtx = C.context_new()
 			defer C.context_free(cCtx)
 
-			cerr := C.fetch_subvolume(
+			cerr_attributes := C.attribute(
 				cCtx,
 				v.DataSource(),
 				cSubVolume,
 				C.enum_interpolation_method(interpolation),
-				C.size_t(from),
-				C.size_t(to),
-			)
-			errs <- toError(cerr, cCtx)
-			<-guard
-		}(from, to)
-
-		nRoutines += 1
-
-		from += chunkSize
-		to = min(to+chunkSize, hsize)
-	}
-
-	// Wait for all gorutines to finish and collect any errors
-	var computeErrors []error
-	for i := 0; i < nRoutines; i++ {
-		err := <-errs
-		if err != nil {
-			computeErrors = append(computeErrors, err)
-		}
-	}
-
-	if len(computeErrors) > 0 {
-		return computeErrors[0]
-	}
-	return nil
-}
-
-func (v DSHandle) calculateAttributes(
-	cSubVolume *C.struct_SurfaceBoundedSubVolume,
-	hsize int,
-	targetAttributes []int,
-	stepsize float32,
-) ([][]byte, error) {
-
-	cAttributes := make([]C.enum_attribute, len(targetAttributes))
-	for i := range targetAttributes {
-		cAttributes[i] = C.enum_attribute(targetAttributes[i])
-	}
-
-	nAttributes := len(cAttributes)
-	var mapsize = hsize * 4
-	buffer := make([]byte, mapsize*nAttributes)
-
-	maxConcurrency := 32
-	windowsPerRoutine := int(math.Ceil(float64(hsize) / float64(maxConcurrency)))
-
-	errs := make(chan error, maxConcurrency)
-
-	from := 0
-	remaining := hsize
-	nRoutines := 0
-	for remaining > 0 {
-		nRoutines++
-
-		size := min(windowsPerRoutine, remaining)
-		to := from + size
-
-		go func(from, to int) {
-			var cCtx = C.context_new()
-			defer C.context_free(cCtx)
-
-			cErr := C.attribute(
-				cCtx,
-				v.DataSource(),
-				cSubVolume,
 				&cAttributes[0],
 				C.size_t(nAttributes),
 				C.float(stepsize),
@@ -370,11 +285,15 @@ func (v DSHandle) calculateAttributes(
 				unsafe.Pointer(&buffer[0]),
 			)
 
-			errs <- toError(cErr, cCtx)
+			errs <- toError(cerr_attributes, cCtx)
+			<-guard
+
 		}(from, to)
 
-		from = to
-		remaining -= size
+		nRoutines += 1
+
+		from += chunkSize
+		to = min(to+chunkSize, hsize)
 	}
 
 	// Wait for all gorutines to finish and collect any errors
