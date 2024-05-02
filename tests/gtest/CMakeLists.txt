@@ -8,6 +8,7 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(cppcoretests
   cppapi_test.cpp
+  datahandle_fence_test.cpp
   datahandle_metadata_test.cpp
   datahandle_slice_test.cpp
   datahandle_test.cpp
