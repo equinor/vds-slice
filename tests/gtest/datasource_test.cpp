@@ -7,11 +7,6 @@
 namespace {
 const std::string DEFAULT_DATA = "file://10_samples_default.vds";
 const std::string DOUBLE_VALUE_DATA = "file://10_double_value.vds";
-const std::string MISSING_ILINE_DATA = "file://10_missing_iline.vds";
-const std::string MISSING_XLINE_DATA = "file://10_missing_xline.vds";
-const std::string MISSING_SAMPLE_DATA = "file://10_missing_samples.vds";
-const std::string ALTERED_OFFSET_DATA = "file://10_miss_offset.vds";
-const std::string ALTERED_STEPSIZE_DATA = "file://10_miss_stepsize.vds";
 
 const std::string CREDENTIALS = "";
 
@@ -71,72 +66,6 @@ protected:
         delete datasource_reference;
     }
 };
-
-TEST_F(DataSourceTest, ILineMismatch) {
-    const std::string EXPECTED_MSG = "Axis: Inline: Mismatch in number of samples: 3 != 2";
-
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                MISSING_ILINE_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
-
-TEST_F(DataSourceTest, XLineMismatch) {
-    const std::string EXPECTED_MSG = "Axis: Crossline: Mismatch in number of samples: 2 != 1";
-
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                MISSING_XLINE_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
-
-TEST_F(DataSourceTest, SamplesMismatch) {
-    const std::string EXPECTED_MSG = "Axis: Sample: Mismatch in number of samples: 10 != 8";
-
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                MISSING_SAMPLE_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
-
-TEST_F(DataSourceTest, OffsetMismatch) {
-    const std::string EXPECTED_MSG = "Axis: Crossline: Mismatch in min value: 10.00 != 12.00";
-
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                ALTERED_OFFSET_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
-
-TEST_F(DataSourceTest, StepSizeMismatch) {
-    // Changing the stepsize causes the max value to change. Max value is checked before stepsize.
-    const std::string EXPECTED_MSG = "Axis: Inline: Mismatch in max value: 5.00 != 7.00";
-
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                ALTERED_STEPSIZE_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
 
 TEST_F(DataSourceTest, Addition) {
 

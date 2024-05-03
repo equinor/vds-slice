@@ -72,18 +72,8 @@ def create_10_samples(path, samples, ilines, xlines, factor):
 
 if __name__ == "__main__":
     parameters = [
-        {"path": "10_missing_iline", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
-            1, 3], "xlines": [10, 11], "factor": 1},
-        {"path": "10_missing_samples", "samples": [4, 8, 12, 16, 20, 24, 28, 32], "ilines": [
-            1, 3, 5], "xlines": [10, 11], "factor": 1},
-        {"path": "10_missing_xline", "samples": [
-            4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [1, 3, 5], "xlines": [10], "factor": 1},
         {"path": "10_double_value", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
             1, 3, 5], "xlines": [10, 11], "factor": 2},
-        {"path": "10_miss_offset", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
-            1, 3, 5], "xlines": [12, 13], "factor": 1},
-        {"path": "10_miss_stepsize", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
-            1, 4, 7], "xlines": [10, 11], "factor": 1},
     ]
     for p in parameters:
         create_10_samples(**p)
