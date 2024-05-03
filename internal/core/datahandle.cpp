@@ -26,7 +26,7 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
 
 } /* namespace */
 
-DataHandle* make_datahandle(
+SingleDataHandle* make_single_datahandle(
     const char* url,
     const char* credentials
 ) {
@@ -35,20 +35,17 @@ DataHandle* make_datahandle(
     if(error.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error.string);
     }
-    return new DataHandle(std::move(handle));
+    return new SingleDataHandle(std::move(handle));
 }
 
-DataHandle::DataHandle(OpenVDS::VDSHandle handle)
-    : m_file_handle(handle)
-    , m_access_manager(OpenVDS::GetAccessManager(handle))
-    , m_metadata(m_access_manager.GetVolumeDataLayout())
-{}
+SingleDataHandle::SingleDataHandle(OpenVDS::VDSHandle handle)
+    : m_file_handle(handle), m_access_manager(OpenVDS::GetAccessManager(handle)), m_metadata(m_access_manager.GetVolumeDataLayout()) {}
 
-MetadataHandle const& DataHandle::get_metadata() const noexcept (true) {
+MetadataHandle const& SingleDataHandle::get_metadata() const noexcept(true) {
     return this->m_metadata;
 }
 
-OpenVDS::VolumeDataFormat DataHandle::format() noexcept (true) {
+OpenVDS::VolumeDataFormat SingleDataHandle::format() noexcept(true) {
     /*
      * We always want to request data in OpenVDS::VolumeDataFormat::Format_R32
      * format for slice. For fence documentation says: "The traces/samples are
@@ -57,22 +54,22 @@ OpenVDS::VolumeDataFormat DataHandle::format() noexcept (true) {
     return OpenVDS::VolumeDataFormat::Format_R32;
 }
 
-std::int64_t DataHandle::subcube_buffer_size(
+std::int64_t SingleDataHandle::subcube_buffer_size(
     SubCube const& subcube
 ) noexcept (false) {
     std::int64_t size = this->m_access_manager.GetVolumeSubsetBufferSize(
         subcube.bounds.lower,
         subcube.bounds.upper,
-        DataHandle::format(),
-        DataHandle::lod_level,
-        DataHandle::channel
+        SingleDataHandle::format(),
+        SingleDataHandle::lod_level,
+        SingleDataHandle::channel
     );
 
     return size;
 }
 
-void DataHandle::read_subcube(
-    void * const buffer,
+void SingleDataHandle::read_subcube(
+    void* const buffer,
     std::int64_t size,
     SubCube const& subcube
 ) noexcept (false) {
@@ -80,11 +77,11 @@ void DataHandle::read_subcube(
         buffer,
         size,
         OpenVDS::Dimensions_012,
-        DataHandle::lod_level,
-        DataHandle::channel,
+        SingleDataHandle::lod_level,
+        SingleDataHandle::channel,
         subcube.bounds.lower,
         subcube.bounds.upper,
-        DataHandle::format()
+        SingleDataHandle::format()
     );
     bool const success = request.get()->WaitForCompletion();
 
@@ -93,16 +90,16 @@ void DataHandle::read_subcube(
     }
 }
 
-std::int64_t DataHandle::traces_buffer_size(std::size_t const ntraces) noexcept (false) {
+std::int64_t SingleDataHandle::traces_buffer_size(std::size_t const ntraces) noexcept(false) {
     int const dimension = this->get_metadata().sample().dimension();
     return this->m_access_manager.GetVolumeTracesBufferSize(ntraces, dimension);
 }
 
-void DataHandle::read_traces(
-    void * const                    buffer,
-    std::int64_t const              size,
-    voxel const*                    coordinates,
-    std::size_t const               ntraces,
+void SingleDataHandle::read_traces(
+    void* const buffer,
+    std::int64_t const size,
+    voxel const* coordinates,
+    std::size_t const ntraces,
     enum interpolation_method const interpolation_method
 ) noexcept (false) {
     int const dimension = this->get_metadata().sample().dimension();
@@ -111,8 +108,8 @@ void DataHandle::read_traces(
         (float*)buffer,
         size,
         OpenVDS::Dimensions_012,
-        DataHandle::lod_level,
-        DataHandle::channel,
+        SingleDataHandle::lod_level,
+        SingleDataHandle::channel,
         coordinates,
         ntraces,
         ::to_interpolation(interpolation_method),
@@ -125,28 +122,28 @@ void DataHandle::read_traces(
     }
 }
 
-std::int64_t DataHandle::samples_buffer_size(
+std::int64_t SingleDataHandle::samples_buffer_size(
     std::size_t const nsamples
 ) noexcept (false) {
     return this->m_access_manager.GetVolumeSamplesBufferSize(
         nsamples,
-        DataHandle::channel
+        SingleDataHandle::channel
     );
 }
 
-void DataHandle::read_samples(
-    void * const                    buffer,
-    std::int64_t const              size,
-    voxel const*                    samples,
-    std::size_t const               nsamples,
+void SingleDataHandle::read_samples(
+    void* const buffer,
+    std::int64_t const size,
+    voxel const* samples,
+    std::size_t const nsamples,
     enum interpolation_method const interpolation_method
 ) noexcept (false) {
     auto request = this->m_access_manager.RequestVolumeSamples(
         (float*)buffer,
         size,
         OpenVDS::Dimensions_012,
-        DataHandle::lod_level,
-        DataHandle::channel,
+        SingleDataHandle::lod_level,
+        SingleDataHandle::channel,
         samples,
         nsamples,
         ::to_interpolation(interpolation_method)

@@ -3,7 +3,7 @@
 #include "datahandle.hpp"
 
 SingleDataSource::SingleDataSource(const char* url, const char* credentials) {
-    this->handle = make_datahandle(url, credentials);
+    this->handle = make_single_datahandle(url, credentials);
 }
 
 SingleDataSource::~SingleDataSource() {

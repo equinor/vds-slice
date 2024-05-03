@@ -78,7 +78,7 @@ public:
         enum interpolation_method const interpolation_method) noexcept(false);
 
 private:
-    DataHandle *handle;
+    SingleDataHandle* handle;
 };
 
 SingleDataSource *make_single_datasource(

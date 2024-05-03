@@ -11,9 +11,10 @@
 
 using voxel = float[OpenVDS::Dimensionality_Max];
 
-class DataHandle {
-    DataHandle(OpenVDS::VDSHandle handle);
-    friend DataHandle* make_datahandle(const char* url,const char* credentials);
+class SingleDataHandle {
+    SingleDataHandle(OpenVDS::VDSHandle handle);
+    friend SingleDataHandle* make_single_datahandle(const char* url, const char* credentials);
+
 public:
 
     MetadataHandle const& get_metadata() const noexcept (true);
@@ -58,7 +59,7 @@ private:
     static int constexpr channel = 0;
 };
 
-DataHandle* make_datahandle(
+SingleDataHandle* make_single_datahandle(
     const char* url,
     const char* credentials
 ) noexcept (false);
