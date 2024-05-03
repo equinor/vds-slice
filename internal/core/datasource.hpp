@@ -138,24 +138,4 @@ DoubleDataSource *make_double_datasource(
     const char *credentials_B,
     binary_function binary_operator);
 
-void inplace_subtraction(
-    float *buffer_A,
-    const float *buffer_B,
-    std::size_t nsamples) noexcept(true);
-
-void inplace_addition(
-    float *buffer_A,
-    const float *buffer_B,
-    std::size_t nsamples) noexcept(true);
-
-void inplace_multiplication(
-    float *buffer_A,
-    const float *buffer_B,
-    std::size_t nsamples) noexcept(true);
-
-void inplace_division(
-    float *buffer_A,
-    const float *buffer_B,
-    std::size_t nsamples) noexcept(true);
-
 #endif /* VDS_SLICE_DATA_SOURCE_HPP */

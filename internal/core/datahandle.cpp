@@ -26,6 +26,15 @@ OpenVDS::InterpolationMethod to_interpolation(interpolation_method interpolation
 
 } /* namespace */
 
+OpenVDS::VolumeDataFormat DataHandle::format() noexcept(true) {
+    /*
+     * We always want to request data in OpenVDS::VolumeDataFormat::Format_R32
+     * format for slice. For fence documentation says: "The traces/samples are
+     * always in 32-bit floating point format."
+     */
+    return OpenVDS::VolumeDataFormat::Format_R32;
+}
+
 SingleDataHandle* make_single_datahandle(
     const char* url,
     const char* credentials
@@ -176,15 +185,7 @@ DoubleDataHandle* make_double_datahandle(
 }
 
 DoubleDataHandle::DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHandle handle_b, binary_function binary_operator)
-    : m_file_handle_a(handle_a)
-    , m_file_handle_b(handle_b)
-    , m_binary_operator(binary_operator)
-    , m_access_manager_a(OpenVDS::GetAccessManager(handle_a))
-    , m_access_manager_b(OpenVDS::GetAccessManager(handle_b))
-    , m_metadata_a(m_access_manager_a.GetVolumeDataLayout())
-    , m_metadata_b(m_access_manager_b.GetVolumeDataLayout())
-    , m_metadata(DoubleMetadataHandle(m_metadata_a, m_metadata_b)) 
-    {}
+    : m_file_handle_a(handle_a), m_file_handle_b(handle_b), m_binary_operator(binary_operator), m_access_manager_a(OpenVDS::GetAccessManager(handle_a)), m_access_manager_b(OpenVDS::GetAccessManager(handle_b)), m_metadata_a(m_access_manager_a.GetVolumeDataLayout()), m_metadata_b(m_access_manager_b.GetVolumeDataLayout()), m_metadata(DoubleMetadataHandle(m_metadata_a, m_metadata_b)) {}
 
 MetadataHandle const& DoubleDataHandle::get_metadata() const noexcept(true) {
     return this->m_metadata;
@@ -322,5 +323,29 @@ void DoubleDataHandle::read_samples(
     bool const success = request.get()->WaitForCompletion();
     if (!success) {
         throw std::runtime_error("Failed to read from VDS.");
+    }
+}
+
+void inplace_subtraction(float* buffer_A, const float* buffer_B, std::size_t nsamples) noexcept(true) {
+    for (std::size_t i = 0; i < nsamples; i++) {
+        buffer_A[i] -= buffer_B[i];
+    }
+}
+
+void inplace_addition(float* buffer_A, const float* buffer_B, std::size_t nsamples) noexcept(true) {
+    for (std::size_t i = 0; i < nsamples; i++) {
+        buffer_A[i] += buffer_B[i];
+    }
+}
+
+void inplace_multiplication(float* buffer_A, const float* buffer_B, std::size_t nsamples) noexcept(true) {
+    for (std::size_t i = 0; i < nsamples; i++) {
+        buffer_A[i] *= buffer_B[i];
+    }
+}
+
+void inplace_division(float* buffer_A, const float* buffer_B, std::size_t nsamples) noexcept(true) {
+    for (std::size_t i = 0; i < nsamples; i++) {
+        buffer_A[i] /= buffer_B[i];
     }
 }

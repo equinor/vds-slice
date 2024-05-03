@@ -11,6 +11,7 @@
 
 class MetadataHandle {
     friend class DoubleMetadataHandle;
+
 public:
     virtual Axis iline() const noexcept(true) = 0;
     virtual Axis xline() const noexcept(true) = 0;
@@ -23,6 +24,7 @@ public:
     virtual std::string import_time_stamp() const noexcept(false) = 0;
 
     virtual OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept(false) = 0;
+
 protected:
     virtual void dimension_validation() const = 0;
 };
@@ -42,6 +44,7 @@ public:
     std::string import_time_stamp() const noexcept(false);
 
     OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept(false);
+
 protected:
     void dimension_validation() const;
 
@@ -75,6 +78,7 @@ public:
     OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept(false);
 protected:
     void dimension_validation() const;
+
 private:
     MetadataHandle const* m_handle_A;
     MetadataHandle const* m_handle_B;

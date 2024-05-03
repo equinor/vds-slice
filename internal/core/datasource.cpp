@@ -182,26 +182,3 @@ DoubleDataSource* make_double_datasource(
     return new DoubleDataSource(url_A, credentials_A, url_B, credentials_B, binary_operator);
 }
 
-void inplace_subtraction(float* buffer_A, const float* buffer_B, std::size_t nsamples) noexcept(true) {
-    for (std::size_t i = 0; i < nsamples; i++) {
-        buffer_A[i] -= buffer_B[i];
-    }
-}
-
-void inplace_addition(float* buffer_A, const float* buffer_B, std::size_t nsamples) noexcept(true) {
-    for (std::size_t i = 0; i < nsamples; i++) {
-        buffer_A[i] += buffer_B[i];
-    }
-}
-
-void inplace_multiplication(float* buffer_A, const float* buffer_B, std::size_t nsamples) noexcept(true) {
-    for (std::size_t i = 0; i < nsamples; i++) {
-        buffer_A[i] *= buffer_B[i];
-    }
-}
-
-void inplace_division(float* buffer_A, const float* buffer_B, std::size_t nsamples) noexcept(true) {
-    for (std::size_t i = 0; i < nsamples; i++) {
-        buffer_A[i] /= buffer_B[i];
-    }
-}
