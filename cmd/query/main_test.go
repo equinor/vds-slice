@@ -606,8 +606,8 @@ func TestDoubleMetadataHappyHTTPResponse(t *testing.T) {
 				"ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
 			},
 			"crs"            : "utmXX",
-			"inputFileName"  : "well_known.segy; well_known.segy",
-			"importTimeStamp": "^\\d{4}-\\d{2}-\\d{2}[A-Z]\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[A-Z]; \\d{4}-\\d{2}-\\d{2}[A-Z]\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[A-Z]$"
+			"inputFileName"  : "well_known.segy - well_known.segy",
+			"importTimeStamp": "^\\d{4}-\\d{2}-\\d{2}[A-Z]\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[A-Z] - \\d{4}-\\d{2}-\\d{2}[A-Z]\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[A-Z]$"
 		}`
 
 		var expectedMap map[string]any

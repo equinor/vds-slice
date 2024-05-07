@@ -1,9 +1,8 @@
 #ifndef VDS_SLICE_METADATAHANDLE_HPP
 #define VDS_SLICE_METADATAHANDLE_HPP
 
-#include <string>
-
 #include <OpenVDS/OpenVDS.h>
+#include <string>
 
 #include "axis.hpp"
 #include "boundingbox.hpp"
@@ -63,7 +62,13 @@ private:
 
 class DoubleMetadataHandle : public MetadataHandle {
 public:
-    DoubleMetadataHandle(OpenVDS::VolumeDataLayout const* const layout_a, OpenVDS::VolumeDataLayout const* const layout_b, SingleMetadataHandle const* const m_metadata_a, SingleMetadataHandle const* const m_metadata_b);
+    DoubleMetadataHandle(
+        OpenVDS::VolumeDataLayout const* const layout_a,
+        OpenVDS::VolumeDataLayout const* const layout_b,
+        SingleMetadataHandle const* const m_metadata_a,
+        SingleMetadataHandle const* const m_metadata_b,
+        enum binary_operator binary_symbol
+    );
 
     Axis iline() const noexcept(true);
     Axis xline() const noexcept(true);
@@ -87,11 +92,13 @@ private:
     DoubleVolumeDataLayout const m_layout;
     SingleMetadataHandle const* const m_metadata_a;
     SingleMetadataHandle const* const m_metadata_b;
+    enum binary_operator m_binary_symbol;
 
     Axis m_iline;
     Axis m_xline;
     Axis m_sample;
 
     int get_dimension(std::vector<std::string> const& names) const;
+    std::string operator_string() const noexcept(false);
 };
 #endif /* VDS_SLICE_METADATAHANDLE_HPP */

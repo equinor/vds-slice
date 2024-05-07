@@ -169,8 +169,9 @@ DoubleDataHandle* make_double_datahandle(
     const char* credentials_a,
     const char* url_b,
     const char* credentials_b,
-    binary_function binary_operator
+    enum binary_operator binary_symbol
 ) noexcept(false) {
+
     OpenVDS::Error error_a;
     auto handle_a = OpenVDS::Open(url_a, credentials_a, error_a);
     if (error_a.code != 0) {
@@ -181,11 +182,31 @@ DoubleDataHandle* make_double_datahandle(
     if (error_b.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error_b.string);
     }
-    return new DoubleDataHandle(std::move(handle_a), std::move(handle_b), binary_operator);
+    return new DoubleDataHandle(std::move(handle_a), std::move(handle_b), binary_symbol);
 }
 
-DoubleDataHandle::DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHandle handle_b, binary_function binary_operator)
-    : m_file_handle_a(handle_a), m_file_handle_b(handle_b), m_binary_operator(binary_operator), m_access_manager_a(OpenVDS::GetAccessManager(handle_a)), m_access_manager_b(OpenVDS::GetAccessManager(handle_b)), m_metadata_a(m_access_manager_a.GetVolumeDataLayout()), m_metadata_b(m_access_manager_b.GetVolumeDataLayout()), m_metadata(DoubleMetadataHandle(m_access_manager_a.GetVolumeDataLayout(), m_access_manager_b.GetVolumeDataLayout(), &m_metadata_a, &m_metadata_b)) {}
+DoubleDataHandle::DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHandle handle_b, enum binary_operator binary_symbol)
+    : m_file_handle_a(handle_a),
+      m_file_handle_b(handle_b),
+      m_access_manager_a(OpenVDS::GetAccessManager(handle_a)),
+      m_access_manager_b(OpenVDS::GetAccessManager(handle_b)),
+      m_metadata_a(m_access_manager_a.GetVolumeDataLayout()),
+      m_metadata_b(m_access_manager_b.GetVolumeDataLayout()),
+      m_metadata(DoubleMetadataHandle(m_access_manager_a.GetVolumeDataLayout(), m_access_manager_b.GetVolumeDataLayout(), &m_metadata_a, &m_metadata_b, binary_symbol)) {
+
+    if (binary_symbol == NO_OPERATOR)
+        throw detail::bad_request("Invalid function");
+    else if (binary_symbol == ADDITION)
+        this->m_binary_operator = &inplace_addition;
+    else if (binary_symbol == SUBTRACTION)
+        this->m_binary_operator = &inplace_subtraction;
+    else if (binary_symbol == MULTIPLICATION)
+        this->m_binary_operator = &inplace_multiplication;
+    else if (binary_symbol == DIVISION)
+        this->m_binary_operator = &inplace_division;
+    else
+        throw detail::bad_request("Invalid binary_operator string");
+}
 
 MetadataHandle const& DoubleDataHandle::get_metadata() const noexcept(true) {
     return this->m_metadata;

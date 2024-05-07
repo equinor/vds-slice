@@ -74,7 +74,7 @@ TEST_F(DataHandleTest, Addition) {
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_addition
+        binary_operator::ADDITION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
@@ -107,7 +107,7 @@ TEST_F(DataHandleTest, Multiplication) {
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_multiplication
+        binary_operator::MULTIPLICATION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
@@ -140,7 +140,7 @@ TEST_F(DataHandleTest, Division) {
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_division
+        binary_operator::DIVISION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
@@ -172,7 +172,7 @@ TEST_F(DataHandleTest, Subtraction) {
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_subtraction
+        binary_operator::SUBTRACTION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
@@ -204,7 +204,7 @@ TEST_F(DataHandleTest, SubtractionReverse) {
         CREDENTIALS.c_str(),
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_subtraction
+        binary_operator::SUBTRACTION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(

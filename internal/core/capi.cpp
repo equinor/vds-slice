@@ -1,5 +1,3 @@
-#include <functional>
-
 #include "ctypes.h"
 #include "capi.h"
 
@@ -82,22 +80,7 @@ int double_datahandle_new(
         if (not datahandle)
             throw detail::nullptr_error("Invalid datahandle pointer");
 
-        std::function<void(float*, const float*, size_t)> binary_operator_function;
-
-        if (bin_operator == NO_OPERATOR)
-            throw detail::bad_request("Invalid function");
-        else if (bin_operator == ADDITION)
-            binary_operator_function = &inplace_addition;
-        else if (bin_operator == SUBTRACTION)
-            binary_operator_function = &inplace_subtraction;
-        else if (bin_operator == MULTIPLICATION)
-            binary_operator_function = &inplace_multiplication;
-        else if (bin_operator == DIVISION)
-            binary_operator_function = &inplace_division;
-        else
-            throw detail::bad_request("Invalid binary_operator string");
-
-        *datahandle = make_double_datahandle(url_A, credentials_A, url_B, credentials_B, binary_operator_function);
+        *datahandle = make_double_datahandle(url_A, credentials_A, url_B, credentials_B, bin_operator);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
