@@ -16,6 +16,27 @@ SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* cons
       m_xline(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
       m_sample(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))) {
     this->dimension_validation();
+
+    if (this->m_iline.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS, expect at least two inLines, got " +
+            std::to_string(this->m_iline.nsamples())
+        );
+    }
+
+    if (this->m_xline.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS, expect at least two crossLines, got " +
+            std::to_string(this->m_xline.nsamples())
+        );
+    }
+
+    if (this->m_sample.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS, expect at least two samples, got " +
+            std::to_string(this->m_sample.nsamples())
+        );
+    }
 }
 
 Axis SingleMetadataHandle::iline() const noexcept(true) {
@@ -108,6 +129,27 @@ DoubleMetadataHandle::DoubleMetadataHandle(
       m_sample(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))
       ) {
     this->dimension_validation();
+
+    if (this->m_iline.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS pair, expect that the intersection contains at least two inLines, got " +
+            std::to_string(this->m_iline.nsamples())
+        );
+    }
+
+    if (this->m_xline.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS pair, expect that the intersection contains at least two crossLines, got " +
+            std::to_string(this->m_xline.nsamples())
+        );
+    }
+
+    if (this->m_sample.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS pair, expect that the intersection contains at least two samples, got " +
+            std::to_string(this->m_sample.nsamples())
+        );
+    }
 }
 
 Axis DoubleMetadataHandle::iline() const noexcept(true) {
