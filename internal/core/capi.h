@@ -41,27 +41,27 @@ const char* errmsg(Context* ctx);
 
 void response_delete(struct response*);
 
-struct DataSource;
-typedef struct DataSource DataSource;
+struct DataHandle;
+typedef struct DataHandle DataHandle;
 
-int single_datasource_new(
+int single_datahandle_new(
     Context* ctx,
     const char* url,
     const char* credentials,
-    DataSource** ds_out
+    DataHandle** ds_out
 );
 
-int double_datasource_new(
+int double_datahandle_new(
     Context* ctx,
     const char* url_A,
     const char* credentials_A,
     const char* url_B,
     const char* credentials_B,
     enum binary_operator bin_operator,
-    DataSource** ds_out
+    DataHandle** ds_out
 );
 
-int datasource_free(Context* ctx, DataSource* f);
+int datahandle_free(Context* ctx, DataHandle* f);
 
 struct RegularSurface;
 typedef struct RegularSurface RegularSurface;
@@ -90,7 +90,7 @@ typedef struct SurfaceBoundedSubVolume SurfaceBoundedSubVolume;
 
 int subvolume_new(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     RegularSurface* reference,
     RegularSurface* top,
     RegularSurface* bottom,
@@ -104,13 +104,13 @@ int subvolume_free(
 
 int metadata(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     response* out
 );
 
 int slice(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     int lineno,
     enum axis_name direction,
     struct Bound* bounds,
@@ -120,7 +120,7 @@ int slice(
 
 int slice_metadata(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     int lineno,
     enum axis_name direction,
     struct Bound* bounds,
@@ -130,7 +130,7 @@ int slice_metadata(
 
 int fence(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     enum coordinate_system coordinate_system,
     const float* points,
     size_t npoints,
@@ -141,14 +141,14 @@ int fence(
 
 int fence_metadata(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     size_t npoints,
     response* out
 );
 
 int attribute_metadata(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     size_t nrows,
     size_t ncols,
     response* out
@@ -174,7 +174,7 @@ int attribute_metadata(
 */
 int attribute(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     SurfaceBoundedSubVolume* src_subvolume,
     enum interpolation_method interpolation_method,
     enum attribute* attributes,

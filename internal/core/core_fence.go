@@ -38,7 +38,7 @@ func (v DSHandle) GetFence(
 	var result C.struct_response
 	cerr := C.fence(
 		v.context(),
-		v.DataSource(),
+		v.DataHandle(),
 		C.enum_coordinate_system(coordinateSystem),
 		&ccoordinates[0],
 		C.size_t(len(coordinates)),
@@ -61,7 +61,7 @@ func (v DSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.fence_metadata(
 		v.context(),
-		v.DataSource(),
+		v.DataHandle(),
 		C.size_t(len(coordinates)),
 		&result,
 	)

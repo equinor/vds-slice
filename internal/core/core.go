@@ -419,12 +419,12 @@ func (surface *RegularSurface) toCRegularSurface(cdata []C.float) (cRegularSurfa
 }
 
 type DSHandle struct {
-	dataSource *C.struct_DataSource
+	dataHandle *C.struct_DataHandle
 	ctx        *C.struct_Context
 }
 
-func (v DSHandle) DataSource() *C.struct_DataSource {
-	return v.dataSource
+func (v DSHandle) DataHandle() *C.struct_DataHandle {
+	return v.dataHandle
 }
 
 func (v DSHandle) context() *C.struct_Context {
@@ -438,7 +438,7 @@ func (v DSHandle) Error(status C.int) error {
 func (v DSHandle) Close() error {
 	defer C.context_free(v.ctx)
 
-	cerr := C.datasource_free(v.ctx, v.dataSource)
+	cerr := C.datahandle_free(v.ctx, v.dataHandle)
 	return toError(cerr, v.ctx)
 }
 
@@ -462,7 +462,7 @@ func CreateDSHandle(connections []Connection, operator uint32) (DSHandle, error)
 	}
 
 	var cctx = C.context_new()
-	var dataSource *C.struct_DataSource
+	var dataHandle *C.struct_DataHandle
 	var cerr C.int
 
 	curlA := C.CString(connections[0].Url())
@@ -472,7 +472,7 @@ func CreateDSHandle(connections []Connection, operator uint32) (DSHandle, error)
 	defer C.free(unsafe.Pointer(ccredA))
 
 	if len(connections) == 1 {
-		cerr = C.single_datasource_new(cctx, curlA, ccredA, &dataSource)
+		cerr = C.single_datahandle_new(cctx, curlA, ccredA, &dataHandle)
 	} else if len(connections) == 2 {
 		curlB := C.CString(connections[1].Url())
 		defer C.free(unsafe.Pointer(curlB))
@@ -480,7 +480,7 @@ func CreateDSHandle(connections []Connection, operator uint32) (DSHandle, error)
 		ccredB := C.CString(connections[1].ConnectionString())
 		defer C.free(unsafe.Pointer(ccredB))
 
-		cerr = C.double_datasource_new(cctx, curlA, ccredA, curlB, ccredB, operator, &dataSource)
+		cerr = C.double_datahandle_new(cctx, curlA, ccredA, curlB, ccredB, operator, &dataHandle)
 	}
 
 	if err := toError(cerr, cctx); err != nil {
@@ -488,12 +488,12 @@ func CreateDSHandle(connections []Connection, operator uint32) (DSHandle, error)
 		return DSHandle{}, err
 	}
 
-	return DSHandle{dataSource: dataSource, ctx: cctx}, nil
+	return DSHandle{dataHandle: dataHandle, ctx: cctx}, nil
 }
 
 func (v DSHandle) GetMetadata() ([]byte, error) {
 	var result C.struct_response
-	cerr := C.metadata(v.context(), v.DataSource(), &result)
+	cerr := C.metadata(v.context(), v.DataHandle(), &result)
 
 	defer C.response_delete(&result)
 

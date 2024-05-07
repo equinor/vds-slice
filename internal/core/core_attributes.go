@@ -15,7 +15,7 @@ func (v DSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
 	var result C.struct_response
 	cerr := C.attribute_metadata(
 		v.context(),
-		v.DataSource(),
+		v.DataHandle(),
 		C.size_t(len(data)),
 		C.size_t(len(data[0])),
 		&result,
@@ -225,7 +225,7 @@ func (v DSHandle) getAttributes(
 	defer C.context_free(cCtx)
 	cerr := C.subvolume_new(
 		cCtx,
-		v.DataSource(),
+		v.DataHandle(),
 		cReferenceSurface.get(),
 		cTopSurface.get(),
 		cBottomSurface.get(),
@@ -274,7 +274,7 @@ func (v DSHandle) getAttributes(
 
 			cerr_attributes := C.attribute(
 				cCtx,
-				v.DataSource(),
+				v.DataHandle(),
 				cSubVolume,
 				C.enum_interpolation_method(interpolation),
 				&cAttributes[0],

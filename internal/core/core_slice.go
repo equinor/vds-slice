@@ -51,7 +51,7 @@ func (v DSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, error
 
 	cerr := C.slice(
 		v.context(),
-		v.DataSource(),
+		v.DataHandle(),
 		C.int(lineno),
 		C.enum_axis_name(direction),
 		bound,
@@ -87,7 +87,7 @@ func (v DSHandle) GetSliceMetadata(
 
 	cerr := C.slice_metadata(
 		v.context(),
-		v.DataSource(),
+		v.DataHandle(),
 		C.int(lineno),
 		C.enum_axis_name(direction),
 		bound,

@@ -10,7 +10,7 @@
 
 #include "attribute.hpp"
 #include "axis.hpp"
-#include "datasource.hpp"
+#include "datahandle.hpp"
 #include "direction.hpp"
 #include "exceptions.hpp"
 #include "metadatahandle.hpp"
@@ -130,13 +130,13 @@ void append(std::vector< std::unique_ptr< AttributeMap > >& vec, T obj) {
 namespace cppapi {
 
 void slice(
-    DataSource& handle,
+    DataHandle& datahandle,
     Direction const direction,
     int lineno,
     std::vector< Bound > const& slicebounds,
     response* out
 ) {
-    MetadataHandle const& metadata = handle.get_metadata();
+    MetadataHandle const& metadata = datahandle.get_metadata();
     Axis const& axis = metadata.get_axis(direction);
 
     if (direction.is_sample()) {
@@ -152,16 +152,16 @@ void slice(
     bounds.constrain(metadata, slicebounds);
     bounds.set_slice(axis, lineno, direction.coordinate_system());
 
-    std::int64_t const size = handle.subcube_buffer_size(bounds);
+    std::int64_t const size = datahandle.subcube_buffer_size(bounds);
 
-    std::unique_ptr< char[] > data(new char[size]);
-    handle.read_subcube(data.get(), size, bounds);
+    std::unique_ptr<char[]> data(new char[size]);
+    datahandle.read_subcube(data.get(), size, bounds);
 
     return to_response(std::move(data), size, out);
 }
 
 void fence(
-    DataSource& handle,
+    DataHandle& datahandle,
     enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
@@ -169,7 +169,7 @@ void fence(
     const float* fillValue,
     response* out
 ) {
-    MetadataHandle const& metadata = handle.get_metadata();
+    MetadataHandle const& metadata = datahandle.get_metadata();
 
     std::vector< std::size_t > noval_indicies;
 
@@ -222,11 +222,11 @@ void fence(
         coords[i][crossline_axis.dimension()] = crossline_axis.to_sample_position(coordinate[1]);
     }
 
-    std::int64_t const size = handle.traces_buffer_size(npoints);
+    std::int64_t const size = datahandle.traces_buffer_size(npoints);
 
     std::unique_ptr< char[] > data(new char[size]);
 
-    handle.read_traces(
+    datahandle.read_traces(
         data.get(),
         size,
         coords.get(),
@@ -241,7 +241,7 @@ void fence(
 
 
 void fetch_subvolume(
-    DataSource& handle,
+    DataHandle& datahandle,
     SurfaceBoundedSubVolume& subvolume,
     enum interpolation_method interpolation,
     std::size_t from,
@@ -252,7 +252,7 @@ void fetch_subvolume(
         throw std::invalid_argument("'to' must be less than surface size");
     }
 
-    MetadataHandle const& metadata = handle.get_metadata();
+    MetadataHandle const& metadata = datahandle.get_metadata();
     auto transform = metadata.coordinate_transformer();
 
     auto iline  = metadata.iline ();
@@ -293,9 +293,9 @@ void fetch_subvolume(
                                  " and actual samples " + std::to_string(cur) + " differ");
     }
 
-    auto const size = handle.samples_buffer_size(nsamples);
+    auto const size = datahandle.samples_buffer_size(nsamples);
 
-    handle.read_samples(
+    datahandle.read_samples(
         subvolume.data(from),
         size,
         samples.get(),

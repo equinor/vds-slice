@@ -41,20 +41,17 @@ std::map<Samples10Points, std::vector<float>> samples_10_data(float fill)
     return points;
 }
 
-class SubvolumeTest : public ::testing::Test
-{
-  protected:
-    void SetUp() override
-    {
-        datasource = make_single_datasource(SAMPLES_10.c_str(), CREDENTIALS.c_str());
+class SubvolumeTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        datahandle = make_single_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str());
     }
 
-    void TearDown() override
-    {
-        delete datasource;
+    void TearDown() override {
+        delete datahandle;
     }
 
-    SingleDataSource *datasource;
+    SingleDataHandle* datahandle;
 
     static constexpr float fill = -999.25;
     std::map<float, std::vector<float>> points;
@@ -68,10 +65,10 @@ class SubvolumeTest : public ::testing::Test
         auto size = primary_surface.grid().size();
 
         SurfaceBoundedSubVolume* subvolume = make_subvolume(
-            datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+            datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
         );
 
-        cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
+        cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
 
         /* We are checking here points unordered. Meaning that if all points in a
         * row appear somewhere in the horizon, we assume we are good. Alternative
@@ -153,12 +150,11 @@ TEST_F(SubvolumeTest, SubvolumeSize)
         RegularSurface(bottom_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
-    for (int i = 0; i < size; ++i)
-    {
+    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
+    for (int i = 0; i < size; ++i) {
         EXPECT_EQ(expected_fetched_size[i], subvolume->vertical_segment(i).size())
             << "Retrieved segment size not as expected at position " << i;
     }
@@ -304,12 +300,11 @@ TEST_F(SubvolumeTest, LargestPossibleMarginRetrievedNearTraceTopBoundary)
         RegularSurface(bottom_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
-    for (int i = 0; i < size; ++i)
-    {
+    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
+    for (int i = 0; i < size; ++i) {
         auto segment = subvolume->vertical_segment(i);
         EXPECT_EQ(expected_fetched_size, segment.size())
             << "Retrieved segment size not as expected at position " << i;
@@ -361,12 +356,11 @@ TEST_F(SubvolumeTest, LargestPossibleMarginRetrievedNearTraceBottomBoundary)
         RegularSurface(bottom_surface_data.data(), nrows, ncols, samples_10_grid, fill);
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
-    for (int i = 0; i < size; ++i)
-    {
+    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
+    for (int i = 0; i < size; ++i) {
         auto segment = subvolume->vertical_segment(i);
         EXPECT_EQ(expected_fetched_size, segment.size())
             << "Retrieved segment size not as expected at position " << i;
@@ -378,21 +372,17 @@ TEST_F(SubvolumeTest, LargestPossibleMarginRetrievedNearTraceBottomBoundary)
     delete subvolume;
 }
 
-
-class SurfaceAlignmentTest : public ::testing::Test
-{
-  protected:
-    void SetUp() override
-    {
-        datasource = make_single_datasource(SAMPLES_10.c_str(), CREDENTIALS.c_str());
+class SurfaceAlignmentTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        datahandle = make_single_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str());
     }
 
-    void TearDown() override
-    {
-        delete datasource;
+    void TearDown() override {
+        delete datahandle;
     }
 
-    SingleDataSource *datasource;
+    SingleDataHandle* datahandle;
 
     static constexpr float fill = -999.25;
 };
@@ -805,8 +795,8 @@ void inplace_subtraction(float* buffer_A, const float* buffer_B, std::size_t nsa
 class FenceFunctionTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        datasource = make_single_datasource(SAMPLES_10.c_str(), CREDENTIALS.c_str());
-        double_datasource = make_double_datasource(
+        datahandle = make_single_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str());
+        double_datahandle = make_double_datahandle(
             SAMPLES_10.c_str(),
             CREDENTIALS.c_str(),
             SAMPLES_10_x2.c_str(),
@@ -816,12 +806,12 @@ protected:
     }
 
     void TearDown() override {
-        delete datasource;
-        delete double_datasource;
+        delete datahandle;
+        delete double_datahandle;
     }
 
-    SingleDataSource* datasource;
-    DoubleDataSource* double_datasource;
+    SingleDataHandle* datahandle;
+    DoubleDataHandle* double_datahandle;
 
     const coordinate_system c_system = coordinate_system::INDEX;
     const std::vector<float> coordinates{1, 1, 2, 1};
@@ -838,7 +828,7 @@ protected:
 TEST_F(FenceFunctionTest, RequestingFenceData) {
     struct response response_data;
     cppapi::fence(
-        *datasource,
+        *datahandle,
         c_system,
         coordinates.data(),
         coordinate_size,
@@ -860,7 +850,7 @@ TEST_F(FenceFunctionTest, RequestingFenceDataSubtract) {
     struct response response_data;
 
     cppapi::fence(
-        *double_datasource,
+        *double_datahandle,
         c_system,
         coordinates.data(),
         coordinate_size,
@@ -880,8 +870,8 @@ TEST_F(FenceFunctionTest, RequestingFenceDataSubtract) {
 class SliceFunctionTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        datasource = make_single_datasource(SAMPLES_10.c_str(), CREDENTIALS.c_str());
-        double_datasource = make_double_datasource(
+        datahandle = make_single_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str());
+        double_datahandle = make_double_datahandle(
             SAMPLES_10.c_str(),
             CREDENTIALS.c_str(),
             SAMPLES_10_x2.c_str(),
@@ -891,12 +881,12 @@ protected:
     }
 
     void TearDown() override {
-        delete datasource;
-        delete double_datasource;
+        delete datahandle;
+        delete double_datahandle;
     }
 
-    SingleDataSource* datasource;
-    DoubleDataSource* double_datasource;
+    SingleDataHandle* datahandle;
+    DoubleDataHandle* double_datahandle;
     const int lineno = 4;
     std::vector<Bound> slice_bounds;
     const std::vector<float> expected{
@@ -911,7 +901,7 @@ TEST_F(SliceFunctionTest, RequestingSliceData) {
     struct response response_data;
 
     cppapi::slice(
-        *datasource,
+        *datahandle,
         direction,
         lineno,
         slice_bounds,
@@ -932,7 +922,7 @@ TEST_F(SliceFunctionTest, RequestingSliceDataSubtraction) {
     struct response response_data;
 
     cppapi::slice(
-        *double_datasource,
+        *double_datahandle,
         direction,
         lineno,
         slice_bounds,
