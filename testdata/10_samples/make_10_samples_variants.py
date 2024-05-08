@@ -74,6 +74,13 @@ if __name__ == "__main__":
     parameters = [
         {"path": "10_double_value", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
             1, 3, 5], "xlines": [10, 11], "factor": 2},
+        {"path": "10_single_xline", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
+            1, 3, 5], "xlines": [10], "factor": 1},
+        {"path": "10_single_sample", "samples": [4], "ilines": [
+            1, 3, 5], "xlines": [10, 11], "factor": 1},
+        {"path": "10_min_dimensions", "samples": [4, 8], "ilines": [
+            1, 3], "xlines": [10, 11], "factor": 1},
+
     ]
     for p in parameters:
         create_10_samples(**p)

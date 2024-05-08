@@ -19,8 +19,11 @@ target_link_libraries(cppcoretests
   PRIVATE GTest::gmock_main
 )
 
-configure_file(../../testdata/10_samples/10_samples_default.vds . COPYONLY)
 configure_file(../../testdata/10_samples/10_double_value.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_min_dimensions.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_samples_default.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_single_sample.vds . COPYONLY)
+configure_file(../../testdata/10_samples/10_single_xline.vds . COPYONLY)
 
 include(GoogleTest)
 gtest_discover_tests(cppcoretests)
