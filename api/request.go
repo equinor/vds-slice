@@ -63,14 +63,13 @@ type RequestedResource struct {
 
 	// When a singe blob URL and sas token pair is provided the binary_operator-key must be undefined or be the empty string("").
 	// If two pairs are provided the binary_operator-key defines how the two data sets are combined into a new virtual data set.
-	// Provided VDS A, VDS B and the binary_operator-key "subtraction" the request returns data from data set (A - B).
+	// Provided VDS A, VDS B and the binary_operator-key "subtraction" the request returns data from data set (A - B) in the intersection (A ∩ B).
 	// Valid options are: "addition", "subtraction", "multiplication", "division" and empty string ("").
 	//
 	// Note that there are some restrictions when applying a binary operation on two cubes.
-	// Each of the axes inline, crossline and depth/time must be identical.
-	// I.e, same start value, same stepsize and same number of values.
-	// Further more the axis must be of the same type, for instance it is not possible to take the
-	// difference between a time cube and a depth cube.
+	// The axes inline, crossline and depth/time must be in the same order and have matching stepsize and unit for each axis.
+	// Annotated origin and stepsize should be identical,
+	// causing the intersecting sub-cube to have matching annotated start index and number of values for each axis.
 	BinaryOperator string `json:"binary_operator,omitempty" example:"subtraction"`
 }
 

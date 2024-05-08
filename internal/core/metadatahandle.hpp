@@ -8,6 +8,7 @@
 #include "axis.hpp"
 #include "boundingbox.hpp"
 #include "direction.hpp"
+#include "volumedatalayout.hpp"
 
 class MetadataHandle {
     friend class DoubleMetadataHandle;
@@ -60,10 +61,7 @@ private:
 
 class DoubleMetadataHandle : public MetadataHandle {
 public:
-    DoubleMetadataHandle(
-        MetadataHandle const& handle_A,
-        MetadataHandle const& handle_B
-    );
+    DoubleMetadataHandle(DoubleVolumeDataLayout const* const layout);
 
     Axis iline() const noexcept(true);
     Axis xline() const noexcept(true);
@@ -80,8 +78,11 @@ protected:
     void dimension_validation() const;
 
 private:
-    MetadataHandle const* m_handle_A;
-    MetadataHandle const* m_handle_B;
+    DoubleVolumeDataLayout const* const m_layout;
+
+    Axis m_iline;
+    Axis m_xline;
+    Axis m_sample;
 
     int get_dimension(std::vector<std::string> const& names) const;
 };

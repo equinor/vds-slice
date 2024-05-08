@@ -185,7 +185,7 @@ DoubleDataHandle* make_double_datahandle(
 }
 
 DoubleDataHandle::DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHandle handle_b, binary_function binary_operator)
-    : m_file_handle_a(handle_a), m_file_handle_b(handle_b), m_binary_operator(binary_operator), m_access_manager_a(OpenVDS::GetAccessManager(handle_a)), m_access_manager_b(OpenVDS::GetAccessManager(handle_b)), m_metadata_a(m_access_manager_a.GetVolumeDataLayout()), m_metadata_b(m_access_manager_b.GetVolumeDataLayout()), m_metadata(DoubleMetadataHandle(m_metadata_a, m_metadata_b)) {}
+    : m_file_handle_a(handle_a), m_file_handle_b(handle_b), m_binary_operator(binary_operator), m_access_manager_a(OpenVDS::GetAccessManager(handle_a)), m_access_manager_b(OpenVDS::GetAccessManager(handle_b)), m_metadata_a(m_access_manager_a.GetVolumeDataLayout()), m_metadata_b(m_access_manager_b.GetVolumeDataLayout()), m_layout(DoubleVolumeDataLayout(m_access_manager_a.GetVolumeDataLayout(), m_access_manager_b.GetVolumeDataLayout())), m_metadata(DoubleMetadataHandle(&m_layout)) {}
 
 MetadataHandle const& DoubleDataHandle::get_metadata() const noexcept(true) {
     return this->m_metadata;
@@ -244,26 +244,46 @@ void DoubleDataHandle::read_subcube(
     std::int64_t size,
     SubCube const& subcube
 ) noexcept(false) {
-    auto request = this->m_access_manager_a.RequestVolumeSubset(
+
+    SubCube subcube_a = this->offset_bounds(subcube, m_metadata_a);
+    std::vector<char> buffer_a(size);
+
+    auto request_a = this->m_access_manager_a.RequestVolumeSubset(
         buffer,
         size,
         OpenVDS::Dimensions_012,
         DoubleDataHandle::lod_level,
         DoubleDataHandle::channel,
-        subcube.bounds.lower,
-        subcube.bounds.upper,
+        subcube_a.bounds.lower,
+        subcube_a.bounds.upper,
         DoubleDataHandle::format()
     );
-    bool const success = request.get()->WaitForCompletion();
 
-    if (!success) {
+    SubCube subcube_b = this->offset_bounds(subcube, m_metadata_b);
+    std::vector<char> buffer_b(size);
+    auto request_b = this->m_access_manager_b.RequestVolumeSubset(
+        buffer_b.data(),
+        size,
+        OpenVDS::Dimensions_012,
+        DoubleDataHandle::lod_level,
+        DoubleDataHandle::channel,
+        subcube_b.bounds.lower,
+        subcube_b.bounds.upper,
+        DoubleDataHandle::format()
+    );
+
+    bool const success_a = request_a.get()->WaitForCompletion();
+    bool const success_b = request_b.get()->WaitForCompletion();
+
+    if (!success_a || !success_b) {
         throw std::runtime_error("Failed to read from VDS.");
     }
+
+    m_binary_operator((float*)buffer, (float* const)buffer_b.data(), (std::size_t)size / sizeof(float));
 }
 
 std::int64_t DoubleDataHandle::traces_buffer_size(std::size_t const ntraces) noexcept(false) {
-    int const dimension = this->get_metadata().sample().dimension();
-    return this->m_access_manager_a.GetVolumeTracesBufferSize(ntraces, dimension);
+    return this->get_metadata().sample().nsamples() * ntraces * sizeof(float);
 }
 
 void DoubleDataHandle::read_traces(
@@ -273,23 +293,84 @@ void DoubleDataHandle::read_traces(
     std::size_t const ntraces,
     enum interpolation_method const interpolation_method
 ) noexcept(false) {
-    int const dimension = this->get_metadata().sample().dimension();
+    int const sample_dimension_index = this->get_metadata().sample().dimension();
 
-    auto request = this->m_access_manager_a.RequestVolumeTraces(
-        (float*)buffer,
-        size,
+    std::size_t coordinates_buffer_size = OpenVDS::Dimensionality_Max * ntraces;
+
+    std::vector<float> coordinates_a(coordinates_buffer_size);
+    std::vector<float> coordinates_b(coordinates_buffer_size);
+
+    memcpy(coordinates_a.data(), coordinates[0], coordinates_buffer_size * sizeof(float));
+    memcpy(coordinates_b.data(), coordinates[0], coordinates_buffer_size * sizeof(float));
+
+    for (int v = 0; v < ntraces; v++) {
+        for (int i = 0; i < this->m_layout.Dimensionality_Max; i++) {
+            coordinates_a[v * this->m_layout.Dimensionality_Max + i] += this->m_layout.GetDimensionIndexOffset_a(i);
+            coordinates_b[v * this->m_layout.Dimensionality_Max + i] += this->m_layout.GetDimensionIndexOffset_b(i);
+        }
+    }
+
+    std::size_t size_a = this->m_access_manager_a.GetVolumeTracesBufferSize(ntraces, sample_dimension_index);
+    std::vector<float> buffer_a((std::size_t)size_a / sizeof(float));
+    auto request_a = this->m_access_manager_a.RequestVolumeTraces(
+        buffer_a.data(),
+        size_a,
         OpenVDS::Dimensions_012,
         DoubleDataHandle::lod_level,
         DoubleDataHandle::channel,
-        coordinates,
+        (voxel*)coordinates_a.data(),
         ntraces,
         ::to_interpolation(interpolation_method),
-        dimension
+        sample_dimension_index
     );
-    bool const success = request.get()->WaitForCompletion();
 
-    if (!success) {
+    std::size_t size_b = this->m_access_manager_b.GetVolumeTracesBufferSize(ntraces, sample_dimension_index);
+    std::vector<float> buffer_b((std::size_t)size_b / sizeof(float));
+    auto request_b = this->m_access_manager_b.RequestVolumeTraces(
+        buffer_b.data(),
+        size_b,
+        OpenVDS::Dimensions_012,
+        DoubleDataHandle::lod_level,
+        DoubleDataHandle::channel,
+        (voxel*)coordinates_b.data(),
+        ntraces,
+        ::to_interpolation(interpolation_method),
+        sample_dimension_index
+    );
+
+    bool const success_a = request_a.get()->WaitForCompletion();
+    bool const success_b = request_b.get()->WaitForCompletion();
+
+    if (!success_a || !success_b) {
         throw std::runtime_error("Failed to read from VDS.");
+    }
+
+    float* floatBuffer = (float*)buffer;
+    this->extract_part_of_trace(&coordinates_a, &buffer_a, this->m_metadata_a.sample().nsamples(), floatBuffer);
+
+    std::vector<float> res_buffer_b(this->get_metadata().sample().nsamples() * ntraces);
+    this->extract_part_of_trace(&coordinates_b, &buffer_b, this->m_metadata_b.sample().nsamples(), res_buffer_b.data());
+
+    m_binary_operator((float*)buffer, (float* const)res_buffer_b.data(), (std::size_t)size / sizeof(float));
+}
+
+void DoubleDataHandle::extract_part_of_trace(
+    std::vector<float>* coordinates,
+    std::vector<float>* source_traces,
+    int source_trace_length,
+    float* target_buffer
+) {
+    int counter = 0;
+    int const sample_dimension_index = this->get_metadata().sample().dimension();
+    int const nsamples_in_intersection = this->get_metadata().sample().nsamples();
+
+    auto min_intersection_sample_index = (long)((*coordinates)[sample_dimension_index] + 0.5f);
+
+    int ntraces = source_traces->size() / source_trace_length;
+    for (int i = 0; i < ntraces; ++i) {
+        float* src_trace = source_traces->data() + i * source_trace_length;
+        float* dst_trace = target_buffer + i * nsamples_in_intersection;
+        std::memcpy(dst_trace, src_trace + min_intersection_sample_index, nsamples_in_intersection * sizeof(float));
     }
 }
 
@@ -309,21 +390,54 @@ void DoubleDataHandle::read_samples(
     std::size_t const nsamples,
     enum interpolation_method const interpolation_method
 ) noexcept(false) {
-    auto request = this->m_access_manager_a.RequestVolumeSamples(
+
+    std::size_t samples_size = (std::size_t)(sizeof(voxel) * nsamples / sizeof(float));
+
+    std::vector<float> samples_a((std::size_t)(sizeof(voxel) * nsamples));
+    std::vector<float> samples_b((std::size_t)(sizeof(voxel) * nsamples));
+
+    memcpy(samples_a.data(), samples[0], samples_size * sizeof(float));
+    memcpy(samples_b.data(), samples[0], samples_size * sizeof(float));
+
+    for (int v = 0; v < nsamples; v++) {
+        for (int i = 0; i < this->m_layout.Dimensionality_Max; i++) {
+            samples_a[v * this->m_layout.Dimensionality_Max + i] += this->m_layout.GetDimensionIndexOffset_a(i);
+            samples_b[v * this->m_layout.Dimensionality_Max + i] += this->m_layout.GetDimensionIndexOffset_b(i);
+        }
+    }
+
+    auto request_a = this->m_access_manager_a.RequestVolumeSamples(
         (float*)buffer,
         size,
         OpenVDS::Dimensions_012,
         DoubleDataHandle::lod_level,
         DoubleDataHandle::channel,
-        samples,
+        (voxel*)samples_a.data(),
         nsamples,
         ::to_interpolation(interpolation_method)
     );
 
-    bool const success = request.get()->WaitForCompletion();
-    if (!success) {
+    std::vector<float> buffer_b((std::size_t)size / sizeof(float));
+
+    auto request_b = this->m_access_manager_b.RequestVolumeSamples(
+        buffer_b.data(),
+        size,
+        OpenVDS::Dimensions_012,
+        DoubleDataHandle::lod_level,
+        DoubleDataHandle::channel,
+        (voxel*)samples_b.data(),
+        nsamples,
+        ::to_interpolation(interpolation_method)
+    );
+
+    bool const success_a = request_a.get()->WaitForCompletion();
+    bool const success_b = request_b.get()->WaitForCompletion();
+
+    if (!success_a || !success_b) {
         throw std::runtime_error("Failed to read from VDS.");
     }
+
+    m_binary_operator((float*)buffer, (float* const)buffer_b.data(), (std::size_t)size / sizeof(float));
 }
 
 void inplace_subtraction(float* buffer_A, const float* buffer_B, std::size_t nsamples) noexcept(true) {

@@ -152,6 +152,7 @@ private:
     OpenVDS::ScopedVDSHandle m_file_handle_b;
     OpenVDS::VolumeDataAccessManager m_access_manager_a;
     OpenVDS::VolumeDataAccessManager m_access_manager_b;
+    DoubleVolumeDataLayout m_layout;
     DoubleMetadataHandle m_metadata;
     SingleMetadataHandle m_metadata_a;
     SingleMetadataHandle m_metadata_b;
@@ -161,6 +162,12 @@ private:
     static int constexpr channel = 0;
 
     SubCube offset_bounds(const SubCube subcube, SingleMetadataHandle metadata);
+    void extract_part_of_trace(
+        std::vector<float>* coordinates,
+        std::vector<float>* source_traces,
+        int source_trace_length,
+        float* target_buffer
+    );
 };
 
 DoubleDataHandle* make_double_datahandle(
