@@ -4,7 +4,7 @@ import sys
 import subprocess
 
 
-def create_10_samples(path, samples, ilines, xlines, factor):
+def create_10_samples(path, samples, ilines, xlines, factor, crs):
     """ Create file with 10 values in each trace.
     | xlines-ilines | 1               | 3                 | 5                 |
     |---------------|-----------------|-------------------|-------------------|
@@ -73,18 +73,19 @@ def create_10_samples(path, samples, ilines, xlines, factor):
 if __name__ == "__main__":
     parameters = [
         {"path": "10_double_value", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
-            1, 3, 5], "xlines": [10, 11], "factor": 2},
+            1, 3, 5], "xlines": [10, 11], "factor": 2, "crs": "utmXX"},
         {"path": "10_single_xline", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
-            1, 3, 5], "xlines": [10], "factor": 1},
+            1, 3, 5], "xlines": [10], "factor": 1, "crs": "utmXX"},
         {"path": "10_single_sample", "samples": [4], "ilines": [
-            1, 3, 5], "xlines": [10, 11], "factor": 1},
+            1, 3, 5], "xlines": [10, 11], "factor": 1, "crs": "utmXX"},
         {"path": "10_min_dimensions", "samples": [4, 8], "ilines": [
-            1, 3], "xlines": [10, 11], "factor": 1},
-
+            1, 3], "xlines": [10, 11], "factor": 1, "crs": "utmXX"},
+        {"path": "10_default_crs", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
+            1, 3, 5], "xlines": [10, 11], "factor": 1, "crs": "utmXX_modified"},
     ]
     for p in parameters:
         create_10_samples(**p)
         name = p["path"]
         subprocess.run(["SEGYImport", "--url", "file://.", "--vdsfile",
-                       name+".vds", name+".segy", "--crs-wkt=\"utmXX\""])
+                       name+".vds", name+".segy", "--crs-wkt=" + p["crs"]])
         subprocess.run(["rm", name+".segy"])
