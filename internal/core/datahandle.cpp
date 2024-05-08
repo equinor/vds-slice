@@ -185,7 +185,7 @@ DoubleDataHandle* make_double_datahandle(
 }
 
 DoubleDataHandle::DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHandle handle_b, binary_function binary_operator)
-    : m_file_handle_a(handle_a), m_file_handle_b(handle_b), m_binary_operator(binary_operator), m_access_manager_a(OpenVDS::GetAccessManager(handle_a)), m_access_manager_b(OpenVDS::GetAccessManager(handle_b)), m_metadata_a(m_access_manager_a.GetVolumeDataLayout()), m_metadata_b(m_access_manager_b.GetVolumeDataLayout()), m_layout(DoubleVolumeDataLayout(m_access_manager_a.GetVolumeDataLayout(), m_access_manager_b.GetVolumeDataLayout())), m_metadata(DoubleMetadataHandle(&m_layout)) {}
+    : m_file_handle_a(handle_a), m_file_handle_b(handle_b), m_binary_operator(binary_operator), m_access_manager_a(OpenVDS::GetAccessManager(handle_a)), m_access_manager_b(OpenVDS::GetAccessManager(handle_b)), m_metadata_a(m_access_manager_a.GetVolumeDataLayout()), m_metadata_b(m_access_manager_b.GetVolumeDataLayout()), m_metadata(DoubleMetadataHandle(m_access_manager_a.GetVolumeDataLayout(), m_access_manager_b.GetVolumeDataLayout(), &m_metadata_a, &m_metadata_b)) {}
 
 MetadataHandle const& DoubleDataHandle::get_metadata() const noexcept(true) {
     return this->m_metadata;
@@ -214,29 +214,28 @@ std::int64_t DoubleDataHandle::subcube_buffer_size(
     return size;
 }
 
-/// @brief Shift the provided subcube to match the intersection of the two initial cubes.
-/// @param subcube Subcube contains vectors lower and upper of length 6. Lower defines start index
-/// for each of the 6 dimensions while upper defines end index for the intersection of cube_a and cube_b.
-/// @param metadata Metadata for cube_x (one of the intersecting cubes)
-/// @return Subcube of intersection of cube_a and cube_b in cube_x.
-SubCube DoubleDataHandle::offset_bounds(const SubCube subcube, SingleMetadataHandle metadata_cube_x) {
+/// @brief Copy and shift the coordinates in the provided subcube to describe it in cube X coordinates.
+/// @param subcube_intersect_AB Subcube is defined by (A ∩ B) for cubes A and B. Only the first three axis are currently used.
+/// @param metadata_cube_X Metadata for cube X where X ∈ {A, B}.
+/// @return Subcube (A ∩ B) defined in the coordinates of cube X.
+SubCube DoubleDataHandle::offset_bounds(const SubCube subcube_intersect_AB, SingleMetadataHandle metadata_cube_X) {
 
     // Create a copy
-    SubCube new_subcube = std::move(subcube);
+    SubCube subcube_in_X_coordinates = std::move(subcube_intersect_AB);
 
     // Calculate the number of steps to offset the subcube in the three dimensions.
-    float iline_offset = (m_metadata.iline().min() - metadata_cube_x.iline().min()) / m_metadata.iline().stepsize();
-    float xline_offset = (m_metadata.xline().min() - metadata_cube_x.xline().min()) / m_metadata.xline().stepsize();
-    float sample_offset = (m_metadata.sample().min() - metadata_cube_x.sample().min()) / m_metadata.sample().stepsize();
+    float iline_offset = (m_metadata.iline().min() - metadata_cube_X.iline().min()) / m_metadata.iline().stepsize();
+    float xline_offset = (m_metadata.xline().min() - metadata_cube_X.xline().min()) / m_metadata.xline().stepsize();
+    float sample_offset = (m_metadata.sample().min() - metadata_cube_X.sample().min()) / m_metadata.sample().stepsize();
 
-    new_subcube.bounds.lower[m_metadata.iline().dimension()] += iline_offset;
-    new_subcube.bounds.lower[m_metadata.xline().dimension()] += xline_offset;
-    new_subcube.bounds.lower[m_metadata.sample().dimension()] += sample_offset;
+    subcube_in_X_coordinates.bounds.lower[m_metadata.iline().dimension()] += iline_offset;
+    subcube_in_X_coordinates.bounds.lower[m_metadata.xline().dimension()] += xline_offset;
+    subcube_in_X_coordinates.bounds.lower[m_metadata.sample().dimension()] += sample_offset;
 
-    new_subcube.bounds.upper[m_metadata.iline().dimension()] += iline_offset;
-    new_subcube.bounds.upper[m_metadata.xline().dimension()] += xline_offset;
-    new_subcube.bounds.upper[m_metadata.sample().dimension()] += sample_offset;
-    return new_subcube;
+    subcube_in_X_coordinates.bounds.upper[m_metadata.iline().dimension()] += iline_offset;
+    subcube_in_X_coordinates.bounds.upper[m_metadata.xline().dimension()] += xline_offset;
+    subcube_in_X_coordinates.bounds.upper[m_metadata.sample().dimension()] += sample_offset;
+    return subcube_in_X_coordinates;
 }
 
 void DoubleDataHandle::read_subcube(
@@ -298,17 +297,10 @@ void DoubleDataHandle::read_traces(
     std::size_t coordinates_buffer_size = OpenVDS::Dimensionality_Max * ntraces;
 
     std::vector<float> coordinates_a(coordinates_buffer_size);
+    this->m_metadata.offset_samples_to_match_cube_a(coordinates, ntraces, &coordinates_a);
+
     std::vector<float> coordinates_b(coordinates_buffer_size);
-
-    memcpy(coordinates_a.data(), coordinates[0], coordinates_buffer_size * sizeof(float));
-    memcpy(coordinates_b.data(), coordinates[0], coordinates_buffer_size * sizeof(float));
-
-    for (int v = 0; v < ntraces; v++) {
-        for (int i = 0; i < this->m_layout.Dimensionality_Max; i++) {
-            coordinates_a[v * this->m_layout.Dimensionality_Max + i] += this->m_layout.GetDimensionIndexOffset_a(i);
-            coordinates_b[v * this->m_layout.Dimensionality_Max + i] += this->m_layout.GetDimensionIndexOffset_b(i);
-        }
-    }
+    this->m_metadata.offset_samples_to_match_cube_b(coordinates, ntraces, &coordinates_b);
 
     std::size_t size_a = this->m_access_manager_a.GetVolumeTracesBufferSize(ntraces, sample_dimension_index);
     std::vector<float> buffer_a((std::size_t)size_a / sizeof(float));
@@ -345,32 +337,40 @@ void DoubleDataHandle::read_traces(
         throw std::runtime_error("Failed to read from VDS.");
     }
 
+    // Function read_traces extracts whole traces out of corresponding files.
+    // However it could happen that data files are not fully aligned in their sample dimensions.
+    // That creates a need to extract from each trace data that make up the intersection.
     float* floatBuffer = (float*)buffer;
-    this->extract_part_of_trace(&coordinates_a, &buffer_a, this->m_metadata_a.sample().nsamples(), floatBuffer);
+    this->extract_continuous_part_of_trace(
+        &buffer_a,
+        this->m_metadata_a.sample().nsamples(),
+        (long)((coordinates_a)[sample_dimension_index] + 0.5f),
+        this->get_metadata().sample().nsamples(),
+        floatBuffer);
 
     std::vector<float> res_buffer_b(this->get_metadata().sample().nsamples() * ntraces);
-    this->extract_part_of_trace(&coordinates_b, &buffer_b, this->m_metadata_b.sample().nsamples(), res_buffer_b.data());
+    this->extract_continuous_part_of_trace(
+        &buffer_b,
+        this->m_metadata_b.sample().nsamples(),
+        (long)((coordinates_b)[sample_dimension_index] + 0.5f),
+        this->get_metadata().sample().nsamples(),
+        res_buffer_b.data());
 
     m_binary_operator((float*)buffer, (float* const)res_buffer_b.data(), (std::size_t)size / sizeof(float));
 }
 
-void DoubleDataHandle::extract_part_of_trace(
-    std::vector<float>* coordinates,
+void DoubleDataHandle::extract_continuous_part_of_trace(
     std::vector<float>* source_traces,
     int source_trace_length,
+    long start_extract_index,
+    int nsamples_to_extract,
     float* target_buffer
 ) {
-    int counter = 0;
-    int const sample_dimension_index = this->get_metadata().sample().dimension();
-    int const nsamples_in_intersection = this->get_metadata().sample().nsamples();
-
-    auto min_intersection_sample_index = (long)((*coordinates)[sample_dimension_index] + 0.5f);
-
     int ntraces = source_traces->size() / source_trace_length;
     for (int i = 0; i < ntraces; ++i) {
         float* src_trace = source_traces->data() + i * source_trace_length;
-        float* dst_trace = target_buffer + i * nsamples_in_intersection;
-        std::memcpy(dst_trace, src_trace + min_intersection_sample_index, nsamples_in_intersection * sizeof(float));
+        float* dst_trace = target_buffer + i * nsamples_to_extract;
+        std::memcpy(dst_trace, src_trace + start_extract_index, nsamples_to_extract * sizeof(float));
     }
 }
 
@@ -394,17 +394,10 @@ void DoubleDataHandle::read_samples(
     std::size_t samples_size = (std::size_t)(sizeof(voxel) * nsamples / sizeof(float));
 
     std::vector<float> samples_a((std::size_t)(sizeof(voxel) * nsamples));
+    this->m_metadata.offset_samples_to_match_cube_a(samples, nsamples, &samples_a);
+
     std::vector<float> samples_b((std::size_t)(sizeof(voxel) * nsamples));
-
-    memcpy(samples_a.data(), samples[0], samples_size * sizeof(float));
-    memcpy(samples_b.data(), samples[0], samples_size * sizeof(float));
-
-    for (int v = 0; v < nsamples; v++) {
-        for (int i = 0; i < this->m_layout.Dimensionality_Max; i++) {
-            samples_a[v * this->m_layout.Dimensionality_Max + i] += this->m_layout.GetDimensionIndexOffset_a(i);
-            samples_b[v * this->m_layout.Dimensionality_Max + i] += this->m_layout.GetDimensionIndexOffset_b(i);
-        }
-    }
+    this->m_metadata.offset_samples_to_match_cube_b(samples, nsamples, &samples_b);
 
     auto request_a = this->m_access_manager_a.RequestVolumeSamples(
         (float*)buffer,

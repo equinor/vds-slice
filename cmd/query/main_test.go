@@ -573,6 +573,62 @@ func TestFenceErrorHTTPResponse(t *testing.T) {
 	testErrorHTTPResponse(t, testcases)
 }
 
+func TestDoubleMetadataHappyHTTPResponse(t *testing.T) {
+	testcases := []metadataTest{
+		{
+			baseTest{
+				name:           "Valid two vds urls request",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusOK,
+			},
+			testMetadataRequest{
+				Vds:            []string{well_known, well_known},
+				Sas:            []string{"n/a", "n/a"},
+				BinaryOperator: "subtraction",
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		w := setupTest(t, testcase)
+
+		requireStatus(t, testcase, w)
+		metadata := w.Body.String()
+		expectedMetadata := `{
+			"axis": [
+				{"annotation": "Inline", "max": 5.0, "min": 1.0, "samples" : 3, "stepsize":2, "unit": "unitless"},
+				{"annotation": "Crossline", "max": 11.0, "min": 10.0, "samples" : 2, "stepsize":1, "unit": "unitless"},
+				{"annotation": "Sample", "max": 16.0, "min": 4.0, "samples" : 4, "stepsize":4, "unit": "ms"}
+			],
+			"boundingBox": {
+				"cdp": [[2,0],[14,8],[12,11],[0,3]],
+				"ilxl": [[1, 10], [5, 10], [5, 11], [1, 11]],
+				"ij": [[0, 0], [2, 0], [2, 1], [0, 1]]
+			},
+			"crs"            : "utmXX",
+			"inputFileName"  : "well_known.segy; well_known.segy",
+			"importTimeStamp": "^\\d{4}-\\d{2}-\\d{2}[A-Z]\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[A-Z]; \\d{4}-\\d{2}-\\d{2}[A-Z]\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[A-Z]$"
+		}`
+
+		var expectedMap map[string]any
+		var actualMap map[string]any
+
+		json.Unmarshal([]byte(expectedMetadata), &expectedMap)
+		json.Unmarshal([]byte(metadata), &actualMap)
+
+		if _, ok := actualMap["importTimeStamp"]; !ok {
+			t.Errorf("importTimeStampt is not found in case '%s'", testcase.name)
+		}
+
+		require.Regexp(t, expectedMap["importTimeStamp"], actualMap["importTimeStamp"])
+
+		expectedMap["importTimeStamp"] = "dummy"
+		actualMap["importTimeStamp"] = "dummy"
+
+		require.Equal(t, expectedMap, actualMap, "Metadata not equal in case '%s'", testcase.name)
+	}
+}
+
 func TestMetadataHappyHTTPResponse(t *testing.T) {
 	testcases := []metadataTest{
 		{
