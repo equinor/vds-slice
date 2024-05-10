@@ -9,7 +9,6 @@
 #include "axis.hpp"
 #include "boundingbox.hpp"
 #include "datahandle.hpp"
-#include "datasource.hpp"
 #include "direction.hpp"
 #include "exceptions.hpp"
 #include "metadatahandle.hpp"
@@ -143,17 +142,17 @@ nlohmann::json json_slice_geospatial(
 namespace cppapi {
 
 void slice_metadata(
-    DataSource& datasource,
+    DataHandle& datahandle,
     Direction const direction,
     int lineno,
     std::vector< Bound > const& slicebounds,
     response* out
 ) {
-    MetadataHandle const& metadata = datasource.get_metadata();
+    MetadataHandle const& metadata = datahandle.get_metadata();
     auto const& axis = metadata.get_axis(direction);
 
     nlohmann::json meta;
-    meta["format"] = fmtstr(DataHandle::format());
+    meta["format"] = fmtstr(SingleDataHandle::format());
 
     Axis const& inline_axis = metadata.iline();
     Axis const& crossline_axis = metadata.xline();
@@ -196,22 +195,22 @@ void slice_metadata(
 }
 
 void fence_metadata(
-    DataSource& datasource,
+    DataHandle& datahandle,
     size_t npoints,
     response* out
 ) {
-    MetadataHandle const& metadata = datasource.get_metadata();
+    MetadataHandle const& metadata = datahandle.get_metadata();
 
     nlohmann::json meta;
     Axis const& sample_axis = metadata.sample();
-    meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples() });
-    meta["format"] = fmtstr(DataHandle::format());
+    meta["shape"] = nlohmann::json::array({npoints, sample_axis.nsamples()});
+    meta["format"] = fmtstr(SingleDataHandle::format());
 
     return to_response(meta, out);
 }
 
-void metadata(DataSource& datasource, response* out) {
-    MetadataHandle const& metadata = datasource.get_metadata();
+void metadata(DataHandle& datahandle, response* out) {
+    MetadataHandle const& metadata = datahandle.get_metadata();
 
     nlohmann::json meta;
 
@@ -239,14 +238,14 @@ void metadata(DataSource& datasource, response* out) {
 }
 
 void attributes_metadata(
-    DataSource& datasource,
+    DataHandle& datahandle,
     std::size_t nrows,
     std::size_t ncols,
     response* out
 ) {
     nlohmann::json meta;
     meta["shape"] = nlohmann::json::array({nrows, ncols});
-    meta["format"] = fmtstr(DataHandle::format());
+    meta["format"] = fmtstr(SingleDataHandle::format());
 
     return to_response(meta, out);
 }

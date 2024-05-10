@@ -1,5 +1,3 @@
-#include <functional>
-
 #include "ctypes.h"
 #include "capi.h"
 
@@ -53,58 +51,43 @@ int handle_exception(Context* ctx, std::exception_ptr eptr) {
     return STATUS_OK;
 }
 
-int single_datasource_new(
+int single_datahandle_new(
     Context* ctx,
     const char* url,
     const char* credentials,
-    DataSource** ds_out
-){
+    DataHandle** ds_out
+) {
     try {
         if (not ds_out) throw detail::nullptr_error("Invalid out pointer");
 
-        *ds_out = make_single_datasource(url, credentials);
+        *ds_out = make_single_datahandle(url, credentials);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
     }
 }
 
-int double_datasource_new(
+int double_datahandle_new(
     Context* ctx,
     const char* url_A,
     const char* credentials_A,
     const char* url_B,
     const char* credentials_B,
     enum binary_operator bin_operator,
-    DataSource** datasource
+    DataHandle** datahandle
 ) {
     try {
-        if (not datasource)
-            throw detail::nullptr_error("Invalid datasource pointer");
+        if (not datahandle)
+            throw detail::nullptr_error("Invalid datahandle pointer");
 
-        std::function<void(float*, const float*, size_t)> binary_operator_function;
-
-        if (bin_operator == NO_OPERATOR)
-            throw detail::bad_request("Invalid function");
-        else if (bin_operator == ADDITION)
-            binary_operator_function = &inplace_addition;
-        else if (bin_operator == SUBTRACTION)
-            binary_operator_function = &inplace_subtraction;
-        else if (bin_operator == MULTIPLICATION)
-            binary_operator_function = &inplace_multiplication;
-        else if (bin_operator == DIVISION)
-            binary_operator_function = &inplace_division;
-        else
-            throw detail::bad_request("Invalid binary_operator string");
-
-        *datasource = make_double_datasource(url_A, credentials_A, url_B, credentials_B, binary_operator_function);
+        *datahandle = make_double_datahandle(url_A, credentials_A, url_B, credentials_B, bin_operator);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
     }
 }
 
-int datasource_free(Context* ctx, DataSource* ds) {
+int datahandle_free(Context* ctx, DataHandle* ds) {
     try {
         if (not ds) return STATUS_OK;
 
@@ -159,7 +142,7 @@ int regular_surface_free(Context* ctx, RegularSurface* surface) {
 
 int subvolume_new(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     RegularSurface* reference,
     RegularSurface* top,
     RegularSurface* bottom,
@@ -168,8 +151,8 @@ int subvolume_new(
     try {
         if (not out)
             throw detail::nullptr_error("Invalid out pointer");
-        if (not datasource)
-            throw detail::nullptr_error("Invalid datasource");
+        if (not datahandle)
+            throw detail::nullptr_error("Invalid datahandle");
         if (not reference)
             throw detail::nullptr_error("Invalid reference surface");
         if (not top)
@@ -178,7 +161,7 @@ int subvolume_new(
             throw detail::nullptr_error("Invalid bottom surface");
 
         *out = make_subvolume(
-            datasource->get_metadata(),
+            datahandle->get_metadata(),
             *reference,
             *top,
             *bottom
@@ -206,7 +189,7 @@ int subvolume_free(Context* ctx, SurfaceBoundedSubVolume* subvolume) {
 
 int slice(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     int lineno,
     axis_name ax,
     struct Bound* bounds,
@@ -214,8 +197,10 @@ int slice(
     response* out
 ) {
     try {
-        if (not out)        throw detail::nullptr_error("Invalid out pointer");
-        if (not datasource) throw detail::nullptr_error("Invalid datasource");
+        if (not out)
+            throw detail::nullptr_error("Invalid out pointer");
+        if (not datahandle)
+            throw detail::nullptr_error("Invalid datahandle");
 
         Direction const direction(ax);
 
@@ -225,7 +210,7 @@ int slice(
             bounds++;
         }
 
-        cppapi::slice(*datasource, direction, lineno, slice_bounds, out);
+        cppapi::slice(*datahandle, direction, lineno, slice_bounds, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -234,7 +219,7 @@ int slice(
 
 int slice_metadata(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     int lineno,
     axis_name ax,
     struct Bound* bounds,
@@ -242,8 +227,10 @@ int slice_metadata(
     response* out
 ) {
     try {
-        if (not out)        throw detail::nullptr_error("Invalid out pointer");
-        if (not datasource) throw detail::nullptr_error("Invalid datasource");
+        if (not out)
+            throw detail::nullptr_error("Invalid out pointer");
+        if (not datahandle)
+            throw detail::nullptr_error("Invalid datahandle");
 
         Direction const direction(ax);
 
@@ -253,7 +240,7 @@ int slice_metadata(
             bounds++;
         }
 
-        cppapi::slice_metadata(*datasource, direction, lineno, slice_bounds, out);
+        cppapi::slice_metadata(*datahandle, direction, lineno, slice_bounds, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -262,7 +249,7 @@ int slice_metadata(
 
 int fence(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
@@ -271,11 +258,13 @@ int fence(
     response* out
 ) {
     try {
-        if (not out)        throw detail::nullptr_error("Invalid out pointer");
-        if (not datasource) throw detail::nullptr_error("Invalid datasource");
+        if (not out)
+            throw detail::nullptr_error("Invalid out pointer");
+        if (not datahandle)
+            throw detail::nullptr_error("Invalid datahandle");
 
         cppapi::fence(
-            *datasource,
+            *datahandle,
             coordinate_system,
             coordinates,
             npoints,
@@ -291,15 +280,17 @@ int fence(
 
 int fence_metadata(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     size_t npoints,
     response* out
 ) {
     try {
-        if (not out)        throw detail::nullptr_error("Invalid out pointer");
-        if (not datasource) throw detail::nullptr_error("Invalid datasource");
+        if (not out)
+            throw detail::nullptr_error("Invalid out pointer");
+        if (not datahandle)
+            throw detail::nullptr_error("Invalid datahandle");
 
-        cppapi::fence_metadata(*datasource, npoints, out);
+        cppapi::fence_metadata(*datahandle, npoints, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -308,14 +299,16 @@ int fence_metadata(
 
 int metadata(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     response* out
 ) {
     try {
-        if (not out)        throw detail::nullptr_error("Invalid out pointer");
-        if (not datasource) throw detail::nullptr_error("Invalid datasource");
+        if (not out)
+            throw detail::nullptr_error("Invalid out pointer");
+        if (not datahandle)
+            throw detail::nullptr_error("Invalid datahandle");
 
-        cppapi::metadata(*datasource, out);
+        cppapi::metadata(*datahandle, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -324,16 +317,18 @@ int metadata(
 
 int attribute_metadata(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     size_t nrows,
     size_t ncols,
     response* out
 ) {
     try {
-        if (not out)        throw detail::nullptr_error("Invalid out pointer");
-        if (not datasource) throw detail::nullptr_error("Invalid datasource");
+        if (not out)
+            throw detail::nullptr_error("Invalid out pointer");
+        if (not datahandle)
+            throw detail::nullptr_error("Invalid datahandle");
 
-        cppapi::attributes_metadata(*datasource, nrows, ncols, out);
+        cppapi::attributes_metadata(*datahandle, nrows, ncols, out);
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
@@ -342,7 +337,7 @@ int attribute_metadata(
 
 int attribute(
     Context* ctx,
-    DataSource* datasource,
+    DataHandle* datahandle,
     SurfaceBoundedSubVolume* src_subvolume,
     enum interpolation_method interpolation_method,
     enum attribute* attributes,
@@ -353,13 +348,16 @@ int attribute(
     void*  out
 ) {
     try {
-        if (not out)           throw detail::nullptr_error("Invalid out pointer");
-        if (not datasource)    throw detail::nullptr_error("Invalid datasource");
-        if (not src_subvolume) throw detail::nullptr_error("Invalid subvolume");
+        if (not out)
+            throw detail::nullptr_error("Invalid out pointer");
+        if (not datahandle)
+            throw detail::nullptr_error("Invalid datahandle");
+        if (not src_subvolume)
+            throw detail::nullptr_error("Invalid subvolume");
 
         if (from >= to)  throw std::runtime_error("No data to iterate over");
 
-        MetadataHandle const& metadata = datasource->get_metadata();
+        MetadataHandle const& metadata = datahandle->get_metadata();
         auto const& sample = metadata.sample();
 
         if (stepsize == 0) {
@@ -375,7 +373,7 @@ int attribute(
         }
 
         cppapi::fetch_subvolume(
-            *datasource,
+            *datahandle,
             *src_subvolume,
             interpolation_method,
             from,

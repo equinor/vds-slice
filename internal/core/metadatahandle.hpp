@@ -1,16 +1,19 @@
 #ifndef VDS_SLICE_METADATAHANDLE_HPP
 #define VDS_SLICE_METADATAHANDLE_HPP
 
-#include <string>
-
 #include <OpenVDS/OpenVDS.h>
+#include <string>
 
 #include "axis.hpp"
 #include "boundingbox.hpp"
 #include "direction.hpp"
+#include "volumedatalayout.hpp"
+
+using voxel = float[OpenVDS::Dimensionality_Max];
 
 class MetadataHandle {
     friend class DoubleMetadataHandle;
+
 public:
     virtual Axis iline() const noexcept(true) = 0;
     virtual Axis xline() const noexcept(true) = 0;
@@ -23,6 +26,7 @@ public:
     virtual std::string import_time_stamp() const noexcept(false) = 0;
 
     virtual OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept(false) = 0;
+
 protected:
     virtual void dimension_validation() const = 0;
 };
@@ -42,6 +46,7 @@ public:
     std::string import_time_stamp() const noexcept(false);
 
     OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept(false);
+
 protected:
     void dimension_validation() const;
 
@@ -58,8 +63,11 @@ private:
 class DoubleMetadataHandle : public MetadataHandle {
 public:
     DoubleMetadataHandle(
-        MetadataHandle const& handle_A,
-        MetadataHandle const& handle_B
+        OpenVDS::VolumeDataLayout const* const layout_a,
+        OpenVDS::VolumeDataLayout const* const layout_b,
+        SingleMetadataHandle const* const m_metadata_a,
+        SingleMetadataHandle const* const m_metadata_b,
+        enum binary_operator binary_symbol
     );
 
     Axis iline() const noexcept(true);
@@ -73,12 +81,24 @@ public:
     std::string import_time_stamp() const noexcept(false);
 
     OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept(false);
+
+    void offset_samples_to_match_cube_a(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_a) noexcept(true);
+    void offset_samples_to_match_cube_b(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_b) noexcept(true);
+
 protected:
     void dimension_validation() const;
-private:
-    MetadataHandle const* m_handle_A;
-    MetadataHandle const* m_handle_B;
 
-    void validate_metadata() const noexcept(false);
+private:
+    DoubleVolumeDataLayout const m_layout;
+    SingleMetadataHandle const* const m_metadata_a;
+    SingleMetadataHandle const* const m_metadata_b;
+    enum binary_operator m_binary_symbol;
+
+    Axis m_iline;
+    Axis m_xline;
+    Axis m_sample;
+
+    int get_dimension(std::vector<std::string> const& names) const;
+    std::string operator_string() const noexcept(false);
 };
 #endif /* VDS_SLICE_METADATAHANDLE_HPP */

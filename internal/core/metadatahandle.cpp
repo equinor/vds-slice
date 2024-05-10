@@ -16,6 +16,27 @@ SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* cons
       m_xline(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
       m_sample(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))) {
     this->dimension_validation();
+
+    if (this->m_iline.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS, expect at least two inLines, got " +
+            std::to_string(this->m_iline.nsamples())
+        );
+    }
+
+    if (this->m_xline.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS, expect at least two crossLines, got " +
+            std::to_string(this->m_xline.nsamples())
+        );
+    }
+
+    if (this->m_sample.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS, expect at least two samples, got " +
+            std::to_string(this->m_sample.nsamples())
+        );
+    }
 }
 
 Axis SingleMetadataHandle::iline() const noexcept(true) {
@@ -93,27 +114,54 @@ int SingleMetadataHandle::get_dimension(std::vector<std::string> const& names) c
 }
 
 DoubleMetadataHandle::DoubleMetadataHandle(
-    MetadataHandle const& handle_A,
-    MetadataHandle const& handle_B
+    OpenVDS::VolumeDataLayout const* const layout_a,
+    OpenVDS::VolumeDataLayout const* const layout_b,
+    SingleMetadataHandle const* const metadata_a,
+    SingleMetadataHandle const* const metadata_b,
+    enum binary_operator binary_symbol
 )
-    : m_handle_A(&handle_A),
-      m_handle_B(&handle_B) {
-    this->validate_metadata();
+    : m_layout(DoubleVolumeDataLayout(layout_a, layout_b)),
+      m_metadata_a(metadata_a),
+      m_metadata_b(metadata_b),
+      m_binary_symbol(binary_symbol),
+      m_iline(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
+      m_xline(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
+      m_sample(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))
+      ) {
+    this->dimension_validation();
+
+    if (this->m_iline.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS pair, expect that the intersection contains at least two inLines, got " +
+            std::to_string(this->m_iline.nsamples())
+        );
+    }
+
+    if (this->m_xline.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS pair, expect that the intersection contains at least two crossLines, got " +
+            std::to_string(this->m_xline.nsamples())
+        );
+    }
+
+    if (this->m_sample.nsamples() < 2) {
+        throw std::runtime_error(
+            "Unsupported VDS pair, expect that the intersection contains at least two samples, got " +
+            std::to_string(this->m_sample.nsamples())
+        );
+    }
 }
 
 Axis DoubleMetadataHandle::iline() const noexcept(true) {
-    // Axis iline in handle A and B are identical by validate_metadata()
-    return this->m_handle_A->iline();
+    return this->m_iline;
 }
 
 Axis DoubleMetadataHandle::xline() const noexcept(true) {
-    // Axis xline in handle A and B are identical by validate_metadata()
-    return this->m_handle_A->xline();
+    return this->m_xline;
 }
 
 Axis DoubleMetadataHandle::sample() const noexcept(true) {
-    // Axis sample in handle A and B are identical by validate_metadata()
-    return this->m_handle_A->sample();
+    return this->m_sample;
 }
 
 Axis DoubleMetadataHandle::get_axis(
@@ -130,33 +178,91 @@ Axis DoubleMetadataHandle::get_axis(
 }
 
 BoundingBox DoubleMetadataHandle::bounding_box() const noexcept(false) {
-    throw std::runtime_error("Not implemented");
+    return BoundingBox(
+        this->iline().nsamples(),
+        this->xline().nsamples(),
+        this->coordinate_transformer()
+    );
 }
 
 std::string DoubleMetadataHandle::crs() const noexcept(false) {
-    throw std::runtime_error("Not implemented");
+    // DoubleVolumeDataLayout constructor ensures that 'crs' for A and B are identical.
+    return this->m_metadata_a->crs();
 }
 
 std::string DoubleMetadataHandle::input_filename() const noexcept(false) {
-    throw std::runtime_error("Not implemented");
+    return this->m_metadata_a->input_filename() + this->operator_string() + this->m_metadata_b->input_filename();
 }
 
 std::string DoubleMetadataHandle::import_time_stamp() const noexcept(false) {
-    throw std::runtime_error("Not implemented");
+    return this->m_metadata_a->import_time_stamp() + this->operator_string() + this->m_metadata_b->import_time_stamp();
 }
 
 OpenVDS::IJKCoordinateTransformer DoubleMetadataHandle::coordinate_transformer() const noexcept(false) {
-    throw std::runtime_error("Not implemented");
+    return OpenVDS::IJKCoordinateTransformer(&(this->m_layout));
 }
 
 void DoubleMetadataHandle::dimension_validation() const {
-    this->m_handle_A->dimension_validation();
-    this->m_handle_B->dimension_validation();
+    if (this->m_layout.GetDimensionality() != 3) {
+        throw std::runtime_error(
+            "Unsupported VDS, expected 3 dimensions, got " +
+            std::to_string(this->m_layout.GetDimensionality())
+        );
+    }
 }
 
-void DoubleMetadataHandle::validate_metadata() const noexcept(false) {
-    this->dimension_validation();
-    this->m_handle_A->iline().assert_equal(this->m_handle_B->iline());
-    this->m_handle_A->xline().assert_equal(this->m_handle_B->xline());
-    this->m_handle_A->sample().assert_equal(this->m_handle_B->sample());
+int DoubleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
+    for (auto i = 0; i < this->m_layout.GetDimensionality(); i++) {
+        std::string dimension_name = this->m_layout.GetDimensionName(i);
+        if (std::find(names.begin(), names.end(), dimension_name) != names.end()) {
+            return i;
+        }
+    }
+    throw std::runtime_error(
+        "Requested axis not found under names " + boost::algorithm::join(names, ", ") +
+        " in vds file "
+    );
+}
+
+std::string DoubleMetadataHandle::operator_string() const noexcept(false) {
+
+    switch (this->m_binary_symbol) {
+        case binary_operator::NO_OPERATOR:
+            return " ? ";
+
+        case binary_operator::ADDITION:
+            return " + ";
+
+        case binary_operator::SUBTRACTION:
+            return " - ";
+
+        case binary_operator::MULTIPLICATION:
+            return " * ";
+
+        case binary_operator::DIVISION:
+            return " / ";
+
+        default:
+            return " XX ";
+    }
+}
+
+void DoubleMetadataHandle::offset_samples_to_match_cube_a(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_a) noexcept(true) {
+
+    auto data = samples_a->data();
+    for (int v = 0; v < nsamples; v++) {
+        for (int i = 0; i < this->m_layout.Dimensionality_Max; i++) {
+            data[v * this->m_layout.Dimensionality_Max + i] = samples[v][i] + this->m_layout.GetDimensionIndexOffset_a(i);
+        }
+    }
+}
+
+void DoubleMetadataHandle::offset_samples_to_match_cube_b(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_b) noexcept(true) {
+
+    auto data = samples_b->data();
+    for (int v = 0; v < nsamples; v++) {
+        for (int i = 0; i < this->m_layout.Dimensionality_Max; i++) {
+            data[v * this->m_layout.Dimensionality_Max + i] = samples[v][i] + this->m_layout.GetDimensionIndexOffset_b(i);
+        }
+    }
 }

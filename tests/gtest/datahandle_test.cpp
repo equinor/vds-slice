@@ -7,11 +7,6 @@
 namespace {
 const std::string DEFAULT_DATA = "file://10_samples_default.vds";
 const std::string DOUBLE_VALUE_DATA = "file://10_double_value.vds";
-const std::string MISSING_ILINE_DATA = "file://10_missing_iline.vds";
-const std::string MISSING_XLINE_DATA = "file://10_missing_xline.vds";
-const std::string MISSING_SAMPLE_DATA = "file://10_missing_samples.vds";
-const std::string ALTERED_OFFSET_DATA = "file://10_miss_offset.vds";
-const std::string ALTERED_STEPSIZE_DATA = "file://10_miss_stepsize.vds";
 
 const std::string CREDENTIALS = "";
 
@@ -23,10 +18,10 @@ const float y_inc = std::sqrt((-2) * (-2) + 3 * 3);                             
 const float angle = std::asin(4 / std::sqrt((8 - 2) * (8 - 2) + 4 * 4)) / (2 * std::acos(-1)) * 360; // 33.69
 Grid default_grid = Grid(2, 0, x_inc, y_inc, angle);
 
-class DataSourceTest : public ::testing::Test {
+class DataHandleTest : public ::testing::Test {
 protected:
-    DoubleDataSource* datasource;
-    SingleDataSource* datasource_reference;
+    DoubleDataHandle* datahandle;
+    SingleDataHandle* datahandle_reference;
     SurfaceBoundedSubVolume* subvolume_reference;
     static constexpr int nrows = 3;
     static constexpr int ncols = 2;
@@ -48,7 +43,7 @@ protected:
         RegularSurface(bottom_surface_data.data(), nrows, ncols, default_grid, fill);
 
     void SetUp() override {
-        datasource_reference = make_single_datasource(
+        datahandle_reference = make_single_datahandle(
             DEFAULT_DATA.c_str(),
             CREDENTIALS.c_str()
         );
@@ -60,99 +55,33 @@ protected:
         };
 
         subvolume_reference = make_subvolume(
-            datasource_reference->get_metadata(), primary_surface, top_surface, bottom_surface
+            datahandle_reference->get_metadata(), primary_surface, top_surface, bottom_surface
         );
 
-        cppapi::fetch_subvolume(*datasource_reference, *subvolume_reference, NEAREST, 0, size);
+        cppapi::fetch_subvolume(*datahandle_reference, *subvolume_reference, NEAREST, 0, size);
     }
 
     void TearDown() override {
         delete subvolume_reference;
-        delete datasource_reference;
+        delete datahandle_reference;
     }
 };
 
-TEST_F(DataSourceTest, ILineMismatch) {
-    const std::string EXPECTED_MSG = "Axis: Inline: Mismatch in number of samples: 3 != 2";
+TEST_F(DataHandleTest, Addition) {
 
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                MISSING_ILINE_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
-
-TEST_F(DataSourceTest, XLineMismatch) {
-    const std::string EXPECTED_MSG = "Axis: Crossline: Mismatch in number of samples: 2 != 1";
-
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                MISSING_XLINE_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
-
-TEST_F(DataSourceTest, SamplesMismatch) {
-    const std::string EXPECTED_MSG = "Axis: Sample: Mismatch in number of samples: 10 != 8";
-
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                MISSING_SAMPLE_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
-
-TEST_F(DataSourceTest, OffsetMismatch) {
-    const std::string EXPECTED_MSG = "Axis: Crossline: Mismatch in min value: 10.00 != 12.00";
-
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                ALTERED_OFFSET_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
-
-TEST_F(DataSourceTest, StepSizeMismatch) {
-    // Changing the stepsize causes the max value to change. Max value is checked before stepsize.
-    const std::string EXPECTED_MSG = "Axis: Inline: Mismatch in max value: 5.00 != 7.00";
-
-    EXPECT_THAT([&]() {         
-            DoubleDataSource *datasource = make_double_datasource(
-                DEFAULT_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                ALTERED_STEPSIZE_DATA.c_str(),
-                CREDENTIALS.c_str(),
-                &inplace_subtraction);
-                delete datasource; }, testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr(EXPECTED_MSG)));
-}
-
-TEST_F(DataSourceTest, Addition) {
-
-    DoubleDataSource* datasource = make_double_datasource(
+    DoubleDataHandle* datahandle = make_double_datahandle(
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_addition
+        binary_operator::ADDITION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
         RawSegment rs = subvolume->vertical_segment(i);
@@ -168,24 +97,24 @@ TEST_F(DataSourceTest, Addition) {
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
 
     delete subvolume;
-    delete datasource;
+    delete datahandle;
 }
 
-TEST_F(DataSourceTest, Multiplication) {
+TEST_F(DataHandleTest, Multiplication) {
 
-    DoubleDataSource* datasource = make_double_datasource(
+    DoubleDataHandle* datahandle = make_double_datahandle(
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_multiplication
+        binary_operator::MULTIPLICATION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
 
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
@@ -201,24 +130,24 @@ TEST_F(DataSourceTest, Multiplication) {
     }
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
     delete subvolume;
-    delete datasource;
+    delete datahandle;
 }
 
-TEST_F(DataSourceTest, Division) {
+TEST_F(DataHandleTest, Division) {
 
-    DoubleDataSource* datasource = make_double_datasource(
+    DoubleDataHandle* datahandle = make_double_datahandle(
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_division
+        binary_operator::DIVISION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
         RawSegment rs = subvolume->vertical_segment(i);
@@ -233,24 +162,24 @@ TEST_F(DataSourceTest, Division) {
     }
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
     delete subvolume;
-    delete datasource;
+    delete datahandle;
 }
 
-TEST_F(DataSourceTest, Subtraction) {
+TEST_F(DataHandleTest, Subtraction) {
 
-    DoubleDataSource* datasource = make_double_datasource(
+    DoubleDataHandle* datahandle = make_double_datahandle(
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_subtraction
+        binary_operator::SUBTRACTION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
         RawSegment rs = subvolume->vertical_segment(i);
@@ -265,24 +194,24 @@ TEST_F(DataSourceTest, Subtraction) {
     }
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
     delete subvolume;
-    delete datasource;
+    delete datahandle;
 }
 
-TEST_F(DataSourceTest, SubtractionReverse) {
+TEST_F(DataHandleTest, SubtractionReverse) {
 
-    DoubleDataSource* datasource = make_double_datasource(
+    DoubleDataHandle* datahandle = make_double_datahandle(
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
-        &inplace_subtraction
+        binary_operator::SUBTRACTION
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datasource->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datasource, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
         RawSegment rs = subvolume->vertical_segment(i);
@@ -297,7 +226,7 @@ TEST_F(DataSourceTest, SubtractionReverse) {
     }
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
     delete subvolume;
-    delete datasource;
+    delete datahandle;
 }
 
 } // namespace

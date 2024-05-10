@@ -8,12 +8,12 @@ add_library(cppcore
   cppapi_metadata.cpp
   datahandle.hpp
   datahandle.cpp
-  datasource.cpp
   direction.cpp
   metadatahandle.cpp
   regularsurface.cpp
   subcube.cpp
   subvolume.cpp
+  volumedatalayout.cpp
 )
 
 target_include_directories(cppcore

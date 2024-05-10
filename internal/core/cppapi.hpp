@@ -6,7 +6,7 @@
 #include "ctypes.h"
 
 #include "attribute.hpp"
-#include "datasource.hpp"
+#include "datahandle.hpp"
 #include "direction.hpp"
 #include "regularsurface.hpp"
 #include "subvolume.hpp"
@@ -14,7 +14,7 @@
 namespace cppapi {
 
 void slice(
-    DataSource& datasource,
+    DataHandle& datahandle,
     Direction const direction,
     int lineno,
     std::vector< Bound > const& bounds,
@@ -22,7 +22,7 @@ void slice(
 ) noexcept (false);
 
 void fence(
-    DataSource& datasource,
+    DataHandle& datahandle,
     enum coordinate_system coordinate_system,
     const float* coordinates,
     size_t npoints,
@@ -32,7 +32,7 @@ void fence(
 ) noexcept (false);
 
 void fetch_subvolume(
-    DataSource& datasource,
+    DataHandle& datahandle,
     SurfaceBoundedSubVolume& subvolume,
     enum interpolation_method interpolation,
     std::size_t from,
@@ -77,7 +77,7 @@ void align_surfaces(
 ) noexcept (false);
 
 void slice_metadata(
-    DataSource& datasource,
+    DataHandle& datahandle,
     Direction const direction,
     int lineno,
     std::vector< Bound > const& bounds,
@@ -86,18 +86,18 @@ void slice_metadata(
 
 
 void fence_metadata(
-    DataSource& datasource,
+    DataHandle& datahandle,
     size_t npoints,
     response* out
 ) noexcept (false);
 
 void metadata(
-    DataSource& datasource,
+    DataHandle& datahandle,
     response* out
 ) noexcept (false);
 
 void attributes_metadata(
-    DataSource& datasource,
+    DataHandle& datahandle,
     std::size_t nrows,
     std::size_t ncols,
     response* out
