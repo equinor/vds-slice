@@ -152,9 +152,9 @@ private:
     OpenVDS::ScopedVDSHandle m_file_handle_b;
     OpenVDS::VolumeDataAccessManager m_access_manager_a;
     OpenVDS::VolumeDataAccessManager m_access_manager_b;
-    DoubleMetadataHandle m_metadata;
     SingleMetadataHandle m_metadata_a;
     SingleMetadataHandle m_metadata_b;
+    DoubleMetadataHandle m_metadata;
     std::function<void(float*, const float*, std::size_t)> m_binary_operator;
 
     static int constexpr lod_level = 0;
