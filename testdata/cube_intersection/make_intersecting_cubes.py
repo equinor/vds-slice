@@ -80,18 +80,31 @@ if __name__ == "__main__":
     base_range_32 = np.arange(1, 32+1, dtype=np.int32)
 
     parameters = [
+        # Sample: [4, 128], Inline: [3, 24], Xline: [2, 16]
         {"path": "regular_8x2_cube", "samples": (
             0+base_range_32)*4, "ilines": (0+base_range_8)*3, "xlines": (0+base_range_8)*2},
+
+        # Sample: [20, 144], Inline: [15, 36], Xline: [10, 24]
         {"path": "shift_4_8x2_cube", "samples": (
             4+base_range_32)*4, "ilines": (4+base_range_8)*3, "xlines": (4+base_range_8)*2},
+
+        # Sample: [124, 248], Inline: [21, 42], Xline: [14, 28]
         {"path": "shift_6_8x2_cube", "samples": (
             30+base_range_32)*4, "ilines": (6+base_range_8)*3, "xlines": (6+base_range_8)*2},
+
+        # Sample: [4, 128], Inline: [24, 45], Xline: [2, 16]
         {"path": "shift_7_inLine_8x2_cube", "samples": (
             base_range_32)*4, "ilines": (7+base_range_8)*3, "xlines": (base_range_8)*2},
+
+        # Sample: [4, 128], Inline: [3, 24], Xline: [16, 30]
         {"path": "shift_7_xLine_8x2_cube", "samples": (
             base_range_32)*4, "ilines": (base_range_8)*3, "xlines": (7+base_range_8)*2},
+
+        # Sample: [36, 160], Inline: [27, 120], Xline: [18, 80]
         {"path": "shift_8_32x3_cube", "samples": (
             8+base_range_32)*4, "ilines": (8+base_range_32)*3, "xlines": (8+base_range_32)*2},
+
+        # Sample: [128, 252], Inline: [3, 24], Xline: [2, 16]
         {"path": "shift_31_Sample_8x2_cube", "samples": (
             31+base_range_32)*4, "ilines": (base_range_8)*3, "xlines": (base_range_8)*2}
     ]
