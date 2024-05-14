@@ -22,13 +22,6 @@ const std::string SHIFT_8_32_DATA = "file://shift_8_32x3_cube.vds";
 
 const std::string CREDENTIALS = "";
 
-double norm(const OpenVDS::Vector<double, 4UL>& vec) {
-    double sum = 0.0;
-    for (int i = 0; i < 4; i++) {
-        sum += std::pow(vec[i], 2);
-    }
-    return std::sqrt(sum);
-}
 
 class DatahandleAttributeTest : public ::testing::Test {
 
@@ -99,17 +92,25 @@ public:
     static constexpr float fill = -999.25;
 
     Grid get_grid(DataHandle* datahandle) {
-
         const MetadataHandle* metadata = &(datahandle->get_metadata());
-        const OpenVDS::DoubleMatrix4x4 ijkToWorldTransform = metadata->coordinate_transformer().IJKToWorldTransform();
 
-        double xori = ijkToWorldTransform.data[3][0];
-        double yori = ijkToWorldTransform.data[3][1];
-        double xinc = norm(ijkToWorldTransform.data[0]);
-        double yinc = norm(ijkToWorldTransform.data[1]);
-        double rot = std::atan2(ijkToWorldTransform.data[0][1], ijkToWorldTransform.data[0][0]) / M_PI * 180;
+        auto cdp = metadata->bounding_box().world();
 
-        return Grid(xori, yori, xinc, yinc, rot);
+        auto nsteps_iline = metadata->iline().nsamples() - 1;
+        auto nsteps_xline = metadata->xline().nsamples() - 1;
+
+        auto iline_distance_x = cdp[1].first - cdp[0].first;
+        auto iline_distance_y = cdp[1].second - cdp[0].second;
+        auto xline_distance_x = cdp[3].first - cdp[0].first;
+        auto xline_distance_y = cdp[3].second - cdp[0].second;
+
+        const double xori = cdp[0].first;
+        const double yori = cdp[0].second;
+        const double xinc = std::hypot(iline_distance_x, iline_distance_y) / nsteps_iline;
+        const double yinc = std::hypot(xline_distance_x, xline_distance_y) / nsteps_xline;
+        const double rotation = std::atan2(iline_distance_y, iline_distance_x) * 180 / M_PI;
+
+        return Grid(xori, yori, xinc, yinc, rotation);
     }
 
     /// @brief Check attribute values against expected values
