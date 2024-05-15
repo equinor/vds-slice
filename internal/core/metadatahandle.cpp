@@ -14,7 +14,9 @@ SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* cons
     : m_layout(layout),
       m_iline(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
       m_xline(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
-      m_sample(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))) {
+      m_sample(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
+      m_coordinate_transformer(SingleCoordinateTransformer(OpenVDS::IJKCoordinateTransformer(layout)))
+    {
     this->dimension_validation();
 
     if (this->m_iline.nsamples() < 2) {
@@ -87,8 +89,8 @@ std::string SingleMetadataHandle::import_time_stamp() const noexcept(false) {
     return this->m_layout->GetMetadataString(time_stamp.GetCategory(), time_stamp.GetName());
 }
 
-OpenVDS::IJKCoordinateTransformer SingleMetadataHandle::coordinate_transformer() const noexcept(false) {
-    return OpenVDS::IJKCoordinateTransformer(this->m_layout);
+SingleCoordinateTransformer const& SingleMetadataHandle::coordinate_transformer() const noexcept(false) {
+    return this->m_coordinate_transformer;
 }
 
 void SingleMetadataHandle::dimension_validation() const {
@@ -126,8 +128,8 @@ DoubleMetadataHandle::DoubleMetadataHandle(
       m_binary_symbol(binary_symbol),
       m_iline(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
       m_xline(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
-      m_sample(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))
-      ) {
+      m_sample(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
+      m_coordinate_transformer(m_metadata_a->coordinate_transformer(), m_metadata_b->coordinate_transformer()) {
     this->dimension_validation();
 
     if (this->m_iline.nsamples() < 2) {
@@ -198,8 +200,8 @@ std::string DoubleMetadataHandle::import_time_stamp() const noexcept(false) {
     return this->m_metadata_a->import_time_stamp() + this->operator_string() + this->m_metadata_b->import_time_stamp();
 }
 
-OpenVDS::IJKCoordinateTransformer DoubleMetadataHandle::coordinate_transformer() const noexcept(false) {
-    return OpenVDS::IJKCoordinateTransformer(&(this->m_layout));
+DoubleCoordinateTransformer const& DoubleMetadataHandle::coordinate_transformer() const noexcept(false) {
+    return this->m_coordinate_transformer;
 }
 
 void DoubleMetadataHandle::dimension_validation() const {

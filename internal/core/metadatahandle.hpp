@@ -6,6 +6,7 @@
 
 #include "axis.hpp"
 #include "boundingbox.hpp"
+#include "coordinate_transformer.hpp"
 #include "direction.hpp"
 #include "volumedatalayout.hpp"
 
@@ -25,7 +26,7 @@ public:
     virtual std::string input_filename() const noexcept(false) = 0;
     virtual std::string import_time_stamp() const noexcept(false) = 0;
 
-    virtual OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept(false) = 0;
+    virtual CoordinateTransformer const& coordinate_transformer() const noexcept(false) = 0;
 
 protected:
     virtual void dimension_validation() const = 0;
@@ -45,7 +46,7 @@ public:
     std::string input_filename() const noexcept(false);
     std::string import_time_stamp() const noexcept(false);
 
-    OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept(false);
+    SingleCoordinateTransformer const& coordinate_transformer() const noexcept(false);
 
 protected:
     void dimension_validation() const;
@@ -56,6 +57,8 @@ private:
     Axis m_iline;
     Axis m_xline;
     Axis m_sample;
+
+    SingleCoordinateTransformer m_coordinate_transformer;
 
     int get_dimension(std::vector<std::string> const& names) const;
 };
@@ -80,7 +83,7 @@ public:
     std::string input_filename() const noexcept(false);
     std::string import_time_stamp() const noexcept(false);
 
-    OpenVDS::IJKCoordinateTransformer coordinate_transformer() const noexcept(false);
+    DoubleCoordinateTransformer const& coordinate_transformer() const noexcept(false);
 
     void offset_samples_to_match_cube_a(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_a) noexcept(true);
     void offset_samples_to_match_cube_b(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_b) noexcept(true);
@@ -97,6 +100,8 @@ private:
     Axis m_iline;
     Axis m_xline;
     Axis m_sample;
+
+    DoubleCoordinateTransformer m_coordinate_transformer;
 
     int get_dimension(std::vector<std::string> const& names) const;
     std::string operator_string() const noexcept(false);

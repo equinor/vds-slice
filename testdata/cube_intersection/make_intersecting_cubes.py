@@ -76,6 +76,7 @@ def create_intersecting_data(path, samples, ilines, xlines):
 
 
 if __name__ == "__main__":
+    base_range_4 = np.arange(1, 4+1, dtype=np.int32)
     base_range_8 = np.arange(1, 8+1, dtype=np.int32)
     base_range_32 = np.arange(1, 32+1, dtype=np.int32)
 
@@ -106,7 +107,11 @@ if __name__ == "__main__":
 
         # Sample: [128, 252], Inline: [3, 24], Xline: [2, 16]
         {"path": "shift_31_Sample_8x2_cube", "samples": (
-            31+base_range_32)*4, "ilines": (base_range_8)*3, "xlines": (base_range_8)*2}
+            31+base_range_32)*4, "ilines": (base_range_8)*3, "xlines": (base_range_8)*2},
+
+        # Sample: [8, 36], Inline: [9, 18], Xline: [8, 14]
+        {"path": "inner_4x2_cube", "samples": (
+            1+base_range_8)*4, "ilines": (2+base_range_4)*3, "xlines": (3+base_range_4)*2},
     ]
 
     for p in parameters:
