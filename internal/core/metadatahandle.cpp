@@ -327,17 +327,19 @@ DoubleCoordinateTransformer const& DoubleMetadataHandle::coordinate_transformer(
 }
 
 void DoubleMetadataHandle::dimension_validation() const {
-    if (this->m_layout.GetDimensionality() != 3) {
+    auto dimensionality = this->m_metadata_a->m_layout->GetDimensionality();
+    if (dimensionality != 3) {
         throw std::runtime_error(
             "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(this->m_layout.GetDimensionality())
+            std::to_string(dimensionality)
         );
     }
 }
 
 int DoubleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
-    for (auto i = 0; i < this->m_layout.GetDimensionality(); i++) {
-        std::string dimension_name = this->m_layout.GetDimensionName(i);
+    auto dimensionality = this->m_metadata_a->m_layout->GetDimensionality();
+    for (auto i = 0; i < dimensionality; i++) {
+        std::string dimension_name = this->m_metadata_a->m_layout->GetDimensionName(i);
         if (std::find(names.begin(), names.end(), dimension_name) != names.end()) {
             return i;
         }
