@@ -82,6 +82,9 @@ public:
                 this->m_intersection_zero_as_cube_a_index[index] = 0;
             }
         }
+
+        auto intersection_zero_as_annotation = transformer_a.IJKIndexToAnnotation(this->m_intersection_zero_as_cube_a_index);
+        this->m_intersection_zero_as_cube_b_index = transformer_b.AnnotationToIJKIndex(intersection_zero_as_annotation);
     }
 
     OpenVDS::IntVector3 VoxelIndexToIJKIndex(const OpenVDS::IntVector3& voxelIndex) const {
@@ -109,6 +112,18 @@ public:
         return m_transformer_a.IJKPositionToAnnotation(ijkPosistionInCubeA);
     }
 
+    void to_cube_a_ijk_position(float* out_cube_a_position, float const* intersection_cube_position) const {
+        for (int index = 0; index < 3; ++index) {
+            out_cube_a_position[index] = intersection_cube_position[index] + this->m_intersection_zero_as_cube_a_index[index];
+        }
+    }
+
+    void to_cube_b_ijk_position(float* out_cube_b_position, float const* intersection_cube_position) const {
+        for (int index = 0; index < 3; ++index) {
+            out_cube_b_position[index] = intersection_cube_position[index] + this->m_intersection_zero_as_cube_b_index[index];
+        }
+    }
+
 private:
     OpenVDS::IntVector3 as_cube_a_ijk_index(const OpenVDS::IntVector3& ijkIndex) const {
         auto as_cube_a_index = OpenVDS::IntVector3(ijkIndex);
@@ -128,6 +143,7 @@ private:
 
     SingleCoordinateTransformer const& m_transformer_a;
     OpenVDS::IntVector3 m_intersection_zero_as_cube_a_index;
+    OpenVDS::IntVector3 m_intersection_zero_as_cube_b_index;
 };
 
 #endif /* VDS_SLICE_COORDINATE_TRANSFORMER */

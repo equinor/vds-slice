@@ -88,9 +88,6 @@ public:
 
     DoubleCoordinateTransformer const& coordinate_transformer() const noexcept(false);
 
-    void offset_samples_to_match_cube_a(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_a) noexcept(true);
-    void offset_samples_to_match_cube_b(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_b) noexcept(true);
-
 protected:
     void dimension_validation() const;
 

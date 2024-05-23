@@ -371,22 +371,3 @@ std::string DoubleMetadataHandle::operator_string() const noexcept(false) {
     }
 }
 
-void DoubleMetadataHandle::offset_samples_to_match_cube_a(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_a) noexcept(true) {
-
-    auto data = samples_a->data();
-    for (int v = 0; v < nsamples; v++) {
-        for (int i = 0; i < this->m_layout.Dimensionality_Max; i++) {
-            data[v * this->m_layout.Dimensionality_Max + i] = samples[v][i] + this->m_layout.GetDimensionIndexOffset_a(i);
-        }
-    }
-}
-
-void DoubleMetadataHandle::offset_samples_to_match_cube_b(voxel const* samples, std::size_t const nsamples, std::vector<float>* samples_b) noexcept(true) {
-
-    auto data = samples_b->data();
-    for (int v = 0; v < nsamples; v++) {
-        for (int i = 0; i < this->m_layout.Dimensionality_Max; i++) {
-            data[v * this->m_layout.Dimensionality_Max + i] = samples[v][i] + this->m_layout.GetDimensionIndexOffset_b(i);
-        }
-    }
-}
