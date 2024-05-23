@@ -175,13 +175,13 @@ Axis make_double_cube_axis(
 }
 
 DoubleMetadataHandle::DoubleMetadataHandle(
-    OpenVDS::VolumeDataLayout const* const layout_a,
-    OpenVDS::VolumeDataLayout const* const layout_b,
+    OpenVDS::VolumeDataLayout const* const p_layout_a,
+    OpenVDS::VolumeDataLayout const* const p_layout_b,
     SingleMetadataHandle const* const metadata_a,
     SingleMetadataHandle const* const metadata_b,
     enum binary_operator binary_symbol
 )
-    : m_layout(DoubleVolumeDataLayout(layout_a, layout_b)),
+    : m_layout(DoubleVolumeDataLayout(p_layout_a, p_layout_b)),
       m_metadata_a(metadata_a),
       m_metadata_b(metadata_b),
       m_binary_symbol(binary_symbol),
@@ -190,6 +190,69 @@ DoubleMetadataHandle::DoubleMetadataHandle(
       m_sample(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
       m_coordinate_transformer(m_metadata_a->coordinate_transformer(), m_metadata_b->coordinate_transformer()) {
     this->dimension_validation();
+
+    auto layout_a = this->m_metadata_a->m_layout;
+    auto layout_b = this->m_metadata_b->m_layout;
+
+    if (layout_a->GetDimensionality() != layout_b->GetDimensionality()) {
+        throw detail::bad_request("Different number of dimensions");
+    }
+
+    /* Axis order is assured indirectly through axes creation by checking name
+     * match for each dimension index.
+     */
+
+    auto const crs_name = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
+    std::string crs_a = layout_a->GetMetadataString(crs_name.GetCategory(), crs_name.GetName());
+    std::string crs_b = layout_b->GetMetadataString(crs_name.GetCategory(), crs_name.GetName());
+
+    if (crs_a != crs_b) {
+        throw detail::bad_request("Coordinate reference system (CRS) mismatch: " + crs_a + " versus " + crs_b);
+    }
+
+    auto const origin_name = OpenVDS::KnownMetadata::SurveyCoordinateSystemOrigin();
+    auto origin_a = layout_a->GetMetadataDoubleVector2(origin_name.GetCategory(), origin_name.GetName());
+    auto origin_b = layout_b->GetMetadataDoubleVector2(origin_name.GetCategory(), origin_name.GetName());
+
+    // returned origins are in annotated coordinate system, so they are expected to be the same
+    if (origin_a != origin_b) {
+        std::string args = "(" + utils::to_string_with_precision(origin_a.X) + ", " + utils::to_string_with_precision(origin_a.Y) +
+                           ") versus (" +
+                           utils::to_string_with_precision(origin_b.X) + ", " + utils::to_string_with_precision(origin_b.Y) + ")";
+        throw detail::bad_request("Mismatch in origin position: " + args);
+    }
+
+    auto const inline_cdp_spacing_name = OpenVDS::KnownMetadata::SurveyCoordinateSystemInlineSpacing();
+    auto inline_cdp_spacing_a =
+        layout_a->GetMetadataDoubleVector2(inline_cdp_spacing_name.GetCategory(), inline_cdp_spacing_name.GetName());
+    auto inline_cdp_spacing_b =
+        layout_b->GetMetadataDoubleVector2(inline_cdp_spacing_name.GetCategory(), inline_cdp_spacing_name.GetName());
+
+    if (inline_cdp_spacing_a != inline_cdp_spacing_b) {
+        std::string args = "(" +
+                           utils::to_string_with_precision(inline_cdp_spacing_a.X) + ", " +
+                           utils::to_string_with_precision(inline_cdp_spacing_a.Y) +
+                           ") versus (" +
+                           utils::to_string_with_precision(inline_cdp_spacing_b.X) + ", " +
+                           utils::to_string_with_precision(inline_cdp_spacing_b.Y) + ")";
+        throw detail::bad_request("Mismatch in inline spacing: " + args);
+    }
+
+    auto const xline_cdp_spacing_name = OpenVDS::KnownMetadata::SurveyCoordinateSystemCrosslineSpacing();
+    auto xline_cdp_spacing_a =
+        layout_a->GetMetadataDoubleVector2(xline_cdp_spacing_name.GetCategory(), xline_cdp_spacing_name.GetName());
+    auto xline_cdp_spacing_b =
+        layout_b->GetMetadataDoubleVector2(xline_cdp_spacing_name.GetCategory(), xline_cdp_spacing_name.GetName());
+
+    if (xline_cdp_spacing_a != xline_cdp_spacing_b) {
+        std::string args = "(" +
+                           utils::to_string_with_precision(xline_cdp_spacing_a.X) + ", " +
+                           utils::to_string_with_precision(xline_cdp_spacing_a.Y) +
+                           ") versus (" +
+                           utils::to_string_with_precision(xline_cdp_spacing_b.X) + ", " +
+                           utils::to_string_with_precision(xline_cdp_spacing_b.Y) + ")";
+        throw detail::bad_request("Mismatch in xline spacing: " + args);
+    }
 
     if (this->m_iline.nsamples() < 2) {
         throw std::runtime_error(

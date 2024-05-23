@@ -8,6 +8,7 @@
 #include "boundingbox.hpp"
 #include "coordinate_transformer.hpp"
 #include "direction.hpp"
+#include "exceptions.hpp"
 #include "volumedatalayout.hpp"
 
 using voxel = float[OpenVDS::Dimensionality_Max];
@@ -33,6 +34,7 @@ protected:
 };
 
 class SingleMetadataHandle : public MetadataHandle {
+    friend class DoubleMetadataHandle;
 public:
     SingleMetadataHandle(OpenVDS::VolumeDataLayout const* const layout);
 
