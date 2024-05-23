@@ -175,14 +175,11 @@ Axis make_double_cube_axis(
 }
 
 DoubleMetadataHandle::DoubleMetadataHandle(
-    OpenVDS::VolumeDataLayout const* const p_layout_a,
-    OpenVDS::VolumeDataLayout const* const p_layout_b,
     SingleMetadataHandle const* const metadata_a,
     SingleMetadataHandle const* const metadata_b,
     enum binary_operator binary_symbol
 )
-    : m_layout(DoubleVolumeDataLayout(p_layout_a, p_layout_b)),
-      m_metadata_a(metadata_a),
+    : m_metadata_a(metadata_a),
       m_metadata_b(metadata_b),
       m_binary_symbol(binary_symbol),
       m_iline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),

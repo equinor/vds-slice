@@ -5,6 +5,7 @@
 #include <OpenVDS/KnownMetadata.h>
 #include <OpenVDS/OpenVDS.h>
 
+#include "exceptions.hpp"
 #include "metadatahandle.hpp"
 #include "subcube.hpp"
 
@@ -192,7 +193,7 @@ DoubleDataHandle::DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHand
       m_access_manager_b(OpenVDS::GetAccessManager(handle_b)),
       m_metadata_a(m_access_manager_a.GetVolumeDataLayout()),
       m_metadata_b(m_access_manager_b.GetVolumeDataLayout()),
-      m_metadata(DoubleMetadataHandle(m_access_manager_a.GetVolumeDataLayout(), m_access_manager_b.GetVolumeDataLayout(), &m_metadata_a, &m_metadata_b, binary_symbol)) {
+      m_metadata(&m_metadata_a, &m_metadata_b, binary_symbol) {
 
     if (binary_symbol == NO_OPERATOR)
         throw detail::bad_request("Invalid function");

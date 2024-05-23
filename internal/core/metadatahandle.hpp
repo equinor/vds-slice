@@ -9,7 +9,6 @@
 #include "coordinate_transformer.hpp"
 #include "direction.hpp"
 #include "exceptions.hpp"
-#include "volumedatalayout.hpp"
 
 using voxel = float[OpenVDS::Dimensionality_Max];
 
@@ -69,8 +68,6 @@ private:
 class DoubleMetadataHandle : public MetadataHandle {
 public:
     DoubleMetadataHandle(
-        OpenVDS::VolumeDataLayout const* const layout_a,
-        OpenVDS::VolumeDataLayout const* const layout_b,
         SingleMetadataHandle const* const m_metadata_a,
         SingleMetadataHandle const* const m_metadata_b,
         enum binary_operator binary_symbol
@@ -92,7 +89,6 @@ protected:
     void dimension_validation() const;
 
 private:
-    DoubleVolumeDataLayout const m_layout;
     SingleMetadataHandle const* const m_metadata_a;
     SingleMetadataHandle const* const m_metadata_b;
     enum binary_operator m_binary_symbol;
