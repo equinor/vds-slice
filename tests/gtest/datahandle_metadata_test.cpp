@@ -327,4 +327,117 @@ TEST_F(DatahandleMetadataTest, Metadata_CRS_Double) {
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Coordinate reference system (CRS) mismatch: utmXX versus utmXX_modified")));
 }
 
+TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Origin) {
+
+    const std::string WELL_KNOWN_DEFAULT_DATA = "file://well_known_default.vds";
+    const std::string CUSTOM_ORIGIN_DATA = "file://well_known_custom_origin.vds";
+
+    EXPECT_THAT([&]() {
+        DoubleDataHandle* double_crs_datahandle = make_double_datahandle(
+            WELL_KNOWN_DEFAULT_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            CUSTOM_ORIGIN_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            binary_operator::SUBTRACTION
+        );
+
+        delete double_crs_datahandle;
+    },
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Mismatch in origin position: (19.00, -32.00) versus (20.00, -27.00)")));
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Inline_Spacing) {
+
+    const std::string WELL_KNOWN_DEFAULT_DATA = "file://well_known_default.vds";
+    const std::string CUSTOM_INLINE_SPACING_DATA = "file://well_known_custom_inline_spacing.vds";
+
+    EXPECT_THAT([&]() {
+        DoubleDataHandle* double_crs_datahandle = make_double_datahandle(
+            WELL_KNOWN_DEFAULT_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            CUSTOM_INLINE_SPACING_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            binary_operator::SUBTRACTION
+        );
+
+        delete double_crs_datahandle;
+    },
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Mismatch in inline spacing: (3.00, 2.00) versus (6.00, 4.00)")));
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Xline_Spacing) {
+
+    const std::string WELL_KNOWN_DEFAULT_DATA = "file://well_known_default.vds";
+    const std::string CUSTOM_XLINE_SPACING_DATA = "file://well_known_custom_xline_spacing.vds";
+
+    EXPECT_THAT([&]() {
+        DoubleDataHandle* double_crs_datahandle = make_double_datahandle(
+            WELL_KNOWN_DEFAULT_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            CUSTOM_XLINE_SPACING_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            binary_operator::SUBTRACTION
+        );
+
+        delete double_crs_datahandle;
+    },
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Mismatch in xline spacing: (-2.00, 3.00) versus (-4.00, 6.00)")));
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Order) {
+
+    const std::string WELL_KNOWN_DEFAULT_DATA = "file://well_known_default.vds";
+    const std::string CUSTOM_AXIS_ORDER_DATA = "file://well_known_custom_axis_order.vds";
+
+    EXPECT_THAT([&]() {
+        DoubleDataHandle* double_axis_order_datahandle = make_double_datahandle(
+            WELL_KNOWN_DEFAULT_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            CUSTOM_AXIS_ORDER_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            binary_operator::SUBTRACTION
+        );
+
+        delete double_axis_order_datahandle;
+    },
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Dimension name mismatch for dimension 2: Inline versus Sample")));
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Units) {
+
+    const std::string WELL_KNOWN_DEFAULT_DATA = "file://well_known_default.vds";
+    const std::string DEPTH_AXIS_DATA = "file://well_known_depth_axis.vds";
+
+    EXPECT_THAT([&]() {
+        DoubleDataHandle* double_axis_order_datahandle = make_double_datahandle(
+            WELL_KNOWN_DEFAULT_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            DEPTH_AXIS_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            binary_operator::SUBTRACTION
+        );
+
+        delete double_axis_order_datahandle;
+    },
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Dimension unit mismatch for axis Sample: ms versus m")));
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Stepsize) {
+
+    const std::string DEFAULT_DATA = "file://10_samples_default.vds";
+
+    EXPECT_THAT([&]() {
+        DoubleDataHandle* double_axis_order_datahandle = make_double_datahandle(
+            DEFAULT_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            REGULAR_DATA.c_str(),
+            CREDENTIALS.c_str(),
+            binary_operator::SUBTRACTION
+        );
+
+        delete double_axis_order_datahandle;
+    },
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Stepsize mismatch in axis Inline: 2.00 versus 3.00")));
+}
+
 } // namespace

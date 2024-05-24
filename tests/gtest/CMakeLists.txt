@@ -24,6 +24,13 @@ target_link_libraries(cppcoretests
   PRIVATE GTest::gmock_main
 )
 
+configure_file(../../testdata/well_known/well_known_default.vds . COPYONLY)
+configure_file(../../testdata/well_known/well_known_custom_axis_order.vds . COPYONLY)
+configure_file(../../testdata/well_known/well_known_custom_inline_spacing.vds . COPYONLY)
+configure_file(../../testdata/well_known/well_known_custom_origin.vds . COPYONLY)
+configure_file(../../testdata/well_known/well_known_custom_xline_spacing.vds . COPYONLY)
+configure_file(../../testdata/well_known/well_known_depth_axis.vds . COPYONLY)
+
 configure_file(../../testdata/10_samples/10_default_crs.vds . COPYONLY)
 configure_file(../../testdata/10_samples/10_double_value.vds . COPYONLY)
 configure_file(../../testdata/10_samples/10_min_dimensions.vds . COPYONLY)
