@@ -19,6 +19,8 @@ const std::string SHIFT_8_BIG_DATA = "file://shift_8_32x3_cube.vds";
 const std::string CREDENTIALS = "";
 
 class DatahandleFenceTest : public ::testing::Test {
+protected:
+    DatahandleFenceTest() : single_datahandle(make_single_datahandle(REGULAR_DATA.c_str(), CREDENTIALS.c_str())) {}
 
     void SetUp() override {
         iline_array = std::vector<int>(32);
@@ -33,11 +35,6 @@ class DatahandleFenceTest : public ::testing::Test {
         for (int i = 0; i < sample_array.size(); i++) {
             sample_array[i] = 4 + i * 4;
         }
-
-        single_datahandle = make_single_datahandle(
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str()
-        );
 
         double_datahandle = make_double_datahandle(
             REGULAR_DATA.c_str(),
@@ -65,7 +62,6 @@ class DatahandleFenceTest : public ::testing::Test {
     }
 
     void TearDown() override {
-        delete single_datahandle;
         delete double_datahandle;
         delete double_reverse_datahandle;
         delete double_different_size;
@@ -76,7 +72,7 @@ public:
     std::vector<int> xline_array;
     std::vector<int> sample_array;
 
-    SingleDataHandle* single_datahandle;
+    SingleDataHandle single_datahandle;
     DoubleDataHandle* double_datahandle;
     DoubleDataHandle* double_reverse_datahandle;
     DoubleDataHandle* double_different_size;
@@ -130,7 +126,7 @@ TEST_F(DatahandleFenceTest, Fence_INDEX_Single) {
     const std::vector<float> check_coordinates{0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
 
     cppapi::fence(
-        *single_datahandle,
+        single_datahandle,
         coordinate_system::INDEX,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -172,7 +168,7 @@ TEST_F(DatahandleFenceTest, Fence_INDEX_Fill_Single) {
     const std::vector<float> check_coordinates{-1, -1, 8, 8};
 
     cppapi::fence(
-        *single_datahandle,
+        single_datahandle,
         coordinate_system::INDEX,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -214,7 +210,7 @@ TEST_F(DatahandleFenceTest, Fence_INDEX_out_Of_Bounds_Single) {
 
     EXPECT_THAT([&]() {
         cppapi::fence(
-            *single_datahandle,
+            single_datahandle,
             coordinate_system::INDEX,
             coordinates.data(),
             int(coordinates.size() / 2),
@@ -254,7 +250,7 @@ TEST_F(DatahandleFenceTest, Fence_ANNOTATION_Single) {
     const std::vector<float> check_coordinates{0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
 
     cppapi::fence(
-        *single_datahandle,
+        single_datahandle,
         coordinate_system::ANNOTATION,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -296,7 +292,7 @@ TEST_F(DatahandleFenceTest, Fence_ANNOTATION_Fill_Single) {
     const std::vector<float> check_coordinates{0, 0, 8, 8};
 
     cppapi::fence(
-        *single_datahandle,
+        single_datahandle,
         coordinate_system::ANNOTATION,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -338,7 +334,7 @@ TEST_F(DatahandleFenceTest, Fence_ANNOTATION_out_Of_Bounds_Single) {
 
     EXPECT_THAT([&]() {
         cppapi::fence(
-            *single_datahandle,
+            single_datahandle,
             coordinate_system::ANNOTATION,
             coordinates.data(),
             int(coordinates.size() / 2),
@@ -378,7 +374,7 @@ TEST_F(DatahandleFenceTest, Fence_CDP_Single) {
     const std::vector<float> check_coordinates{0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
 
     cppapi::fence(
-        *single_datahandle,
+        single_datahandle,
         coordinate_system::CDP,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -420,7 +416,7 @@ TEST_F(DatahandleFenceTest, Fence_CDP_Fill_Single) {
     const std::vector<float> check_coordinates{-1, -1, 8, 8};
 
     cppapi::fence(
-        *single_datahandle,
+        single_datahandle,
         coordinate_system::CDP,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -462,7 +458,7 @@ TEST_F(DatahandleFenceTest, Fence_CDP_out_Of_Bounds_Single) {
 
     EXPECT_THAT([&]() {
         cppapi::fence(
-            *single_datahandle,
+            single_datahandle,
             coordinate_system::CDP,
             coordinates.data(),
             int(coordinates.size() / 2),

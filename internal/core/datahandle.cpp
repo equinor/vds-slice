@@ -36,7 +36,7 @@ OpenVDS::VolumeDataFormat DataHandle::format() noexcept(true) {
     return OpenVDS::VolumeDataFormat::Format_R32;
 }
 
-SingleDataHandle* make_single_datahandle(
+SingleDataHandle make_single_datahandle(
     const char* url,
     const char* credentials
 ) {
@@ -45,7 +45,7 @@ SingleDataHandle* make_single_datahandle(
     if(error.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error.string);
     }
-    return new SingleDataHandle(std::move(handle));
+    return SingleDataHandle(handle);
 }
 
 SingleDataHandle::SingleDataHandle(OpenVDS::VDSHandle handle)

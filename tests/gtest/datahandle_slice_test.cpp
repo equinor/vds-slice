@@ -19,7 +19,8 @@ const std::string SHIFT_8_BIG_DATA = "file://shift_8_32x3_cube.vds";
 const std::string CREDENTIALS = "";
 
 class DatahandleSliceTest : public ::testing::Test {
-
+protected:
+    DatahandleSliceTest() : single_datahandle(make_single_datahandle(REGULAR_DATA.c_str(), CREDENTIALS.c_str())) {}
     void SetUp() override {
         iline_array = std::vector<int>(32);
         xline_array = std::vector<int>(32);
@@ -33,11 +34,6 @@ class DatahandleSliceTest : public ::testing::Test {
         for (int i = 0; i < sample_array.size(); i++) {
             sample_array[i] = 4 + i * 4;
         }
-
-        single_datahandle = make_single_datahandle(
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str()
-        );
 
         double_datahandle = make_double_datahandle(
             REGULAR_DATA.c_str(),
@@ -65,7 +61,6 @@ class DatahandleSliceTest : public ::testing::Test {
     }
 
     void TearDown() override {
-        delete single_datahandle;
         delete double_datahandle;
         delete double_reverse_datahandle;
         delete double_different_size;
@@ -78,7 +73,7 @@ public:
 
     std::vector<Bound> slice_bounds;
 
-    SingleDataHandle* single_datahandle;
+    SingleDataHandle single_datahandle;
     DoubleDataHandle* double_datahandle;
     DoubleDataHandle* double_reverse_datahandle;
     DoubleDataHandle* double_different_size;
@@ -119,7 +114,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_I_Single) {
 
     struct response response_data;
     cppapi::slice(
-        *single_datahandle,
+        single_datahandle,
         Direction(axis_name::I),
         2,
         slice_bounds,
@@ -151,7 +146,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_J_Single) {
 
     struct response response_data;
     cppapi::slice(
-        *single_datahandle,
+        single_datahandle,
         Direction(axis_name::J),
         2,
         slice_bounds,
@@ -183,7 +178,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_K_Single) {
 
     struct response response_data;
     cppapi::slice(
-        *single_datahandle,
+        single_datahandle,
         Direction(axis_name::K),
         2,
         slice_bounds,
@@ -215,7 +210,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_INLINE_Single) {
 
     struct response response_data;
     cppapi::slice(
-        *single_datahandle,
+        single_datahandle,
         Direction(axis_name::INLINE),
         21,
         slice_bounds,
@@ -247,7 +242,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_CROSSLINE_Single) {
 
     struct response response_data;
     cppapi::slice(
-        *single_datahandle,
+        single_datahandle,
         Direction(axis_name::CROSSLINE),
         14,
         slice_bounds,
@@ -279,7 +274,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_SAMPLE_Single) {
 
     struct response response_data;
     cppapi::slice(
-        *single_datahandle,
+        single_datahandle,
         Direction(axis_name::SAMPLE),
         40,
         slice_bounds,
@@ -311,7 +306,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_TIME_Single) {
 
     struct response response_data;
     cppapi::slice(
-        *single_datahandle,
+        single_datahandle,
         Direction(axis_name::TIME),
         40,
         slice_bounds,
@@ -345,7 +340,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_DEPTH_Single) {
 
     EXPECT_THAT([&]() {
         cppapi::slice(
-            *single_datahandle,
+            single_datahandle,
             Direction(axis_name::DEPTH),
             40,
             slice_bounds,
@@ -378,7 +373,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_TIME_Invalid_Single) {
 
     EXPECT_THAT([&]() {
         cppapi::slice(
-            *single_datahandle,
+            single_datahandle,
             direction,
             0,
             slice_bounds,
@@ -389,7 +384,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_TIME_Invalid_Single) {
 
     EXPECT_THAT([&]() {
         cppapi::slice(
-            *single_datahandle,
+            single_datahandle,
             direction,
             132,
             slice_bounds,
@@ -400,7 +395,7 @@ TEST_F(DatahandleSliceTest, Slice_Axis_TIME_Invalid_Single) {
 
     EXPECT_THAT([&]() {
         cppapi::slice(
-            *single_datahandle,
+            single_datahandle,
             direction,
             21,
             slice_bounds,
@@ -469,14 +464,14 @@ TEST_F(DatahandleSliceTest, Slice_Minimum_Single) {
 
     const std::string MINIMUM_CUBE = "file://10_min_dimensions.vds";
 
-    SingleDataHandle* single_minimum_handle = make_single_datahandle(
+    SingleDataHandle single_minimum_handle = make_single_datahandle(
         MINIMUM_CUBE.c_str(),
         CREDENTIALS.c_str()
     );
 
     struct response response_data;
     cppapi::slice(
-        *single_minimum_handle,
+        single_minimum_handle,
         Direction(axis_name::TIME),
         8,
         slice_bounds,
@@ -491,8 +486,6 @@ TEST_F(DatahandleSliceTest, Slice_Minimum_Single) {
         float value = *(float*)&response_data.data[i * sizeof(float)];
         EXPECT_EQ(value, expected[i]);
     }
-
-    delete single_minimum_handle;
 }
 
 TEST_F(DatahandleSliceTest, Slice_Minimum_Double) {

@@ -17,6 +17,8 @@ const std::string SHIFT_8_BIG_DATA = "file://shift_8_32x3_cube.vds";
 const std::string CREDENTIALS = "";
 
 class DatahandleMetadataTest : public ::testing::Test {
+protected:
+    DatahandleMetadataTest() : single_datahandle(make_single_datahandle(REGULAR_DATA.c_str(), CREDENTIALS.c_str())) {}
 
     void SetUp() override {
         expected_intersect_metadata["crs"] = "utmXX";
@@ -26,11 +28,6 @@ class DatahandleMetadataTest : public ::testing::Test {
         expected_intersect_metadata["axis"][0] = {{"annotation", "Inline"}, {"max", 24.0f}, {"min", 15.0f}, {"samples", 4}, {"stepsize", 3.0f}, {"unit", "unitless"}};
         expected_intersect_metadata["axis"][1] = {{"annotation", "Crossline"}, {"max", 16.0f}, {"min", 10.0f}, {"samples", 4}, {"stepsize", 2.0f}, {"unit", "unitless"}};
         expected_intersect_metadata["axis"][2] = {{"annotation", "Sample"}, {"max", 128.0f}, {"min", 20.0f}, {"samples", 28}, {"stepsize", 4.0f}, {"unit", "ms"}};
-
-        single_datahandle = make_single_datahandle(
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str()
-        );
 
         double_datahandle = make_double_datahandle(
             REGULAR_DATA.c_str(),
@@ -66,7 +63,6 @@ class DatahandleMetadataTest : public ::testing::Test {
     }
 
     void TearDown() override {
-        delete single_datahandle;
         delete double_datahandle;
         delete double_subtraction_datahandle;
         delete double_reverse_datahandle;
@@ -76,7 +72,7 @@ class DatahandleMetadataTest : public ::testing::Test {
 public:
     nlohmann::json expected_intersect_metadata;
 
-    SingleDataHandle* single_datahandle;
+    SingleDataHandle single_datahandle;
     DoubleDataHandle* double_datahandle;
     DoubleDataHandle* double_subtraction_datahandle;
     DoubleDataHandle* double_reverse_datahandle;
@@ -96,7 +92,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Single) {
     expected["axis"][2] = {{"annotation", "Sample"}, {"max", 128.0f}, {"min", 4.0f}, {"samples", 32}, {"stepsize", 4.0f}, {"unit", "ms"}};
 
     struct response response_data;
-    cppapi::metadata(*single_datahandle, &response_data);
+    cppapi::metadata(single_datahandle, &response_data);
     nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
 
     EXPECT_EQ(metadata["crs"], expected["crs"]);
@@ -167,11 +163,10 @@ TEST_F(DatahandleMetadataTest, Metadata_One_crossLine_Single) {
     const std::string SINGLE_XLINE_DATA = "file://10_single_xline.vds";
 
     EXPECT_THAT([&]() {
-        SingleDataHandle* single_xline_handle = make_single_datahandle(
+        SingleDataHandle single_xline_handle = make_single_datahandle(
             SINGLE_XLINE_DATA.c_str(),
             CREDENTIALS.c_str()
         );
-        delete single_xline_handle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS, expect at least two crossLines, got 1")));
 }
@@ -182,11 +177,10 @@ TEST_F(DatahandleMetadataTest, Metadata_One_Sample_Single) {
     SingleDataHandle* single_sample_handle;
 
     EXPECT_THAT([&]() {
-        SingleDataHandle* single_sample_handle = make_single_datahandle(
+        SingleDataHandle single_sample_handle = make_single_datahandle(
             SINGLE_SAMPLE_DATA.c_str(),
             CREDENTIALS.c_str()
         );
-        delete single_sample_handle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS, expect at least two samples, got 1")));
 }
@@ -195,13 +189,13 @@ TEST_F(DatahandleMetadataTest, Metadata_Minimum_Cube_Single) {
 
     const std::string MINIMUM_CUBE = "file://10_min_dimensions.vds";
 
-    SingleDataHandle* single_minimum_handle = make_single_datahandle(
+    SingleDataHandle single_minimum_handle = make_single_datahandle(
         MINIMUM_CUBE.c_str(),
         CREDENTIALS.c_str()
     );
 
     struct response response_data;
-    cppapi::metadata(*single_minimum_handle, &response_data);
+    cppapi::metadata(single_minimum_handle, &response_data);
     nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
 
     nlohmann::json different_size_metadata;
@@ -217,8 +211,6 @@ TEST_F(DatahandleMetadataTest, Metadata_Minimum_Cube_Single) {
     EXPECT_EQ(metadata["inputFileName"], different_size_metadata["inputFileName"]);
     EXPECT_EQ(metadata["boundingBox"], different_size_metadata["boundingBox"]);
     EXPECT_EQ(metadata["axis"], different_size_metadata["axis"]);
-
-    delete single_minimum_handle;
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_One_inLine_Double) {

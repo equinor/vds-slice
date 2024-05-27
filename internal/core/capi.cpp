@@ -60,7 +60,7 @@ int single_datahandle_new(
     try {
         if (not ds_out) throw detail::nullptr_error("Invalid out pointer");
 
-        *ds_out = make_single_datahandle(url, credentials);
+        *ds_out = new SingleDataHandle(make_single_datahandle(url, credentials));
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());

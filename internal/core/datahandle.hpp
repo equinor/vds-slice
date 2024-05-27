@@ -52,7 +52,7 @@ public:
 
 class SingleDataHandle : public DataHandle {
     SingleDataHandle(OpenVDS::VDSHandle handle);
-    friend SingleDataHandle* make_single_datahandle(const char* url, const char* credentials);
+    friend SingleDataHandle make_single_datahandle(const char* url, const char* credentials);
 
 public:
 
@@ -98,7 +98,7 @@ private:
     static int constexpr channel = 0;
 };
 
-SingleDataHandle* make_single_datahandle(
+SingleDataHandle make_single_datahandle(
     const char* url,
     const char* credentials
 ) noexcept(false);

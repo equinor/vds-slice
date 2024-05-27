@@ -20,8 +20,9 @@ Grid default_grid = Grid(2, 0, x_inc, y_inc, angle);
 
 class DataHandleTest : public ::testing::Test {
 protected:
-    DoubleDataHandle* datahandle;
-    SingleDataHandle* datahandle_reference;
+    DataHandleTest() : datahandle_reference(make_single_datahandle(DEFAULT_DATA.c_str(), CREDENTIALS.c_str())) {}
+
+    SingleDataHandle datahandle_reference;
     SurfaceBoundedSubVolume* subvolume_reference;
     static constexpr int nrows = 3;
     static constexpr int ncols = 2;
@@ -43,11 +44,6 @@ protected:
         RegularSurface(bottom_surface_data.data(), nrows, ncols, default_grid, fill);
 
     void SetUp() override {
-        datahandle_reference = make_single_datahandle(
-            DEFAULT_DATA.c_str(),
-            CREDENTIALS.c_str()
-        );
-
         for (int i = 0; i < size; ++i) {
             top_surface_data[i] = 19.0;
             primary_surface_data[i] = 20.0;
@@ -55,15 +51,14 @@ protected:
         };
 
         subvolume_reference = make_subvolume(
-            datahandle_reference->get_metadata(), primary_surface, top_surface, bottom_surface
+            datahandle_reference.get_metadata(), primary_surface, top_surface, bottom_surface
         );
 
-        cppapi::fetch_subvolume(*datahandle_reference, *subvolume_reference, NEAREST, 0, size);
+        cppapi::fetch_subvolume(datahandle_reference, *subvolume_reference, NEAREST, 0, size);
     }
 
     void TearDown() override {
         delete subvolume_reference;
-        delete datahandle_reference;
     }
 };
 
