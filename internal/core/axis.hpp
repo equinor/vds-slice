@@ -9,7 +9,7 @@
 class Axis {
 public:
     Axis(
-        OpenVDS::VolumeDataLayout const * const layout,
+        OpenVDS::VolumeDataLayout const* const layout,
         int const dimension
     );
 
@@ -38,8 +38,6 @@ public:
      */
     bool inrange_with_margin(float coordinate) const noexcept(true);
     float to_sample_position(float coordinate) noexcept(false);
-
-    void assert_equal(Axis const& other) noexcept(false);
 
 private:
     int const m_dimension;
