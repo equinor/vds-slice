@@ -20,7 +20,30 @@ const std::string CREDENTIALS = "";
 
 class DatahandleFenceTest : public ::testing::Test {
 protected:
-    DatahandleFenceTest() : single_datahandle(make_single_datahandle(REGULAR_DATA.c_str(), CREDENTIALS.c_str())) {}
+    DatahandleFenceTest() : single_datahandle(make_single_datahandle(REGULAR_DATA.c_str(), CREDENTIALS.c_str())),
+                            double_datahandle(make_double_datahandle(
+                                REGULAR_DATA.c_str(),
+                                CREDENTIALS.c_str(),
+                                SHIFT_4_DATA.c_str(),
+                                CREDENTIALS.c_str(),
+                                binary_operator::ADDITION
+                            )),
+
+                            double_reverse_datahandle(make_double_datahandle(
+                                SHIFT_4_DATA.c_str(),
+                                CREDENTIALS.c_str(),
+                                REGULAR_DATA.c_str(),
+                                CREDENTIALS.c_str(),
+                                binary_operator::ADDITION
+                            )),
+
+                            double_different_size(make_double_datahandle(
+                                SHIFT_4_DATA.c_str(),
+                                CREDENTIALS.c_str(),
+                                SHIFT_8_BIG_DATA.c_str(),
+                                CREDENTIALS.c_str(),
+                                binary_operator::ADDITION
+                            )) {}
 
     void SetUp() override {
         iline_array = std::vector<int>(32);
@@ -35,36 +58,6 @@ protected:
         for (int i = 0; i < sample_array.size(); i++) {
             sample_array[i] = 4 + i * 4;
         }
-
-        double_datahandle = make_double_datahandle(
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::ADDITION
-        );
-
-        double_reverse_datahandle = make_double_datahandle(
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::ADDITION
-        );
-
-        double_different_size = make_double_datahandle(
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            SHIFT_8_BIG_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::ADDITION
-        );
-    }
-
-    void TearDown() override {
-        delete double_datahandle;
-        delete double_reverse_datahandle;
-        delete double_different_size;
     }
 
 public:
@@ -73,9 +66,9 @@ public:
     std::vector<int> sample_array;
 
     SingleDataHandle single_datahandle;
-    DoubleDataHandle* double_datahandle;
-    DoubleDataHandle* double_reverse_datahandle;
-    DoubleDataHandle* double_different_size;
+    DoubleDataHandle double_datahandle;
+    DoubleDataHandle double_reverse_datahandle;
+    DoubleDataHandle double_different_size;
 
     static constexpr float fill = -999.25;
 
@@ -147,7 +140,7 @@ TEST_F(DatahandleFenceTest, Fence_INDEX_Double) {
     const std::vector<float> check_coordinates{4, 4, 5, 5, 6, 6, 7, 7};
 
     cppapi::fence(
-        *double_datahandle,
+        double_datahandle,
         coordinate_system::INDEX,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -189,7 +182,7 @@ TEST_F(DatahandleFenceTest, Fence_INDEX_Fill_Double) {
     const std::vector<float> check_coordinates{-1, -1, 4, 4};
 
     cppapi::fence(
-        *double_datahandle,
+        double_datahandle,
         coordinate_system::INDEX,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -229,7 +222,7 @@ TEST_F(DatahandleFenceTest, Fence_INDEX_out_Of_Bounds_Double) {
 
     EXPECT_THAT([&]() {
         cppapi::fence(
-            *double_datahandle,
+            double_datahandle,
             coordinate_system::INDEX,
             coordinates.data(),
             int(coordinates.size() / 2),
@@ -271,7 +264,7 @@ TEST_F(DatahandleFenceTest, Fence_ANNOTATION_Double) {
     const std::vector<float> check_coordinates{4, 4, 5, 5, 6, 6, 7, 7};
 
     cppapi::fence(
-        *double_datahandle,
+        double_datahandle,
         coordinate_system::ANNOTATION,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -313,7 +306,7 @@ TEST_F(DatahandleFenceTest, Fence_ANNOTATION_Fill_Double) {
     const std::vector<float> check_coordinates{-1, -1, 4, 4};
 
     cppapi::fence(
-        *double_datahandle,
+        double_datahandle,
         coordinate_system::ANNOTATION,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -353,7 +346,7 @@ TEST_F(DatahandleFenceTest, Fence_ANNOTATION_out_Of_Bounds_Double) {
 
     EXPECT_THAT([&]() {
         cppapi::fence(
-            *double_datahandle,
+            double_datahandle,
             coordinate_system::ANNOTATION,
             coordinates.data(),
             int(coordinates.size() / 2),
@@ -395,7 +388,7 @@ TEST_F(DatahandleFenceTest, Fence_CDP_Double) {
     const std::vector<float> check_coordinates{4, 4, 5, 5, 6, 6, 7, 7};
 
     cppapi::fence(
-        *double_datahandle,
+        double_datahandle,
         coordinate_system::CDP,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -437,7 +430,7 @@ TEST_F(DatahandleFenceTest, Fence_CDP_Fill_Double) {
     const std::vector<float> check_coordinates{-1, -1, 8, 8};
 
     cppapi::fence(
-        *double_datahandle,
+        double_datahandle,
         coordinate_system::CDP,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -477,7 +470,7 @@ TEST_F(DatahandleFenceTest, Fence_CDP_out_Of_Bounds_Double) {
 
     EXPECT_THAT([&]() {
         cppapi::fence(
-            *double_datahandle,
+            double_datahandle,
             coordinate_system::CDP,
             coordinates.data(),
             int(coordinates.size() / 2),
@@ -499,7 +492,7 @@ TEST_F(DatahandleFenceTest, Fence_INDEX_Reverse_Double) {
     const std::vector<float> check_coordinates{4, 4, 5, 5, 6, 6, 7, 7};
 
     cppapi::fence(
-        *double_reverse_datahandle,
+        double_reverse_datahandle,
         coordinate_system::INDEX,
         coordinates.data(),
         int(coordinates.size() / 2),
@@ -520,7 +513,7 @@ TEST_F(DatahandleFenceTest, Fence_INDEX_Different_Size_Double) {
     const std::vector<float> check_coordinates{8, 8, 9, 9, 10, 10, 11, 11};
 
     cppapi::fence(
-        *double_different_size,
+        double_different_size,
         coordinate_system::INDEX,
         coordinates.data(),
         int(coordinates.size() / 2),

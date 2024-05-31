@@ -782,24 +782,17 @@ void inplace_subtraction(float* buffer_A, const float* buffer_B, std::size_t nsa
 
 class FenceFunctionTest : public ::testing::Test {
 protected:
-    FenceFunctionTest() : datahandle(make_single_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str())) {}
-
-    void SetUp() override {
-        double_datahandle = make_double_datahandle(
-            SAMPLES_10.c_str(),
-            CREDENTIALS.c_str(),
-            SAMPLES_10_x2.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::SUBTRACTION
-        );
-    }
-
-    void TearDown() override {
-        delete double_datahandle;
-    }
+    FenceFunctionTest() : datahandle(make_single_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str())),
+                          double_datahandle(make_double_datahandle(
+                              SAMPLES_10.c_str(),
+                              CREDENTIALS.c_str(),
+                              SAMPLES_10_x2.c_str(),
+                              CREDENTIALS.c_str(),
+                              binary_operator::SUBTRACTION
+                          )) {}
 
     SingleDataHandle datahandle;
-    DoubleDataHandle* double_datahandle;
+    DoubleDataHandle double_datahandle;
 
     const coordinate_system c_system = coordinate_system::INDEX;
     const std::vector<float> coordinates{1, 1, 2, 1};
@@ -838,7 +831,7 @@ TEST_F(FenceFunctionTest, RequestingFenceDataSubtract) {
     struct response response_data;
 
     cppapi::fence(
-        *double_datahandle,
+        double_datahandle,
         c_system,
         coordinates.data(),
         coordinate_size,
@@ -857,24 +850,17 @@ TEST_F(FenceFunctionTest, RequestingFenceDataSubtract) {
 
 class SliceFunctionTest : public ::testing::Test {
 protected:
-    SliceFunctionTest() : datahandle(make_single_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str())) {}
-
-    void SetUp() override {
-        double_datahandle = make_double_datahandle(
-            SAMPLES_10.c_str(),
-            CREDENTIALS.c_str(),
-            SAMPLES_10_x2.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::SUBTRACTION
-        );
-    }
-
-    void TearDown() override {
-        delete double_datahandle;
-    }
+    SliceFunctionTest() : datahandle(make_single_datahandle(SAMPLES_10.c_str(), CREDENTIALS.c_str())),
+                          double_datahandle(make_double_datahandle(
+                              SAMPLES_10.c_str(),
+                              CREDENTIALS.c_str(),
+                              SAMPLES_10_x2.c_str(),
+                              CREDENTIALS.c_str(),
+                              binary_operator::SUBTRACTION
+                          )) {}
 
     SingleDataHandle datahandle;
-    DoubleDataHandle* double_datahandle;
+    DoubleDataHandle double_datahandle;
     const int lineno = 4;
     std::vector<Bound> slice_bounds;
     const std::vector<float> expected{
@@ -910,7 +896,7 @@ TEST_F(SliceFunctionTest, RequestingSliceDataSubtraction) {
     struct response response_data;
 
     cppapi::slice(
-        *double_datahandle,
+        double_datahandle,
         direction,
         lineno,
         slice_bounds,

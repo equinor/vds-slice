@@ -165,7 +165,7 @@ void SingleDataHandle::read_samples(
     }
 }
 
-DoubleDataHandle* make_double_datahandle(
+DoubleDataHandle make_double_datahandle(
     const char* url_a,
     const char* credentials_a,
     const char* url_b,
@@ -183,7 +183,7 @@ DoubleDataHandle* make_double_datahandle(
     if (error_b.code != 0) {
         throw std::runtime_error("Could not open VDS: " + error_b.string);
     }
-    return new DoubleDataHandle(std::move(handle_a), std::move(handle_b), binary_symbol);
+    return DoubleDataHandle(std::move(handle_a), std::move(handle_b), binary_symbol);
 }
 
 DoubleDataHandle::DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHandle handle_b, enum binary_operator binary_symbol)

@@ -64,7 +64,7 @@ protected:
 
 TEST_F(DataHandleTest, Addition) {
 
-    DoubleDataHandle* datahandle = make_double_datahandle(
+    DoubleDataHandle datahandle = make_double_datahandle(
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
@@ -73,10 +73,10 @@ TEST_F(DataHandleTest, Addition) {
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle.get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, size);
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
         RawSegment rs = subvolume->vertical_segment(i);
@@ -92,12 +92,11 @@ TEST_F(DataHandleTest, Addition) {
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
 
     delete subvolume;
-    delete datahandle;
 }
 
 TEST_F(DataHandleTest, Multiplication) {
 
-    DoubleDataHandle* datahandle = make_double_datahandle(
+    DoubleDataHandle datahandle = make_double_datahandle(
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
@@ -106,10 +105,10 @@ TEST_F(DataHandleTest, Multiplication) {
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle.get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, size);
 
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
@@ -125,12 +124,11 @@ TEST_F(DataHandleTest, Multiplication) {
     }
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
     delete subvolume;
-    delete datahandle;
 }
 
 TEST_F(DataHandleTest, Division) {
 
-    DoubleDataHandle* datahandle = make_double_datahandle(
+    DoubleDataHandle datahandle = make_double_datahandle(
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
@@ -139,10 +137,10 @@ TEST_F(DataHandleTest, Division) {
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle.get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, size);
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
         RawSegment rs = subvolume->vertical_segment(i);
@@ -157,12 +155,11 @@ TEST_F(DataHandleTest, Division) {
     }
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
     delete subvolume;
-    delete datahandle;
 }
 
 TEST_F(DataHandleTest, Subtraction) {
 
-    DoubleDataHandle* datahandle = make_double_datahandle(
+    DoubleDataHandle datahandle = make_double_datahandle(
         DEFAULT_DATA.c_str(),
         CREDENTIALS.c_str(),
         DOUBLE_VALUE_DATA.c_str(),
@@ -171,10 +168,10 @@ TEST_F(DataHandleTest, Subtraction) {
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle.get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, size);
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
         RawSegment rs = subvolume->vertical_segment(i);
@@ -189,12 +186,11 @@ TEST_F(DataHandleTest, Subtraction) {
     }
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
     delete subvolume;
-    delete datahandle;
 }
 
 TEST_F(DataHandleTest, SubtractionReverse) {
 
-    DoubleDataHandle* datahandle = make_double_datahandle(
+    DoubleDataHandle datahandle = make_double_datahandle(
         DOUBLE_VALUE_DATA.c_str(),
         CREDENTIALS.c_str(),
         DEFAULT_DATA.c_str(),
@@ -203,10 +199,10 @@ TEST_F(DataHandleTest, SubtractionReverse) {
     );
 
     SurfaceBoundedSubVolume* subvolume = make_subvolume(
-        datahandle->get_metadata(), primary_surface, top_surface, bottom_surface
+        datahandle.get_metadata(), primary_surface, top_surface, bottom_surface
     );
 
-    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, size);
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, size);
     int compared_values = 0;
     for (int i = 0; i < size; ++i) {
         RawSegment rs = subvolume->vertical_segment(i);
@@ -221,7 +217,6 @@ TEST_F(DataHandleTest, SubtractionReverse) {
     }
     EXPECT_EQ(compared_values, size * EXPECTED_TRACE_LENGTH);
     delete subvolume;
-    delete datahandle;
 }
 
 } // namespace

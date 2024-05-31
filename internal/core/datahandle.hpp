@@ -107,7 +107,7 @@ class DoubleDataHandle : public DataHandle {
 
 public:
     DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHandle handle_b, enum binary_operator binary_symbol);
-    friend DoubleDataHandle* make_double_datahandle(
+    friend DoubleDataHandle make_double_datahandle(
         const char* url_a,
         const char* credentials_a,
         const char* url_b,
@@ -170,7 +170,7 @@ private:
     );
 };
 
-DoubleDataHandle* make_double_datahandle(
+DoubleDataHandle make_double_datahandle(
     const char* url_a, const char* credentials_a,
     const char* url_b, const char* credentials_b,
     enum binary_operator bin_operator

@@ -25,7 +25,28 @@ const std::string CREDENTIALS = "";
 
 class DatahandleAttributeTest : public ::testing::Test {
 protected:
-    DatahandleAttributeTest() : single_datahandle(make_single_datahandle(REGULAR_DATA.c_str(), CREDENTIALS.c_str())) {}
+    DatahandleAttributeTest() : single_datahandle(make_single_datahandle(REGULAR_DATA.c_str(), CREDENTIALS.c_str())),
+                                double_datahandle(make_double_datahandle(
+                                    REGULAR_DATA.c_str(),
+                                    CREDENTIALS.c_str(),
+                                    SHIFT_4_DATA.c_str(),
+                                    CREDENTIALS.c_str(),
+                                    binary_operator::ADDITION
+                                )),
+                                double_reverse_datahandle(make_double_datahandle(
+                                    SHIFT_4_DATA.c_str(),
+                                    CREDENTIALS.c_str(),
+                                    REGULAR_DATA.c_str(),
+                                    CREDENTIALS.c_str(),
+                                    binary_operator::ADDITION
+                                )),
+                                double_different_size(make_double_datahandle(
+                                    SHIFT_4_DATA.c_str(),
+                                    CREDENTIALS.c_str(),
+                                    SHIFT_8_32_DATA.c_str(),
+                                    CREDENTIALS.c_str(),
+                                    binary_operator::ADDITION
+                                )) {}
 
     void SetUp() override {
 
@@ -41,36 +62,6 @@ protected:
         for (int i = 0; i < sample_array.size(); i++) {
             sample_array[i] = 4 + i * 4;
         }
-
-        double_datahandle = make_double_datahandle(
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::ADDITION
-        );
-
-        double_reverse_datahandle = make_double_datahandle(
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::ADDITION
-        );
-
-        double_different_size = make_double_datahandle(
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            SHIFT_8_32_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::ADDITION
-        );
-    }
-
-    void TearDown() override {
-        delete double_datahandle;
-        delete double_reverse_datahandle;
-        delete double_different_size;
     }
 
 public:
@@ -81,19 +72,19 @@ public:
     std::vector<Bound> slice_bounds;
 
     SingleDataHandle single_datahandle;
-    DoubleDataHandle* double_datahandle;
-    DoubleDataHandle* double_reverse_datahandle;
-    DoubleDataHandle* double_different_size;
+    DoubleDataHandle double_datahandle;
+    DoubleDataHandle double_reverse_datahandle;
+    DoubleDataHandle double_different_size;
 
     static constexpr float fill = -999.25;
 
     Grid get_grid(DataHandle& datahandle) {
-        const MetadataHandle* metadata = &(datahandle.get_metadata());
+        const MetadataHandle& metadata = datahandle.get_metadata();
 
-        auto cdp = metadata->bounding_box().world();
+        auto cdp = metadata.bounding_box().world();
 
-        auto nsteps_iline = metadata->iline().nsamples() - 1;
-        auto nsteps_xline = metadata->xline().nsamples() - 1;
+        auto nsteps_iline = metadata.iline().nsamples() - 1;
+        auto nsteps_xline = metadata.xline().nsamples() - 1;
 
         auto iline_distance_x = cdp[1].first - cdp[0].first;
         auto iline_distance_y = cdp[1].second - cdp[0].second;
@@ -169,9 +160,9 @@ TEST_F(DatahandleAttributeTest, Attribute_Single) {
 
 TEST_F(DatahandleAttributeTest, Attribute_Double) {
 
-    DataHandle* datahandle = double_datahandle;
-    Grid grid = get_grid(*datahandle);
-    const MetadataHandle* metadata = &(datahandle->get_metadata());
+    DoubleDataHandle& datahandle = double_datahandle;
+    Grid grid = get_grid(datahandle);
+    const MetadataHandle* metadata = &(datahandle.get_metadata());
 
     std::size_t nrows = metadata->iline().nsamples();
     std::size_t ncols = metadata->xline().nsamples();
@@ -181,9 +172,9 @@ TEST_F(DatahandleAttributeTest, Attribute_Double) {
     RegularSurface pri_surface = RegularSurface(pri_surface_data.data(), nrows, ncols, grid, fill);
     RegularSurface top_surface = RegularSurface(top_surface_data.data(), nrows, ncols, grid, fill);
     RegularSurface bot_surface = RegularSurface(bot_surface_data.data(), nrows, ncols, grid, fill);
-    SurfaceBoundedSubVolume* subvolume = make_subvolume(datahandle->get_metadata(), pri_surface, top_surface, bot_surface);
+    SurfaceBoundedSubVolume* subvolume = make_subvolume(datahandle.get_metadata(), pri_surface, top_surface, bot_surface);
 
-    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, nrows * ncols);
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, nrows * ncols);
 
     int low[3] = {4, 4, 4};
     int high[3] = {8, 8, 15};
@@ -194,9 +185,9 @@ TEST_F(DatahandleAttributeTest, Attribute_Double) {
 
 TEST_F(DatahandleAttributeTest, Attribute_Reverse_Double) {
 
-    DataHandle* datahandle = double_reverse_datahandle;
-    Grid grid = get_grid(*datahandle);
-    const MetadataHandle* metadata = &(datahandle->get_metadata());
+    DataHandle& datahandle = double_reverse_datahandle;
+    Grid grid = get_grid(datahandle);
+    const MetadataHandle* metadata = &(datahandle.get_metadata());
 
     std::size_t nrows = metadata->iline().nsamples();
     std::size_t ncols = metadata->xline().nsamples();
@@ -206,9 +197,9 @@ TEST_F(DatahandleAttributeTest, Attribute_Reverse_Double) {
     RegularSurface pri_surface = RegularSurface(pri_surface_data.data(), nrows, ncols, grid, fill);
     RegularSurface top_surface = RegularSurface(top_surface_data.data(), nrows, ncols, grid, fill);
     RegularSurface bot_surface = RegularSurface(bot_surface_data.data(), nrows, ncols, grid, fill);
-    SurfaceBoundedSubVolume* subvolume = make_subvolume(datahandle->get_metadata(), pri_surface, top_surface, bot_surface);
+    SurfaceBoundedSubVolume* subvolume = make_subvolume(datahandle.get_metadata(), pri_surface, top_surface, bot_surface);
 
-    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, nrows * ncols);
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, nrows * ncols);
 
     int low[3] = {4, 4, 4};
     int high[3] = {8, 8, 15};
@@ -219,9 +210,9 @@ TEST_F(DatahandleAttributeTest, Attribute_Reverse_Double) {
 
 TEST_F(DatahandleAttributeTest, Attribute_Different_Size_Double) {
 
-    DataHandle* datahandle = double_different_size;
-    Grid grid = get_grid(*datahandle);
-    const MetadataHandle* metadata = &(datahandle->get_metadata());
+    DataHandle& datahandle = double_different_size;
+    Grid grid = get_grid(datahandle);
+    const MetadataHandle* metadata = &(datahandle.get_metadata());
 
     std::size_t nrows = metadata->iline().nsamples();
     std::size_t ncols = metadata->xline().nsamples();
@@ -231,9 +222,9 @@ TEST_F(DatahandleAttributeTest, Attribute_Different_Size_Double) {
     RegularSurface pri_surface = RegularSurface(pri_surface_data.data(), nrows, ncols, grid, fill);
     RegularSurface top_surface = RegularSurface(top_surface_data.data(), nrows, ncols, grid, fill);
     RegularSurface bot_surface = RegularSurface(bot_surface_data.data(), nrows, ncols, grid, fill);
-    SurfaceBoundedSubVolume* subvolume = make_subvolume(datahandle->get_metadata(), pri_surface, top_surface, bot_surface);
+    SurfaceBoundedSubVolume* subvolume = make_subvolume(datahandle.get_metadata(), pri_surface, top_surface, bot_surface);
 
-    cppapi::fetch_subvolume(*datahandle, *subvolume, NEAREST, 0, nrows * ncols);
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, nrows * ncols);
 
     int low[3] = {8, 8, 8};
     int high[3] = {12, 12, 20};

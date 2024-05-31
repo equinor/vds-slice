@@ -80,7 +80,7 @@ int double_datahandle_new(
         if (not datahandle)
             throw detail::nullptr_error("Invalid datahandle pointer");
 
-        *datahandle = make_double_datahandle(url_A, credentials_A, url_B, credentials_B, bin_operator);
+        *datahandle = new DoubleDataHandle(make_double_datahandle(url_A, credentials_A, url_B, credentials_B, bin_operator));
         return STATUS_OK;
     } catch (...) {
         return handle_exception(ctx, std::current_exception());
