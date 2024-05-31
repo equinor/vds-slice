@@ -56,7 +56,7 @@ class SingleDataHandle : public DataHandle {
 
 public:
 
-    MetadataHandle const& get_metadata() const noexcept (true);
+    SingleMetadataHandle const& get_metadata() const noexcept (true);
 
     static OpenVDS::VolumeDataFormat format() noexcept (true);
 
@@ -115,7 +115,7 @@ public:
         enum binary_operator binary_symbol
     );
 
-    MetadataHandle const& get_metadata() const noexcept(true);
+    DoubleMetadataHandle const& get_metadata() const noexcept(true);
 
     static OpenVDS::VolumeDataFormat format() noexcept(true);
 

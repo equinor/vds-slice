@@ -51,7 +51,7 @@ SingleDataHandle make_single_datahandle(
 SingleDataHandle::SingleDataHandle(OpenVDS::VDSHandle handle)
     : m_file_handle(handle), m_access_manager(OpenVDS::GetAccessManager(handle)), m_metadata(m_access_manager.GetVolumeDataLayout()) {}
 
-MetadataHandle const& SingleDataHandle::get_metadata() const noexcept(true) {
+SingleMetadataHandle const& SingleDataHandle::get_metadata() const noexcept(true) {
     return this->m_metadata;
 }
 
@@ -209,7 +209,7 @@ DoubleDataHandle::DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHand
         throw detail::bad_request("Invalid binary_operator string");
 }
 
-MetadataHandle const& DoubleDataHandle::get_metadata() const noexcept(true) {
+DoubleMetadataHandle const& DoubleDataHandle::get_metadata() const noexcept(true) {
     return this->m_metadata;
 }
 
