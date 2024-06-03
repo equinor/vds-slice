@@ -373,10 +373,11 @@ public:
     }
 
     /**
-     * Segment size in number of samples
+     * Segment size in number of samples. Note that raw segment gets its data
+     * from outside, so its size might not correspond to the blueprint size.
      */
     std::size_t size() const noexcept {
-        return this->m_blueprint->size(m_top_boundary, m_bottom_boundary, m_top_margin, m_bottom_margin);
+        return this->m_data_end - this->m_data_begin;
     }
 
     /**
