@@ -40,6 +40,7 @@ public:
     Axis xline() const noexcept(true);
     Axis sample() const noexcept(true);
     Axis get_axis(Direction const direction) const noexcept(false);
+    Axis get_axis(int dimension) const noexcept(false);
 
     BoundingBox bounding_box() const noexcept(false);
     std::string crs() const noexcept(false);

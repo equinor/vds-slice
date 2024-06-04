@@ -9,7 +9,11 @@
 class Axis {
 public:
     Axis(
-        OpenVDS::VolumeDataLayout const* const layout,
+        float min,
+        float max,
+        int nsamples,
+        std::string name,
+        std::string unit,
         int const dimension
     );
 
@@ -40,7 +44,16 @@ public:
     float to_sample_position(float coordinate) noexcept(false);
 
 private:
+    const float m_min;
+    const float m_max;
+    const int m_nsamples;
+    std::string m_name;
+    std::string m_unit;
+
     int const m_dimension;
+
+    // redundant, but stored as a field to avoid on-fly creation in methods used
+    // in loops
     OpenVDS::VolumeDataAxisDescriptor m_axis_descriptor;
 };
 

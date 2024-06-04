@@ -9,26 +9,35 @@
 
 
 Axis::Axis(
-    OpenVDS::VolumeDataLayout const* const layout,
-    int const                              dimension
+    float min, float max, int nsamples, std::string name, std::string unit, int const dimension
 ) : m_dimension(dimension),
-    m_axis_descriptor(layout->GetAxisDescriptor(dimension))
-{}
+    m_min(min),
+    m_max(max),
+    m_nsamples(nsamples),
+    m_name(name),
+    m_unit(unit),
+    m_axis_descriptor(OpenVDS::VolumeDataAxisDescriptor(
+        m_nsamples,
+        m_name.c_str(),
+        m_unit.c_str(),
+        m_min,
+        m_max
+    )) {}
 
 float Axis::min() const noexcept(true) {
-    return this->m_axis_descriptor.GetCoordinateMin();
+    return this->m_min;
 }
 
 float Axis::max() const noexcept(true) {
-    return this->m_axis_descriptor.GetCoordinateMax();
+    return this->m_max;
 }
 
 int Axis::nsamples() const noexcept(true) {
-    return this->m_axis_descriptor.GetNumSamples();
+    return this->m_nsamples;
 }
 
 std::string Axis::unit() const noexcept(true) {
-    return this->m_axis_descriptor.GetUnit();
+    return this->m_unit;
 }
 
 int Axis::dimension() const noexcept(true) {
@@ -40,7 +49,7 @@ float Axis::stepsize() const noexcept (true) {
 }
 
 std::string Axis::name() const noexcept(true) {
-    return this->m_axis_descriptor.GetName();
+    return this->m_name;
 }
 
 bool Axis::inrange(float coordinate) const noexcept(true) {

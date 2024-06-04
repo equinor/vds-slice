@@ -9,12 +9,28 @@
 #include "axis.hpp"
 #include "boundingbox.hpp"
 #include "direction.hpp"
+#include "utils.hpp"
+
+Axis make_single_cube_axis(
+    OpenVDS::VolumeDataLayout const* const layout,
+    int dimension
+) {
+    auto axis_descriptor = layout->GetAxisDescriptor(dimension);
+    return Axis(
+        axis_descriptor.GetCoordinateMin(),
+        axis_descriptor.GetCoordinateMax(),
+        axis_descriptor.GetNumSamples(),
+        axis_descriptor.GetName(),
+        axis_descriptor.GetUnit(),
+        dimension
+    );
+}
 
 SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* const layout)
     : m_layout(layout),
-      m_iline(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
-      m_xline(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
-      m_sample(Axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
+      m_iline(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
+      m_xline(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
+      m_sample(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
       m_coordinate_transformer(SingleCoordinateTransformer(OpenVDS::IJKCoordinateTransformer(layout)))
     {
     this->dimension_validation();
@@ -66,6 +82,17 @@ Axis SingleMetadataHandle::get_axis(
     throw std::runtime_error("Unhandled axis");
 }
 
+Axis SingleMetadataHandle::get_axis(int dimension) const noexcept(false) {
+    if (this->iline().dimension() == dimension)
+        return this->iline();
+    else if (this->xline().dimension() == dimension)
+        return this->xline();
+    else if (this->sample().dimension() == dimension)
+        return this->sample();
+
+    throw std::runtime_error("Unhandled dimension");
+}
+
 BoundingBox SingleMetadataHandle::bounding_box() const noexcept(false) {
     return BoundingBox(
         this->iline().nsamples(),
@@ -115,6 +142,38 @@ int SingleMetadataHandle::get_dimension(std::vector<std::string> const& names) c
     );
 }
 
+Axis make_double_cube_axis(
+    SingleMetadataHandle const* const metadata_a,
+    SingleMetadataHandle const* const metadata_b,
+    int dimension
+    ) {
+        auto axis_a = metadata_a->get_axis(dimension);
+        auto axis_b = metadata_b->get_axis(dimension);
+
+        if (axis_a.name() != axis_b.name()) {
+            std::string args = axis_a.name() + " versus " + axis_b.name();
+            throw detail::bad_request("Dimension name mismatch for dimension " + std::to_string(dimension) + ": " + args);
+        }
+
+        if (axis_a.unit() != axis_b.unit()) {
+            std::string args = axis_a.unit() + " versus " + axis_b.unit();
+            throw detail::bad_request("Dimension unit mismatch for axis " + axis_a.name() + ": " + args);
+        }
+
+        if (axis_a.stepsize() != axis_b.stepsize()) {
+            std::string args = utils::to_string_with_precision(axis_a.stepsize()) + " versus " +
+                               utils::to_string_with_precision(axis_b.stepsize());
+            throw detail::bad_request("Stepsize mismatch in axis " + axis_a.name() + ": " + args);
+        }
+
+        auto min = std::max(axis_a.min(), axis_b.min());
+        auto max = std::min(axis_a.max(), axis_b.max());
+
+        auto nsamples = 1 + ((max - min) / (int) axis_a.stepsize());
+
+        return Axis(min, max, nsamples, axis_a.name(), axis_a.unit(), dimension);
+}
+
 DoubleMetadataHandle::DoubleMetadataHandle(
     OpenVDS::VolumeDataLayout const* const layout_a,
     OpenVDS::VolumeDataLayout const* const layout_b,
@@ -126,9 +185,9 @@ DoubleMetadataHandle::DoubleMetadataHandle(
       m_metadata_a(metadata_a),
       m_metadata_b(metadata_b),
       m_binary_symbol(binary_symbol),
-      m_iline(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
-      m_xline(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
-      m_sample(Axis(&m_layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
+      m_iline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
+      m_xline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
+      m_sample(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
       m_coordinate_transformer(m_metadata_a->coordinate_transformer(), m_metadata_b->coordinate_transformer()) {
     this->dimension_validation();
 
