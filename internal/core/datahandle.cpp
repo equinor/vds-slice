@@ -5,6 +5,7 @@
 #include <OpenVDS/KnownMetadata.h>
 #include <OpenVDS/OpenVDS.h>
 
+#include "exceptions.hpp"
 #include "metadatahandle.hpp"
 #include "subcube.hpp"
 
@@ -192,7 +193,7 @@ DoubleDataHandle::DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHand
       m_access_manager_b(OpenVDS::GetAccessManager(handle_b)),
       m_metadata_a(m_access_manager_a.GetVolumeDataLayout()),
       m_metadata_b(m_access_manager_b.GetVolumeDataLayout()),
-      m_metadata(DoubleMetadataHandle(m_access_manager_a.GetVolumeDataLayout(), m_access_manager_b.GetVolumeDataLayout(), &m_metadata_a, &m_metadata_b, binary_symbol)) {
+      m_metadata(&m_metadata_a, &m_metadata_b, binary_symbol) {
 
     if (binary_symbol == NO_OPERATOR)
         throw detail::bad_request("Invalid function");
@@ -316,12 +317,17 @@ void DoubleDataHandle::read_traces(
     int const sample_dimension_index = this->get_metadata().sample().dimension();
 
     std::size_t coordinates_buffer_size = OpenVDS::Dimensionality_Max * ntraces;
-
     std::vector<float> coordinates_a(coordinates_buffer_size);
-    this->m_metadata.offset_samples_to_match_cube_a(coordinates, ntraces, &coordinates_a);
+    auto transformer_a = this->m_metadata.coordinate_transformer();
+    for (int v = 0; v < ntraces; v++) {
+        transformer_a.to_cube_a_ijk_position(coordinates_a.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
+    }
 
     std::vector<float> coordinates_b(coordinates_buffer_size);
-    this->m_metadata.offset_samples_to_match_cube_b(coordinates, ntraces, &coordinates_b);
+    auto transformer_b = this->m_metadata.coordinate_transformer();
+    for (int v = 0; v < ntraces; v++) {
+        transformer_b.to_cube_b_ijk_position(coordinates_b.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
+    }
 
     std::size_t size_a = this->m_access_manager_a.GetVolumeTracesBufferSize(ntraces, sample_dimension_index);
     std::vector<float> buffer_a((std::size_t)size_a / sizeof(float));
@@ -365,7 +371,7 @@ void DoubleDataHandle::read_traces(
     this->extract_continuous_part_of_trace(
         &buffer_a,
         this->m_metadata_a.sample().nsamples(),
-        (long)((coordinates_a)[sample_dimension_index] + 0.5f),
+        (long)(coordinates_a[sample_dimension_index] + 0.5f),
         this->get_metadata().sample().nsamples(),
         floatBuffer);
 
@@ -373,7 +379,7 @@ void DoubleDataHandle::read_traces(
     this->extract_continuous_part_of_trace(
         &buffer_b,
         this->m_metadata_b.sample().nsamples(),
-        (long)((coordinates_b)[sample_dimension_index] + 0.5f),
+        (long)(coordinates_b[sample_dimension_index] + 0.5f),
         this->get_metadata().sample().nsamples(),
         res_buffer_b.data());
 
@@ -412,13 +418,24 @@ void DoubleDataHandle::read_samples(
     enum interpolation_method const interpolation_method
 ) noexcept(false) {
 
-    std::size_t samples_size = (std::size_t)(sizeof(voxel) * nsamples / sizeof(float));
+    std::size_t samples_buffer_size = OpenVDS::Dimensionality_Max * nsamples;
 
-    std::vector<float> samples_a((std::size_t)(sizeof(voxel) * nsamples));
-    this->m_metadata.offset_samples_to_match_cube_a(samples, nsamples, &samples_a);
+    /* Note that samples contain sample positions, yet we handle them here as
+     * ijk positions. That shouldn't be a problem as sample positions should
+     * differ from ijk positions just by half a sample.
+     */
 
-    std::vector<float> samples_b((std::size_t)(sizeof(voxel) * nsamples));
-    this->m_metadata.offset_samples_to_match_cube_b(samples, nsamples, &samples_b);
+    std::vector<float> samples_a(samples_buffer_size);
+    auto transformer_a = this->m_metadata.coordinate_transformer();
+    for (int v = 0; v < nsamples; v++) {
+        transformer_a.to_cube_a_ijk_position(samples_a.data() + OpenVDS::Dimensionality_Max * v, samples[v]);
+    }
+
+    std::vector<float> samples_b(samples_buffer_size);
+    auto transformer_b = this->m_metadata.coordinate_transformer();
+    for (int v = 0; v < nsamples; v++) {
+        transformer_b.to_cube_b_ijk_position(samples_b.data() + OpenVDS::Dimensionality_Max * v, samples[v]);
+    }
 
     auto request_a = this->m_access_manager_a.RequestVolumeSamples(
         (float*)buffer,

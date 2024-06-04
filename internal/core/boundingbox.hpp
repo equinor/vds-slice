@@ -4,15 +4,16 @@
 #include <utility>
 #include <vector>
 
+#include "coordinate_transformer.hpp"
+
 #include <OpenVDS/OpenVDS.h>
-#include <OpenVDS/IJKCoordinateTransformer.h>
 
 class BoundingBox {
 public:
     explicit BoundingBox(
         int const nilines,
         int const nxlines,
-        OpenVDS::IJKCoordinateTransformer transformer
+        CoordinateTransformer const& transformer
     ) : m_nilines(nilines), m_nxlines(nxlines), m_transformer(transformer)
     {}
 
@@ -22,7 +23,7 @@ public:
 private:
     int const m_nilines;
     int const m_nxlines;
-    OpenVDS::IJKCoordinateTransformer m_transformer;
+    CoordinateTransformer const& m_transformer;
 };
 
 #endif /* VDS_SLICE_BOUNDINGBOX_HPP */

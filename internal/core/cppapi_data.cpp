@@ -175,7 +175,7 @@ void fence(
 
     std::unique_ptr< voxel[] > coords(new voxel[npoints]{{0}});
 
-    auto coordinate_transformer = metadata.coordinate_transformer();
+    CoordinateTransformer const& coordinate_transformer = metadata.coordinate_transformer();
     auto transform_coordinate = [&] (const float x, const float y) {
         switch (coordinate_system) {
             case INDEX:
@@ -253,7 +253,7 @@ void fetch_subvolume(
     }
 
     MetadataHandle const& metadata = datahandle.get_metadata();
-    auto transform = metadata.coordinate_transformer();
+    CoordinateTransformer const& transform = metadata.coordinate_transformer();
 
     auto iline  = metadata.iline ();
     auto xline  = metadata.xline();

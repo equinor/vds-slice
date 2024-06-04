@@ -52,7 +52,7 @@ SurfaceBoundedSubVolume* make_subvolume(
         throw std::runtime_error("Expected surfaces to have the same plane and size");
     }
 
-    auto transform = metadata.coordinate_transformer();
+    CoordinateTransformer const& transform = metadata.coordinate_transformer();
 
     auto iline = metadata.iline();
     auto xline = metadata.xline();
