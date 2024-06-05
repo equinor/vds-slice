@@ -90,7 +90,6 @@ public:
     ) noexcept (false);
 
 private:
-    OpenVDS::ScopedVDSHandle m_file_handle;
     OpenVDS::VolumeDataAccessManager m_access_manager;
     SingleMetadataHandle m_metadata;
 
@@ -106,7 +105,7 @@ SingleDataHandle make_single_datahandle(
 class DoubleDataHandle : public DataHandle {
 
 public:
-    DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHandle handle_b, enum binary_operator binary_symbol);
+    DoubleDataHandle(SingleDataHandle handle_a, SingleDataHandle handle_b, enum binary_operator binary_symbol);
     friend DoubleDataHandle make_double_datahandle(
         const char* url_a,
         const char* credentials_a,
@@ -148,12 +147,8 @@ public:
     ) noexcept(false);
 
 private:
-    OpenVDS::ScopedVDSHandle m_file_handle_a;
-    OpenVDS::ScopedVDSHandle m_file_handle_b;
-    OpenVDS::VolumeDataAccessManager m_access_manager_a;
-    OpenVDS::VolumeDataAccessManager m_access_manager_b;
-    SingleMetadataHandle m_metadata_a;
-    SingleMetadataHandle m_metadata_b;
+    SingleDataHandle m_datahandle_a;
+    SingleDataHandle m_datahandle_b;
     DoubleMetadataHandle m_metadata;
     std::function<void(float*, const float*, std::size_t)> m_binary_operator;
 
