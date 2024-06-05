@@ -286,13 +286,13 @@ void DoubleDataHandle::read_traces(
     std::vector<float> coordinates_a(coordinates_buffer_size);
     auto transformer_a = this->m_metadata.coordinate_transformer();
     for (int v = 0; v < ntraces; v++) {
-        transformer_a.to_cube_a_ijk_position(coordinates_a.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
+        transformer_a.to_cube_a_voxel_position(coordinates_a.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
     }
 
     std::vector<float> coordinates_b(coordinates_buffer_size);
     auto transformer_b = this->m_metadata.coordinate_transformer();
     for (int v = 0; v < ntraces; v++) {
-        transformer_b.to_cube_b_ijk_position(coordinates_b.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
+        transformer_b.to_cube_b_voxel_position(coordinates_b.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
     }
 
     std::size_t size_a = this->m_datahandle_a.traces_buffer_size(ntraces);
@@ -376,13 +376,13 @@ void DoubleDataHandle::read_samples(
     std::vector<float> samples_a(samples_buffer_size);
     auto transformer_a = this->m_metadata.coordinate_transformer();
     for (int v = 0; v < nsamples; v++) {
-        transformer_a.to_cube_a_ijk_position(samples_a.data() + OpenVDS::Dimensionality_Max * v, samples[v]);
+        transformer_a.to_cube_a_voxel_position(samples_a.data() + OpenVDS::Dimensionality_Max * v, samples[v]);
     }
 
     std::vector<float> samples_b(samples_buffer_size);
     auto transformer_b = this->m_metadata.coordinate_transformer();
     for (int v = 0; v < nsamples; v++) {
-        transformer_b.to_cube_b_ijk_position(samples_b.data() + OpenVDS::Dimensionality_Max * v, samples[v]);
+        transformer_b.to_cube_b_voxel_position(samples_b.data() + OpenVDS::Dimensionality_Max * v, samples[v]);
     }
 
     this->m_datahandle_a.read_samples(

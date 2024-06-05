@@ -345,4 +345,44 @@ TEST_F(DatahandleAttributeTest, Attribute_Double_Data_Outside_Intersection_Verti
     );
 }
 
+TEST_F(DatahandleAttributeTest, Attribute_Double_Different_Number_Of_Samples_To_Border_Per_Dimension) {
+    const std::string INNER_CUBE = "file://inner_4x2_cube.vds";
+
+    DoubleDataHandle datahandle = make_double_datahandle(
+        INNER_CUBE.c_str(),
+        CREDENTIALS.c_str(),
+        REGULAR_DATA.c_str(),
+        CREDENTIALS.c_str(),
+        binary_operator::ADDITION
+    );
+
+    Grid grid = get_grid(datahandle);
+
+    const MetadataHandle* metadata = &(datahandle.get_metadata());
+
+    std::size_t nrows = metadata->iline().nsamples();
+    std::size_t ncols = metadata->xline().nsamples();
+    static std::vector<float> top_surface_data(nrows * ncols, 12.0f);
+    static std::vector<float> pri_surface_data(nrows * ncols, 20.0f);
+    static std::vector<float> bot_surface_data(nrows * ncols, 36.0f);
+    RegularSurface pri_surface = RegularSurface(pri_surface_data.data(), nrows, ncols, grid, fill);
+    RegularSurface top_surface = RegularSurface(top_surface_data.data(), nrows, ncols, grid, fill);
+    RegularSurface bot_surface = RegularSurface(bot_surface_data.data(), nrows, ncols, grid, fill);
+    SurfaceBoundedSubVolume* subvolume = make_subvolume(datahandle.get_metadata(), pri_surface, top_surface, bot_surface);
+
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, nrows * ncols);
+
+    /* For regular files "low" in other double tests is something like {4, 4,
+     * 4}; The files which create this test intersection are crafted such a way
+     * that in every dimension "low" is different, thus checking for the
+     * possible mess up in values order.
+     */
+    int expected_low[3] = {2, 3, 1};
+    int expected_high[3] = {6, 7, 9};
+
+    check_attribute(*subvolume,expected_low, expected_high, 2);
+
+    delete subvolume;
+}
+
 } // namespace

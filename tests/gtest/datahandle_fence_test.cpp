@@ -533,4 +533,56 @@ TEST_F(DatahandleFenceTest, Fence_INDEX_Different_Size_Double) {
     check_fence(response_data, check_coordinates, low, high, 2, false);
 }
 
+TEST_F(DatahandleFenceTest, Fence_Different_Number_Of_Samples_To_Border_Per_Dimension_Double) {
+
+    struct response response_data;
+    struct response response_data_reverse;
+    const std::vector<float> coordinates{0, 0, 1, 1, 2, 2, 3, 3};
+    const std::vector<float> check_coordinates{2, 3, 3, 4, 4, 5, 5, 6};
+    int low_sample_index = 1;
+    int high_sample_index = 9;
+
+    const std::string INNER_CUBE = "file://inner_4x2_cube.vds";
+
+    DoubleDataHandle double_overlap_handle = make_double_datahandle(
+        REGULAR_DATA.c_str(),
+        CREDENTIALS.c_str(),
+        INNER_CUBE.c_str(),
+        CREDENTIALS.c_str(),
+        binary_operator::ADDITION
+    );
+
+    cppapi::fence(
+        double_overlap_handle,
+        coordinate_system::INDEX,
+        coordinates.data(),
+        int(coordinates.size() / 2),
+        NEAREST,
+        nullptr,
+        &response_data
+    );
+
+    check_fence(response_data, check_coordinates, low_sample_index, high_sample_index, 2, false);
+
+    DoubleDataHandle double_overlap_handle_reverse = make_double_datahandle(
+        INNER_CUBE.c_str(),
+        CREDENTIALS.c_str(),
+        REGULAR_DATA.c_str(),
+        CREDENTIALS.c_str(),
+        binary_operator::ADDITION
+    );
+
+    cppapi::fence(
+        double_overlap_handle_reverse,
+        coordinate_system::INDEX,
+        coordinates.data(),
+        int(coordinates.size() / 2),
+        NEAREST,
+        nullptr,
+        &response_data_reverse
+    );
+
+    check_fence(response_data_reverse, check_coordinates, low_sample_index, high_sample_index, 2, false);
+}
+
 } // namespace
