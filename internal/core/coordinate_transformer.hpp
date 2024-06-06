@@ -116,8 +116,8 @@ public:
         return m_transformer_a.WorldToAnnotation(worldPosition);
     }
     OpenVDS::DoubleVector3 IJKPositionToAnnotation(const OpenVDS::DoubleVector3& ijkPosition) const {
-        auto ijkPosistionInCubeA = as_cube_a_ijk_position(ijkPosition);
-        return m_transformer_a.IJKPositionToAnnotation(ijkPosistionInCubeA);
+        auto ijkPositionInCubeA = as_cube_a_ijk_position(ijkPosition);
+        return m_transformer_a.IJKPositionToAnnotation(ijkPositionInCubeA);
     }
 
     void to_cube_a_voxel_position(float* out_cube_a_position, float const* intersection_cube_position) const {

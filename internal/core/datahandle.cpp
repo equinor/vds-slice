@@ -281,18 +281,17 @@ void DoubleDataHandle::read_traces(
     enum interpolation_method const interpolation_method
 ) noexcept(false) {
     int const sample_dimension_index = this->get_metadata().sample().dimension();
+    auto transformer = this->m_metadata.coordinate_transformer();
 
     std::size_t coordinates_buffer_size = OpenVDS::Dimensionality_Max * ntraces;
     std::vector<float> coordinates_a(coordinates_buffer_size);
-    auto transformer_a = this->m_metadata.coordinate_transformer();
     for (int v = 0; v < ntraces; v++) {
-        transformer_a.to_cube_a_voxel_position(coordinates_a.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
+        transformer.to_cube_a_voxel_position(coordinates_a.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
     }
 
     std::vector<float> coordinates_b(coordinates_buffer_size);
-    auto transformer_b = this->m_metadata.coordinate_transformer();
     for (int v = 0; v < ntraces; v++) {
-        transformer_b.to_cube_b_voxel_position(coordinates_b.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
+        transformer.to_cube_b_voxel_position(coordinates_b.data() + OpenVDS::Dimensionality_Max * v, coordinates[v]);
     }
 
     std::size_t size_a = this->m_datahandle_a.traces_buffer_size(ntraces);
