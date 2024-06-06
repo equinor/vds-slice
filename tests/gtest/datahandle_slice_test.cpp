@@ -460,6 +460,48 @@ TEST_F(DatahandleSliceTest, Slice_Axis_TIME_Reverse_Double) {
     check_slice(response_data, low, high, 2);
 }
 
+TEST_F(DatahandleSliceTest, Slice_Different_Size_Double) {
+
+    struct response response_data;
+    cppapi::slice(
+        double_different_size,
+        Direction(axis_name::INLINE),
+        30,
+        slice_bounds,
+        &response_data
+    );
+
+    int low[3] = {9, 8, 8};
+    int high[3] = {10, 12, 36};
+    check_slice(response_data, low, high, 2);
+}
+
+TEST_F(DatahandleSliceTest, Slice_Different_Number_Of_Samples_To_Border_Per_Dimension) {
+    const std::string INNER_CUBE = "file://inner_4x2_cube.vds";
+
+    DoubleDataHandle datahandle = make_double_datahandle(
+        REGULAR_DATA.c_str(),
+        CREDENTIALS.c_str(),
+        INNER_CUBE.c_str(),
+        CREDENTIALS.c_str(),
+        binary_operator::ADDITION
+    );
+
+    struct response response_data;
+    cppapi::slice(
+        datahandle,
+        Direction(axis_name::CROSSLINE),
+        14,
+        slice_bounds,
+        &response_data
+    );
+
+    int low[3] = {2, 6, 1};
+    int high[3] = {6, 7, 9};
+
+    check_slice(response_data, low, high, 2);
+}
+
 TEST_F(DatahandleSliceTest, Slice_Minimum_Single) {
 
     const std::string MINIMUM_CUBE = "file://10_min_dimensions.vds";

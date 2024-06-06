@@ -218,37 +218,17 @@ std::int64_t DoubleDataHandle::subcube_buffer_size(
     return size;
 }
 
-/// @brief Copy and shift the coordinates in the provided subcube to describe it in cube X coordinates.
-/// @param subcube_intersect_AB Subcube is defined by (A ∩ B) for cubes A and B. Only the first three axis are currently used.
-/// @param metadata_cube_X Metadata for cube X where X ∈ {A, B}.
-/// @return Subcube (A ∩ B) defined in the coordinates of cube X.
-SubCube DoubleDataHandle::offset_bounds(const SubCube subcube_intersect_AB, SingleMetadataHandle metadata_cube_X) {
-
-    // Create a copy
-    SubCube subcube_in_X_coordinates = std::move(subcube_intersect_AB);
-
-    // Calculate the number of steps to offset the subcube in the three dimensions.
-    float iline_offset = (m_metadata.iline().min() - metadata_cube_X.iline().min()) / m_metadata.iline().stepsize();
-    float xline_offset = (m_metadata.xline().min() - metadata_cube_X.xline().min()) / m_metadata.xline().stepsize();
-    float sample_offset = (m_metadata.sample().min() - metadata_cube_X.sample().min()) / m_metadata.sample().stepsize();
-
-    subcube_in_X_coordinates.bounds.lower[m_metadata.iline().dimension()] += iline_offset;
-    subcube_in_X_coordinates.bounds.lower[m_metadata.xline().dimension()] += xline_offset;
-    subcube_in_X_coordinates.bounds.lower[m_metadata.sample().dimension()] += sample_offset;
-
-    subcube_in_X_coordinates.bounds.upper[m_metadata.iline().dimension()] += iline_offset;
-    subcube_in_X_coordinates.bounds.upper[m_metadata.xline().dimension()] += xline_offset;
-    subcube_in_X_coordinates.bounds.upper[m_metadata.sample().dimension()] += sample_offset;
-    return subcube_in_X_coordinates;
-}
-
 void DoubleDataHandle::read_subcube(
     void* const buffer,
     std::int64_t size,
     SubCube const& subcube
 ) noexcept(false) {
 
-    SubCube subcube_a = this->offset_bounds(subcube, m_datahandle_a.get_metadata());
+    auto transformer = this->m_metadata.coordinate_transformer();
+    SubCube subcube_a = SubCube(subcube);
+    transformer.to_cube_a_voxel_position(subcube_a.bounds.lower, subcube.bounds.lower);
+    transformer.to_cube_a_voxel_position(subcube_a.bounds.upper, subcube.bounds.upper);
+
     std::vector<char> buffer_a(size);
 
     this->m_datahandle_a.read_subcube(
@@ -257,7 +237,10 @@ void DoubleDataHandle::read_subcube(
         subcube_a
     );
 
-    SubCube subcube_b = this->offset_bounds(subcube, m_datahandle_b.get_metadata());
+    SubCube subcube_b = SubCube(subcube);
+    transformer.to_cube_b_voxel_position(subcube_b.bounds.lower, subcube.bounds.lower);
+    transformer.to_cube_b_voxel_position(subcube_b.bounds.upper, subcube.bounds.upper);
+
     std::vector<char> buffer_b(size);
 
     this->m_datahandle_b.read_subcube(

@@ -120,7 +120,14 @@ public:
         return m_transformer_a.IJKPositionToAnnotation(ijkPositionInCubeA);
     }
 
-    void to_cube_a_voxel_position(float* out_cube_a_position, float const* intersection_cube_position) const {
+    /**
+     * Having position in intersection voxel coordinates, transforms it to cube
+     * a voxel coordinates. Only 3 dimensions are supported: first 3 T values
+     * will be read from intersection_cube_position and 3 T values will be
+     * written to out_cube_a_position.
+     */
+    template<typename T>
+    void to_cube_a_voxel_position(T* out_cube_a_position, T const* intersection_cube_position) const {
         for (int ijk_index = 0; ijk_index < 3; ++ijk_index) {
             auto voxel_index = m_transformer_a.IJKToVoxelDimensionMap()[ijk_index];
             out_cube_a_position[voxel_index] = intersection_cube_position[voxel_index] +
@@ -128,7 +135,14 @@ public:
         };
     }
 
-    void to_cube_b_voxel_position(float* out_cube_b_position, float const* intersection_cube_position) const {
+    /**
+     * Having position in intersection voxel coordinates, transforms it to cube
+     * b voxel coordinates. Only 3 dimensions are supported: first 3 T values
+     * will be read from intersection_cube_position and 3 T values will be
+     * written to out_cube_b_position.
+     */
+    template<typename T>
+    void to_cube_b_voxel_position(T* out_cube_b_position, T const* intersection_cube_position) const {
         for (int ijk_index = 0; ijk_index < 3; ++ijk_index) {
             auto voxel_index = m_transformer_a.IJKToVoxelDimensionMap()[ijk_index];
             out_cube_b_position[voxel_index] = intersection_cube_position[voxel_index] +
