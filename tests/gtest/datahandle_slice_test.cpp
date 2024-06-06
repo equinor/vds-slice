@@ -72,11 +72,17 @@ public:
     DoubleDataHandle double_reverse_datahandle;
     DoubleDataHandle double_different_size;
 
-    /// @brief Check response slice towards expected slice
-    /// @param response_data Data from request
-    /// @param low Low limit on axis for expected data
-    /// @param high High limit on axis for expected data
-    /// @param factor multiplicative factor
+    /**
+     * @brief Check response slice towards expected slice
+     *
+     * @param response_data Data from request
+     * @param low Low limit on axis for expected data. Array contains
+     * 3 values corresponding to indicies in iline_array, xline_array,
+     * sample_array.
+     * @param high High limit on axis for expected data. Exclusive
+     * @param factor multiplicative factor (expected value * factor = actual
+     * value). Expected value comes from rules used in file creation
+     */
     void check_slice(struct response response_data, int low[], int high[], float factor) {
         std::size_t nr_of_values = (std::size_t)(response_data.size / sizeof(float));
 
@@ -94,9 +100,9 @@ public:
                     iline = iline >> 16;
                     xline = xline >> 8;
 
-                    EXPECT_EQ(iline, iline_array[il]);
-                    EXPECT_EQ(xline, xline_array[xl]);
-                    EXPECT_EQ(sample, sample_array[s]);
+                    EXPECT_EQ(iline, iline_array[il]) << "at iline " << il << " xline " << xl << " sample " << s;
+                    EXPECT_EQ(xline, xline_array[xl]) << "at iline " << il << " xline " << xl << " sample " << s;
+                    EXPECT_EQ(sample, sample_array[s]) << "at iline " << il << " xline " << xl << " sample " << s;
                     counter += 1;
                 }
             }

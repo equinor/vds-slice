@@ -72,13 +72,19 @@ public:
 
     static constexpr float fill = -999.25;
 
-    /// @brief Check result from fence request
-    /// @param response_data Result from request
-    /// @param coordinates Provided coordinates (index based)
-    /// @param low Low limit on sample axis for expected data
-    /// @param high High limit on sample axis for expected data
-    /// @param factor multiplicative factor
-    /// @param fill_flag True if fill value is expected
+    /**
+     * @brief Check result from fence request
+     *
+     * @param response_data Result from request
+     * @param coordinates Provided coordinates (index based)
+     * @param low Low limit on samples axis for expected data as per indicies in
+     * sample_array.
+     * @param high High limit on samples axis for expected data as per indicies
+     * in sample_array. Exclusive
+     * @param factor multiplicative factor (expected value * factor = actual
+     * value). Expected value comes from rules used in file creation
+     * @param fill_flag True if fill value is expected in the whole cube
+     */
     void check_fence(struct response response_data, std::vector<float> coordinates, int low, int high, float factor, bool fill_flag) {
         std::size_t nr_of_values = (std::size_t)(response_data.size / sizeof(float));
         std::size_t nr_of_traces = (std::size_t)(coordinates.size() / 2);
@@ -98,10 +104,10 @@ public:
                     int xline = (intValue & 0xFF00) >> 8;    // Bits 8-15
                     int iline = (intValue & 0xFF0000) >> 16; // Bits 15-23
 
-                    EXPECT_EQ(iline, iline_array[ic]);
-                    EXPECT_EQ(xline, xline_array[xc]);
+                    EXPECT_EQ(iline, iline_array[ic]) << "at iline coordinate " << ic << " xline coordinate " << xc << " sample " << s;
+                    EXPECT_EQ(xline, xline_array[xc]) << "at iline coordinate " << ic << " xline coordinate " << xc << " sample " << s;
 
-                    EXPECT_EQ(sample, sample_array[s]);
+                    EXPECT_EQ(sample, sample_array[s]) << "at iline coordinate " << ic << " xline coordinate " << xc << " sample " << s;
                 } else {
                     EXPECT_EQ(value, fill);
                 }
