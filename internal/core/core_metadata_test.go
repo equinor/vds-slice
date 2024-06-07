@@ -60,8 +60,8 @@ func TestMetadataCustomAxisOrder(t *testing.T) {
 	require.Equal(t, meta.Axis, expected)
 }
 
-func TestMetadataAxesNames(t *testing.T) {
+func TestMetadataInvalidAxisName(t *testing.T) {
 	expected := "Requested axis not found under names "
-	_, err := NewDSHandle(invalid_axes_names)
+	_, err := NewDSHandle(invalid_axis_name)
 	require.ErrorContains(t, err, expected)
 }

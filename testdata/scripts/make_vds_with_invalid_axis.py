@@ -12,13 +12,19 @@ def make_unknown_axis(filename: str) -> None:
     Returns:
     None.
 
-    This function creates a NumPy array with shape (4, 1, 2), assigns metadata to 3 axes with
+    This function creates a NumPy array with shape (4, 2, 2), assigns metadata to 3 axes with
     inline, crossline and one invalid axis name and creates a VDS file with the specified output filename.
     """
-    data = np.array([[[200, 201]], [[202, 203]], [[204, 205]], [[206, 207]]])
+    data = np.array(
+        [
+            [[200, 201], [202, 203]],
+            [[204, 205], [206, 207]],
+            [[208, 209], [210, 211]],
+            [[212, 213], [214, 215]]
+        ])
     axes = [
         Config.Axis.from_values([15, 16], "Inline", "unitless"),
-        Config.Axis.from_values([79], "Crossline", "unitless"),
+        Config.Axis.from_values([79, 80], "Crossline", "unitless"),
         Config.Axis.from_values([1, 2, 3, 4], "Evil", "unitless"),
     ]
 
@@ -28,13 +34,13 @@ def make_unknown_axis(filename: str) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="The following script will genrate a VDS file with an invalid axis name"
+        description="The following script will generate a VDS file with an invalid axis name"
     )
     parser.add_argument(
         "-v",
         "--vdsfile",
         type=str,
-        default="invalid_axes_name.vds",
+        default="invalid_axis_name.vds",
         help="Name of the new vds file",
     )
     args = parser.parse_args()
