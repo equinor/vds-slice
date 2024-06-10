@@ -7,6 +7,7 @@
 #include <OpenVDS/IJKCoordinateTransformer.h>
 
 #include "axis.hpp"
+#include "axis_type.hpp"
 #include "boundingbox.hpp"
 #include "datahandle.hpp"
 #include "direction.hpp"
@@ -174,14 +175,18 @@ void slice_metadata(
         });
     };
 
-    if (direction.is_iline()) {
-        json_shape(sample_axis, crossline_axis);
-    } else if (direction.is_xline()) {
-        json_shape(sample_axis, inline_axis);
-    } else if (direction.is_sample()) {
-        json_shape(crossline_axis, inline_axis);
-    } else {
-        throw std::runtime_error("Unhandled direction");
+    switch (direction.axis_type()) {
+        case AxisType::ILINE:
+            json_shape(sample_axis, crossline_axis);
+            break;
+        case AxisType::XLINE:
+            json_shape(sample_axis, inline_axis);
+            break;
+        case AxisType::SAMPLE:
+            json_shape(crossline_axis, inline_axis);
+            break;
+        default:
+            throw std::runtime_error("Unhandled direction");
     }
 
     meta["geospatial"] = json_slice_geospatial(
