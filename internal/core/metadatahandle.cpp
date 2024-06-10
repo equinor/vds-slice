@@ -218,10 +218,6 @@ DoubleMetadataHandle::DoubleMetadataHandle(
 
     validate_dimensionality(layout_a->GetDimensionality());
 
-    /* Axis order is assured indirectly through axes creation by checking name
-     * match for each dimension index.
-     */
-
     auto const crs_name = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
     std::string crs_a = layout_a->GetMetadataString(crs_name.GetCategory(), crs_name.GetName());
     std::string crs_b = layout_b->GetMetadataString(crs_name.GetCategory(), crs_name.GetName());
@@ -274,9 +270,31 @@ DoubleMetadataHandle::DoubleMetadataHandle(
         throw detail::bad_request("Mismatch in xline spacing: " + args);
     }
 
-    validate_minimal_nsamples(this->m_iline);
-    validate_minimal_nsamples(this->m_xline);
-    validate_minimal_nsamples(this->m_sample);
+    std::unordered_map<AxisType, Axis> axes_map;
+
+    for (int dimension = 0; dimension < 3; ++dimension) {
+        auto name_a = std::string(layout_a->GetDimensionName(dimension));
+        auto name_b = std::string(layout_b->GetDimensionName(dimension));
+
+        if (name_a != name_b) {
+            std::string args = name_a + " versus " + name_b;
+            throw detail::bad_request(
+                "Expected layouts to contain the same axes in the same order. Got mismatch for dimension " +
+                std::to_string(dimension) + ": " + args
+            );
+        }
+
+        AxisType axis_type = axis_name_to_axis_type(name_a);
+        validate_direction_uniqueness(axes_map, axis_type);
+
+        Axis axis = make_double_cube_axis(
+            metadata_a,
+            metadata_b,
+            dimension
+        );
+        validate_minimal_nsamples(axis);
+        axes_map.emplace(axis_type, axis);
+    }
 }
 
 Axis DoubleMetadataHandle::iline() const noexcept(true) {
