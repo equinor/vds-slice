@@ -82,11 +82,12 @@ Axis make_single_cube_axis(
     );
 }
 
-SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* const layout)
-    : m_layout(layout),
-      m_iline(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
-      m_xline(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
-      m_sample(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
+SingleMetadataHandle::SingleMetadataHandle(
+    OpenVDS::VolumeDataLayout const* const layout,
+    std::unordered_map<AxisType, Axis> axes_map
+)
+    : m_axes_map(axes_map),
+      m_layout(layout),
       m_coordinate_transformer(SingleCoordinateTransformer(OpenVDS::IJKCoordinateTransformer(layout))) {}
 
 SingleMetadataHandle SingleMetadataHandle::create(OpenVDS::VolumeDataLayout const* const layout) {
@@ -105,19 +106,19 @@ SingleMetadataHandle SingleMetadataHandle::create(OpenVDS::VolumeDataLayout cons
         axes_map.emplace(axis_type, axis);
     }
 
-    return SingleMetadataHandle(layout);
+    return SingleMetadataHandle(layout, axes_map);
 }
 
 Axis SingleMetadataHandle::iline() const noexcept(true) {
-    return this->m_iline;
+    return this->m_axes_map.at(AxisType::ILINE);
 }
 
 Axis SingleMetadataHandle::xline() const noexcept(true) {
-    return this->m_xline;
+    return this->m_axes_map.at(AxisType::XLINE);
 }
 
 Axis SingleMetadataHandle::sample() const noexcept(true) {
-    return this->m_sample;
+    return this->m_axes_map.at(AxisType::SAMPLE);
 }
 
 Axis SingleMetadataHandle::get_axis(
@@ -161,19 +162,6 @@ std::string SingleMetadataHandle::import_time_stamp() const noexcept(false) {
 
 SingleCoordinateTransformer const& SingleMetadataHandle::coordinate_transformer() const noexcept(false) {
     return this->m_coordinate_transformer;
-}
-
-int SingleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
-    for (auto i = 0; i < this->m_layout->GetDimensionality(); i++) {
-        std::string dimension_name = this->m_layout->GetDimensionName(i);
-        if (std::find(names.begin(), names.end(), dimension_name) != names.end()) {
-            return i;
-        }
-    }
-    throw std::runtime_error(
-        "Requested axis not found under names " + boost::algorithm::join(names, ", ") +
-        " in vds file "
-    );
 }
 
 Axis make_double_cube_axis(

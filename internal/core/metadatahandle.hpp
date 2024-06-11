@@ -3,8 +3,10 @@
 
 #include <OpenVDS/OpenVDS.h>
 #include <string>
+#include <unordered_map>
 
 #include "axis.hpp"
+#include "axis_type.hpp"
 #include "boundingbox.hpp"
 #include "coordinate_transformer.hpp"
 #include "direction.hpp"
@@ -49,18 +51,14 @@ public:
     SingleCoordinateTransformer const& coordinate_transformer() const noexcept(false);
 
 protected:
-    SingleMetadataHandle(OpenVDS::VolumeDataLayout const* const layout);
+    SingleMetadataHandle(OpenVDS::VolumeDataLayout const* const layout, std::unordered_map<AxisType, Axis> axes_map);
 
 private:
     OpenVDS::VolumeDataLayout const* const m_layout;
 
-    Axis m_iline;
-    Axis m_xline;
-    Axis m_sample;
+    std::unordered_map<AxisType, Axis> m_axes_map;
 
     SingleCoordinateTransformer m_coordinate_transformer;
-
-    int get_dimension(std::vector<std::string> const& names) const;
 };
 
 class DoubleMetadataHandle : public MetadataHandle {
