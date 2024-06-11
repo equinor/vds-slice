@@ -21,7 +21,7 @@ public:
     virtual Axis sample() const noexcept(true) = 0;
     virtual Axis get_axis(Direction const direction) const noexcept(false) = 0;
 
-    virtual BoundingBox bounding_box() const noexcept(false) = 0;
+    BoundingBox bounding_box() const noexcept(false);
     virtual std::string crs() const noexcept(false) = 0;
     virtual std::string input_filename() const noexcept(false) = 0;
     virtual std::string import_time_stamp() const noexcept(false) = 0;
@@ -43,7 +43,6 @@ public:
     Axis get_axis(Direction const direction) const noexcept(false);
     Axis get_axis(int dimension) const noexcept(false);
 
-    BoundingBox bounding_box() const noexcept(false);
     std::string crs() const noexcept(false);
     std::string input_filename() const noexcept(false);
     std::string import_time_stamp() const noexcept(false);
@@ -78,7 +77,6 @@ public:
     Axis sample() const noexcept(true);
     Axis get_axis(Direction const direction) const noexcept(false);
 
-    BoundingBox bounding_box() const noexcept(false);
     std::string crs() const noexcept(false);
     std::string input_filename() const noexcept(false);
     std::string import_time_stamp() const noexcept(false);

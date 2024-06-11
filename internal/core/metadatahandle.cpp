@@ -11,6 +11,14 @@
 #include "direction.hpp"
 #include "utils.hpp"
 
+BoundingBox MetadataHandle::bounding_box() const noexcept(false) {
+    return BoundingBox(
+        this->iline().nsamples(),
+        this->xline().nsamples(),
+        this->coordinate_transformer()
+    );
+}
+
 Axis make_single_cube_axis(
     OpenVDS::VolumeDataLayout const* const layout,
     int dimension
@@ -91,14 +99,6 @@ Axis SingleMetadataHandle::get_axis(int dimension) const noexcept(false) {
         return this->sample();
 
     throw std::runtime_error("Unhandled dimension");
-}
-
-BoundingBox SingleMetadataHandle::bounding_box() const noexcept(false) {
-    return BoundingBox(
-        this->iline().nsamples(),
-        this->xline().nsamples(),
-        this->coordinate_transformer()
-    );
 }
 
 std::string SingleMetadataHandle::crs() const noexcept(false) {
@@ -296,14 +296,6 @@ Axis DoubleMetadataHandle::get_axis(
         return this->sample();
 
     throw std::runtime_error("Unhandled axis");
-}
-
-BoundingBox DoubleMetadataHandle::bounding_box() const noexcept(false) {
-    return BoundingBox(
-        this->iline().nsamples(),
-        this->xline().nsamples(),
-        this->coordinate_transformer()
-    );
 }
 
 std::string DoubleMetadataHandle::crs() const noexcept(false) {
