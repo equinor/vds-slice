@@ -207,10 +207,16 @@ DoubleMetadataHandle::DoubleMetadataHandle(
       m_iline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
       m_xline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
       m_sample(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
-      m_coordinate_transformer(m_metadata_a->coordinate_transformer(), m_metadata_b->coordinate_transformer()) {
+      m_coordinate_transformer(m_metadata_a->coordinate_transformer(), m_metadata_b->coordinate_transformer()) { }
 
-    auto layout_a = this->m_metadata_a->m_layout;
-    auto layout_b = this->m_metadata_b->m_layout;
+DoubleMetadataHandle DoubleMetadataHandle::create(
+    SingleMetadataHandle const* const metadata_a,
+    SingleMetadataHandle const* const metadata_b,
+    enum binary_operator binary_symbol
+) {
+
+    auto layout_a = metadata_a->m_layout;
+    auto layout_b = metadata_b->m_layout;
 
     if (layout_a->GetDimensionality() != layout_b->GetDimensionality()) {
         throw detail::bad_request("Different number of dimensions");
@@ -295,6 +301,8 @@ DoubleMetadataHandle::DoubleMetadataHandle(
         validate_minimal_nsamples(axis);
         axes_map.emplace(axis_type, axis);
     }
+
+    return DoubleMetadataHandle(metadata_a, metadata_b, binary_symbol);
 }
 
 Axis DoubleMetadataHandle::iline() const noexcept(true) {

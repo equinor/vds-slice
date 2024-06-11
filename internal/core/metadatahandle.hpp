@@ -63,9 +63,9 @@ private:
 
 class DoubleMetadataHandle : public MetadataHandle {
 public:
-    DoubleMetadataHandle(
-        SingleMetadataHandle const* const m_metadata_a,
-        SingleMetadataHandle const* const m_metadata_b,
+    static DoubleMetadataHandle create(
+        SingleMetadataHandle const* const metadata_a,
+        SingleMetadataHandle const* const metadata_b,
         enum binary_operator binary_symbol
     );
 
@@ -81,6 +81,11 @@ public:
     DoubleCoordinateTransformer const& coordinate_transformer() const noexcept(false);
 
 protected:
+    DoubleMetadataHandle(
+        SingleMetadataHandle const* const metadata_a,
+        SingleMetadataHandle const* const metadata_b,
+        enum binary_operator binary_symbol
+    );
 
 private:
     SingleMetadataHandle const* const m_metadata_a;

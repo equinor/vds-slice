@@ -179,7 +179,7 @@ DoubleDataHandle make_double_datahandle(
 
 DoubleDataHandle::DoubleDataHandle(SingleDataHandle datahandle_a, SingleDataHandle datahandle_b, binary_operator binary_symbol)
     : m_datahandle_a(datahandle_a), m_datahandle_b(datahandle_b),
-      m_metadata(&m_datahandle_a.get_metadata(), &m_datahandle_b.get_metadata(), binary_symbol) {
+      m_metadata(DoubleMetadataHandle::create(&m_datahandle_a.get_metadata(), &m_datahandle_b.get_metadata(), binary_symbol)) {
 
     if (binary_symbol == NO_OPERATOR)
         throw detail::bad_request("Invalid function");

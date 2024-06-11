@@ -367,7 +367,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Order) {
             binary_operator::SUBTRACTION
         );
     },
-                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Dimension name mismatch for dimension 2: Inline versus Sample")));
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Expected layouts to contain the same axes in the same order. Got mismatch for dimension 0: Sample versus Crossline")));
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Units) {
@@ -400,7 +400,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Stepsize) {
             binary_operator::SUBTRACTION
         );
     },
-                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Stepsize mismatch in axis Inline: 3.00 versus 2.00")));
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Stepsize mismatch in axis Sample: 4.00 versus 3.00")));
 }
 
 } // namespace
