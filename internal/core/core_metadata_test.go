@@ -61,13 +61,13 @@ func TestMetadataCustomAxisOrder(t *testing.T) {
 }
 
 func TestMetadataInvalidAxisName(t *testing.T) {
-	expected := "Requested axis not found under names "
+	expected := "Unhandled axis name"
 	_, err := NewDSHandle(invalid_axis_name)
 	require.ErrorContains(t, err, expected)
 }
 
 func TestMetadataAxesDirection(t *testing.T) {
-	expected := "Requested axis not found under names Crossline in vds file"
+	expected := "two axes describe the same axis type sample"
 	_, err := NewDSHandle(invalid_axes_direction)
 	require.ErrorContains(t, err, expected)
 }

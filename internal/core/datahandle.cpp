@@ -49,7 +49,7 @@ SingleDataHandle make_single_datahandle(
 }
 
 SingleDataHandle::SingleDataHandle(OpenVDS::VDSHandle handle)
-    :m_access_manager(OpenVDS::GetAccessManager(handle)), m_metadata(m_access_manager.GetVolumeDataLayout()) {}
+    :m_access_manager(OpenVDS::GetAccessManager(handle)), m_metadata(SingleMetadataHandle::create(m_access_manager.GetVolumeDataLayout())) {}
 
 SingleMetadataHandle const& SingleDataHandle::get_metadata() const noexcept(true) {
     return this->m_metadata;

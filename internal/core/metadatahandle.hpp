@@ -34,7 +34,7 @@ protected:
 class SingleMetadataHandle : public MetadataHandle {
     friend class DoubleMetadataHandle;
 public:
-    SingleMetadataHandle(OpenVDS::VolumeDataLayout const* const layout);
+    static SingleMetadataHandle create(OpenVDS::VolumeDataLayout const* const layout);
 
     Axis iline() const noexcept(true);
     Axis xline() const noexcept(true);
@@ -49,6 +49,7 @@ public:
     SingleCoordinateTransformer const& coordinate_transformer() const noexcept(false);
 
 protected:
+    SingleMetadataHandle(OpenVDS::VolumeDataLayout const* const layout);
 
 private:
     OpenVDS::VolumeDataLayout const* const m_layout;

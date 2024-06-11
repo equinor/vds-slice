@@ -87,8 +87,9 @@ SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* cons
       m_iline(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
       m_xline(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
       m_sample(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
-      m_coordinate_transformer(SingleCoordinateTransformer(OpenVDS::IJKCoordinateTransformer(layout)))
-    {
+      m_coordinate_transformer(SingleCoordinateTransformer(OpenVDS::IJKCoordinateTransformer(layout))) {}
+
+SingleMetadataHandle SingleMetadataHandle::create(OpenVDS::VolumeDataLayout const* const layout) {
     validate_dimensionality(layout->GetDimensionality());
 
     std::unordered_map<AxisType, Axis> axes_map;
@@ -103,6 +104,8 @@ SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* cons
         validate_minimal_nsamples(axis);
         axes_map.emplace(axis_type, axis);
     }
+
+    return SingleMetadataHandle(layout);
 }
 
 Axis SingleMetadataHandle::iline() const noexcept(true) {
