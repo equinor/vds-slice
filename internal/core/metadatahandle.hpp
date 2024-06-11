@@ -15,8 +15,6 @@
 using voxel = float[OpenVDS::Dimensionality_Max];
 
 class MetadataHandle {
-    friend class DoubleMetadataHandle;
-
 public:
     virtual Axis iline() const noexcept(true) = 0;
     virtual Axis xline() const noexcept(true) = 0;
@@ -84,6 +82,7 @@ protected:
     DoubleMetadataHandle(
         SingleMetadataHandle const* const metadata_a,
         SingleMetadataHandle const* const metadata_b,
+        std::unordered_map<AxisType, Axis> axes_map,
         enum binary_operator binary_symbol
     );
 
@@ -92,13 +91,10 @@ private:
     SingleMetadataHandle const* const m_metadata_b;
     enum binary_operator m_binary_symbol;
 
-    Axis m_iline;
-    Axis m_xline;
-    Axis m_sample;
+    std::unordered_map<AxisType, Axis> m_axes_map;
 
     DoubleCoordinateTransformer m_coordinate_transformer;
 
-    int get_dimension(std::vector<std::string> const& names) const;
     std::string operator_string() const noexcept(false);
 };
 #endif /* VDS_SLICE_METADATAHANDLE_HPP */

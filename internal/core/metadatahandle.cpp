@@ -199,14 +199,13 @@ Axis make_double_cube_axis(
 DoubleMetadataHandle::DoubleMetadataHandle(
     SingleMetadataHandle const* const metadata_a,
     SingleMetadataHandle const* const metadata_b,
+    std::unordered_map<AxisType, Axis> axes_map,
     enum binary_operator binary_symbol
 )
-    : m_metadata_a(metadata_a),
+    : m_axes_map(axes_map),
+      m_metadata_a(metadata_a),
       m_metadata_b(metadata_b),
       m_binary_symbol(binary_symbol),
-      m_iline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
-      m_xline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
-      m_sample(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
       m_coordinate_transformer(m_metadata_a->coordinate_transformer(), m_metadata_b->coordinate_transformer()) { }
 
 DoubleMetadataHandle DoubleMetadataHandle::create(
@@ -302,19 +301,19 @@ DoubleMetadataHandle DoubleMetadataHandle::create(
         axes_map.emplace(axis_type, axis);
     }
 
-    return DoubleMetadataHandle(metadata_a, metadata_b, binary_symbol);
+    return DoubleMetadataHandle(metadata_a, metadata_b, axes_map, binary_symbol);
 }
 
 Axis DoubleMetadataHandle::iline() const noexcept(true) {
-    return this->m_iline;
+    return this->m_axes_map.at(AxisType::ILINE);
 }
 
 Axis DoubleMetadataHandle::xline() const noexcept(true) {
-    return this->m_xline;
+    return this->m_axes_map.at(AxisType::XLINE);
 }
 
 Axis DoubleMetadataHandle::sample() const noexcept(true) {
-    return this->m_sample;
+    return this->m_axes_map.at(AxisType::SAMPLE);
 }
 
 Axis DoubleMetadataHandle::get_axis(
@@ -331,7 +330,6 @@ Axis DoubleMetadataHandle::get_axis(
 }
 
 std::string DoubleMetadataHandle::crs() const noexcept(false) {
-    // DoubleVolumeDataLayout constructor ensures that 'crs' for A and B are identical.
     return this->m_metadata_a->crs();
 }
 
@@ -345,20 +343,6 @@ std::string DoubleMetadataHandle::import_time_stamp() const noexcept(false) {
 
 DoubleCoordinateTransformer const& DoubleMetadataHandle::coordinate_transformer() const noexcept(false) {
     return this->m_coordinate_transformer;
-}
-
-int DoubleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
-    auto dimensionality = this->m_metadata_a->m_layout->GetDimensionality();
-    for (auto i = 0; i < dimensionality; i++) {
-        std::string dimension_name = this->m_metadata_a->m_layout->GetDimensionName(i);
-        if (std::find(names.begin(), names.end(), dimension_name) != names.end()) {
-            return i;
-        }
-    }
-    throw std::runtime_error(
-        "Requested axis not found under names " + boost::algorithm::join(names, ", ") +
-        " in vds file "
-    );
 }
 
 std::string DoubleMetadataHandle::operator_string() const noexcept(false) {
