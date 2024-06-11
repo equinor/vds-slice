@@ -160,7 +160,7 @@ TEST_F(DatahandleMetadataTest, Metadata_One_crossLine_Single) {
             CREDENTIALS.c_str()
         );
     },
-                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS, expect at least two crossLines, got 1")));
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported layout, expect at least two values in axis Crossline, got 1")));
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_One_Sample_Single) {
@@ -174,7 +174,7 @@ TEST_F(DatahandleMetadataTest, Metadata_One_Sample_Single) {
             CREDENTIALS.c_str()
         );
     },
-                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS, expect at least two samples, got 1")));
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported layout, expect at least two values in axis Sample, got 1")));
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_Minimum_Cube_Single) {
@@ -218,7 +218,7 @@ TEST_F(DatahandleMetadataTest, Metadata_One_inLine_Double) {
             binary_operator::SUBTRACTION
         );
     },
-                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS pair, expect that the intersection contains at least two inLines, got 1")));
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported layout, expect at least two values in axis Inline, got 1")));
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_One_crossLine_Double) {
@@ -234,7 +234,7 @@ TEST_F(DatahandleMetadataTest, Metadata_One_crossLine_Double) {
             binary_operator::SUBTRACTION
         );
     },
-                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS pair, expect that the intersection contains at least two crossLines, got 1")));
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported layout, expect at least two values in axis Crossline, got 1")));
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_One_Sample_Double) {
@@ -250,7 +250,7 @@ TEST_F(DatahandleMetadataTest, Metadata_One_Sample_Double) {
             binary_operator::SUBTRACTION
         );
     },
-                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS pair, expect that the intersection contains at least two samples, got 1")));
+                testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported layout, expect at least two values in axis Sample, got 1")));
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_Minimum_Cube_Double) {
