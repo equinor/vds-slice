@@ -16,10 +16,10 @@ using voxel = float[OpenVDS::Dimensionality_Max];
 
 class MetadataHandle {
 public:
-    virtual Axis iline() const noexcept(true) = 0;
-    virtual Axis xline() const noexcept(true) = 0;
-    virtual Axis sample() const noexcept(true) = 0;
-    virtual Axis get_axis(Direction const direction) const noexcept(false) = 0;
+    Axis iline() const noexcept(true);
+    Axis xline() const noexcept(true);
+    Axis sample() const noexcept(true);
+    Axis get_axis(Direction const direction) const noexcept(false);
 
     BoundingBox bounding_box() const noexcept(false);
     virtual std::string crs() const noexcept(false) = 0;
@@ -29,18 +29,15 @@ public:
     virtual CoordinateTransformer const& coordinate_transformer() const noexcept(false) = 0;
 
 protected:
+    MetadataHandle(std::unordered_map<AxisType, Axis> axes_map);
+
+    std::unordered_map<AxisType, Axis> m_axes_map;
 };
 
 class SingleMetadataHandle : public MetadataHandle {
     friend class DoubleMetadataHandle;
 public:
     static SingleMetadataHandle create(OpenVDS::VolumeDataLayout const* const layout);
-
-    Axis iline() const noexcept(true);
-    Axis xline() const noexcept(true);
-    Axis sample() const noexcept(true);
-    Axis get_axis(Direction const direction) const noexcept(false);
-    Axis get_axis(int dimension) const noexcept(false);
 
     std::string crs() const noexcept(false);
     std::string input_filename() const noexcept(false);
@@ -54,8 +51,6 @@ protected:
 private:
     OpenVDS::VolumeDataLayout const* const m_layout;
 
-    std::unordered_map<AxisType, Axis> m_axes_map;
-
     SingleCoordinateTransformer m_coordinate_transformer;
 };
 
@@ -66,11 +61,6 @@ public:
         SingleMetadataHandle const* const metadata_b,
         enum binary_operator binary_symbol
     );
-
-    Axis iline() const noexcept(true);
-    Axis xline() const noexcept(true);
-    Axis sample() const noexcept(true);
-    Axis get_axis(Direction const direction) const noexcept(false);
 
     std::string crs() const noexcept(false);
     std::string input_filename() const noexcept(false);
@@ -90,8 +80,6 @@ private:
     SingleMetadataHandle const* const m_metadata_a;
     SingleMetadataHandle const* const m_metadata_b;
     enum binary_operator m_binary_symbol;
-
-    std::unordered_map<AxisType, Axis> m_axes_map;
 
     DoubleCoordinateTransformer m_coordinate_transformer;
 

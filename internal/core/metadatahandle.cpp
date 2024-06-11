@@ -13,6 +13,27 @@
 #include "direction.hpp"
 #include "utils.hpp"
 
+
+MetadataHandle::MetadataHandle(std::unordered_map<AxisType, Axis> axes_map) : m_axes_map(axes_map) {}
+
+Axis MetadataHandle::iline() const noexcept(true) {
+    return this->m_axes_map.at(AxisType::ILINE);
+}
+
+Axis MetadataHandle::xline() const noexcept(true) {
+    return this->m_axes_map.at(AxisType::XLINE);
+}
+
+Axis MetadataHandle::sample() const noexcept(true) {
+    return this->m_axes_map.at(AxisType::SAMPLE);
+}
+
+Axis MetadataHandle::get_axis(
+    Direction const direction
+) const noexcept(false) {
+    return this->m_axes_map.at(direction.axis_type());
+}
+
 BoundingBox MetadataHandle::bounding_box() const noexcept(false) {
     return BoundingBox(
         this->iline().nsamples(),
@@ -86,7 +107,7 @@ SingleMetadataHandle::SingleMetadataHandle(
     OpenVDS::VolumeDataLayout const* const layout,
     std::unordered_map<AxisType, Axis> axes_map
 )
-    : m_axes_map(axes_map),
+    : MetadataHandle(axes_map),
       m_layout(layout),
       m_coordinate_transformer(SingleCoordinateTransformer(OpenVDS::IJKCoordinateTransformer(layout))) {}
 
@@ -107,42 +128,6 @@ SingleMetadataHandle SingleMetadataHandle::create(OpenVDS::VolumeDataLayout cons
     }
 
     return SingleMetadataHandle(layout, axes_map);
-}
-
-Axis SingleMetadataHandle::iline() const noexcept(true) {
-    return this->m_axes_map.at(AxisType::ILINE);
-}
-
-Axis SingleMetadataHandle::xline() const noexcept(true) {
-    return this->m_axes_map.at(AxisType::XLINE);
-}
-
-Axis SingleMetadataHandle::sample() const noexcept(true) {
-    return this->m_axes_map.at(AxisType::SAMPLE);
-}
-
-Axis SingleMetadataHandle::get_axis(
-    Direction const direction
-) const noexcept(false) {
-    if (direction.is_iline())
-        return this->iline();
-    else if (direction.is_xline())
-        return this->xline();
-    else if (direction.is_sample())
-        return this->sample();
-
-    throw std::runtime_error("Unhandled axis");
-}
-
-Axis SingleMetadataHandle::get_axis(int dimension) const noexcept(false) {
-    if (this->iline().dimension() == dimension)
-        return this->iline();
-    else if (this->xline().dimension() == dimension)
-        return this->xline();
-    else if (this->sample().dimension() == dimension)
-        return this->sample();
-
-    throw std::runtime_error("Unhandled dimension");
 }
 
 std::string SingleMetadataHandle::crs() const noexcept(false) {
@@ -199,7 +184,7 @@ DoubleMetadataHandle::DoubleMetadataHandle(
     std::unordered_map<AxisType, Axis> axes_map,
     enum binary_operator binary_symbol
 )
-    : m_axes_map(axes_map),
+    : MetadataHandle(axes_map),
       m_metadata_a(metadata_a),
       m_metadata_b(metadata_b),
       m_binary_symbol(binary_symbol),
@@ -299,31 +284,6 @@ DoubleMetadataHandle DoubleMetadataHandle::create(
     }
 
     return DoubleMetadataHandle(metadata_a, metadata_b, axes_map, binary_symbol);
-}
-
-Axis DoubleMetadataHandle::iline() const noexcept(true) {
-    return this->m_axes_map.at(AxisType::ILINE);
-}
-
-Axis DoubleMetadataHandle::xline() const noexcept(true) {
-    return this->m_axes_map.at(AxisType::XLINE);
-}
-
-Axis DoubleMetadataHandle::sample() const noexcept(true) {
-    return this->m_axes_map.at(AxisType::SAMPLE);
-}
-
-Axis DoubleMetadataHandle::get_axis(
-    Direction const direction
-) const noexcept(false) {
-    if (direction.is_iline())
-        return this->iline();
-    else if (direction.is_xline())
-        return this->xline();
-    else if (direction.is_sample())
-        return this->sample();
-
-    throw std::runtime_error("Unhandled axis");
 }
 
 std::string DoubleMetadataHandle::crs() const noexcept(false) {
