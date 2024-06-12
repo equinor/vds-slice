@@ -93,6 +93,79 @@ TEST_F(DatahandleMetadataTest, Metadata_Single) {
     EXPECT_EQ(metadata["axis"], expected["axis"]);
 }
 
+TEST_F(DatahandleMetadataTest, Metadata_Single_Slice) {
+    nlohmann::json expected;
+    expected["format"] = "<f4";
+    expected["shape"] = {8, 6};
+    expected["geospatial"] = {{20.0, 12.0}, {-8.0, 54.0}};
+    expected["x"] = {{"annotation", "Sample"}, {"max", 28.0f}, {"min", 8.0f}, {"samples", 6}, {"stepsize", 4.0f}, {"unit", "ms"}};
+    expected["y"] = {{"annotation", "Crossline"}, {"max", 16.0f}, {"min", 2.0f}, {"samples", 8}, {"stepsize", 2.0f}, {"unit", "unitless"}};
+
+    std::vector<Bound> slice_bounds;
+    Bound bound;
+    bound.name = axis_name::K;
+    bound.lower = 1;
+    bound.upper = 6;
+    slice_bounds.push_back(bound);
+
+    struct response response_data;
+    cppapi::slice_metadata(
+        single_datahandle,
+        Direction(axis_name::I),
+        2,
+        slice_bounds,
+        &response_data
+    );
+    nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
+
+    EXPECT_EQ(metadata["format"], expected["format"]);
+    EXPECT_EQ(metadata["shape"], expected["shape"]);
+    EXPECT_EQ(metadata["x"], expected["x"]);
+    EXPECT_EQ(metadata["y"], expected["y"]);
+    EXPECT_EQ(metadata["geospatial"], expected["geospatial"]);
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Single_Fence) {
+    nlohmann::json expected;
+    expected["format"] = "<f4";
+    expected["shape"] = {5, 32};
+
+    struct response response_data;
+    cppapi::fence_metadata(
+        single_datahandle,
+        5,
+        &response_data
+    );
+    nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
+
+    EXPECT_EQ(metadata["format"], expected["format"]);
+    EXPECT_EQ(metadata["shape"], expected["shape"]);
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Attribute) {
+    int nrows = 7;
+    int ncols = 6;
+    nlohmann::json expected;
+    expected["format"] = "<f4";
+    expected["shape"] = {nrows, ncols};
+
+    std::array<DataHandle*, 2> handles = {&single_datahandle, &double_datahandle};
+
+    for (auto handle : handles) {
+        struct response response_data;
+        cppapi::attributes_metadata(
+            *handle,
+            nrows,
+            ncols,
+            &response_data
+        );
+        nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
+
+        EXPECT_EQ(metadata["format"], expected["format"]);
+        EXPECT_EQ(metadata["shape"], expected["shape"]);
+    }
+}
+
 TEST_F(DatahandleMetadataTest, Metadata_Double) {
 
     struct response response_data;
@@ -103,6 +176,55 @@ TEST_F(DatahandleMetadataTest, Metadata_Double) {
     EXPECT_EQ(metadata["inputFileName"], "regular_8x2_cube.segy + shift_4_8x2_cube.segy");
     EXPECT_EQ(metadata["boundingBox"], expected_intersect_metadata["boundingBox"]);
     EXPECT_EQ(metadata["axis"], expected_intersect_metadata["axis"]);
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Double_Slice) {
+    nlohmann::json expected;
+    expected["format"] = "<f4";
+    expected["shape"] = {4, 6};
+    expected["geospatial"] = {{40.0, 60.0}, {28.0, 78.0}};
+    expected["x"] = {{"annotation", "Sample"}, {"max", 44.0f}, {"min", 24.0f}, {"samples", 6}, {"stepsize", 4.0f}, {"unit", "ms"}};
+    expected["y"] = {{"annotation", "Crossline"}, {"max", 16.0f}, {"min", 10.0f}, {"samples", 4}, {"stepsize", 2.0f}, {"unit", "unitless"}};
+
+    std::vector<Bound> slice_bounds;
+    Bound bound;
+    bound.name = axis_name::K;
+    bound.lower = 1;
+    bound.upper = 6;
+    slice_bounds.push_back(bound);
+
+    struct response response_data;
+    cppapi::slice_metadata(
+        double_datahandle,
+        Direction(axis_name::I),
+        2,
+        slice_bounds,
+        &response_data
+    );
+    nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
+
+    EXPECT_EQ(metadata["format"], expected["format"]);
+    EXPECT_EQ(metadata["shape"], expected["shape"]);
+    EXPECT_EQ(metadata["x"], expected["x"]);
+    EXPECT_EQ(metadata["y"], expected["y"]);
+    EXPECT_EQ(metadata["geospatial"], expected["geospatial"]);
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Double_Fence) {
+    nlohmann::json expected;
+    expected["format"] = "<f4";
+    expected["shape"] = {5, 28};
+
+    struct response response_data;
+    cppapi::fence_metadata(
+        double_datahandle,
+        5,
+        &response_data
+    );
+    nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
+
+    EXPECT_EQ(metadata["format"], expected["format"]);
+    EXPECT_EQ(metadata["shape"], expected["shape"]);
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_Subtraction_Double) {
