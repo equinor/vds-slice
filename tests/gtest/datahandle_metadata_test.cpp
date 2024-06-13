@@ -17,6 +17,39 @@ const std::string SHIFT_8_BIG_DATA = "file://shift_8_32x3_cube.vds";
 const std::string CREDENTIALS = "";
 
 class DatahandleMetadataTest : public ::testing::Test {
+protected:
+    DatahandleMetadataTest() : single_datahandle(make_single_datahandle(REGULAR_DATA.c_str(), CREDENTIALS.c_str())),
+                               double_datahandle(make_double_datahandle(
+                                   REGULAR_DATA.c_str(),
+                                   CREDENTIALS.c_str(),
+                                   SHIFT_4_DATA.c_str(),
+                                   CREDENTIALS.c_str(),
+                                   binary_operator::ADDITION
+                               )),
+
+                               double_subtraction_datahandle(make_double_datahandle(
+                                   REGULAR_DATA.c_str(),
+                                   CREDENTIALS.c_str(),
+                                   SHIFT_4_DATA.c_str(),
+                                   CREDENTIALS.c_str(),
+                                   binary_operator::SUBTRACTION
+                               )),
+
+                               double_reverse_datahandle(make_double_datahandle(
+                                   SHIFT_4_DATA.c_str(),
+                                   CREDENTIALS.c_str(),
+                                   REGULAR_DATA.c_str(),
+                                   CREDENTIALS.c_str(),
+                                   binary_operator::ADDITION
+                               )),
+
+                               double_different_size(make_double_datahandle(
+                                   SHIFT_4_DATA.c_str(),
+                                   CREDENTIALS.c_str(),
+                                   SHIFT_8_BIG_DATA.c_str(),
+                                   CREDENTIALS.c_str(),
+                                   binary_operator::ADDITION
+                               )) {}
 
     void SetUp() override {
         expected_intersect_metadata["crs"] = "utmXX";
@@ -26,61 +59,16 @@ class DatahandleMetadataTest : public ::testing::Test {
         expected_intersect_metadata["axis"][0] = {{"annotation", "Inline"}, {"max", 24.0f}, {"min", 15.0f}, {"samples", 4}, {"stepsize", 3.0f}, {"unit", "unitless"}};
         expected_intersect_metadata["axis"][1] = {{"annotation", "Crossline"}, {"max", 16.0f}, {"min", 10.0f}, {"samples", 4}, {"stepsize", 2.0f}, {"unit", "unitless"}};
         expected_intersect_metadata["axis"][2] = {{"annotation", "Sample"}, {"max", 128.0f}, {"min", 20.0f}, {"samples", 28}, {"stepsize", 4.0f}, {"unit", "ms"}};
-
-        single_datahandle = make_single_datahandle(
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str()
-        );
-
-        double_datahandle = make_double_datahandle(
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::ADDITION
-        );
-
-        double_subtraction_datahandle = make_double_datahandle(
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::SUBTRACTION
-        );
-
-        double_reverse_datahandle = make_double_datahandle(
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            REGULAR_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::ADDITION
-        );
-
-        double_different_size = make_double_datahandle(
-            SHIFT_4_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            SHIFT_8_BIG_DATA.c_str(),
-            CREDENTIALS.c_str(),
-            binary_operator::ADDITION
-        );
-    }
-
-    void TearDown() override {
-        delete single_datahandle;
-        delete double_datahandle;
-        delete double_subtraction_datahandle;
-        delete double_reverse_datahandle;
-        delete double_different_size;
     }
 
 public:
     nlohmann::json expected_intersect_metadata;
 
-    SingleDataHandle* single_datahandle;
-    DoubleDataHandle* double_datahandle;
-    DoubleDataHandle* double_subtraction_datahandle;
-    DoubleDataHandle* double_reverse_datahandle;
-    DoubleDataHandle* double_different_size;
+    SingleDataHandle single_datahandle;
+    DoubleDataHandle double_datahandle;
+    DoubleDataHandle double_subtraction_datahandle;
+    DoubleDataHandle double_reverse_datahandle;
+    DoubleDataHandle double_different_size;
 };
 
 TEST_F(DatahandleMetadataTest, Metadata_Single) {
@@ -96,7 +84,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Single) {
     expected["axis"][2] = {{"annotation", "Sample"}, {"max", 128.0f}, {"min", 4.0f}, {"samples", 32}, {"stepsize", 4.0f}, {"unit", "ms"}};
 
     struct response response_data;
-    cppapi::metadata(*single_datahandle, &response_data);
+    cppapi::metadata(single_datahandle, &response_data);
     nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
 
     EXPECT_EQ(metadata["crs"], expected["crs"]);
@@ -108,7 +96,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Single) {
 TEST_F(DatahandleMetadataTest, Metadata_Double) {
 
     struct response response_data;
-    cppapi::metadata(*double_datahandle, &response_data);
+    cppapi::metadata(double_datahandle, &response_data);
     nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
 
     EXPECT_EQ(metadata["crs"], this->expected_intersect_metadata["crs"]);
@@ -120,7 +108,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Double) {
 TEST_F(DatahandleMetadataTest, Metadata_Subtraction_Double) {
 
     struct response response_data;
-    cppapi::metadata(*double_subtraction_datahandle, &response_data);
+    cppapi::metadata(double_subtraction_datahandle, &response_data);
     nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
 
     EXPECT_EQ(metadata["crs"], this->expected_intersect_metadata["crs"]);
@@ -132,7 +120,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Subtraction_Double) {
 TEST_F(DatahandleMetadataTest, Metadata_Reverse_Double) {
 
     struct response response_data;
-    cppapi::metadata(*double_reverse_datahandle, &response_data);
+    cppapi::metadata(double_reverse_datahandle, &response_data);
     nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
 
     EXPECT_EQ(metadata["crs"], this->expected_intersect_metadata["crs"]);
@@ -144,7 +132,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Reverse_Double) {
 TEST_F(DatahandleMetadataTest, Metadata_Different_Size_Double) {
 
     struct response response_data;
-    cppapi::metadata(*double_different_size, &response_data);
+    cppapi::metadata(double_different_size, &response_data);
     nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
 
     nlohmann::json different_size_metadata;
@@ -167,11 +155,10 @@ TEST_F(DatahandleMetadataTest, Metadata_One_crossLine_Single) {
     const std::string SINGLE_XLINE_DATA = "file://10_single_xline.vds";
 
     EXPECT_THAT([&]() {
-        SingleDataHandle* single_xline_handle = make_single_datahandle(
+        SingleDataHandle single_xline_handle = make_single_datahandle(
             SINGLE_XLINE_DATA.c_str(),
             CREDENTIALS.c_str()
         );
-        delete single_xline_handle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS, expect at least two crossLines, got 1")));
 }
@@ -182,11 +169,10 @@ TEST_F(DatahandleMetadataTest, Metadata_One_Sample_Single) {
     SingleDataHandle* single_sample_handle;
 
     EXPECT_THAT([&]() {
-        SingleDataHandle* single_sample_handle = make_single_datahandle(
+        SingleDataHandle single_sample_handle = make_single_datahandle(
             SINGLE_SAMPLE_DATA.c_str(),
             CREDENTIALS.c_str()
         );
-        delete single_sample_handle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS, expect at least two samples, got 1")));
 }
@@ -195,13 +181,13 @@ TEST_F(DatahandleMetadataTest, Metadata_Minimum_Cube_Single) {
 
     const std::string MINIMUM_CUBE = "file://10_min_dimensions.vds";
 
-    SingleDataHandle* single_minimum_handle = make_single_datahandle(
+    SingleDataHandle single_minimum_handle = make_single_datahandle(
         MINIMUM_CUBE.c_str(),
         CREDENTIALS.c_str()
     );
 
     struct response response_data;
-    cppapi::metadata(*single_minimum_handle, &response_data);
+    cppapi::metadata(single_minimum_handle, &response_data);
     nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
 
     nlohmann::json different_size_metadata;
@@ -217,8 +203,6 @@ TEST_F(DatahandleMetadataTest, Metadata_Minimum_Cube_Single) {
     EXPECT_EQ(metadata["inputFileName"], different_size_metadata["inputFileName"]);
     EXPECT_EQ(metadata["boundingBox"], different_size_metadata["boundingBox"]);
     EXPECT_EQ(metadata["axis"], different_size_metadata["axis"]);
-
-    delete single_minimum_handle;
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_One_inLine_Double) {
@@ -226,15 +210,13 @@ TEST_F(DatahandleMetadataTest, Metadata_One_inLine_Double) {
     EXPECT_THAT([&]() {
         const std::string SHIFT_7_INLINE_DATA = "file://shift_7_inLine_8x2_cube.vds";
 
-        DoubleDataHandle* double_inline_datahandle = make_double_datahandle(
+        DoubleDataHandle double_inline_datahandle = make_double_datahandle(
             REGULAR_DATA.c_str(),
             CREDENTIALS.c_str(),
             SHIFT_7_INLINE_DATA.c_str(),
             CREDENTIALS.c_str(),
             binary_operator::SUBTRACTION
         );
-
-        delete double_inline_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS pair, expect that the intersection contains at least two inLines, got 1")));
 }
@@ -244,15 +226,13 @@ TEST_F(DatahandleMetadataTest, Metadata_One_crossLine_Double) {
     EXPECT_THAT([&]() {
         const std::string SHIFT_7_CROSSLINE_DATA = "file://shift_7_xLine_8x2_cube.vds";
 
-        DoubleDataHandle* double_xline_datahandle = make_double_datahandle(
+        DoubleDataHandle double_xline_datahandle = make_double_datahandle(
             REGULAR_DATA.c_str(),
             CREDENTIALS.c_str(),
             SHIFT_7_CROSSLINE_DATA.c_str(),
             CREDENTIALS.c_str(),
             binary_operator::SUBTRACTION
         );
-
-        delete double_xline_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS pair, expect that the intersection contains at least two crossLines, got 1")));
 }
@@ -262,15 +242,13 @@ TEST_F(DatahandleMetadataTest, Metadata_One_Sample_Double) {
     EXPECT_THAT([&]() {
         const std::string SHIFT_31_SAMPLE_DATA = "file://shift_31_Sample_8x2_cube.vds";
 
-        DoubleDataHandle* double_sample_datahandle = make_double_datahandle(
+        DoubleDataHandle double_sample_datahandle = make_double_datahandle(
             REGULAR_DATA.c_str(),
             CREDENTIALS.c_str(),
             SHIFT_31_SAMPLE_DATA.c_str(),
             CREDENTIALS.c_str(),
             binary_operator::SUBTRACTION
         );
-
-        delete double_sample_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Unsupported VDS pair, expect that the intersection contains at least two samples, got 1")));
 }
@@ -279,7 +257,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Minimum_Cube_Double) {
 
     const std::string SHIFT_6_CUBE = "file://shift_6_8x2_cube.vds";
 
-    DoubleDataHandle* double_minimum_datahandle = make_double_datahandle(
+    DoubleDataHandle double_minimum_datahandle = make_double_datahandle(
         REGULAR_DATA.c_str(),
         CREDENTIALS.c_str(),
         SHIFT_6_CUBE.c_str(),
@@ -288,7 +266,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Minimum_Cube_Double) {
     );
 
     struct response response_data;
-    cppapi::metadata(*double_minimum_datahandle, &response_data);
+    cppapi::metadata(double_minimum_datahandle, &response_data);
     nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
 
     nlohmann::json different_size_metadata;
@@ -304,8 +282,6 @@ TEST_F(DatahandleMetadataTest, Metadata_Minimum_Cube_Double) {
     EXPECT_EQ(metadata["inputFileName"], different_size_metadata["inputFileName"]);
     EXPECT_EQ(metadata["boundingBox"], different_size_metadata["boundingBox"]);
     EXPECT_EQ(metadata["axis"], different_size_metadata["axis"]);
-
-    delete double_minimum_datahandle;
 }
 
 TEST_F(DatahandleMetadataTest, Metadata_CRS_Double) {
@@ -314,15 +290,13 @@ TEST_F(DatahandleMetadataTest, Metadata_CRS_Double) {
     const std::string DEFAULT_CRS_DATA = "file://10_default_crs.vds";
 
     EXPECT_THAT([&]() {
-        DoubleDataHandle* double_crs_datahandle = make_double_datahandle(
+        DoubleDataHandle double_crs_datahandle = make_double_datahandle(
             DEFAULT_DATA.c_str(),
             CREDENTIALS.c_str(),
             DEFAULT_CRS_DATA.c_str(),
             CREDENTIALS.c_str(),
             binary_operator::SUBTRACTION
         );
-
-        delete double_crs_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Coordinate reference system (CRS) mismatch: utmXX versus utmXX_modified")));
 }
@@ -333,7 +307,7 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Origin) {
     const std::string CUSTOM_ORIGIN_DATA = "file://well_known_custom_origin.vds";
 
     EXPECT_THAT([&]() {
-        DoubleDataHandle* double_crs_datahandle = make_double_datahandle(
+        DoubleDataHandle double_crs_datahandle = make_double_datahandle(
             WELL_KNOWN_DEFAULT_DATA.c_str(),
             CREDENTIALS.c_str(),
             CUSTOM_ORIGIN_DATA.c_str(),
@@ -341,7 +315,6 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Origin) {
             binary_operator::SUBTRACTION
         );
 
-        delete double_crs_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Mismatch in origin position: (19.00, -32.00) versus (20.00, -27.00)")));
 }
@@ -352,15 +325,13 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Inline_Spacing) {
     const std::string CUSTOM_INLINE_SPACING_DATA = "file://well_known_custom_inline_spacing.vds";
 
     EXPECT_THAT([&]() {
-        DoubleDataHandle* double_crs_datahandle = make_double_datahandle(
+        DoubleDataHandle double_crs_datahandle = make_double_datahandle(
             WELL_KNOWN_DEFAULT_DATA.c_str(),
             CREDENTIALS.c_str(),
             CUSTOM_INLINE_SPACING_DATA.c_str(),
             CREDENTIALS.c_str(),
             binary_operator::SUBTRACTION
         );
-
-        delete double_crs_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Mismatch in inline spacing: (3.00, 2.00) versus (6.00, 4.00)")));
 }
@@ -371,15 +342,13 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Xline_Spacing) {
     const std::string CUSTOM_XLINE_SPACING_DATA = "file://well_known_custom_xline_spacing.vds";
 
     EXPECT_THAT([&]() {
-        DoubleDataHandle* double_crs_datahandle = make_double_datahandle(
+        DoubleDataHandle double_crs_datahandle = make_double_datahandle(
             WELL_KNOWN_DEFAULT_DATA.c_str(),
             CREDENTIALS.c_str(),
             CUSTOM_XLINE_SPACING_DATA.c_str(),
             CREDENTIALS.c_str(),
             binary_operator::SUBTRACTION
         );
-
-        delete double_crs_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Mismatch in xline spacing: (-2.00, 3.00) versus (-4.00, 6.00)")));
 }
@@ -390,15 +359,13 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Order) {
     const std::string CUSTOM_AXIS_ORDER_DATA = "file://well_known_custom_axis_order.vds";
 
     EXPECT_THAT([&]() {
-        DoubleDataHandle* double_axis_order_datahandle = make_double_datahandle(
+        DoubleDataHandle double_axis_order_datahandle = make_double_datahandle(
             WELL_KNOWN_DEFAULT_DATA.c_str(),
             CREDENTIALS.c_str(),
             CUSTOM_AXIS_ORDER_DATA.c_str(),
             CREDENTIALS.c_str(),
             binary_operator::SUBTRACTION
         );
-
-        delete double_axis_order_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Dimension name mismatch for dimension 2: Inline versus Sample")));
 }
@@ -409,15 +376,13 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Units) {
     const std::string DEPTH_AXIS_DATA = "file://well_known_depth_axis.vds";
 
     EXPECT_THAT([&]() {
-        DoubleDataHandle* double_axis_order_datahandle = make_double_datahandle(
+        DoubleDataHandle double_axis_order_datahandle = make_double_datahandle(
             WELL_KNOWN_DEFAULT_DATA.c_str(),
             CREDENTIALS.c_str(),
             DEPTH_AXIS_DATA.c_str(),
             CREDENTIALS.c_str(),
             binary_operator::SUBTRACTION
         );
-
-        delete double_axis_order_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Dimension unit mismatch for axis Sample: ms versus m")));
 }
@@ -427,15 +392,13 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Stepsize) {
     const std::string DEFAULT_DATA = "file://10_samples_default.vds";
 
     EXPECT_THAT([&]() {
-        DoubleDataHandle* double_axis_order_datahandle = make_double_datahandle(
+        DoubleDataHandle double_axis_order_datahandle = make_double_datahandle(
             DEFAULT_DATA.c_str(),
             CREDENTIALS.c_str(),
             REGULAR_DATA.c_str(),
             CREDENTIALS.c_str(),
             binary_operator::SUBTRACTION
         );
-
-        delete double_axis_order_datahandle;
     },
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Stepsize mismatch in axis Inline: 2.00 versus 3.00")));
 }

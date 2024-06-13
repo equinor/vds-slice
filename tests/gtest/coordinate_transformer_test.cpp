@@ -26,7 +26,7 @@ TEST(DoubleCoordinateTransformerTest, A_Before_B) {
     OpenVDS::DoubleVector3 as_annotation = {21, 22, 20};
     OpenVDS::IntVector3 as_intersection_index = {2, 6, 0};
 
-    CoordinateTransformer const& transformer = datahandle->get_metadata().coordinate_transformer();
+    CoordinateTransformer const& transformer = datahandle.get_metadata().coordinate_transformer();
     EXPECT_EQ(as_annotation, transformer.IJKIndexToAnnotation(as_intersection_index));
 }
 
@@ -45,7 +45,7 @@ TEST(DoubleCoordinateTransformerTest, A_After_B) {
     OpenVDS::DoubleVector3 as_annotation = {21, 22, 20};
     OpenVDS::DoubleVector3 as_intersection_position = {2, 6, 0};
 
-    CoordinateTransformer const& transformer = datahandle->get_metadata().coordinate_transformer();
+    CoordinateTransformer const& transformer = datahandle.get_metadata().coordinate_transformer();
     EXPECT_EQ(as_annotation, transformer.IJKPositionToAnnotation(as_intersection_position));
 }
 
@@ -64,7 +64,7 @@ TEST(DoubleCoordinateTransformerTest, A_Equals_B) {
     OpenVDS::DoubleVector3 as_annotation = {12, 10, 8};
     OpenVDS::DoubleVector3 as_intersection_position = {3, 4, 1};
 
-    CoordinateTransformer const& transformer = datahandle->get_metadata().coordinate_transformer();
+    CoordinateTransformer const& transformer = datahandle.get_metadata().coordinate_transformer();
     EXPECT_EQ(as_annotation, transformer.IJKPositionToAnnotation(as_intersection_position));
 }
 
@@ -83,7 +83,7 @@ TEST(DoubleCoordinateTransformerTest, A_In_B) {
     OpenVDS::DoubleVector3 as_annotation = {9, 12, 20};
     OpenVDS::IntVector3 as_intersection_index = {0, 2, 3};
 
-    CoordinateTransformer const& transformer = datahandle->get_metadata().coordinate_transformer();
+    CoordinateTransformer const& transformer = datahandle.get_metadata().coordinate_transformer();
     EXPECT_EQ(as_annotation, transformer.IJKIndexToAnnotation(as_intersection_index));
 }
 
@@ -102,7 +102,7 @@ TEST(DoubleCoordinateTransformerTest, A_Around_B) {
     OpenVDS::DoubleVector3 as_annotation = {9, 12, 20};
     OpenVDS::IntVector3 as_intersection_index = {0, 2, 3};
 
-    CoordinateTransformer const& transformer = datahandle->get_metadata().coordinate_transformer();
+    CoordinateTransformer const& transformer = datahandle.get_metadata().coordinate_transformer();
     EXPECT_EQ(as_annotation, transformer.IJKIndexToAnnotation(as_intersection_index));
 }
 

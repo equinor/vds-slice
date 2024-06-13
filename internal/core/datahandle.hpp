@@ -52,11 +52,11 @@ public:
 
 class SingleDataHandle : public DataHandle {
     SingleDataHandle(OpenVDS::VDSHandle handle);
-    friend SingleDataHandle* make_single_datahandle(const char* url, const char* credentials);
+    friend SingleDataHandle make_single_datahandle(const char* url, const char* credentials);
 
 public:
 
-    MetadataHandle const& get_metadata() const noexcept (true);
+    SingleMetadataHandle const& get_metadata() const noexcept (true);
 
     static OpenVDS::VolumeDataFormat format() noexcept (true);
 
@@ -90,7 +90,6 @@ public:
     ) noexcept (false);
 
 private:
-    OpenVDS::ScopedVDSHandle m_file_handle;
     OpenVDS::VolumeDataAccessManager m_access_manager;
     SingleMetadataHandle m_metadata;
 
@@ -98,7 +97,7 @@ private:
     static int constexpr channel = 0;
 };
 
-SingleDataHandle* make_single_datahandle(
+SingleDataHandle make_single_datahandle(
     const char* url,
     const char* credentials
 ) noexcept(false);
@@ -106,8 +105,8 @@ SingleDataHandle* make_single_datahandle(
 class DoubleDataHandle : public DataHandle {
 
 public:
-    DoubleDataHandle(OpenVDS::VDSHandle handle_a, OpenVDS::VDSHandle handle_b, enum binary_operator binary_symbol);
-    friend DoubleDataHandle* make_double_datahandle(
+    DoubleDataHandle(SingleDataHandle handle_a, SingleDataHandle handle_b, enum binary_operator binary_symbol);
+    friend DoubleDataHandle make_double_datahandle(
         const char* url_a,
         const char* credentials_a,
         const char* url_b,
@@ -115,7 +114,7 @@ public:
         enum binary_operator binary_symbol
     );
 
-    MetadataHandle const& get_metadata() const noexcept(true);
+    DoubleMetadataHandle const& get_metadata() const noexcept(true);
 
     static OpenVDS::VolumeDataFormat format() noexcept(true);
 
@@ -148,12 +147,8 @@ public:
     ) noexcept(false);
 
 private:
-    OpenVDS::ScopedVDSHandle m_file_handle_a;
-    OpenVDS::ScopedVDSHandle m_file_handle_b;
-    OpenVDS::VolumeDataAccessManager m_access_manager_a;
-    OpenVDS::VolumeDataAccessManager m_access_manager_b;
-    SingleMetadataHandle m_metadata_a;
-    SingleMetadataHandle m_metadata_b;
+    SingleDataHandle m_datahandle_a;
+    SingleDataHandle m_datahandle_b;
     DoubleMetadataHandle m_metadata;
     std::function<void(float*, const float*, std::size_t)> m_binary_operator;
 
@@ -170,7 +165,7 @@ private:
     );
 };
 
-DoubleDataHandle* make_double_datahandle(
+DoubleDataHandle make_double_datahandle(
     const char* url_a, const char* credentials_a,
     const char* url_b, const char* credentials_b,
     enum binary_operator bin_operator

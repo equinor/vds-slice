@@ -45,6 +45,10 @@ public:
         return coordinate_transformer.WorldToAnnotation(worldPosition);
     }
 
+    OpenVDS::IntVector3 IJKToVoxelDimensionMap() const {
+        return coordinate_transformer.IJKToVoxelDimensionMap();
+    }
+
 private:
     OpenVDS::IJKCoordinateTransformer coordinate_transformer;
 };
@@ -56,6 +60,10 @@ public:
         SingleCoordinateTransformer const& transformer_b
     )
         : m_transformer_a(transformer_a) {
+
+        if (transformer_a.IJKToVoxelDimensionMap() != transformer_b.IJKToVoxelDimensionMap()) {
+            throw std::runtime_error("Coordinate Transformers have different dimension maps");
+        }
 
         /*
          * For each dimension, intersection 0 index corresponds to either 0-line
@@ -89,7 +97,7 @@ public:
 
     OpenVDS::IntVector3 VoxelIndexToIJKIndex(const OpenVDS::IntVector3& voxelIndex) const {
         // voxel index to ijk index depends only on dimensions order, which
-        // should be the same for intersection and cube a
+        // should be the same for all the cubes
         return m_transformer_a.VoxelIndexToIJKIndex(voxelIndex);
     }
     OpenVDS::DoubleVector3 IJKIndexToWorld(const OpenVDS::IntVector3& ijkIndex) const {
@@ -108,19 +116,37 @@ public:
         return m_transformer_a.WorldToAnnotation(worldPosition);
     }
     OpenVDS::DoubleVector3 IJKPositionToAnnotation(const OpenVDS::DoubleVector3& ijkPosition) const {
-        auto ijkPosistionInCubeA = as_cube_a_ijk_position(ijkPosition);
-        return m_transformer_a.IJKPositionToAnnotation(ijkPosistionInCubeA);
+        auto ijkPositionInCubeA = as_cube_a_ijk_position(ijkPosition);
+        return m_transformer_a.IJKPositionToAnnotation(ijkPositionInCubeA);
     }
 
-    void to_cube_a_ijk_position(float* out_cube_a_position, float const* intersection_cube_position) const {
-        for (int index = 0; index < 3; ++index) {
-            out_cube_a_position[index] = intersection_cube_position[index] + this->m_intersection_zero_as_cube_a_index[index];
-        }
+    /**
+     * Having position in intersection voxel coordinates, transforms it to cube
+     * a voxel coordinates. Only 3 dimensions are supported: first 3 T values
+     * will be read from intersection_cube_position and 3 T values will be
+     * written to out_cube_a_position.
+     */
+    template<typename T>
+    void to_cube_a_voxel_position(T* out_cube_a_position, T const* intersection_cube_position) const {
+        for (int ijk_index = 0; ijk_index < 3; ++ijk_index) {
+            auto voxel_index = m_transformer_a.IJKToVoxelDimensionMap()[ijk_index];
+            out_cube_a_position[voxel_index] = intersection_cube_position[voxel_index] +
+                                               this->m_intersection_zero_as_cube_a_index[ijk_index];
+        };
     }
 
-    void to_cube_b_ijk_position(float* out_cube_b_position, float const* intersection_cube_position) const {
-        for (int index = 0; index < 3; ++index) {
-            out_cube_b_position[index] = intersection_cube_position[index] + this->m_intersection_zero_as_cube_b_index[index];
+    /**
+     * Having position in intersection voxel coordinates, transforms it to cube
+     * b voxel coordinates. Only 3 dimensions are supported: first 3 T values
+     * will be read from intersection_cube_position and 3 T values will be
+     * written to out_cube_b_position.
+     */
+    template<typename T>
+    void to_cube_b_voxel_position(T* out_cube_b_position, T const* intersection_cube_position) const {
+        for (int ijk_index = 0; ijk_index < 3; ++ijk_index) {
+            auto voxel_index = m_transformer_a.IJKToVoxelDimensionMap()[ijk_index];
+            out_cube_b_position[voxel_index] = intersection_cube_position[voxel_index] +
+                                               this->m_intersection_zero_as_cube_b_index[ijk_index];
         }
     }
 

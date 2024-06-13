@@ -110,8 +110,8 @@ if __name__ == "__main__":
             31+base_range_32)*4, "ilines": (base_range_8)*3, "xlines": (base_range_8)*2},
 
         # Sample: [8, 36], Inline: [9, 18], Xline: [8, 14]
-        {"path": "inner_4x2_cube", "samples": (
-            1+base_range_8)*4, "ilines": (2+base_range_4)*3, "xlines": (3+base_range_4)*2},
+        {"path": "inner_4x2_cube", "samples":  # also different shift on every dimension
+            (1+base_range_8)*4, "ilines": (2+base_range_4)*3, "xlines": (3+base_range_4)*2},
     ]
 
     for p in parameters:
