@@ -47,6 +47,7 @@ configure_file(../../testdata/cube_intersection/shift_31_Sample_8x2_cube.vds . C
 configure_file(../../testdata/cube_intersection/shift_8_32x3_cube.vds . COPYONLY)
 configure_file(../../testdata/cube_intersection/inner_4x2_cube.vds . COPYONLY)
 configure_file(../../testdata/cube_intersection/unaligned_stepsize_cube.vds . COPYONLY)
+configure_file(../../testdata/cube_intersection/unaligned_shift_cube.vds . COPYONLY)
 
 include(GoogleTest)
 gtest_discover_tests(cppcoretests)

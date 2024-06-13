@@ -403,4 +403,21 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Stepsize) {
                 testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Stepsize mismatch in axis Sample: 4.00 versus 3.00")));
 }
 
+TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Shift) {
+    const std::string UNALIGNED_DATA = "file://unaligned_shift_cube.vds";
+
+    EXPECT_THAT(
+        [&]() {
+            DoubleDataHandle double_axis_order_datahandle = make_double_datahandle(
+                REGULAR_DATA.c_str(),
+                CREDENTIALS.c_str(),
+                UNALIGNED_DATA.c_str(),
+                CREDENTIALS.c_str(),
+                binary_operator::SUBTRACTION
+            );
+        },
+        testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("Cubes contain no shared line numbers in axis Sample"))
+    );
+}
+
 } // namespace

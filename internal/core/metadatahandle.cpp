@@ -1,5 +1,6 @@
 #include "metadatahandle.hpp"
 
+#include <cmath>
 #include <stdexcept>
 #include <list>
 #include <unordered_map>
@@ -168,6 +169,18 @@ Axis make_double_cube_axis(
         std::string args = utils::to_string_with_precision(axis_a.stepsize()) + " versus " +
                            utils::to_string_with_precision(axis_b.stepsize());
         throw detail::bad_request("Stepsize mismatch in axis " + axis_a.name() + ": " + args);
+    }
+
+    /* Verify that the offset is an integer number of steps. (Assures that both
+     * cubes have data at the same points, as if for one dimension cube a has
+     * lines 1, 3, 5, 7,... and cube b has lines 2, 4, 5, 8, ... we don't have
+     * matching data)
+     */
+    float offset = (axis_b.min() - axis_a.min()) / axis_a.stepsize();
+    if (std::floor(offset) != offset) {
+        throw detail::bad_request(
+            "Cubes contain no shared line numbers in axis " + axis_a.name()
+        );
     }
 
     auto min = std::max(axis_a.min(), axis_b.min());

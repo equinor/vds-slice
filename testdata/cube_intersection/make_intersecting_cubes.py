@@ -116,6 +116,10 @@ if __name__ == "__main__":
         # Sample: [3, 24], Inline: [2, 8], Xline: [4, 16]
         {"path": "unaligned_stepsize_cube", "samples":
             (0+base_range_8)*3, "ilines": (0+base_range_4)*2, "xlines": (0+base_range_4)*4},
+
+        # Sample: [7, 35], Inline: [5, 14], Xline: [3, 9]
+        {"path": "unaligned_shift_cube", "samples":
+            (0+base_range_8)*4 + 3, "ilines": (0+base_range_4)*3 + 2, "xlines": (0+base_range_4)*2 + 1},
     ]
 
     for p in parameters:
