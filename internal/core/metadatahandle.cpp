@@ -2,11 +2,13 @@
 
 #include <stdexcept>
 #include <list>
+#include <unordered_map>
 #include <utility>
 #include <boost/algorithm/string/join.hpp>
 #include <OpenVDS/KnownMetadata.h>
 
 #include "axis.hpp"
+#include "axis_type.hpp"
 #include "boundingbox.hpp"
 #include "direction.hpp"
 #include "utils.hpp"
@@ -28,6 +30,24 @@ void validate_dimensionality(int dimensionality) {
             std::to_string(dimensionality)
         );
     }
+}
+
+AxisType axis_name_to_axis_type(std::string name) noexcept(false) {
+    // we assume that axis names I, J, K are invalid in metadata
+    if (name == std::string(OpenVDS::KnownAxisNames::Inline())) {
+        return AxisType::ILINE;
+    }
+
+    if (name == std::string(OpenVDS::KnownAxisNames::Crossline())) {
+        return AxisType::XLINE;
+    }
+
+    if (name == std::string(OpenVDS::KnownAxisNames::Depth()) ||
+        name == std::string(OpenVDS::KnownAxisNames::Time()) ||
+        name == std::string(OpenVDS::KnownAxisNames::Sample())) {
+        return AxisType::SAMPLE;
+    }
+    throw std::runtime_error("Unhandled axis name");
 }
 
 void validate_minimal_nsamples(Axis const& axis) {
@@ -65,9 +85,17 @@ SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* cons
     {
     validate_dimensionality(layout->GetDimensionality());
 
-    validate_minimal_nsamples(this->m_iline);
-    validate_minimal_nsamples(this->m_xline);
-    validate_minimal_nsamples(this->m_sample);
+    std::unordered_map<AxisType, Axis> axes_map;
+
+    for (int dimension = 0; dimension < layout->GetDimensionality(); ++dimension) {
+        auto name = std::string(layout->GetDimensionName(dimension));
+
+        AxisType axis_type = axis_name_to_axis_type(name);
+
+        Axis axis = make_single_cube_axis(layout, dimension);
+        validate_minimal_nsamples(axis);
+        axes_map.emplace(axis_type, axis);
+    }
 }
 
 Axis SingleMetadataHandle::iline() const noexcept(true) {
