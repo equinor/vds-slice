@@ -168,32 +168,32 @@ Axis make_double_cube_axis(
     SingleMetadataHandle const* const metadata_a,
     SingleMetadataHandle const* const metadata_b,
     int dimension
-    ) {
-        auto axis_a = metadata_a->get_axis(dimension);
-        auto axis_b = metadata_b->get_axis(dimension);
+) {
+    auto axis_a = metadata_a->get_axis(dimension);
+    auto axis_b = metadata_b->get_axis(dimension);
 
-        if (axis_a.name() != axis_b.name()) {
-            std::string args = axis_a.name() + " versus " + axis_b.name();
-            throw detail::bad_request("Dimension name mismatch for dimension " + std::to_string(dimension) + ": " + args);
-        }
+    if (axis_a.name() != axis_b.name()) {
+        std::string args = axis_a.name() + " versus " + axis_b.name();
+        throw detail::bad_request("Dimension name mismatch for dimension " + std::to_string(dimension) + ": " + args);
+    }
 
-        if (axis_a.unit() != axis_b.unit()) {
-            std::string args = axis_a.unit() + " versus " + axis_b.unit();
-            throw detail::bad_request("Dimension unit mismatch for axis " + axis_a.name() + ": " + args);
-        }
+    if (axis_a.unit() != axis_b.unit()) {
+        std::string args = axis_a.unit() + " versus " + axis_b.unit();
+        throw detail::bad_request("Dimension unit mismatch for axis " + axis_a.name() + ": " + args);
+    }
 
-        if (axis_a.stepsize() != axis_b.stepsize()) {
-            std::string args = utils::to_string_with_precision(axis_a.stepsize()) + " versus " +
-                               utils::to_string_with_precision(axis_b.stepsize());
-            throw detail::bad_request("Stepsize mismatch in axis " + axis_a.name() + ": " + args);
-        }
+    if (axis_a.stepsize() != axis_b.stepsize()) {
+        std::string args = utils::to_string_with_precision(axis_a.stepsize()) + " versus " +
+                           utils::to_string_with_precision(axis_b.stepsize());
+        throw detail::bad_request("Stepsize mismatch in axis " + axis_a.name() + ": " + args);
+    }
 
-        auto min = std::max(axis_a.min(), axis_b.min());
-        auto max = std::min(axis_a.max(), axis_b.max());
+    auto min = std::max(axis_a.min(), axis_b.min());
+    auto max = std::min(axis_a.max(), axis_b.max());
 
-        auto nsamples = 1 + ((max - min) / (int) axis_a.stepsize());
+    auto nsamples = 1 + ((max - min) / (int)axis_a.stepsize());
 
-        return Axis(min, max, nsamples, axis_a.name(), axis_a.unit(), dimension);
+    return Axis(min, max, nsamples, axis_a.name(), axis_a.unit(), dimension);
 }
 
 DoubleMetadataHandle::DoubleMetadataHandle(
