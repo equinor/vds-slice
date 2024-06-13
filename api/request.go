@@ -67,9 +67,10 @@ type RequestedResource struct {
 	// Valid options are: "addition", "subtraction", "multiplication", "division" and empty string ("").
 	//
 	// Note that there are some restrictions when applying a binary operation on two cubes.
-	// The axes inline, crossline and depth/time must be in the same order and have matching stepsize and unit for each axis.
-	// Annotated origin and stepsize should be identical,
-	// causing the intersecting sub-cube to have matching annotated start index and number of values for each axis.
+	// The axes must be in the same order and have matching stepsize and units.
+	// CRS, annotated origin and inline/crossline spacing should be identical.
+	// Inside the intersection both cubes should have data at the same lines and
+	// there should be at least two samples in each dimension.
 	BinaryOperator string `json:"binary_operator,omitempty" example:"subtraction"`
 }
 
