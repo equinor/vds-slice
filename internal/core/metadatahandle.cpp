@@ -165,13 +165,10 @@ SingleCoordinateTransformer const& SingleMetadataHandle::coordinate_transformer(
 }
 
 Axis make_double_cube_axis(
-    SingleMetadataHandle const* const metadata_a,
-    SingleMetadataHandle const* const metadata_b,
+    Axis const& axis_a,
+    Axis const& axis_b,
     int dimension
 ) {
-    auto axis_a = metadata_a->get_axis(dimension);
-    auto axis_b = metadata_b->get_axis(dimension);
-
     if (axis_a.name() != axis_b.name()) {
         std::string args = axis_a.name() + " versus " + axis_b.name();
         throw detail::bad_request("Dimension name mismatch for dimension " + std::to_string(dimension) + ": " + args);
@@ -293,8 +290,8 @@ DoubleMetadataHandle DoubleMetadataHandle::create(
         validate_direction_uniqueness(axes_map, axis_type);
 
         Axis axis = make_double_cube_axis(
-            metadata_a,
-            metadata_b,
+            metadata_a->m_axes_map.at(axis_type),
+            metadata_b->m_axes_map.at(axis_type),
             dimension
         );
         validate_minimal_nsamples(axis);
