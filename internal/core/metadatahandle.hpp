@@ -29,7 +29,6 @@ public:
     virtual CoordinateTransformer const& coordinate_transformer() const noexcept(false) = 0;
 
 protected:
-    virtual void dimension_validation() const = 0;
 };
 
 class SingleMetadataHandle : public MetadataHandle {
@@ -50,7 +49,6 @@ public:
     SingleCoordinateTransformer const& coordinate_transformer() const noexcept(false);
 
 protected:
-    void dimension_validation() const;
 
 private:
     OpenVDS::VolumeDataLayout const* const m_layout;
@@ -84,7 +82,6 @@ public:
     DoubleCoordinateTransformer const& coordinate_transformer() const noexcept(false);
 
 protected:
-    void dimension_validation() const;
 
 private:
     SingleMetadataHandle const* const m_metadata_a;

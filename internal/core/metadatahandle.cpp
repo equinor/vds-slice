@@ -21,6 +21,15 @@ BoundingBox MetadataHandle::bounding_box() const noexcept(false) {
 
 namespace {
 
+void validate_dimensionality(int dimensionality) {
+    if (dimensionality != 3) {
+        throw std::runtime_error(
+            "Unsupported VDS, expected 3 dimensions, got " +
+            std::to_string(dimensionality)
+        );
+    }
+}
+
 void validate_minimal_nsamples(Axis const& axis) {
     if (axis.nsamples() < 2) {
         throw detail::bad_request(
@@ -54,7 +63,7 @@ SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* cons
       m_sample(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
       m_coordinate_transformer(SingleCoordinateTransformer(OpenVDS::IJKCoordinateTransformer(layout)))
     {
-    this->dimension_validation();
+    validate_dimensionality(layout->GetDimensionality());
 
     validate_minimal_nsamples(this->m_iline);
     validate_minimal_nsamples(this->m_xline);
@@ -116,15 +125,6 @@ SingleCoordinateTransformer const& SingleMetadataHandle::coordinate_transformer(
     return this->m_coordinate_transformer;
 }
 
-void SingleMetadataHandle::dimension_validation() const {
-    if (this->m_layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(this->m_layout->GetDimensionality())
-        );
-    }
-}
-
 int SingleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
     for (auto i = 0; i < this->m_layout->GetDimensionality(); i++) {
         std::string dimension_name = this->m_layout->GetDimensionName(i);
@@ -182,7 +182,6 @@ DoubleMetadataHandle::DoubleMetadataHandle(
       m_xline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
       m_sample(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
       m_coordinate_transformer(m_metadata_a->coordinate_transformer(), m_metadata_b->coordinate_transformer()) {
-    this->dimension_validation();
 
     auto layout_a = this->m_metadata_a->m_layout;
     auto layout_b = this->m_metadata_b->m_layout;
@@ -190,6 +189,8 @@ DoubleMetadataHandle::DoubleMetadataHandle(
     if (layout_a->GetDimensionality() != layout_b->GetDimensionality()) {
         throw detail::bad_request("Different number of dimensions");
     }
+
+    validate_dimensionality(layout_a->GetDimensionality());
 
     /* Axis order is assured indirectly through axes creation by checking name
      * match for each dimension index.
@@ -292,16 +293,6 @@ std::string DoubleMetadataHandle::import_time_stamp() const noexcept(false) {
 
 DoubleCoordinateTransformer const& DoubleMetadataHandle::coordinate_transformer() const noexcept(false) {
     return this->m_coordinate_transformer;
-}
-
-void DoubleMetadataHandle::dimension_validation() const {
-    auto dimensionality = this->m_metadata_a->m_layout->GetDimensionality();
-    if (dimensionality != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(dimensionality)
-        );
-    }
 }
 
 int DoubleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
