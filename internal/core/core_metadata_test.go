@@ -65,3 +65,9 @@ func TestMetadataInvalidAxisName(t *testing.T) {
 	_, err := NewDSHandle(invalid_axis_name)
 	require.ErrorContains(t, err, expected)
 }
+
+func TestMetadataAxesDirection(t *testing.T) {
+	expected := "Requested axis not found under names Crossline in vds file"
+	_, err := NewDSHandle(invalid_axes_direction)
+	require.ErrorContains(t, err, expected)
+}

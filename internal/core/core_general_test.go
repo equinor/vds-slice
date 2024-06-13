@@ -18,6 +18,7 @@ func make_connection(name string) Connection {
 
 var well_known_custom_axis_order = make_connection("well_known/well_known_custom_axis_order.vds")
 var invalid_axis_name = make_connection("invalid_data/invalid_axis_name.vds")
+var invalid_axes_direction = make_connection("invalid_data/invalid_same_axes_direction.vds")
 var well_known = make_connection("well_known/well_known_default.vds")
 var samples10 = make_connection("10_samples/10_samples_default.vds")
 var prestack = make_connection("prestack/prestack_default.vds")

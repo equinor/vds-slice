@@ -50,6 +50,12 @@ AxisType axis_name_to_axis_type(std::string name) noexcept(false) {
     throw std::runtime_error("Unhandled axis name");
 }
 
+void validate_direction_uniqueness(std::unordered_map<AxisType, Axis> const& axes_map, AxisType axis_type) {
+    if (axes_map.count(axis_type) != 0) {
+        throw std::runtime_error("Bad metadata: two axes describe the same axis type " + axis_type_to_string(axis_type));
+    }
+}
+
 void validate_minimal_nsamples(Axis const& axis) {
     if (axis.nsamples() < 2) {
         throw detail::bad_request(
@@ -91,6 +97,7 @@ SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* cons
         auto name = std::string(layout->GetDimensionName(dimension));
 
         AxisType axis_type = axis_name_to_axis_type(name);
+        validate_direction_uniqueness(axes_map, axis_type);
 
         Axis axis = make_single_cube_axis(layout, dimension);
         validate_minimal_nsamples(axis);
