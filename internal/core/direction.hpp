@@ -4,6 +4,7 @@
 #include <string>
 
 #include "ctypes.h"
+#include "axis_type.hpp"
 
 class Direction {
 public:
@@ -13,9 +14,11 @@ public:
     std::string            to_string()         const noexcept (false);
     enum axis_name         name()              const noexcept (true);
 
-    bool is_iline()  const noexcept (true);
-    bool is_xline()  const noexcept (true);
-    bool is_sample() const noexcept (true);
+    AxisType axis_type() const noexcept(false);
+
+    bool is_iline()  const noexcept (false);
+    bool is_xline()  const noexcept (false);
+    bool is_sample() const noexcept (false);
 private:
     enum axis_name const m_axis_name;
 };

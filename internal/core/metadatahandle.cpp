@@ -1,15 +1,93 @@
 #include "metadatahandle.hpp"
 
+#include <cmath>
 #include <stdexcept>
 #include <list>
+#include <unordered_map>
 #include <utility>
 #include <boost/algorithm/string/join.hpp>
 #include <OpenVDS/KnownMetadata.h>
 
 #include "axis.hpp"
+#include "axis_type.hpp"
 #include "boundingbox.hpp"
 #include "direction.hpp"
 #include "utils.hpp"
+
+
+MetadataHandle::MetadataHandle(std::unordered_map<AxisType, Axis> axes_map) : m_axes_map(axes_map) {}
+
+Axis MetadataHandle::iline() const noexcept(true) {
+    return this->m_axes_map.at(AxisType::ILINE);
+}
+
+Axis MetadataHandle::xline() const noexcept(true) {
+    return this->m_axes_map.at(AxisType::XLINE);
+}
+
+Axis MetadataHandle::sample() const noexcept(true) {
+    return this->m_axes_map.at(AxisType::SAMPLE);
+}
+
+Axis MetadataHandle::get_axis(
+    Direction const direction
+) const noexcept(false) {
+    return this->m_axes_map.at(direction.axis_type());
+}
+
+BoundingBox MetadataHandle::bounding_box() const noexcept(false) {
+    return BoundingBox(
+        this->iline().nsamples(),
+        this->xline().nsamples(),
+        this->coordinate_transformer()
+    );
+}
+
+namespace {
+
+void validate_dimensionality(int dimensionality) {
+    if (dimensionality != 3) {
+        throw std::runtime_error(
+            "Unsupported VDS, expected 3 dimensions, got " +
+            std::to_string(dimensionality)
+        );
+    }
+}
+
+AxisType axis_name_to_axis_type(std::string name) noexcept(false) {
+    // we assume that axis names I, J, K are invalid in metadata
+    if (name == std::string(OpenVDS::KnownAxisNames::Inline())) {
+        return AxisType::ILINE;
+    }
+
+    if (name == std::string(OpenVDS::KnownAxisNames::Crossline())) {
+        return AxisType::XLINE;
+    }
+
+    if (name == std::string(OpenVDS::KnownAxisNames::Depth()) ||
+        name == std::string(OpenVDS::KnownAxisNames::Time()) ||
+        name == std::string(OpenVDS::KnownAxisNames::Sample())) {
+        return AxisType::SAMPLE;
+    }
+    throw std::runtime_error("Unhandled axis name");
+}
+
+void validate_direction_uniqueness(std::unordered_map<AxisType, Axis> const& axes_map, AxisType axis_type) {
+    if (axes_map.count(axis_type) != 0) {
+        throw std::runtime_error("Bad metadata: two axes describe the same axis type " + axis_type_to_string(axis_type));
+    }
+}
+
+void validate_minimal_nsamples(Axis const& axis) {
+    if (axis.nsamples() < 2) {
+        throw detail::bad_request(
+            "Unsupported layout, expect at least two values in axis " + axis.name() + ", got " +
+            std::to_string(axis.nsamples())
+        );
+    }
+}
+
+} // namespace
 
 Axis make_single_cube_axis(
     OpenVDS::VolumeDataLayout const* const layout,
@@ -26,79 +104,31 @@ Axis make_single_cube_axis(
     );
 }
 
-SingleMetadataHandle::SingleMetadataHandle(OpenVDS::VolumeDataLayout const* const layout)
-    : m_layout(layout),
-      m_iline(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
-      m_xline(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
-      m_sample(make_single_cube_axis(layout, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
-      m_coordinate_transformer(SingleCoordinateTransformer(OpenVDS::IJKCoordinateTransformer(layout)))
-    {
-    this->dimension_validation();
+SingleMetadataHandle::SingleMetadataHandle(
+    OpenVDS::VolumeDataLayout const* const layout,
+    std::unordered_map<AxisType, Axis> axes_map
+)
+    : MetadataHandle(axes_map),
+      m_layout(layout),
+      m_coordinate_transformer(SingleCoordinateTransformer(OpenVDS::IJKCoordinateTransformer(layout))) {}
 
-    if (this->m_iline.nsamples() < 2) {
-        throw std::runtime_error(
-            "Unsupported VDS, expect at least two inLines, got " +
-            std::to_string(this->m_iline.nsamples())
-        );
+SingleMetadataHandle SingleMetadataHandle::create(OpenVDS::VolumeDataLayout const* const layout) {
+    validate_dimensionality(layout->GetDimensionality());
+
+    std::unordered_map<AxisType, Axis> axes_map;
+
+    for (int dimension = 0; dimension < layout->GetDimensionality(); ++dimension) {
+        auto name = std::string(layout->GetDimensionName(dimension));
+
+        AxisType axis_type = axis_name_to_axis_type(name);
+        validate_direction_uniqueness(axes_map, axis_type);
+
+        Axis axis = make_single_cube_axis(layout, dimension);
+        validate_minimal_nsamples(axis);
+        axes_map.emplace(axis_type, axis);
     }
 
-    if (this->m_xline.nsamples() < 2) {
-        throw std::runtime_error(
-            "Unsupported VDS, expect at least two crossLines, got " +
-            std::to_string(this->m_xline.nsamples())
-        );
-    }
-
-    if (this->m_sample.nsamples() < 2) {
-        throw std::runtime_error(
-            "Unsupported VDS, expect at least two samples, got " +
-            std::to_string(this->m_sample.nsamples())
-        );
-    }
-}
-
-Axis SingleMetadataHandle::iline() const noexcept(true) {
-    return this->m_iline;
-}
-
-Axis SingleMetadataHandle::xline() const noexcept(true) {
-    return this->m_xline;
-}
-
-Axis SingleMetadataHandle::sample() const noexcept(true) {
-    return this->m_sample;
-}
-
-Axis SingleMetadataHandle::get_axis(
-    Direction const direction
-) const noexcept(false) {
-    if (direction.is_iline())
-        return this->iline();
-    else if (direction.is_xline())
-        return this->xline();
-    else if (direction.is_sample())
-        return this->sample();
-
-    throw std::runtime_error("Unhandled axis");
-}
-
-Axis SingleMetadataHandle::get_axis(int dimension) const noexcept(false) {
-    if (this->iline().dimension() == dimension)
-        return this->iline();
-    else if (this->xline().dimension() == dimension)
-        return this->xline();
-    else if (this->sample().dimension() == dimension)
-        return this->sample();
-
-    throw std::runtime_error("Unhandled dimension");
-}
-
-BoundingBox SingleMetadataHandle::bounding_box() const noexcept(false) {
-    return BoundingBox(
-        this->iline().nsamples(),
-        this->xline().nsamples(),
-        this->coordinate_transformer()
-    );
+    return SingleMetadataHandle(layout, axes_map);
 }
 
 std::string SingleMetadataHandle::crs() const noexcept(false) {
@@ -120,84 +150,73 @@ SingleCoordinateTransformer const& SingleMetadataHandle::coordinate_transformer(
     return this->m_coordinate_transformer;
 }
 
-void SingleMetadataHandle::dimension_validation() const {
-    if (this->m_layout->GetDimensionality() != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(this->m_layout->GetDimensionality())
+Axis make_double_cube_axis(
+    Axis const& axis_a,
+    Axis const& axis_b,
+    int dimension
+) {
+    if (axis_a.name() != axis_b.name()) {
+        std::string args = axis_a.name() + " versus " + axis_b.name();
+        throw detail::bad_request("Dimension name mismatch for dimension " + std::to_string(dimension) + ": " + args);
+    }
+
+    if (axis_a.unit() != axis_b.unit()) {
+        std::string args = axis_a.unit() + " versus " + axis_b.unit();
+        throw detail::bad_request("Dimension unit mismatch for axis " + axis_a.name() + ": " + args);
+    }
+
+    if (axis_a.stepsize() != axis_b.stepsize()) {
+        std::string args = utils::to_string_with_precision(axis_a.stepsize()) + " versus " +
+                           utils::to_string_with_precision(axis_b.stepsize());
+        throw detail::bad_request("Stepsize mismatch in axis " + axis_a.name() + ": " + args);
+    }
+
+    /* Verify that the offset is an integer number of steps. (Assures that both
+     * cubes have data at the same points, as if for one dimension cube a has
+     * lines 1, 3, 5, 7,... and cube b has lines 2, 4, 5, 8, ... we don't have
+     * matching data)
+     */
+    float offset = (axis_b.min() - axis_a.min()) / axis_a.stepsize();
+    if (std::floor(offset) != offset) {
+        throw detail::bad_request(
+            "Cubes contain no shared line numbers in axis " + axis_a.name()
         );
     }
-}
 
-int SingleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
-    for (auto i = 0; i < this->m_layout->GetDimensionality(); i++) {
-        std::string dimension_name = this->m_layout->GetDimensionName(i);
-        if (std::find(names.begin(), names.end(), dimension_name) != names.end()) {
-            return i;
-        }
-    }
-    throw std::runtime_error(
-        "Requested axis not found under names " + boost::algorithm::join(names, ", ") +
-        " in vds file "
-    );
-}
+    auto min = std::max(axis_a.min(), axis_b.min());
+    auto max = std::min(axis_a.max(), axis_b.max());
 
-Axis make_double_cube_axis(
-    SingleMetadataHandle const* const metadata_a,
-    SingleMetadataHandle const* const metadata_b,
-    int dimension
-    ) {
-        auto axis_a = metadata_a->get_axis(dimension);
-        auto axis_b = metadata_b->get_axis(dimension);
+    auto nsamples = 1 + ((max - min) / (int)axis_a.stepsize());
 
-        if (axis_a.name() != axis_b.name()) {
-            std::string args = axis_a.name() + " versus " + axis_b.name();
-            throw detail::bad_request("Dimension name mismatch for dimension " + std::to_string(dimension) + ": " + args);
-        }
-
-        if (axis_a.unit() != axis_b.unit()) {
-            std::string args = axis_a.unit() + " versus " + axis_b.unit();
-            throw detail::bad_request("Dimension unit mismatch for axis " + axis_a.name() + ": " + args);
-        }
-
-        if (axis_a.stepsize() != axis_b.stepsize()) {
-            std::string args = utils::to_string_with_precision(axis_a.stepsize()) + " versus " +
-                               utils::to_string_with_precision(axis_b.stepsize());
-            throw detail::bad_request("Stepsize mismatch in axis " + axis_a.name() + ": " + args);
-        }
-
-        auto min = std::max(axis_a.min(), axis_b.min());
-        auto max = std::min(axis_a.max(), axis_b.max());
-
-        auto nsamples = 1 + ((max - min) / (int) axis_a.stepsize());
-
-        return Axis(min, max, nsamples, axis_a.name(), axis_a.unit(), dimension);
+    return Axis(min, max, nsamples, axis_a.name(), axis_a.unit(), dimension);
 }
 
 DoubleMetadataHandle::DoubleMetadataHandle(
     SingleMetadataHandle const* const metadata_a,
     SingleMetadataHandle const* const metadata_b,
+    std::unordered_map<AxisType, Axis> axes_map,
     enum binary_operator binary_symbol
 )
-    : m_metadata_a(metadata_a),
+    : MetadataHandle(axes_map),
+      m_metadata_a(metadata_a),
       m_metadata_b(metadata_b),
       m_binary_symbol(binary_symbol),
-      m_iline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Inline())}))),
-      m_xline(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Crossline())}))),
-      m_sample(make_double_cube_axis(metadata_a, metadata_b, get_dimension({std::string(OpenVDS::KnownAxisNames::Sample()), std::string(OpenVDS::KnownAxisNames::Depth()), std::string(OpenVDS::KnownAxisNames::Time())}))),
-      m_coordinate_transformer(m_metadata_a->coordinate_transformer(), m_metadata_b->coordinate_transformer()) {
-    this->dimension_validation();
+      m_coordinate_transformer(m_metadata_a->coordinate_transformer(), m_metadata_b->coordinate_transformer()) { }
 
-    auto layout_a = this->m_metadata_a->m_layout;
-    auto layout_b = this->m_metadata_b->m_layout;
+DoubleMetadataHandle DoubleMetadataHandle::create(
+    SingleMetadataHandle const* const metadata_a,
+    SingleMetadataHandle const* const metadata_b,
+    enum binary_operator binary_symbol
+) {
+
+    auto layout_a = metadata_a->m_layout;
+    auto layout_b = metadata_b->m_layout;
 
     if (layout_a->GetDimensionality() != layout_b->GetDimensionality()) {
         throw detail::bad_request("Different number of dimensions");
     }
 
-    /* Axis order is assured indirectly through axes creation by checking name
-     * match for each dimension index.
-     */
+    validate_dimensionality(layout_a->GetDimensionality());
 
     auto const crs_name = OpenVDS::KnownMetadata::SurveyCoordinateSystemCRSWkt();
     std::string crs_a = layout_a->GetMetadataString(crs_name.GetCategory(), crs_name.GetName());
@@ -251,63 +270,36 @@ DoubleMetadataHandle::DoubleMetadataHandle(
         throw detail::bad_request("Mismatch in xline spacing: " + args);
     }
 
-    if (this->m_iline.nsamples() < 2) {
-        throw std::runtime_error(
-            "Unsupported VDS pair, expect that the intersection contains at least two inLines, got " +
-            std::to_string(this->m_iline.nsamples())
+    std::unordered_map<AxisType, Axis> axes_map;
+
+    for (int dimension = 0; dimension < 3; ++dimension) {
+        auto name_a = std::string(layout_a->GetDimensionName(dimension));
+        auto name_b = std::string(layout_b->GetDimensionName(dimension));
+
+        if (name_a != name_b) {
+            std::string args = name_a + " versus " + name_b;
+            throw detail::bad_request(
+                "Expected layouts to contain the same axes in the same order. Got mismatch for dimension " +
+                std::to_string(dimension) + ": " + args
+            );
+        }
+
+        AxisType axis_type = axis_name_to_axis_type(name_a);
+        validate_direction_uniqueness(axes_map, axis_type);
+
+        Axis axis = make_double_cube_axis(
+            metadata_a->m_axes_map.at(axis_type),
+            metadata_b->m_axes_map.at(axis_type),
+            dimension
         );
+        validate_minimal_nsamples(axis);
+        axes_map.emplace(axis_type, axis);
     }
 
-    if (this->m_xline.nsamples() < 2) {
-        throw std::runtime_error(
-            "Unsupported VDS pair, expect that the intersection contains at least two crossLines, got " +
-            std::to_string(this->m_xline.nsamples())
-        );
-    }
-
-    if (this->m_sample.nsamples() < 2) {
-        throw std::runtime_error(
-            "Unsupported VDS pair, expect that the intersection contains at least two samples, got " +
-            std::to_string(this->m_sample.nsamples())
-        );
-    }
-}
-
-Axis DoubleMetadataHandle::iline() const noexcept(true) {
-    return this->m_iline;
-}
-
-Axis DoubleMetadataHandle::xline() const noexcept(true) {
-    return this->m_xline;
-}
-
-Axis DoubleMetadataHandle::sample() const noexcept(true) {
-    return this->m_sample;
-}
-
-Axis DoubleMetadataHandle::get_axis(
-    Direction const direction
-) const noexcept(false) {
-    if (direction.is_iline())
-        return this->iline();
-    else if (direction.is_xline())
-        return this->xline();
-    else if (direction.is_sample())
-        return this->sample();
-
-    throw std::runtime_error("Unhandled axis");
-}
-
-BoundingBox DoubleMetadataHandle::bounding_box() const noexcept(false) {
-    return BoundingBox(
-        this->iline().nsamples(),
-        this->xline().nsamples(),
-        this->coordinate_transformer()
-    );
+    return DoubleMetadataHandle(metadata_a, metadata_b, axes_map, binary_symbol);
 }
 
 std::string DoubleMetadataHandle::crs() const noexcept(false) {
-    // DoubleVolumeDataLayout constructor ensures that 'crs' for A and B are identical.
     return this->m_metadata_a->crs();
 }
 
@@ -321,30 +313,6 @@ std::string DoubleMetadataHandle::import_time_stamp() const noexcept(false) {
 
 DoubleCoordinateTransformer const& DoubleMetadataHandle::coordinate_transformer() const noexcept(false) {
     return this->m_coordinate_transformer;
-}
-
-void DoubleMetadataHandle::dimension_validation() const {
-    auto dimensionality = this->m_metadata_a->m_layout->GetDimensionality();
-    if (dimensionality != 3) {
-        throw std::runtime_error(
-            "Unsupported VDS, expected 3 dimensions, got " +
-            std::to_string(dimensionality)
-        );
-    }
-}
-
-int DoubleMetadataHandle::get_dimension(std::vector<std::string> const& names) const {
-    auto dimensionality = this->m_metadata_a->m_layout->GetDimensionality();
-    for (auto i = 0; i < dimensionality; i++) {
-        std::string dimension_name = this->m_metadata_a->m_layout->GetDimensionName(i);
-        if (std::find(names.begin(), names.end(), dimension_name) != names.end()) {
-            return i;
-        }
-    }
-    throw std::runtime_error(
-        "Requested axis not found under names " + boost::algorithm::join(names, ", ") +
-        " in vds file "
-    );
 }
 
 std::string DoubleMetadataHandle::operator_string() const noexcept(false) {

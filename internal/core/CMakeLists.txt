@@ -3,6 +3,7 @@ find_package(openvds CONFIG REQUIRED)
 add_library(cppcore
   attribute.cpp
   axis.cpp
+  axis_type.cpp
   boundingbox.cpp
   cppapi_data.cpp
   cppapi_metadata.cpp

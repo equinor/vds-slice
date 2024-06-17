@@ -112,6 +112,14 @@ if __name__ == "__main__":
         # Sample: [8, 36], Inline: [9, 18], Xline: [8, 14]
         {"path": "inner_4x2_cube", "samples":  # also different shift on every dimension
             (1+base_range_8)*4, "ilines": (2+base_range_4)*3, "xlines": (3+base_range_4)*2},
+
+        # Sample: [3, 24], Inline: [2, 8], Xline: [4, 16]
+        {"path": "unaligned_stepsize_cube", "samples":
+            (0+base_range_8)*3, "ilines": (0+base_range_4)*2, "xlines": (0+base_range_4)*4},
+
+        # Sample: [7, 35], Inline: [5, 14], Xline: [3, 9]
+        {"path": "unaligned_shift_cube", "samples":
+            (0+base_range_8)*4 + 3, "ilines": (0+base_range_4)*3 + 2, "xlines": (0+base_range_4)*2 + 1},
     ]
 
     for p in parameters:

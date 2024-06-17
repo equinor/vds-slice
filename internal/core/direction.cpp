@@ -1,4 +1,5 @@
 #include "direction.hpp"
+#include "axis_type.hpp"
 
 #include <stdexcept>
 
@@ -44,34 +45,32 @@ enum axis_name Direction::name() const noexcept(true) {
     return this->m_axis_name;
 }
 
-bool Direction::is_iline() const noexcept (true) {
+AxisType Direction::axis_type() const noexcept(false) {
     switch (this->name()) {
-        case I: // fallthrough
+        case I:
         case INLINE:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool Direction::is_xline() const noexcept (true) {
-    switch (this->name()) {
-        case J: // fallthrough
+            return AxisType::ILINE;
+        case J:
         case CROSSLINE:
-            return true;
+            return AxisType::XLINE;
+        case K:
+        case DEPTH:
+        case TIME:
+        case SAMPLE:
+            return AxisType::SAMPLE;
         default:
-            return false;
+            throw std::runtime_error("Unhandled axis");
     }
 }
 
-bool Direction::is_sample() const noexcept (true) {
-    switch (this->name()) {
-        case K:     // fallthrough
-        case DEPTH: // fallthrough
-        case TIME:  // fallthrough
-        case SAMPLE:
-            return true;
-        default:
-            return false;
-    }
+bool Direction::is_iline() const noexcept(false) {
+    return this->axis_type() == AxisType::ILINE;
+}
+
+bool Direction::is_xline() const noexcept(false) {
+    return this->axis_type() == AxisType::XLINE;
+}
+
+bool Direction::is_sample() const noexcept(false) {
+    return this->axis_type() == AxisType::SAMPLE;
 }
