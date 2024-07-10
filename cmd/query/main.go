@@ -26,6 +26,7 @@ type opts struct {
 	cacheSize       uint64
 	metrics         bool
 	metricsPort     uint32
+	trustedProxies  []string
 }
 
 func parseAsUint32(fallback uint32, value string) uint32 {
@@ -68,6 +69,19 @@ func parseAsBool(fallback bool, value string) bool {
 	return v
 }
 
+func parseAsListOfStrings(fallback []string, value string) []string {
+	if len(value) == 0 {
+		return fallback
+	}
+
+	items := strings.Split(value, ",")
+
+	for i, item := range items {
+		items[i] = strings.TrimSpace(item)
+	}
+	return items
+}
+
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 
@@ -77,6 +91,7 @@ func parseopts() opts {
 		cacheSize:       parseAsUint64(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
 		metrics:         parseAsBool(false, os.Getenv("VDSSLICE_METRICS")),
 		metricsPort:     parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
+		trustedProxies:  parseAsListOfStrings(nil, os.Getenv("VDSSLICE_TRUSTED_PROXIES")),
 	}
 
 	getopt.FlagLong(
@@ -127,6 +142,18 @@ func parseopts() opts {
 			"Ignored if metrics are not turned on. (see --metrics)\n"+
 			"Can also be set by environment variable 'VDSSLICE_METRICS_PORT'",
 		"int",
+	)
+
+	getopt.FlagLong(
+		&opts.trustedProxies,
+		"trusted-proxies",
+		0,
+		"Comma-separated list of proxy network origins (IPv4 addresses, IPv4 CIDRs,\n"+
+			"IPv6 addresses or IPv6 CIDRs) from which to trust request's headers that\n"+
+			"contain alternative client IP. This will impact which IP is written \n"+
+			"to the log.\n"+
+			"Can also be set by environment variable 'VDSSLICE_TRUSTED_PROXIES'",
+		"string",
 	)
 
 	getopt.Parse()
@@ -190,7 +217,12 @@ func main() {
 	}
 
 	app := gin.New()
-	app.SetTrustedProxies(nil)
+
+	err := app.SetTrustedProxies(opts.trustedProxies)
+
+	if err != nil {
+		panic(err)
+	}
 
 	var metric *metrics.Metrics
 	if opts.metrics {
@@ -202,7 +234,12 @@ func main() {
 		 * are continually scarping the /metrics endpoint. I.e. Grafana.
 		 */
 		metricsApp := gin.New()
-		metricsApp.SetTrustedProxies(nil)
+
+		err = metricsApp.SetTrustedProxies(opts.trustedProxies)
+
+		if err != nil {
+			panic(err)
+		}
 
 		metricsApp.Use(gin.Recovery())
 		metricsApp.GET("metrics", metrics.NewGinHandler(metric))
