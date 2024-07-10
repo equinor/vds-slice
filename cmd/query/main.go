@@ -26,6 +26,7 @@ type opts struct {
 	cacheSize       uint64
 	metrics         bool
 	metricsPort     uint32
+	trustProxies    []string
 }
 
 func parseAsUint32(fallback uint32, value string) uint32 {
@@ -68,6 +69,13 @@ func parseAsBool(fallback bool, value string) bool {
 	return v
 }
 
+func parseAsListOfStrings(fallback []string, value string) []string {
+	if len(value) == 0 {
+		return fallback
+	}
+	return strings.Split(value, ",")
+}
+
 func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 
@@ -77,6 +85,7 @@ func parseopts() opts {
 		cacheSize:       parseAsUint64(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
 		metrics:         parseAsBool(false, os.Getenv("VDSSLICE_METRICS")),
 		metricsPort:     parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
+		trustProxies:    parseAsListOfStrings(nil, os.Getenv("VDSSLICE_TRUST_PROXIES")),
 	}
 
 	getopt.FlagLong(
@@ -127,6 +136,18 @@ func parseopts() opts {
 			"Ignored if metrics are not turned on. (see --metrics)\n"+
 			"Can also be set by environment variable 'VDSSLICE_METRICS_PORT'",
 		"int",
+	)
+
+	getopt.FlagLong(
+		&opts.trustProxies,
+		"trust-proxies",
+		0,
+		"Comma-separated list of proxy network origins (IPv4 addresses, IPv4 CIDRs,\n"+
+			"IPv6 addresses or IPv6 CIDRs) from which to trust request's headers that\n"+
+			"contain alternative client IP. This will impact which IP is written \n"+
+			"to the log.\n"+
+			"Can also be set by environment variable 'VDSSLICE_TRUST_PROXIES'",
+		"string",
 	)
 
 	getopt.Parse()
@@ -190,7 +211,8 @@ func main() {
 	}
 
 	app := gin.New()
-	app.SetTrustedProxies(nil)
+
+	app.SetTrustedProxies(opts.trustProxies)
 
 	var metric *metrics.Metrics
 	if opts.metrics {
@@ -202,7 +224,8 @@ func main() {
 		 * are continually scarping the /metrics endpoint. I.e. Grafana.
 		 */
 		metricsApp := gin.New()
-		metricsApp.SetTrustedProxies(nil)
+
+		metricsApp.SetTrustedProxies(opts.trustProxies)
 
 		metricsApp.Use(gin.Recovery())
 		metricsApp.GET("metrics", metrics.NewGinHandler(metric))
