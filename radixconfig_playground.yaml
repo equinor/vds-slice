@@ -28,6 +28,7 @@ spec:
             VDSSLICE_CACHE_SIZE: 0 # MB
             VDSSLICE_METRICS: true
             VDSSLICE_METRICS_PORT: 8081
+            VDSSLICE_TRUSTED_PROXIES: ""
           secretRefs:
             azureKeyVaults:
               - name: S067-RadixKeyvault

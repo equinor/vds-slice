@@ -26,7 +26,7 @@ type opts struct {
 	cacheSize       uint64
 	metrics         bool
 	metricsPort     uint32
-	trustProxies    []string
+	trustedProxies  []string
 }
 
 func parseAsUint32(fallback uint32, value string) uint32 {
@@ -73,7 +73,13 @@ func parseAsListOfStrings(fallback []string, value string) []string {
 	if len(value) == 0 {
 		return fallback
 	}
-	return strings.Split(value, ",")
+
+	items := strings.Split(value, ",")
+
+	for i, item := range items {
+		items[i] = strings.TrimSpace(item)
+	}
+	return items
 }
 
 func parseopts() opts {
@@ -85,7 +91,7 @@ func parseopts() opts {
 		cacheSize:       parseAsUint64(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
 		metrics:         parseAsBool(false, os.Getenv("VDSSLICE_METRICS")),
 		metricsPort:     parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
-		trustProxies:    parseAsListOfStrings(nil, os.Getenv("VDSSLICE_TRUST_PROXIES")),
+		trustedProxies:  parseAsListOfStrings(nil, os.Getenv("VDSSLICE_TRUSTED_PROXIES")),
 	}
 
 	getopt.FlagLong(
@@ -139,8 +145,8 @@ func parseopts() opts {
 	)
 
 	getopt.FlagLong(
-		&opts.trustProxies,
-		"trust-proxies",
+		&opts.trustedProxies,
+		"trusted-proxies",
 		0,
 		"Comma-separated list of proxy network origins (IPv4 addresses, IPv4 CIDRs,\n"+
 			"IPv6 addresses or IPv6 CIDRs) from which to trust request's headers that\n"+
@@ -212,7 +218,7 @@ func main() {
 
 	app := gin.New()
 
-	app.SetTrustedProxies(opts.trustProxies)
+	app.SetTrustedProxies(opts.trustedProxies)
 
 	var metric *metrics.Metrics
 	if opts.metrics {
@@ -225,7 +231,7 @@ func main() {
 		 */
 		metricsApp := gin.New()
 
-		metricsApp.SetTrustedProxies(opts.trustProxies)
+		metricsApp.SetTrustedProxies(opts.trustedProxies)
 
 		metricsApp.Use(gin.Recovery())
 		metricsApp.GET("metrics", metrics.NewGinHandler(metric))
