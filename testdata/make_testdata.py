@@ -4,7 +4,10 @@ from typing import List
 
 from common import *
 
+from well_known import WellKnownCategory
+
 categories: List[common.Category] = [
+    WellKnownCategory(),
 ]
 
 
