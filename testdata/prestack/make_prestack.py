@@ -1,7 +1,5 @@
 import segyio
 import numpy as np
-import sys
-
 
 def create_defined(path):
     """ Create file with offset data.
@@ -44,8 +42,3 @@ def create_defined(path):
                     tr += 1
 
         f.bin.update(tsort=segyio.TraceSortingFormat.INLINE_SORTING)
-
-
-if __name__ == "__main__":
-    path = sys.argv[1]
-    create_defined(path)
