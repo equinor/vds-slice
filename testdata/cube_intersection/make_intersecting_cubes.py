@@ -1,7 +1,5 @@
 import segyio
 import numpy as np
-import sys
-import subprocess
 
 
 def create_intersecting_data(path, samples, ilines, xlines):
@@ -49,7 +47,7 @@ def create_intersecting_data(path, samples, ilines, xlines):
         polar_angle * 360 / (2*np.pi), 4), "[0-360]")
     print()
 
-    with segyio.create(path + ".segy", spec) as f:
+    with segyio.create(path, spec) as f:
         tr = 0
 
         for iline_value in ilines:
@@ -73,58 +71,3 @@ def create_intersecting_data(path, samples, ilines, xlines):
                 tr += 1
 
         f.bin.update(tsort=segyio.TraceSortingFormat.INLINE_SORTING)
-
-
-if __name__ == "__main__":
-    base_range_4 = np.arange(1, 4+1, dtype=np.int32)
-    base_range_8 = np.arange(1, 8+1, dtype=np.int32)
-    base_range_32 = np.arange(1, 32+1, dtype=np.int32)
-
-    parameters = [
-        # Sample: [4, 128], Inline: [3, 24], Xline: [2, 16]
-        {"path": "regular_8x2_cube", "samples": (
-            0+base_range_32)*4, "ilines": (0+base_range_8)*3, "xlines": (0+base_range_8)*2},
-
-        # Sample: [20, 144], Inline: [15, 36], Xline: [10, 24]
-        {"path": "shift_4_8x2_cube", "samples": (
-            4+base_range_32)*4, "ilines": (4+base_range_8)*3, "xlines": (4+base_range_8)*2},
-
-        # Sample: [124, 248], Inline: [21, 42], Xline: [14, 28]
-        {"path": "shift_6_8x2_cube", "samples": (
-            30+base_range_32)*4, "ilines": (6+base_range_8)*3, "xlines": (6+base_range_8)*2},
-
-        # Sample: [4, 128], Inline: [24, 45], Xline: [2, 16]
-        {"path": "shift_7_inLine_8x2_cube", "samples": (
-            base_range_32)*4, "ilines": (7+base_range_8)*3, "xlines": (base_range_8)*2},
-
-        # Sample: [4, 128], Inline: [3, 24], Xline: [16, 30]
-        {"path": "shift_7_xLine_8x2_cube", "samples": (
-            base_range_32)*4, "ilines": (base_range_8)*3, "xlines": (7+base_range_8)*2},
-
-        # Sample: [36, 160], Inline: [27, 120], Xline: [18, 80]
-        {"path": "shift_8_32x3_cube", "samples": (
-            8+base_range_32)*4, "ilines": (8+base_range_32)*3, "xlines": (8+base_range_32)*2},
-
-        # Sample: [128, 252], Inline: [3, 24], Xline: [2, 16]
-        {"path": "shift_31_Sample_8x2_cube", "samples": (
-            31+base_range_32)*4, "ilines": (base_range_8)*3, "xlines": (base_range_8)*2},
-
-        # Sample: [8, 36], Inline: [9, 18], Xline: [8, 14]
-        {"path": "inner_4x2_cube", "samples":  # also different shift on every dimension
-            (1+base_range_8)*4, "ilines": (2+base_range_4)*3, "xlines": (3+base_range_4)*2},
-
-        # Sample: [3, 24], Inline: [2, 8], Xline: [4, 16]
-        {"path": "unaligned_stepsize_cube", "samples":
-            (0+base_range_8)*3, "ilines": (0+base_range_4)*2, "xlines": (0+base_range_4)*4},
-
-        # Sample: [7, 35], Inline: [5, 14], Xline: [3, 9]
-        {"path": "unaligned_shift_cube", "samples":
-            (0+base_range_8)*4 + 3, "ilines": (0+base_range_4)*3 + 2, "xlines": (0+base_range_4)*2 + 1},
-    ]
-
-    for p in parameters:
-        create_intersecting_data(**p)
-        name = p["path"]
-        subprocess.run(["SEGYImport", "--url", "file://.", "--vdsfile",
-                       name+".vds", name+".segy", "--crs-wkt=utmXX"])
-        subprocess.run(["rm", name+".segy"])
