@@ -1,6 +1,5 @@
 import segyio
 import numpy as np
-import sys
 
 
 def create_varsize(path, ilines_number, xlines_number, samples_number):
@@ -49,11 +48,3 @@ def create_varsize(path, ilines_number, xlines_number, samples_number):
                 tr += 1
 
         f.bin.update(tsort=segyio.TraceSortingFormat.INLINE_SORTING)
-
-
-if __name__ == "__main__":
-    path = sys.argv[1]
-    ilines = sys.argv[2]
-    xlines = sys.argv[3]
-    samples = sys.argv[4]
-    create_varsize(path, ilines, xlines, samples)
