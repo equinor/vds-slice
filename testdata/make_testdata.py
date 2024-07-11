@@ -5,9 +5,11 @@ from typing import List
 from common import *
 
 from well_known import WellKnownCategory
+from samples10 import Samples10Category
 
 categories: List[common.Category] = [
     WellKnownCategory(),
+    Samples10Category(),
 ]
 
 

@@ -1,10 +1,17 @@
 import segyio
 import numpy as np
-import sys
 
 
-def create_10_samples(path):
-    """ Create file with 10 values in each trace.
+def create_10_samples(filepath, samples, ilines, xlines, factor):
+    """ Create file with max 6 traces and 10 values in each trace.
+    Args:
+        filepath (str): The path to the output file.
+        samples (int): The list of sample numbers.
+        ilines (list): The list of inline numbers.
+        xlines (list): The list of crossline numbers.
+        factor (float): The scaling factor applied to the data.
+
+    Layout with factor 1:
     | xlines-ilines | 1               | 3                 | 5                 |
     |---------------|-----------------|-------------------|-------------------|
     | 10            | -4.5, -3.5 ...  |  25.5, -14.5 ...  |   25.5,  4.5 ...  |
@@ -20,9 +27,9 @@ def create_10_samples(path):
 
     spec.sorting = 2
     spec.format = 1
-    spec.samples = [4, 8, 12, 16, 20, 24, 28, 32, 36, 40]
-    spec.ilines = [1, 3, 5]
-    spec.xlines = [10, 11]
+    spec.samples = samples
+    spec.ilines = ilines
+    spec.xlines = xlines
 
     # We use scaling constant of -10, meaning that values will be divided by 10
     il_step_x = int(3 * 10)
@@ -45,7 +52,7 @@ def create_10_samples(path):
         [ 25.5,  -4.5,  -8.5, -12.5, -16.5, -20.5, -24.5, -20.5, -16.5,  -8.5],
     ]
 
-    with segyio.create(path, spec) as f:
+    with segyio.create(filepath, spec) as f:
         tr = 0
         for il in spec.ilines:
             for xl in spec.xlines:
@@ -63,12 +70,7 @@ def create_10_samples(path):
                     segyio.su.scalco: -10,
                     segyio.su.delrt: 4,
                 }
-                f.trace[tr] = data[tr]
+                f.trace[tr] = np.array(data[tr], dtype=np.float32)*factor
                 tr += 1
 
         f.bin.update(tsort=segyio.TraceSortingFormat.INLINE_SORTING)
-
-
-if __name__ == "__main__":
-    path = sys.argv[1]
-    create_10_samples(path)
