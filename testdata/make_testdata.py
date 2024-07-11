@@ -9,6 +9,7 @@ from samples10 import Samples10Category
 from varsize import VarsizeCategory
 from formats import FormatsCategory
 from cube_intersection import CubeIntersectionCategory
+from invalid_data import InvalidDataCategory
 
 
 categories: List[common.Category] = [
@@ -17,6 +18,7 @@ categories: List[common.Category] = [
     VarsizeCategory(),
     FormatsCategory(),
     CubeIntersectionCategory(),
+    InvalidDataCategory(),
 ]
 
 
