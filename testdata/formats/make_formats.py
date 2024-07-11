@@ -1,6 +1,5 @@
 import segyio
 import numpy as np
-import sys
 
 
 def create_with_format(path, format):
@@ -51,9 +50,3 @@ def create_with_format(path, format):
                 tr += 1
 
         f.bin.update(tsort=segyio.TraceSortingFormat.INLINE_SORTING)
-
-
-if __name__ == "__main__":
-    path = sys.argv[1]
-    format = sys.argv[2]
-    create_with_format(path, format)

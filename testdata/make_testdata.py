@@ -7,11 +7,13 @@ from common import *
 from well_known import WellKnownCategory
 from samples10 import Samples10Category
 from varsize import VarsizeCategory
+from formats import FormatsCategory
 
 categories: List[common.Category] = [
     WellKnownCategory(),
     Samples10Category(),
     VarsizeCategory(),
+    FormatsCategory(),
 ]
 
 
