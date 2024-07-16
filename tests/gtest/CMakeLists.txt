@@ -31,12 +31,12 @@ configure_file(../../testdata/well_known/well_known_custom_origin.vds . COPYONLY
 configure_file(../../testdata/well_known/well_known_custom_xline_spacing.vds . COPYONLY)
 configure_file(../../testdata/well_known/well_known_depth_axis.vds . COPYONLY)
 
-configure_file(../../testdata/10_samples/10_default_crs.vds . COPYONLY)
-configure_file(../../testdata/10_samples/10_double_value.vds . COPYONLY)
-configure_file(../../testdata/10_samples/10_min_dimensions.vds . COPYONLY)
-configure_file(../../testdata/10_samples/10_samples_default.vds . COPYONLY)
-configure_file(../../testdata/10_samples/10_single_sample.vds . COPYONLY)
-configure_file(../../testdata/10_samples/10_single_xline.vds . COPYONLY)
+configure_file(../../testdata/samples10/10_default_crs.vds . COPYONLY)
+configure_file(../../testdata/samples10/10_double_value.vds . COPYONLY)
+configure_file(../../testdata/samples10/10_min_dimensions.vds . COPYONLY)
+configure_file(../../testdata/samples10/10_samples_default.vds . COPYONLY)
+configure_file(../../testdata/samples10/10_single_sample.vds . COPYONLY)
+configure_file(../../testdata/samples10/10_single_xline.vds . COPYONLY)
 
 configure_file(../../testdata/cube_intersection/regular_8x2_cube.vds . COPYONLY)
 configure_file(../../testdata/cube_intersection/shift_4_8x2_cube.vds . COPYONLY)

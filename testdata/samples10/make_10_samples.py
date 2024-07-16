@@ -1,11 +1,17 @@
 import segyio
 import numpy as np
-import sys
-import subprocess
 
 
-def create_10_samples(path, samples, ilines, xlines, factor, crs):
-    """ Create file with 10 values in each trace.
+def create_10_samples(filepath, samples, ilines, xlines, factor):
+    """ Create file with max 6 traces and 10 values in each trace.
+    Args:
+        filepath (str): The path to the output file.
+        samples (int): The list of sample numbers.
+        ilines (list): The list of inline numbers.
+        xlines (list): The list of crossline numbers.
+        factor (float): The scaling factor applied to the data.
+
+    Layout with factor 1:
     | xlines-ilines | 1               | 3                 | 5                 |
     |---------------|-----------------|-------------------|-------------------|
     | 10            | -4.5, -3.5 ...  |  25.5, -14.5 ...  |   25.5,  4.5 ...  |
@@ -36,17 +42,17 @@ def create_10_samples(path, samples, ilines, xlines, factor, crs):
     data = [
         # Traces linear in range [0, len(trace)]
         #  4       8     12     16     20     24     28     32     36     40
-        [-4.5,  -3.5,  -2.5,  -1.5,  -0.5,   0.5,   1.5,   2.5,   3.5,   4.5],
-        [4.5,   3.5,   2.5,   1.5,   0.5,  -0.5,  -1.5,  -2.5,  -3.5,  -4.5],
+        [ -4.5,  -3.5,  -2.5,  -1.5,  -0.5,   0.5,   1.5,   2.5,   3.5,   4.5],
+        [  4.5,   3.5,   2.5,   1.5,   0.5,  -0.5,  -1.5,  -2.5,  -3.5,  -4.5],
         # Traces linear in range [1:-1]
-        [25.5, -14.5, -12.5, -10.5,  -8.5,  -6.5,  -4.5,  -2.5,  -0.5,  25.5],
-        [25.5,   0.5,   2.5,   4.5,   6.5,   8.5,  10.5,  12.5,  14.5,  25.5],
+        [ 25.5, -14.5, -12.5, -10.5,  -8.5,  -6.5,  -4.5,  -2.5,  -0.5,  25.5],
+        [ 25.5,   0.5,   2.5,   4.5,   6.5,   8.5,  10.5,  12.5,  14.5,  25.5],
         # Traces linear in range [1:6] and [6:len(trace)]
-        [25.5,   4.5,   8.5,  12.5,  16.5,  20.5,  24.5,  20.5,  16.5,   8.5],
-        [25.5,  -4.5,  -8.5, -12.5, -16.5, -20.5, -24.5, -20.5, -16.5,  -8.5],
+        [ 25.5,   4.5,   8.5,  12.5,  16.5,  20.5,  24.5,  20.5,  16.5,   8.5],
+        [ 25.5,  -4.5,  -8.5, -12.5, -16.5, -20.5, -24.5, -20.5, -16.5,  -8.5],
     ]
 
-    with segyio.create(path + ".segy", spec) as f:
+    with segyio.create(filepath, spec) as f:
         tr = 0
         for il in spec.ilines:
             for xl in spec.xlines:
@@ -68,24 +74,3 @@ def create_10_samples(path, samples, ilines, xlines, factor, crs):
                 tr += 1
 
         f.bin.update(tsort=segyio.TraceSortingFormat.INLINE_SORTING)
-
-
-if __name__ == "__main__":
-    parameters = [
-        {"path": "10_double_value", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
-            1, 3, 5], "xlines": [10, 11], "factor": 2, "crs": "utmXX"},
-        {"path": "10_single_xline", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
-            1, 3, 5], "xlines": [10], "factor": 1, "crs": "utmXX"},
-        {"path": "10_single_sample", "samples": [4], "ilines": [
-            1, 3, 5], "xlines": [10, 11], "factor": 1, "crs": "utmXX"},
-        {"path": "10_min_dimensions", "samples": [4, 8], "ilines": [
-            1, 3], "xlines": [10, 11], "factor": 1, "crs": "utmXX"},
-        {"path": "10_default_crs", "samples": [4, 8, 12, 16, 20, 24, 28, 32, 36, 40], "ilines": [
-            1, 3, 5], "xlines": [10, 11], "factor": 1, "crs": "utmXX_modified"},
-    ]
-    for p in parameters:
-        create_10_samples(**p)
-        name = p["path"]
-        subprocess.run(["SEGYImport", "--url", "file://.", "--vdsfile",
-                       name+".vds", name+".segy", "--crs-wkt=" + p["crs"]])
-        subprocess.run(["rm", name+".segy"])
