@@ -153,16 +153,6 @@ func (r *RequestedResource) NormalizeConnection() error {
 	return nil
 }
 
-type MetadataRequest struct {
-	RequestedResource
-} //@name MetadataRequest
-
-func (m MetadataRequest) toString() (string, error) {
-	return fmt.Sprintf("{%s}",
-		m.RequestedResource.toString(),
-	), nil
-}
-
 // Query for Attribute endpoints
 // @Description Query payload for attribute endpoint.
 type AttributeRequest struct {
