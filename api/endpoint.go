@@ -184,32 +184,6 @@ func (e *Endpoint) readConnectionParameters(
 	return connections, binaryOperator, nil
 }
 
-func (request SliceRequest) execute(
-	handle core.DSHandle,
-) (data [][]byte, metadata []byte, err error) {
-	axis, err := core.GetAxis(strings.ToLower(request.Direction))
-	if err != nil {
-		return
-	}
-
-	metadata, err = handle.GetSliceMetadata(
-		*request.Lineno,
-		axis,
-		request.Bounds,
-	)
-	if err != nil {
-		return
-	}
-
-	res, err := handle.GetSlice(*request.Lineno, axis, request.Bounds)
-	if err != nil {
-		return
-	}
-	data = [][]byte{res}
-
-	return data, metadata, nil
-}
-
 func (request FenceRequest) execute(
 	handle core.DSHandle,
 ) (data [][]byte, metadata []byte, err error) {
@@ -408,47 +382,6 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 	}
 
 	e.metadata(ctx, request)
-}
-
-// SliceGet godoc
-// @Summary  Fetch a slice from a VDS
-// @description.markdown slice
-// @Tags     slice
-// @Param    query  query  string  True  "Urlencoded/escaped SliceRequest"
-// @Produce  multipart/mixed
-// @Success  200 {object} core.SliceMetadata "(Example below only for metadata part)"
-// @Failure  400 {object} ErrorResponse "Request is invalid"
-// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
-// @Router   /slice  [get]
-func (e *Endpoint) SliceGet(ctx *gin.Context) {
-	var request SliceRequest
-	err := parseGetRequest(ctx, &request)
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	e.makeDataRequest(ctx, request)
-}
-
-// SlicePost godoc
-// @Summary  Fetch a slice from a VDS
-// @description.markdown slice
-// @Tags     slice
-// @Param    body  body  SliceRequest  True  "Query Parameters"
-// @Accept   application/json
-// @Produce  multipart/mixed
-// @Success  200 {object} core.SliceMetadata "(Example below only for metadata part)"
-// @Failure  400 {object} ErrorResponse "Request is invalid"
-// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
-// @Router   /slice  [post]
-func (e *Endpoint) SlicePost(ctx *gin.Context) {
-	var request SliceRequest
-	err := parsePostRequest(ctx, &request)
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	e.makeDataRequest(ctx, request)
 }
 
 // FenceGet godoc
