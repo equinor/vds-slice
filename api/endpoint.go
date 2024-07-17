@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -184,40 +183,6 @@ func (e *Endpoint) readConnectionParameters(
 	return connections, binaryOperator, nil
 }
 
-func (request FenceRequest) execute(
-	handle core.DSHandle,
-) (data [][]byte, metadata []byte, err error) {
-	coordinateSystem, err := core.GetCoordinateSystem(
-		strings.ToLower(request.CoordinateSystem),
-	)
-	if err != nil {
-		return
-	}
-
-	interpolation, err := core.GetInterpolationMethod(request.Interpolation)
-	if err != nil {
-		return
-	}
-
-	metadata, err = handle.GetFenceMetadata(request.Coordinates)
-	if err != nil {
-		return
-	}
-
-	res, err := handle.GetFence(
-		coordinateSystem,
-		request.Coordinates,
-		interpolation,
-		request.FillValue,
-	)
-	if err != nil {
-		return
-	}
-	data = [][]byte{res}
-
-	return data, metadata, nil
-}
-
 func validateVerticalWindow(above float32, below float32, stepSize float32) error {
 	const lowerBound = 0
 	const upperBound = 250
@@ -382,48 +347,6 @@ func (e *Endpoint) MetadataPost(ctx *gin.Context) {
 	}
 
 	e.metadata(ctx, request)
-}
-
-// FenceGet godoc
-// @Summary  Returns traces along an arbitrary path, such as a well-path
-// @description.markdown fence
-// @Tags     fence
-// @Param    query  query  string  True  "Urlencoded/escaped FenceResponse"
-// @Accept   application/json
-// @Produce  multipart/mixed
-// @Success  200 {object} core.FenceMetadata "(Example below only for metadata part)"
-// @Failure  400 {object} ErrorResponse "Request is invalid"
-// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
-// @Router   /fence  [get]
-func (e *Endpoint) FenceGet(ctx *gin.Context) {
-	var request FenceRequest
-	err := parseGetRequest(ctx, &request)
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	e.makeDataRequest(ctx, request)
-}
-
-// FencePost godoc
-// @Summary  Returns traces along an arbitrary path, such as a well-path
-// @description.markdown fence
-// @Tags     fence
-// @Param    body  body  FenceRequest  True  "Request Parameters"
-// @Accept   application/json
-// @Produce  multipart/mixed
-// @Success  200 {object} core.FenceMetadata "(Example below only for metadata part)"
-// @Failure  400 {object} ErrorResponse "Request is invalid"
-// @Failure  500 {object} ErrorResponse "openvds failed to process the request"
-// @Router   /fence  [post]
-func (e *Endpoint) FencePost(ctx *gin.Context) {
-	var request FenceRequest
-	err := parsePostRequest(ctx, &request)
-	if abortOnError(ctx, err) {
-		return
-	}
-
-	e.makeDataRequest(ctx, request)
 }
 
 // AttributesAlongSurfacePost godoc
