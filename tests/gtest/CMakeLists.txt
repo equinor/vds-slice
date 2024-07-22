@@ -16,6 +16,7 @@ add_executable(cppcoretests
   datahandle_test.cpp
   regularsurface_test.cpp
   subvolume_test.cpp
+  test_utils.cpp
 )
 
 target_link_libraries(cppcoretests

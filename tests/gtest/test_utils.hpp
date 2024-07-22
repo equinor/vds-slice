@@ -53,5 +53,15 @@ public:
     DoubleDataHandle double_reverse_datahandle;
     DoubleDataHandle double_different_size;
 
+    /**
+     * @brief Checks that retrieved value and expected iline, xline and sample match as:
+     *
+     * Each value in the test files has the positional information encoded in little-endian.
+     * Byte 0: Sample position
+     * Byte 1: CrossLine position
+     * Byte 2: InLine position
+     */
+    void check_value(int value, int expected_iline, int expected_xline, int expected_sample);
+
 };
 #endif // TEST_UTILS_H
