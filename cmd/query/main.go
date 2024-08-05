@@ -12,7 +12,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"github.com/equinor/vds-slice/api"
+	"github.com/equinor/vds-slice/api/handlers"
 	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/internal/cache"
 	"github.com/equinor/vds-slice/internal/core"
@@ -165,13 +165,13 @@ func parseopts() opts {
 	return opts
 }
 
-func setupApp(app *gin.Engine, endpoint *api.Endpoint, metric *metrics.Metrics) {
+func setupApp(app *gin.Engine, endpoint *handlers.Endpoint, metric *metrics.Metrics) {
 	app.Use(logging.FormattedLogger())
 	app.Use(gin.Recovery())
 	app.Use(gzip.Gzip(gzip.BestSpeed))
 
 	seismic := app.Group("/")
-	seismic.Use(api.ErrorHandler)
+	seismic.Use(handlers.ErrorHandler)
 
 	if metric != nil {
 		seismic.Use(metrics.NewGinMiddleware(metric))
@@ -211,7 +211,7 @@ func main() {
 
 	storageAccounts := strings.Split(opts.storageAccounts, ",")
 
-	endpoint := api.Endpoint{
+	endpoint := handlers.Endpoint{
 		MakeVdsConnection: core.MakeAzureConnection(storageAccounts),
 		Cache:             cache.NewCache(opts.cacheSize),
 	}
