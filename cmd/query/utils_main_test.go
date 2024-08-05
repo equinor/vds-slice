@@ -15,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 
-	"github.com/equinor/vds-slice/api"
+	"github.com/equinor/vds-slice/api/handlers"
 	"github.com/equinor/vds-slice/internal/cache"
 	"github.com/equinor/vds-slice/internal/core"
 )
@@ -304,7 +304,7 @@ func setupTest(t *testing.T, testcase endpointTest) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	ctx, r := gin.CreateTestContext(w)
 
-	endpoint := api.Endpoint{
+	endpoint := handlers.Endpoint{
 		MakeVdsConnection: MakeFileConnection(),
 		Cache:             cache.NewNoCache(),
 	}
