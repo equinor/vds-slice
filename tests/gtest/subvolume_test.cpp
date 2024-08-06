@@ -18,6 +18,13 @@ TEST(FreeFunctions, FloorWithTolerance) {
     EXPECT_EQ(4, floor_with_tolerance(4.998));
     EXPECT_EQ(5, floor_with_tolerance(4.999));
     EXPECT_EQ(5, floor_with_tolerance(4.9999));
+
+    EXPECT_EQ(-4, floor_with_tolerance(-4.0001));
+    EXPECT_EQ(-4, floor_with_tolerance(-4.001));
+    EXPECT_EQ(-5, floor_with_tolerance(-4.002));
+    EXPECT_EQ(-5, floor_with_tolerance(-4.998));
+    EXPECT_EQ(-5, floor_with_tolerance(-4.999));
+    EXPECT_EQ(-5, floor_with_tolerance(-4.9999));
 }
 
 TEST(FreeFunctions, CeilWithTolerance) {
@@ -27,6 +34,13 @@ TEST(FreeFunctions, CeilWithTolerance) {
     EXPECT_EQ(5, ceil_with_tolerance(4.998));
     EXPECT_EQ(5, ceil_with_tolerance(4.999));
     EXPECT_EQ(5, ceil_with_tolerance(4.9999));
+
+    EXPECT_EQ(-4, ceil_with_tolerance(-4.0001));
+    EXPECT_EQ(-4, ceil_with_tolerance(-4.001));
+    EXPECT_EQ(-4, ceil_with_tolerance(-4.002));
+    EXPECT_EQ(-4, ceil_with_tolerance(-4.998));
+    EXPECT_EQ(-5, ceil_with_tolerance(-4.999));
+    EXPECT_EQ(-5, ceil_with_tolerance(-4.9999));
 }
 
 TEST(SegmentBlueprintTest, BoundariesOnSamples) {
