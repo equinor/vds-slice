@@ -87,6 +87,16 @@ void validate_minimal_nsamples(Axis const& axis) {
     }
 }
 
+void validate_positive_stepsize(Axis const& axis) {
+    if (axis.stepsize() <= 0) {
+        throw detail::bad_request(
+            "Unsupported layout, expecting positive stepsize in axis " + axis.name() +
+            ", got max (" + utils::to_string_with_precision(axis.max()) +
+            ") <= min (" + utils::to_string_with_precision(axis.min()) + ")"
+        );
+    }
+}
+
 } // namespace
 
 Axis make_single_cube_axis(
@@ -125,6 +135,7 @@ SingleMetadataHandle SingleMetadataHandle::create(OpenVDS::VolumeDataLayout cons
 
         Axis axis = make_single_cube_axis(layout, dimension);
         validate_minimal_nsamples(axis);
+        validate_positive_stepsize(axis);
         axes_map.emplace(axis_type, axis);
     }
 
@@ -293,6 +304,7 @@ DoubleMetadataHandle DoubleMetadataHandle::create(
             dimension
         );
         validate_minimal_nsamples(axis);
+        validate_positive_stepsize(axis);
         axes_map.emplace(axis_type, axis);
     }
 

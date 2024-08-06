@@ -542,4 +542,33 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Shift) {
     );
 }
 
+TEST_F(DatahandleMetadataTest, Metadata_One_Negative_Stepsize) {
+    const std::string NEGATIVE_STEPSIZE = "file://negative_stepsize.vds";
+    EXPECT_THAT(
+        [&]() {
+            SingleDataHandle negative_stepize_datahandle = make_single_datahandle(
+                NEGATIVE_STEPSIZE.c_str(),
+                CREDENTIALS.c_str()
+            );
+        },
+        testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("expecting positive stepsize in axis Inline, got max (15.00) <= min (16.00)"))
+    );
+}
+
+TEST_F(DatahandleMetadataTest, Metadata_Double_Negative_Stepsize) {
+    const std::string NEGATIVE_STEPSIZE = "file://negative_stepsize.vds";
+    EXPECT_THAT(
+        [&]() {
+            DoubleDataHandle negative_stepize_datahandle = make_double_datahandle(
+                NEGATIVE_STEPSIZE.c_str(),
+                CREDENTIALS.c_str(),
+                NEGATIVE_STEPSIZE.c_str(),
+                CREDENTIALS.c_str(),
+                binary_operator::ADDITION
+            );
+        },
+        testing::ThrowsMessage<std::runtime_error>(testing::HasSubstr("expecting positive stepsize in axis Inline, got max (15.00) <= min (16.00)"))
+    );
+}
+
 } // namespace
