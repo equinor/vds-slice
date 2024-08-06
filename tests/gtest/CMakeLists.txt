@@ -38,6 +38,7 @@ configure_file(../../testdata/samples10/10_min_dimensions.vds . COPYONLY)
 configure_file(../../testdata/samples10/10_samples_default.vds . COPYONLY)
 configure_file(../../testdata/samples10/10_single_sample.vds . COPYONLY)
 configure_file(../../testdata/samples10/10_single_xline.vds . COPYONLY)
+configure_file(../../testdata/samples10/10_negative.vds . COPYONLY)
 
 configure_file(../../testdata/cube_intersection/regular_8x2_cube.vds . COPYONLY)
 configure_file(../../testdata/cube_intersection/shift_4_8x2_cube.vds . COPYONLY)
@@ -49,6 +50,8 @@ configure_file(../../testdata/cube_intersection/shift_8_32x3_cube.vds . COPYONLY
 configure_file(../../testdata/cube_intersection/inner_4x2_cube.vds . COPYONLY)
 configure_file(../../testdata/cube_intersection/unaligned_stepsize_cube.vds . COPYONLY)
 configure_file(../../testdata/cube_intersection/unaligned_shift_cube.vds . COPYONLY)
+
+configure_file(../../testdata/invalid_data/negative_stepsize.vds . COPYONLY)
 
 include(GoogleTest)
 gtest_discover_tests(cppcoretests)
