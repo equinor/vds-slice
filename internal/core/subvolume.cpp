@@ -10,15 +10,6 @@ using boost::math::interpolators::makima;
 
 static const float tolerance = 1e-3f;
 
-float fmod_with_tolerance(float x, float y) {
-    float remainder = std::fmod(x, y);
-
-    if (std::abs(remainder - y) < tolerance) {
-        return 0;
-    }
-    return remainder;
-}
-
 float floor_with_tolerance(float x) {
     float ceil = std::ceil(x);
 
