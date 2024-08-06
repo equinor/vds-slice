@@ -13,10 +13,10 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/equinor/vds-slice/api/handlers"
+	"github.com/equinor/vds-slice/api/middleware"
 	_ "github.com/equinor/vds-slice/docs"
 	"github.com/equinor/vds-slice/internal/cache"
 	"github.com/equinor/vds-slice/internal/core"
-	"github.com/equinor/vds-slice/internal/logging"
 	"github.com/equinor/vds-slice/internal/metrics"
 )
 
@@ -166,7 +166,7 @@ func parseopts() opts {
 }
 
 func setupApp(app *gin.Engine, endpoint *handlers.Endpoint, metric *metrics.Metrics) {
-	app.Use(logging.FormattedLogger())
+	app.Use(middleware.FormattedLogger())
 	app.Use(gin.Recovery())
 	app.Use(gzip.Gzip(gzip.BestSpeed))
 
