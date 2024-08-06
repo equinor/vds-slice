@@ -476,4 +476,33 @@ TEST_F(DatahandleCubeIntersectionTest, Fence_Different_Number_Of_Samples_To_Bord
     check_fence(response_data_reverse, check_coordinates, low_sample, high_sample, 2, false);
 }
 
+TEST_F(Datahandle10SamplesTest, Fence_Single_Negative) {
+    const std::string NEGATIVE = "file://10_negative.vds";
+
+    SingleDataHandle datahandle = make_single_datahandle(
+        NEGATIVE.c_str(),
+        CREDENTIALS.c_str()
+    );
+    const auto metadata = datahandle.get_metadata();
+
+    const std::vector<float> coordinates{1, -10, 3, -11};
+
+    int low = -20;
+    int high = 16;
+
+    struct response response_data;
+
+    cppapi::fence(
+        datahandle,
+        coordinate_system::ANNOTATION,
+        coordinates.data(),
+        int(coordinates.size() / 2),
+        NEAREST,
+        nullptr,
+        &response_data
+    );
+
+    check_fence(response_data, metadata.coordinate_transformer(), coordinates, low, high);
+}
+
 } // namespace

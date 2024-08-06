@@ -542,6 +542,23 @@ TEST_F(DatahandleMetadataTest, Metadata_Mismatch_Axis_Shift) {
     );
 }
 
+TEST_F(DatahandleMetadataTest, Metadata_Negative_Axis_Value) {
+    const std::string NEGATIVE_VALUE = "file://10_negative.vds";
+    SingleDataHandle negative_value_datahandle = make_single_datahandle(
+        NEGATIVE_VALUE.c_str(),
+        CREDENTIALS.c_str()
+    );
+
+    struct response response_data;
+    cppapi::metadata(negative_value_datahandle, &response_data);
+    nlohmann::json metadata = nlohmann::json::parse(response_data.data, response_data.data + response_data.size);
+
+    nlohmann::json expected_negative_xline_axis = {
+        {"annotation", "Crossline"}, {"max", -10.0f}, {"min", -11.0f}, {"samples", 2}, {"stepsize", 1.0f}, {"unit", "unitless"}
+    };
+    EXPECT_EQ(metadata["axis"][1], expected_negative_xline_axis);
+}
+
 TEST_F(DatahandleMetadataTest, Metadata_One_Negative_Stepsize) {
     const std::string NEGATIVE_STEPSIZE = "file://negative_stepsize.vds";
     EXPECT_THAT(

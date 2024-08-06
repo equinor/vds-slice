@@ -160,3 +160,127 @@ void DatahandleCubeIntersectionTest::check_attribute(
 void DatahandleCubeIntersectionTest::check_attribute(SurfaceBoundedSubVolume& subvolume, int low[], int high[], float factor) {
     return this->check_attribute(subvolume, low, high, low, high, factor);
 }
+
+void Datahandle10SamplesTest::check_value(float expected_value, int iline_index, int xline_index, int sample_index) {
+    auto value = samples_10_data[iline_index][xline_index][sample_index];
+    std::string error_message =
+        "at iline index " + std::to_string(iline_index) +
+        " xline index " + std::to_string(xline_index) +
+        " sample index " + std::to_string(sample_index);
+    EXPECT_EQ(expected_value, value) << error_message;
+}
+
+void Datahandle10SamplesTest::check_slice(
+    struct response response_data, SingleCoordinateTransformer const& transformer,
+    int low_annotation[], int high_annotation[]
+) {
+    std::size_t nr_of_values = (std::size_t)(response_data.size / sizeof(float));
+
+    auto low_index = transformer.AnnotationToIJKIndex(
+        OpenVDS::DoubleVector3(low_annotation[0], low_annotation[1], low_annotation[2])
+    );
+    auto high_index = transformer.AnnotationToIJKIndex(
+        OpenVDS::DoubleVector3(high_annotation[0], high_annotation[1], high_annotation[2])
+    );
+
+    // make exclusive
+    high_index[0] += 1;
+    high_index[1] += 1;
+    high_index[2] += 1;
+
+    EXPECT_EQ(
+        nr_of_values,
+        (high_index[0] - low_index[0]) * (high_index[1] - low_index[1]) * (high_index[2] - low_index[2])
+    );
+
+    int counter = 0;
+    auto response_samples = (float*)response_data.data;
+    for (int il = low_index[0]; il < high_index[0]; ++il) {
+        for (int xl = low_index[1]; xl < high_index[1]; ++xl) {
+            for (int s = low_index[2]; s < high_index[2]; ++s) {
+                auto value = response_samples[counter];
+
+                check_value(value, il, xl, s);
+                counter += 1;
+            }
+        }
+    }
+}
+
+void Datahandle10SamplesTest::check_fence(
+    struct response response_data, SingleCoordinateTransformer const& transformer,
+    std::vector<float> annotated_coordinates, int lowest_sample, int highest_sample
+) {
+    std::size_t nr_of_values = (std::size_t)(response_data.size / sizeof(float));
+    std::size_t nr_of_traces = (std::size_t)(annotated_coordinates.size() / 2);
+
+    int lowest_sample_index = transformer.AnnotationToIJKIndex(
+        OpenVDS::DoubleVector3(annotated_coordinates[0], annotated_coordinates[1], lowest_sample)
+    )[2];
+    int highest_sample_index = transformer.AnnotationToIJKIndex(
+        OpenVDS::DoubleVector3(annotated_coordinates[0], annotated_coordinates[1], highest_sample)
+    )[2] + 1;
+
+    EXPECT_EQ(nr_of_values, nr_of_traces * (highest_sample_index - lowest_sample_index));
+
+    int counter = 0;
+    float* response = (float*)response_data.data;
+
+    for (int t = 0; t < nr_of_traces; t++) {
+        auto lowest_index = transformer.AnnotationToIJKIndex(
+            OpenVDS::DoubleVector3(annotated_coordinates[2 * t], annotated_coordinates[(2 * t) + 1], lowest_sample)
+        );
+        for (int s = lowest_sample_index; s < highest_sample_index; ++s) {
+            float value = response[counter];
+
+            auto il = lowest_index[0];
+            auto xl = lowest_index[1];
+
+            check_value(value, il, xl, s);
+            counter += 1;
+        }
+    }
+}
+
+void Datahandle10SamplesTest::check_attribute(
+    SurfaceBoundedSubVolume& subvolume, SingleCoordinateTransformer const& transformer,
+    int low_annotation[], int high_annotation[]
+) {
+    auto low_index = transformer.AnnotationToIJKIndex(
+        OpenVDS::DoubleVector3(low_annotation[0], low_annotation[1], low_annotation[2])
+    );
+    auto high_index = transformer.AnnotationToIJKIndex(
+        OpenVDS::DoubleVector3(high_annotation[0], high_annotation[1], high_annotation[2])
+    );
+
+    // checks assume that margin is stable for the whole grid
+    low_index[2] -= subvolume.top_margin(0);
+    // make exclusive
+    high_index[0] += 1;
+    high_index[1] += 1;
+    high_index[2] += subvolume.bottom_margin(0) + 1;
+
+    std::size_t nr_of_values = subvolume.nsamples(
+        0, (high_index[0] - low_index[0]) * (high_index[1] - low_index[1])
+    );
+
+    EXPECT_EQ(
+        nr_of_values,
+        (high_index[0] - low_index[0]) * (high_index[1] - low_index[1]) * (high_index[2] - low_index[2])
+    );
+
+    int segment_index = 0;
+    for (int il = low_index[0]; il < high_index[0]; ++il) {
+        for (int xl = low_index[1]; xl < high_index[1]; ++xl) {
+            RawSegment rs = subvolume.vertical_segment(segment_index);
+            segment_index += 1;
+
+            int s = low_index[2];
+            for (auto it = rs.begin(); it != rs.end(); ++it) {
+                check_value(*it, il, xl, s);
+                s += 1;
+            }
+            EXPECT_EQ(s, high_index[2]);
+        }
+    }
+}
