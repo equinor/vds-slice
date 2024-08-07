@@ -486,4 +486,27 @@ TEST_F(DatahandleCubeIntersectionTest, Slice_Minimum_Double) {
     }
 }
 
+TEST_F(Datahandle10SamplesTest, Slice_Single_Negative) {
+    const std::string NEGATIVE = "file://10_negative.vds";
+
+    SingleDataHandle datahandle = make_single_datahandle(
+        NEGATIVE.c_str(),
+        CREDENTIALS.c_str()
+    );
+    const auto metadata = datahandle.get_metadata();
+
+    struct response response_data;
+    cppapi::slice(
+        datahandle,
+        Direction(axis_name::CROSSLINE),
+        -11,
+        std::vector<Bound>{Bound{-16, 8, axis_name::TIME}},
+        &response_data
+    );
+
+    int low[3] = {1, -11, -16};
+    int high[3] = {5, -11, 8};
+    check_slice(response_data, metadata.coordinate_transformer(), low, high);
+}
+
 } // namespace

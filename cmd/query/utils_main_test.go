@@ -22,6 +22,7 @@ import (
 
 const well_known = "../../testdata/well_known/well_known_default.vds"
 const samples10 = "../../testdata/samples10/10_samples_default.vds"
+const negative = "../../testdata/samples10/10_negative.vds"
 
 type baseTest struct {
 	name           string

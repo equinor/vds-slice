@@ -10,7 +10,6 @@
 #include "metadatahandle.hpp"
 #include "regularsurface.hpp"
 
-float fmod_with_tolerance(float x, float y);
 float floor_with_tolerance(float x);
 float ceil_with_tolerance(float x);
 
@@ -40,9 +39,9 @@ public:
      * Calculates sample position (in annotated coordinates of samples axis) at
      * provided index.
      *
-     * @param index
+     * @param index Sample index relative to zero_index
      * @param zero_index_sample_position Sample position (in annotated
-     * coordinates of samples axis) at index 0
+     * coordinates of samples axis) considered to be at index 0
      */
     float sample_position_at(int index, float zero_index_sample_position) const noexcept{
         return zero_index_sample_position + this->stepsize() * index;
@@ -61,10 +60,9 @@ protected:
     /**
      * Segment size in number of samples
      * It is expected that top_boundary <= bottom_boundary.
-     * zero_sample_offset must be < stepsize.
      *
      * @param zero_sample_offset Offset (in annotated coordinate system of
-     * samples axis) of sample with number 0
+     * samples axis) of sample considered to be at index 0
      * @param top_boundary Top boundary position (in annotated coordinates of
      * samples axis)
      * @param bottom_boundary Bottom boundary position (in annotated coordinates
@@ -83,10 +81,9 @@ protected:
 
     /**
      * Sequence number of the closest sample that is <= position
-     * zero_sample_offset must be < stepsize.
      *
      * @param zero_sample_offset Offset (in annotated coordinate system of
-     * samples axis) of sample with number 0
+     * samples axis) of sample considered to be at index 0
      * @param position Position (in annotated coordinates of samples axis)
      */
     int to_round_down_sample_number(float zero_sample_offset, float position) const noexcept {
@@ -95,10 +92,9 @@ protected:
 
     /**
      * Sequence number of the closest sample that is >= position
-     * zero_sample_offset must be < stepsize.
      *
      * @param zero_sample_offset Offset (in annotated coordinate system of
-     * samples axis) of sample with number 0
+     * samples axis) of sample considered to be at index 0
      * @param position Position (in annotated coordinates of samples axis)
      */
     int to_round_up_sample_number(float zero_sample_offset, float position) const noexcept {
@@ -120,7 +116,7 @@ private:
 class RawSegmentBlueprint : public SegmentBlueprint {
 public:
     RawSegmentBlueprint(float stepsize, float sample_position) : SegmentBlueprint(stepsize) {
-        m_zero_sample_offset = fmod_with_tolerance(sample_position, this->stepsize());
+        m_zero_sample_offset = sample_position;
     }
 
     /**
@@ -175,7 +171,7 @@ public:
     std::uint8_t preferred_margin() const { return 2; }
 
 private:
-    // offset of the first sample from 0, i.e. m_zero_sample_offset < stepsize
+    // offset of sample considered to be at index 0
     float m_zero_sample_offset;
 };
 
@@ -202,7 +198,7 @@ public:
      * of samples axis)
      */
     std::size_t size(float reference, float top_boundary, float bottom_boundary) const noexcept {
-        float zero_sample_offset = this->zero_sample_offset(reference);
+        float zero_sample_offset = reference;
         return SegmentBlueprint::size(zero_sample_offset, top_boundary, bottom_boundary);
     }
 
@@ -216,7 +212,7 @@ public:
      * samples axis)
      */
     float top_sample_position(float reference, float top_boundary) const noexcept {
-        float zero_sample_offset = this->zero_sample_offset(reference);
+        float zero_sample_offset = reference;
         auto top_sample_number = this->to_round_up_sample_number(zero_sample_offset, top_boundary);
         return sample_position_at(top_sample_number, zero_sample_offset);
     }
@@ -231,7 +227,7 @@ public:
      * samples axis)
      */
     float bottom_sample_position(float reference, float bottom_boundary) const noexcept {
-        float zero_sample_offset = this->zero_sample_offset(reference);
+        float zero_sample_offset = reference;
         auto bottom_sample_number = this->to_round_down_sample_number(zero_sample_offset, bottom_boundary);
         return sample_position_at(bottom_sample_number, zero_sample_offset);
     }
@@ -246,24 +242,8 @@ public:
      * samples axis)
      */
     std::size_t nsamples_above(float reference, float top_boundary) const noexcept {
-        float zero_sample_offset = this->zero_sample_offset(reference);
-        std::size_t top_sample_number = this->to_round_up_sample_number(zero_sample_offset, top_boundary);
-        std::size_t reference_sample_number = std::round((reference - zero_sample_offset) / this->stepsize());
-        return reference_sample_number - top_sample_number;
+        return -(this->to_round_up_sample_number(reference, top_boundary));
     }
-private:
-    /**
-     * In resampled data reference points by definition fall onto samples. Thus
-     * zero sample offset (in annotated coordinate system of samples axis) is
-     * calculated from reference itself.
-     *
-     * @param reference Position (in annotated coordinates of samples axis) of
-     * some known sample
-     */
-    float zero_sample_offset(float reference) const {
-        return fmod_with_tolerance(reference, this->stepsize());
-    }
-
 };
 
 /**

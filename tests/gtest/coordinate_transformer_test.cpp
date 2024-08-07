@@ -106,4 +106,30 @@ TEST(DoubleCoordinateTransformerTest, A_Around_B) {
     EXPECT_EQ(as_annotation, transformer.IJKIndexToAnnotation(as_intersection_index));
 }
 
+TEST(NegativeCoordinateTransformerTest, NegativeAnnotation) {
+    const std::string url = "file://10_negative.vds";
+
+    auto datahandle = make_single_datahandle(
+        url.c_str(),
+        CREDENTIALS.c_str()
+    );
+
+    OpenVDS::DoubleVector3 as_annotation = {3, -11, -8};
+    OpenVDS::IntVector3 as_index = {1, 0, 3};
+    // we always ignore the value of third cdp element
+    OpenVDS::DoubleVector3 as_cdp = {8, 4, 0};
+
+    CoordinateTransformer const& transformer = datahandle.get_metadata().coordinate_transformer();
+
+    EXPECT_EQ(as_annotation, transformer.IJKIndexToAnnotation(as_index));
+
+    auto index_to_world = transformer.IJKIndexToWorld(as_index);
+    EXPECT_EQ(as_cdp.X, index_to_world.X);
+    EXPECT_EQ(as_cdp.Y, index_to_world.Y);
+
+    auto world_to_annotation = transformer.WorldToAnnotation(as_cdp);
+    EXPECT_EQ(as_annotation.X, transformer.WorldToAnnotation(as_cdp).X);
+    EXPECT_EQ(as_annotation.Y, transformer.WorldToAnnotation(as_cdp).Y);
+}
+
 } // namespace

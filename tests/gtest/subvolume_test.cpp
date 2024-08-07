@@ -4,13 +4,6 @@
 #include "gtest/gtest.h"
 namespace {
 
-TEST(FreeFunctions, FmodWithTolerance) {
-    EXPECT_EQ(0, fmod_with_tolerance(4, 2));
-    EXPECT_EQ(0, fmod_with_tolerance(4, 0.1));
-    EXPECT_EQ(0, fmod_with_tolerance(4, 0.2));
-    EXPECT_EQ(0, fmod_with_tolerance(30, 0.3));
-}
-
 TEST(FreeFunctions, FloorWithTolerance) {
     EXPECT_EQ(4, floor_with_tolerance(4.0001));
     EXPECT_EQ(4, floor_with_tolerance(4.001));
@@ -18,6 +11,13 @@ TEST(FreeFunctions, FloorWithTolerance) {
     EXPECT_EQ(4, floor_with_tolerance(4.998));
     EXPECT_EQ(5, floor_with_tolerance(4.999));
     EXPECT_EQ(5, floor_with_tolerance(4.9999));
+
+    EXPECT_EQ(-4, floor_with_tolerance(-4.0001));
+    EXPECT_EQ(-4, floor_with_tolerance(-4.001));
+    EXPECT_EQ(-5, floor_with_tolerance(-4.002));
+    EXPECT_EQ(-5, floor_with_tolerance(-4.998));
+    EXPECT_EQ(-5, floor_with_tolerance(-4.999));
+    EXPECT_EQ(-5, floor_with_tolerance(-4.9999));
 }
 
 TEST(FreeFunctions, CeilWithTolerance) {
@@ -27,6 +27,13 @@ TEST(FreeFunctions, CeilWithTolerance) {
     EXPECT_EQ(5, ceil_with_tolerance(4.998));
     EXPECT_EQ(5, ceil_with_tolerance(4.999));
     EXPECT_EQ(5, ceil_with_tolerance(4.9999));
+
+    EXPECT_EQ(-4, ceil_with_tolerance(-4.0001));
+    EXPECT_EQ(-4, ceil_with_tolerance(-4.001));
+    EXPECT_EQ(-4, ceil_with_tolerance(-4.002));
+    EXPECT_EQ(-4, ceil_with_tolerance(-4.998));
+    EXPECT_EQ(-5, ceil_with_tolerance(-4.999));
+    EXPECT_EQ(-5, ceil_with_tolerance(-4.9999));
 }
 
 TEST(SegmentBlueprintTest, BoundariesOnSamples) {
@@ -238,6 +245,92 @@ TEST(SegmentBlueprintTest, Subsampling04) {
     EXPECT_FLOAT_EQ(0.6, resampled.top_sample_position(reference, top_boundary));
     EXPECT_EQ(1, resampled.bottom_sample_position(reference, bottom_boundary));
     EXPECT_EQ(2, resampled.size(reference, top_boundary, bottom_boundary));
+}
+
+TEST(SegmentBlueprintTest, NegativeZero) {
+    /*
+     * -14 -10 -6 -2 0 2   6   10  14  18  22  26
+     * *---*---*---*---*---*---*---*---*---*---*---
+     *           |  |          |
+     *         top reference bottom
+     */
+
+    float stepsize = 4;
+    float zero_position = -14;
+    std::uint8_t margin = 0;
+    RawSegmentBlueprint raw = RawSegmentBlueprint(stepsize, zero_position);
+
+    float reference = -1;
+    float top_boundary = -5;
+    float bottom_boundary = 10;
+
+    EXPECT_EQ(-2, raw.top_sample_position(top_boundary, margin));
+    EXPECT_EQ(10, raw.bottom_sample_position(bottom_boundary, margin));
+    EXPECT_EQ(4, raw.size(top_boundary, bottom_boundary, margin, margin));
+}
+
+TEST(SegmentBlueprintTest, NegativeTop) {
+    /*
+     * -14 -10 -6 -2 0 2   6   10  14  18  22  26
+     * *---*---*---*---*---*---*---*---*---*---*---
+     *          |      |           |
+     *        top  reference     bottom
+     */
+
+    float stepsize = 4;
+    float zero_position = 6;
+    std::uint8_t margin = 0;
+    RawSegmentBlueprint raw = RawSegmentBlueprint(stepsize, zero_position);
+    ResampledSegmentBlueprint resampled = ResampledSegmentBlueprint(stepsize);
+
+    float reference = 2;
+    float top_boundary = -5;
+    float bottom_boundary = 14;
+
+    EXPECT_EQ(1, resampled.nsamples_above(reference, top_boundary));
+
+    EXPECT_EQ(-2, raw.top_sample_position(top_boundary, margin));
+    EXPECT_EQ(14, raw.bottom_sample_position(bottom_boundary, margin));
+    EXPECT_EQ(-2, resampled.top_sample_position(reference, top_boundary));
+    EXPECT_EQ(14, resampled.bottom_sample_position(reference, bottom_boundary));
+
+    EXPECT_EQ(-6, raw.sample_position_at(-1, -2));
+    EXPECT_EQ(-6, resampled.sample_position_at(-1, -2));
+
+    EXPECT_EQ(5, raw.size(top_boundary, bottom_boundary, margin, margin));
+    EXPECT_EQ(5, resampled.size(reference, top_boundary, bottom_boundary));
+}
+
+TEST(SegmentBlueprintTest, NegativeAxis) {
+    /*
+     * -30 -26 -22 -18 -14 -10 -6 -2   2
+     * *---*---*---*---*---*---*---*---*
+     *    |            |        |
+     *   top       reference  bottom
+     */
+
+    float stepsize = 4;
+    float zero_position = 2;
+    std::uint8_t margin = 0;
+    RawSegmentBlueprint raw = RawSegmentBlueprint(stepsize, zero_position);
+    ResampledSegmentBlueprint resampled = ResampledSegmentBlueprint(stepsize);
+
+    float reference = -14;
+    float top_boundary = -27;
+    float bottom_boundary = -5;
+
+    EXPECT_EQ(3, resampled.nsamples_above(reference, top_boundary));
+
+    EXPECT_EQ(-26, raw.top_sample_position(top_boundary, margin));
+    EXPECT_EQ(-6, raw.bottom_sample_position(bottom_boundary, margin));
+    EXPECT_EQ(-26, resampled.top_sample_position(reference, top_boundary));
+    EXPECT_EQ(-6, resampled.bottom_sample_position(reference, bottom_boundary));
+
+    EXPECT_EQ(-2, raw.sample_position_at(-1, zero_position));
+    EXPECT_EQ(-2, resampled.sample_position_at(-1, zero_position));
+
+    EXPECT_EQ(6, raw.size(top_boundary, bottom_boundary, margin, margin));
+    EXPECT_EQ(6, resampled.size(reference, top_boundary, bottom_boundary));
 }
 
 } // namespace

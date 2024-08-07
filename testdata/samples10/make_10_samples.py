@@ -68,7 +68,7 @@ def create_10_samples(filepath, samples, ilines, xlines, factor):
                         (xl - spec.xlines[0]) * xl_step_y +
                         ori_y,
                     segyio.su.scalco: -10,
-                    segyio.su.delrt: 4,
+                    segyio.su.delrt: samples[0], #real data starts on first sample
                 }
                 f.trace[tr] = np.array(data[tr], dtype=np.float32)*factor
                 tr += 1
