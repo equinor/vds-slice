@@ -171,7 +171,7 @@ func setupApp(app *gin.Engine, endpoint *handlers.Endpoint, metric *metrics.Metr
 	app.Use(gzip.Gzip(gzip.BestSpeed))
 
 	seismic := app.Group("/")
-	seismic.Use(handlers.ErrorHandler)
+	seismic.Use(middleware.ErrorHandler)
 
 	if metric != nil {
 		seismic.Use(metrics.NewGinMiddleware(metric))
