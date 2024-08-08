@@ -186,8 +186,3 @@ func parsePostRequest(ctx *gin.Context, v Normalizable) error {
 	}
 	return v.NormalizeConnection()
 }
-
-func (e *Endpoint) Health(ctx *gin.Context) {
-
-	ctx.HTML(http.StatusOK, "index.html", gin.H{})
-}
