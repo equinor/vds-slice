@@ -51,12 +51,12 @@ spec:
           horizontalScaling:
             minReplicas: 1
             maxReplicas: 1
-        - environment: test
+        - environment: test_large
           replicas: 0
           variables:
             VDSSLICE_PORT: 8080
             VDSSLICE_CACHE_SIZE: 0 # MB
-            VDSSLICE_METRICS: true
+            VDSSLICE_METRICS: false
             VDSSLICE_METRICS_PORT: 8081
             VDSSLICE_TRUSTED_PROXIES: ""
           secretRefs:
