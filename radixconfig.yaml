@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/equinor/radix-operator/release/json-schema/radixapplication.json
+
 #radixconfig production
 apiVersion: radix.equinor.com/v1
 kind: RadixApplication
@@ -15,7 +17,7 @@ spec:
         from: radix_test
     # environment that can be used for performance testing
     # environment must be stopped when not needed
-    - name: test_large
+    - name: test-large
       build:
         from: radix_test_large
   components:
@@ -35,10 +37,10 @@ spec:
       environmentConfig:
         - environment: prod
           variables:
-            VDSSLICE_PORT: 8080
-            VDSSLICE_CACHE_SIZE: 512 # MB
-            VDSSLICE_METRICS: true
-            VDSSLICE_METRICS_PORT: 8081
+            VDSSLICE_PORT: "8080"
+            VDSSLICE_CACHE_SIZE: "512" # MB
+            VDSSLICE_METRICS: "true"
+            VDSSLICE_METRICS_PORT: "8081"
             VDSSLICE_TRUSTED_PROXIES: ""
           secretRefs:
             azureKeyVaults:
@@ -57,10 +59,10 @@ spec:
             maxReplicas: 1
         - environment: test
           variables:
-            VDSSLICE_PORT: 8080
-            VDSSLICE_CACHE_SIZE: 128 # MB
-            VDSSLICE_METRICS: false
-            VDSSLICE_METRICS_PORT: 8081
+            VDSSLICE_PORT: "8080"
+            VDSSLICE_CACHE_SIZE: "128" # MB
+            VDSSLICE_METRICS: "false"
+            VDSSLICE_METRICS_PORT: "8081"
             VDSSLICE_TRUSTED_PROXIES: ""
           secretRefs:
             azureKeyVaults:
@@ -84,13 +86,13 @@ spec:
                 start: 0 7 * * 1-5 # 07:00 Monday - Friday
                 end: 0 21 * * 1-5 # 21:00 Monday - Friday
                 desiredReplicas: 1
-        - environment: test_large
+        - environment: test-large
           replicas: 0
           variables:
-            VDSSLICE_PORT: 8080
-            VDSSLICE_CACHE_SIZE: 0 # MB
-            VDSSLICE_METRICS: false
-            VDSSLICE_METRICS_PORT: 8081
+            VDSSLICE_PORT: "8080"
+            VDSSLICE_CACHE_SIZE: "0" # MB
+            VDSSLICE_METRICS: "false"
+            VDSSLICE_METRICS_PORT: "8081"
             VDSSLICE_TRUSTED_PROXIES: ""
           secretRefs:
             azureKeyVaults:
