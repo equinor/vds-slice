@@ -52,11 +52,40 @@ spec:
             minReplicas: 1
             maxReplicas: 1
         - environment: test
+          variables:
+            VDSSLICE_PORT: 8080
+            VDSSLICE_CACHE_SIZE: 128 # MB
+            VDSSLICE_METRICS: false
+            VDSSLICE_METRICS_PORT: 8081
+            VDSSLICE_TRUSTED_PROXIES: ""
+          secretRefs:
+            azureKeyVaults:
+              - name: S067-RadixKeyvault
+                useAzureIdentity: true
+                items:
+                  - name: test-allowlist
+                    envVar: VDSSLICE_STORAGE_ACCOUNTS
+          monitoring: true
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "100m"
+          horizontalScaling:
+            minReplicas: 0
+            maxReplicas: 1
+            triggers:
+            - name: cron
+              cron:
+                timezone: Europe/Oslo
+                start: 0 7 * * 1-5 # 07:00 Monday - Friday
+                end: 0 21 * * 1-5 # 21:00 Monday - Friday
+                desiredReplicas: 1
+        - environment: test_large
           replicas: 0
           variables:
             VDSSLICE_PORT: 8080
             VDSSLICE_CACHE_SIZE: 0 # MB
-            VDSSLICE_METRICS: true
+            VDSSLICE_METRICS: false
             VDSSLICE_METRICS_PORT: 8081
             VDSSLICE_TRUSTED_PROXIES: ""
           secretRefs:

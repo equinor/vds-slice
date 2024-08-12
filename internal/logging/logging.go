@@ -34,13 +34,14 @@ func FormattedLogger() gin.HandlerFunc {
 			request = fmt.Sprintf("%s\n", request)
 		}
 
-		return fmt.Sprintf("[GIN] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v\n%s%s",
+		return fmt.Sprintf("[GIN] %v |%s %3d %s| %13v | %15s |%s %-7s %s %#v\nUser-Agent: %s\n%s%s",
 			param.TimeStamp.Format(time.RFC1123),
 			statusColor, param.StatusCode, resetColor,
 			param.Latency,
 			param.ClientIP,
 			methodColor, param.Method, resetColor,
 			path,
+			param.Request.UserAgent(),
 			request,
 			param.ErrorMessage,
 		)
