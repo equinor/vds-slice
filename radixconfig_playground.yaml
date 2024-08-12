@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/equinor/radix-operator/release/json-schema/radixapplication.json
+
 apiVersion: radix.equinor.com/v1
 kind: RadixApplication
 metadata:
@@ -24,10 +26,10 @@ spec:
       environmentConfig:
         - environment: test
           variables:
-            VDSSLICE_PORT: 8080
-            VDSSLICE_CACHE_SIZE: 0 # MB
-            VDSSLICE_METRICS: true
-            VDSSLICE_METRICS_PORT: 8081
+            VDSSLICE_PORT: "8080"
+            VDSSLICE_CACHE_SIZE: "0" # MB
+            VDSSLICE_METRICS: "true"
+            VDSSLICE_METRICS_PORT: "8081"
             VDSSLICE_TRUSTED_PROXIES: ""
           secretRefs:
             azureKeyVaults:
