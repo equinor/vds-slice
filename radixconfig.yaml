@@ -9,11 +9,15 @@ spec:
     - name: prod
       build:
         from: radix
-    # environment that can be used for performance testing
-    # environment must be stopped when not needed
+    # small resources environment
     - name: test
       build:
         from: radix_test
+    # environment that can be used for performance testing
+    # environment must be stopped when not needed
+    - name: test_large
+      build:
+        from: radix_test_large
   components:
     - name: server
       dockerfileName: Dockerfile
