@@ -268,4 +268,34 @@ TEST_F(DatahandleCubeIntersectionTest, Attribute_Double_Different_Number_Of_Samp
     delete subvolume;
 }
 
+TEST_F(Datahandle10SamplesTest, Attribute_Single_Negative) {
+    const std::string NEGATIVE = "file://10_negative.vds";
+
+    SingleDataHandle datahandle = make_single_datahandle(
+        NEGATIVE.c_str(),
+        CREDENTIALS.c_str()
+    );
+
+    Grid grid = get_grid(datahandle);
+    const SingleMetadataHandle* metadata = &(datahandle.get_metadata());
+
+    std::size_t nrows = metadata->iline().nsamples();
+    std::size_t ncols = metadata->xline().nsamples();
+    static std::vector<float> top_surface_data(nrows * ncols, -8.0f);
+    static std::vector<float> pri_surface_data(nrows * ncols, -4.0f);
+    static std::vector<float> bot_surface_data(nrows * ncols, 4.0f);
+    RegularSurface pri_surface = RegularSurface(pri_surface_data.data(), nrows, ncols, grid, fill);
+    RegularSurface top_surface = RegularSurface(top_surface_data.data(), nrows, ncols, grid, fill);
+    RegularSurface bot_surface = RegularSurface(bot_surface_data.data(), nrows, ncols, grid, fill);
+    SurfaceBoundedSubVolume* subvolume = make_subvolume(datahandle.get_metadata(), pri_surface, top_surface, bot_surface);
+
+    cppapi::fetch_subvolume(datahandle, *subvolume, NEAREST, 0, nrows * ncols);
+
+    int low[3] = {1, -11, -8};
+    int high[3] = {5, -10, 4};
+    check_attribute(*subvolume, metadata->coordinate_transformer(), low, high);
+
+    delete subvolume;
+}
+
 } // namespace

@@ -1038,6 +1038,79 @@ func TestAttributeErrorHTTPResponse(t *testing.T) {
 	testErrorHTTPResponse(t, testcases)
 }
 
+func TestNegativeLinesInputAccepted(t *testing.T) {
+	var testcases []endpointTest
+
+	sliceTest := sliceTest{
+		baseTest{
+			name:           "Slice Negative input",
+			method:         http.MethodPost,
+			expectedStatus: http.StatusOK,
+		},
+		testSliceRequest{
+			Vds:       []string{negative},
+			Direction: "crossline",
+			Lineno:    -10,
+			Sas:       []string{"n/a"},
+			Bounds: []testBound{
+				{Direction: "time", Lower: -16, Upper: -4},
+			},
+		},
+	}
+	fenceTest := fenceTest{
+		baseTest{
+			name:           "Fence Negative input",
+			method:         http.MethodPost,
+			expectedStatus: http.StatusOK,
+		},
+		testFenceRequest{
+			Vds:              []string{negative},
+			Sas:              []string{"n/a"},
+			CoordinateSystem: "ilxl",
+			Coordinates:      [][]float32{{5, -11}},
+		},
+	}
+	attributesAlongSurfaceTest := attributeAlongSurfaceTest{
+		baseTest{
+			name:           "Attributes Along Surface Negative input",
+			method:         http.MethodPost,
+			expectedStatus: http.StatusOK,
+		},
+		testAttributeAlongSurfaceRequest{
+			Vds:        []string{negative},
+			Values:     [][]float32{{-12}},
+			Sas:        []string{"n/a"},
+			Above:      4.0,
+			Below:      12.0,
+			Attributes: []string{"samplevalue"},
+		},
+	}
+	attributesBetweenSurfacesTest := attributeBetweenSurfacesTest{
+		baseTest{
+			name:           "Attributes Between Surfaces Negative input",
+			method:         http.MethodPost,
+			expectedStatus: http.StatusOK,
+		},
+		testAttributeBetweenSurfacesRequest{
+			Vds:             []string{negative},
+			ValuesPrimary:   [][]float32{{-4}},
+			ValuesSecondary: [][]float32{{-8}},
+			Sas:             []string{"n/a"},
+			Attributes:      []string{"mean"},
+		},
+	}
+
+	testcases = append(testcases, sliceTest)
+	testcases = append(testcases, fenceTest)
+	testcases = append(testcases, attributesAlongSurfaceTest)
+	testcases = append(testcases, attributesBetweenSurfacesTest)
+
+	for _, testcase := range testcases {
+		w := setupTest(t, testcase)
+		requireStatus(t, testcase, w)
+	}
+}
+
 func TestLogHasNoSas(t *testing.T) {
 	var testcases []endpointTest
 	addTests := func(method string) {

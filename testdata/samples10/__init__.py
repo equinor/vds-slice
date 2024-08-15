@@ -79,6 +79,16 @@ cases = [
             description="Minimal viable cube 2 x 2 x 2",
             filename="10_min_dimensions.vds"
         )
+    ),
+    Case(
+        samples=[-20, -16, -12, -8, -4, 0, 4, 8, 12, 16],
+        ilines=[1, 3, 5],
+        xlines=[-11, -10],
+        spec=common.CommandSpecification(
+            case="negative",
+            description="Some values in samples and xlines are negative.",
+            filename="10_negative.vds"
+        )
     )
 ]
 

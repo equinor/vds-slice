@@ -134,4 +134,58 @@ public:
      */
     void check_attribute(SurfaceBoundedSubVolume& subvolume, int low[], int high[], float factor);
 };
+
+class Datahandle10SamplesTest : public ::testing::Test {
+protected:
+
+    int ILINE_STEP = 2;
+    int XLINE_STEP = 1;
+    int SAMPLE_STEP = 4;
+
+    std::vector<std::vector<std::vector<float>>> samples_10_data = {
+        {
+            {-4.5,  -3.5,  -2.5,  -1.5,  -0.5,   0.5,   1.5,   2.5,   3.5,   4.5},
+            { 4.5,   3.5,   2.5,   1.5,   0.5,  -0.5,  -1.5,  -2.5,  -3.5,  -4.5}
+        },
+        {
+            {25.5, -14.5, -12.5, -10.5,  -8.5,  -6.5,  -4.5,  -2.5,  -0.5,  25.5},
+            {25.5,   0.5,   2.5,   4.5,   6.5,   8.5,  10.5,  12.5,  14.5,  25.5}
+        },
+        {
+            {25.5,   4.5,   8.5,  12.5,  16.5,  20.5,  24.5,  20.5,  16.5,   8.5},
+            {25.5,  -4.5,  -8.5, -12.5, -16.5, -20.5, -24.5, -20.5, -16.5,  -8.5}
+        }
+    };
+
+public:
+    /**
+     * @brief Checks value at iline/xline/sample index is a expected
+     */
+    void check_value(float expected_value, int iline_index, int xline_index, int sample_index);
+
+    /**
+     * @brief Check response slice towards expected slice. Both low and high annotation arrays are inclusive
+     */
+    void check_slice(
+        struct response response_data, SingleCoordinateTransformer const& transformer,
+        int low_annotation[], int high_annotation[]
+    );
+
+    /**
+     * @brief Check response fence towards expected. Both low and high samples are inclusive
+     */
+    void check_fence(
+        struct response response_data, SingleCoordinateTransformer const& transformer,
+        std::vector<float> annotated_coordinates, int lowest_sample, int highest_sample
+    );
+
+    /**
+     * @brief Check response attributes towards expected. Both low and high annotation arrays are inclusive
+     */
+    void check_attribute(
+        SurfaceBoundedSubVolume& subvolume, SingleCoordinateTransformer const& transformer,
+        int low_annotation[], int high_annotation[]
+    );
+};
+
 #endif // TEST_UTILS_H
