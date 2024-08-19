@@ -31,6 +31,8 @@ spec:
             VDSSLICE_METRICS: "true"
             VDSSLICE_METRICS_PORT: "8081"
             VDSSLICE_TRUSTED_PROXIES: ""
+            VDSSLICE_BLOCKED_IPS: ""
+            VDSSLICE_BLOCKED_USER_AGENTS: ""
           secretRefs:
             azureKeyVaults:
               - name: S067-RadixKeyvault

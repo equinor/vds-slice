@@ -1171,6 +1171,42 @@ func TestLogHasNoSas(t *testing.T) {
 	}
 }
 
+func TestRequestBlocked(t *testing.T) {
+	testcases := []endpointTest{
+		sliceTest{
+			baseTest{
+				name:           "Blocked IP test",
+				method:         http.MethodPost,
+				expectedStatus: http.StatusForbidden,
+				expectedError:  "request cannot be processed. Please contact system admin to resolve the issue",
+				headers:        map[string]string{"X-Forwarded-For": "66.66.66.66"},
+			},
+			testSliceRequest{
+				Vds:       []string{well_known},
+				Direction: "crossline",
+				Lineno:    10,
+				Sas:       []string{"n/a"},
+			},
+		},
+
+		metadataTest{
+			baseTest{
+				name:           "Blocked User Agent test",
+				method:         http.MethodGet,
+				expectedStatus: http.StatusForbidden,
+				expectedError:  "request cannot be processed. Please contact system admin to resolve the issue",
+				headers:        map[string]string{"User-Agent": "test"},
+			},
+			testMetadataRequest{
+				Vds: []string{"unknown"},
+				Sas: []string{"n/a"},
+			},
+		},
+	}
+
+	testErrorHTTPResponse(t, testcases)
+}
+
 func testErrorHTTPResponse(t *testing.T, testcases []endpointTest) {
 	for _, testcase := range testcases {
 		w := setupTest(t, testcase)

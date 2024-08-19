@@ -30,6 +30,7 @@ type baseTest struct {
 	jsonRequest    string
 	expectedStatus int
 	expectedError  string
+	headers        map[string]string
 }
 
 type endpointTest interface {
@@ -304,12 +305,19 @@ func setupTest(t *testing.T, testcase endpointTest) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	ctx, r := gin.CreateTestContext(w)
 
+	opts := opts{
+		blockedIPs:        []string{"66.66.66.66"},
+		blockedUserAgents: []string{"test"},
+	}
+
 	endpoint := handlers.Endpoint{
 		MakeVdsConnection: MakeFileConnection(),
 		Cache:             cache.NewNoCache(),
 	}
 
-	setupApp(r, &endpoint, nil)
+	setupApp(r, &endpoint, nil, &opts)
+	// setup test server to trust correctness of X-Forwarded-For header
+	r.TrustedPlatform = "X-Forwarded-For"
 
 	prepareRequest(ctx, t, testcase)
 	r.ServeHTTP(w, ctx.Request)
@@ -367,6 +375,10 @@ func prepareRequest(ctx *gin.Context, t *testing.T, testcase endpointTest) {
 		ctx.Request.Header.Set("Content-Type", "application/json")
 	default:
 		t.Fatalf("Unknown method")
+	}
+
+	for headerKey, headerValue := range testcase.base().headers {
+		ctx.Request.Header.Set(headerKey, headerValue)
 	}
 }
 

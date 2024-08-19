@@ -21,12 +21,14 @@ import (
 )
 
 type opts struct {
-	storageAccounts string
-	port            uint32
-	cacheSize       uint64
-	metrics         bool
-	metricsPort     uint32
-	trustedProxies  []string
+	storageAccounts   string
+	port              uint32
+	cacheSize         uint64
+	metrics           bool
+	metricsPort       uint32
+	trustedProxies    []string
+	blockedIPs        []string
+	blockedUserAgents []string
 }
 
 func parseAsUint32(fallback uint32, value string) uint32 {
@@ -86,12 +88,14 @@ func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 
 	opts := opts{
-		storageAccounts: parseAsString("", os.Getenv("VDSSLICE_STORAGE_ACCOUNTS")),
-		port:            parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
-		cacheSize:       parseAsUint64(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
-		metrics:         parseAsBool(false, os.Getenv("VDSSLICE_METRICS")),
-		metricsPort:     parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
-		trustedProxies:  parseAsListOfStrings(nil, os.Getenv("VDSSLICE_TRUSTED_PROXIES")),
+		storageAccounts:   parseAsString("", os.Getenv("VDSSLICE_STORAGE_ACCOUNTS")),
+		port:              parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
+		cacheSize:         parseAsUint64(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
+		metrics:           parseAsBool(false, os.Getenv("VDSSLICE_METRICS")),
+		metricsPort:       parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
+		trustedProxies:    parseAsListOfStrings(nil, os.Getenv("VDSSLICE_TRUSTED_PROXIES")),
+		blockedIPs:        parseAsListOfStrings(nil, os.Getenv("VDSSLICE_BLOCKED_IPS")),
+		blockedUserAgents: parseAsListOfStrings(nil, os.Getenv("VDSSLICE_BLOCKED_USER_AGENTS")),
 	}
 
 	getopt.FlagLong(
@@ -156,6 +160,24 @@ func parseopts() opts {
 		"string",
 	)
 
+	getopt.FlagLong(
+		&opts.blockedIPs,
+		"blocked-ips",
+		0,
+		"Comma-separated list of ips which shouldn't be allowed to access the application.\n"+
+			"Can also be set by environment variable 'VDSSLICE_BLOCKED_IPS'",
+		"string",
+	)
+
+	getopt.FlagLong(
+		&opts.blockedUserAgents,
+		"blocked-user-agents",
+		0,
+		"Comma-separated list of user agents which shouldn't be allowed to access the application"+
+			"Can also be set by environment variable 'VDSSLICE_BLOCKED_USER_AGENTS'",
+		"string",
+	)
+
 	getopt.Parse()
 	if *help {
 		getopt.Usage()
@@ -165,10 +187,11 @@ func parseopts() opts {
 	return opts
 }
 
-func setupApp(app *gin.Engine, endpoint *handlers.Endpoint, metric *metrics.Metrics) {
+func setupApp(app *gin.Engine, endpoint *handlers.Endpoint, metric *metrics.Metrics, opts *opts) {
 	app.Use(middleware.FormattedLogger())
 	app.Use(gin.Recovery())
 	app.Use(gzip.Gzip(gzip.BestSpeed))
+	app.Use(middleware.RequestBlocker(opts.blockedIPs, opts.blockedUserAgents))
 
 	seismic := app.Group("/")
 	seismic.Use(middleware.ErrorHandler)
@@ -249,6 +272,6 @@ func main() {
 		}()
 	}
 
-	setupApp(app, &endpoint, metric)
+	setupApp(app, &endpoint, metric, &opts)
 	app.Run(fmt.Sprintf(":%d", opts.port))
 }
