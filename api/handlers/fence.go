@@ -98,11 +98,21 @@ func (f FenceRequest) toString() (string, error) {
 		}
 	}()
 
-	return fmt.Sprintf("{%s, coordinate system: %s, coordinates: %s, interpolation (optional): %s}",
+	fillValue := "None"
+	if f.FillValue != nil {
+		fillValue = fmt.Sprintf("%.2f", *f.FillValue)
+	}
+
+	msg := "{%s, coordinate system: %s, coordinates: %s, " +
+		"interpolation (optional): %s, fill value (optional): %s}"
+
+	return fmt.Sprintf(
+		msg,
 		f.RequestedResource.toString(),
 		f.CoordinateSystem,
 		coordinates,
 		f.Interpolation,
+		fillValue,
 	), nil
 }
 
