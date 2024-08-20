@@ -91,6 +91,15 @@ func TestFenceGivesUniqueHash(t *testing.T) {
 				[]string{"vds", "vds2"},
 				[]string{"sas", "sas"}, "subtraction", "ij", fence1, "inline"),
 		},
+		{
+			name: "Vds order differs",
+			request1: newFenceRequest(
+				[]string{"vds1", "vds2"},
+				[]string{"sas", "sas"}, "subtraction", "ij", fence1, "inline"),
+			request2: newFenceRequest(
+				[]string{"vds2", "vds1"},
+				[]string{"sas", "sas"}, "subtraction", "ij", fence1, "inline"),
+		},
 	}
 
 	for _, testCase := range testCases {
