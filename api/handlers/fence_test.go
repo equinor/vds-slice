@@ -120,6 +120,47 @@ func TestFenceGivesUniqueHash(t *testing.T) {
 	}
 }
 
+func TestFenceFillValueGivesUniqueHash(t *testing.T) {
+	request := FenceRequest{
+		RequestedResource: RequestedResource{
+			Vds:            []string{"vds"},
+			Sas:            []string{"sas"},
+			BinaryOperator: "",
+		},
+		CoordinateSystem: "cdp",
+		Coordinates:      [][]float32{{0, 0}, {1, 1}},
+	}
+
+	fillvalue0 := float32(0.0)
+	fillvalue100 := float32(100.0)
+
+	request1 := request
+
+	request2 := request
+	request2.FillValue = &fillvalue0
+
+	request3 := request
+	request3.FillValue = &fillvalue100
+
+	requests := []FenceRequest{request1, request2, request3}
+	hashes := make(map[string]bool)
+
+	for _, req := range requests {
+		strReq, _ := req.toString()
+		hash, err := req.hash()
+		require.NoErrorf(t, err,
+			"Failed to compute hash for request %v, err: %v", strReq, err,
+		)
+
+		exists := hashes[hash]
+		require.Falsef(t, exists,
+			"Expected unique hashes but collision for request %v", strReq,
+		)
+
+		hashes[hash] = true
+	}
+}
+
 func TestSasIsOmmitedFromFenceHash(t *testing.T) {
 	fence := [][]float32{{1, 2}, {3, 4}}
 	testCases := []struct {
