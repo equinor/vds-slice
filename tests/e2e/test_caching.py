@@ -87,3 +87,36 @@ def test_cache_request_with_expired_token(path, payload):
     assert res.status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR
     assert "403 Server failed to authenticate the request" in json.loads(res.content)[
         'error']
+
+
+def test_fence_missing_fillvalue_vs_0():
+    # bug test:
+    # Hashes of fence call with "fillvalue=0" and "fillvalue not supplied"
+    # were identical. That made call with no fill value return wrong response
+
+    path = "fence"
+    fence_payload = {
+        "coordinateSystem": "ij",
+        "coordinates": [[0, 0], [1, 1], [2, 2], [3, 3]],
+    }
+
+    def assure_missing_fillvalue_call_fails():
+        payload_without_fillvalue = payload_merge(
+            connection_payload(vds=[VDS_URL], sas=[gen_default_sas()]),
+            fence_payload
+        )
+
+        res = send_request(path, "post", payload_without_fillvalue)
+        assert res.status_code == http.HTTPStatus.BAD_REQUEST
+        msg = "Coordinate (2.000000,2.000000) is out of boundaries"
+        assert msg in json.loads(res.content)['error']
+
+    assure_missing_fillvalue_call_fails()
+
+    payload_with_fillvalue = payload_merge(
+        connection_payload(vds=[VDS_URL], sas=[gen_default_sas()]),
+        {**fence_payload, 'fillvalue': 0}
+    )
+    make_caching_call(payload_with_fillvalue, path)
+
+    assure_missing_fillvalue_call_fails()

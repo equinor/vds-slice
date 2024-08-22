@@ -98,23 +98,46 @@ func (f FenceRequest) toString() (string, error) {
 		}
 	}()
 
-	return fmt.Sprintf("{%s, coordinate system: %s, coordinates: %s, interpolation (optional): %s}",
+	fillValue := "None"
+	if f.FillValue != nil {
+		fillValue = fmt.Sprintf("%.2f", *f.FillValue)
+	}
+
+	msg := "{%s, coordinate system: %s, coordinates: %s, " +
+		"interpolation (optional): %s, fill value (optional): %s}"
+
+	return fmt.Sprintf(
+		msg,
 		f.RequestedResource.toString(),
 		f.CoordinateSystem,
 		coordinates,
 		f.Interpolation,
+		fillValue,
 	), nil
+}
+
+// gob library is used to serialize data
+// however, library does not distinguish between FillValue pointing to 0 or to nil
+// so additional wrapper type is created to avoid same hash for different requests
+type HashableFenceRequest struct {
+	FenceRequest
+	IsFillValueSupplied bool
 }
 
 /** Compute a hash of the request that uniquely identifies the requested fence
  *
  * The hash is computed based on all fields that contribute toward a unique response.
- * I.e. every field except the sas token.
+ * I.e. every field except the sas token and with additional fill value information
  */
 func (f FenceRequest) hash() (string, error) {
 	// Strip the sas tokens before computing hash
 	f.Sas = nil
-	return cache.Hash(f)
+
+	r := HashableFenceRequest{FenceRequest: f}
+	if r.FillValue != nil {
+		r.IsFillValueSupplied = true
+	}
+	return cache.Hash(r)
 }
 
 func (request FenceRequest) execute(
