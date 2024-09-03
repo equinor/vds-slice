@@ -49,7 +49,11 @@ SingleDataHandle make_single_datahandle(
 }
 
 SingleDataHandle::SingleDataHandle(OpenVDS::VDSHandle handle)
-    :m_access_manager(OpenVDS::GetAccessManager(handle)), m_metadata(SingleMetadataHandle::create(m_access_manager.GetVolumeDataLayout())) {}
+    :m_handle(handle), m_access_manager(OpenVDS::GetAccessManager(handle)), m_metadata(SingleMetadataHandle::create(m_access_manager.GetVolumeDataLayout())) {}
+
+void SingleDataHandle::close() {
+    OpenVDS::Close(m_handle);
+}
 
 SingleMetadataHandle const& SingleDataHandle::get_metadata() const noexcept(true) {
     return this->m_metadata;
@@ -193,6 +197,11 @@ DoubleDataHandle::DoubleDataHandle(SingleDataHandle datahandle_a, SingleDataHand
         this->m_binary_operator = &inplace_division;
     else
         throw detail::bad_request("Invalid binary_operator string");
+}
+
+void DoubleDataHandle::close() {
+    m_datahandle_a.close();
+    m_datahandle_b.close();
 }
 
 DoubleMetadataHandle const& DoubleDataHandle::get_metadata() const noexcept(true) {

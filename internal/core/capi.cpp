@@ -90,6 +90,7 @@ int double_datahandle_new(
 int datahandle_free(Context* ctx, DataHandle* ds) {
     try {
         if (not ds) return STATUS_OK;
+        ds->close();
 
         delete ds;
 

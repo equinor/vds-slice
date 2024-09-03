@@ -16,6 +16,7 @@ class DataHandle {
 
 public:
     virtual ~DataHandle() {};
+    virtual void close() = 0;
 
     virtual MetadataHandle const& get_metadata() const noexcept(true) = 0;
 
@@ -55,6 +56,7 @@ class SingleDataHandle : public DataHandle {
     friend SingleDataHandle make_single_datahandle(const char* url, const char* credentials);
 
 public:
+    void close();
 
     SingleMetadataHandle const& get_metadata() const noexcept (true);
 
@@ -90,6 +92,7 @@ public:
     ) noexcept (false);
 
 private:
+    OpenVDS::VDSHandle m_handle;
     OpenVDS::VolumeDataAccessManager m_access_manager;
     SingleMetadataHandle m_metadata;
 
@@ -113,6 +116,8 @@ public:
         const char* credentials_b,
         enum binary_operator binary_symbol
     );
+
+    void close();
 
     DoubleMetadataHandle const& get_metadata() const noexcept(true);
 
