@@ -7,7 +7,18 @@ project(vdsslice LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(GTEST "Include tests/gtest subdirectory" ON)
+option(MEMORYTEST "Include tests/memory subdirectory" OFF)
+option(BUILD_CCORE "Build the c core library" OFF)
+
 add_subdirectory(internal/core)
 
-enable_testing()
-add_subdirectory(tests/gtest)
+if(GTEST)
+    enable_testing()
+    add_subdirectory(tests/gtest)
+endif()
+
+if(MEMORYTEST)
+    enable_testing()
+    add_subdirectory(tests/memory)
+endif()

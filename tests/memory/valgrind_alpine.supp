@@ -1,0 +1,40 @@
+{
+   Something likely purely musl: realloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:realloc
+   obj:/lib/ld-musl-x86_64.so.1
+   obj:*
+   obj:/lib/ld-musl-x86_64.so.1
+}
+{
+   Something likely purely musl: malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib/ld-musl-x86_64.so.1
+}
+{
+   Exceptions are still reachable, for some reason
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_Unwind_Find_FDE
+   obj:/usr/lib/libgcc_s.so.1
+   obj:/usr/lib/libgcc_s.so.1
+   fun:_Unwind_RaiseException
+   fun:__cxa_throw
+}
+{
+   (Debug mode) something xml related
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:xmlNewGlobalState
+   fun:xmlGetGlobalState
+   fun:__xmlLastError
+   fun:xmlResetLastError
+   fun:xmlCleanupParser
+   fun:_ZN5Azure7Storage9_internal20XmlGlobalInitializerD1Ev
+   obj:/lib/ld-musl-x86_64.so.1
+}

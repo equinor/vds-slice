@@ -16,9 +16,10 @@ WORKDIR /
 RUN git clone --depth 1 --branch ${OPENVDS_VERSION} https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds.git
 WORKDIR /open-vds
 
+ARG BUILD_TYPE=Release
 RUN cmake -S . \
     -B build \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DBUILD_JAVA=OFF \
     -DBUILD_PYTHON=OFF \
     -DBUILD_EXAMPLES=OFF \
@@ -29,7 +30,8 @@ RUN cmake -S . \
     -DDISABLE_GCP_IOMANAGER=ON \
     -DDISABLE_DMS_IOMANAGER=OFF \
     -DDISABLE_STRICT_WARNINGS=OFF
-RUN cmake --build build   --config Release  --target install  -j 8 --verbose
+
+RUN cmake --build build --config ${BUILD_TYPE} --target install -j 8 --verbose
 
 
 FROM $OPENVDS_IMAGE as builder
