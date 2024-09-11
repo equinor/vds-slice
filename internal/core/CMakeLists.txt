@@ -28,3 +28,13 @@ find_package(Boost REQUIRED)
 target_include_directories(cppcore
   PRIVATE ${Boost_INCLUDE_DIRS}
 )
+
+if(BUILD_CCORE)
+  add_library(ccore
+    capi.cpp
+  )
+
+  target_link_libraries(ccore
+    PUBLIC cppcore
+  )
+endif()

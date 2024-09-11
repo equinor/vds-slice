@@ -174,6 +174,52 @@ To locally run a file `<chosen_script>.js` from the suite:
 
 Errors and output reports can be found under the `LOGPATH` directory.
 
+### 4. Memory test suite
+
+The memory test suite uses valgrind to verify that common application calls do
+not leak memory.
+
+However the suite is written for C library, not for go one, so it doesn't do
+good enough job for really testing the server. There are many hurdles for
+writing such tests in go and cost of doing that seems way greater than benefit.
+
+As we currently test only C core, tests may be sensitive to internal code
+changes and thus suite might become more of a problem than a useful tool.
+
+Suite best be run using docker:
+
+1. Build openvds in debug mode
+
+   ```
+   docker build -f Dockerfile --build-arg BUILD_TYPE=Debug --target openvds -t openvdsdebug .
+   ```
+
+2. Define the following environment variables:
+
+   ```
+   export STORAGE_ACCOUNT_NAME=<name of Azure storage account>
+   export STORAGE_ACCOUNT_KEY="<storage account key>"
+   export LOGPATH=<directory to store output files inside container>
+   ```
+
+   Suite assumes that `well_known/well_known_default` and `10_samples/10_samples_default` files are
+   uploaded under container `testdata` in `STORAGE_ACCOUNT_NAME`.
+
+3. Build the image
+
+   ```
+   docker build -f tests/memory/Dockerfile --build-arg OPENVDS_IMAGE=openvdsdebug -t memory_tests .
+   ```
+
+4. Run tests
+
+   ```
+   docker run -e STORAGE_ACCOUNT_NAME -e STORAGE_ACCOUNT_KEY -e LOGPATH memory_tests
+   ```
+
+   Output and error logs would be stored inside the container at `LOGPATH`
+   location (use `-v` to map to localhost if needed).
+
 ## CI
 
 E2E tests use secrets to access Azure environment and due to security reasons
