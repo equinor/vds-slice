@@ -50,7 +50,10 @@ SurfaceBoundedSubVolume* make_subvolume(
     auto sample = metadata.sample();
 
     RawSegmentBlueprint segment_blueprint = RawSegmentBlueprint(sample.stepsize(), sample.min());
-    auto subvolume = new SurfaceBoundedSubVolume(reference, top, bottom, segment_blueprint);
+    std::unique_ptr<SurfaceBoundedSubVolume> subvolume_unique_ptr(
+        new SurfaceBoundedSubVolume(reference, top, bottom, segment_blueprint)
+    );
+    SurfaceBoundedSubVolume* subvolume = subvolume_unique_ptr.get();
     auto const horizontal_grid = subvolume->horizontal_grid();
 
     subvolume->m_segment_offsets[0] = 0;
@@ -144,7 +147,7 @@ SurfaceBoundedSubVolume* make_subvolume(
     }
     subvolume->m_data.reserve(subvolume->m_segment_offsets[horizontal_grid.size()]);
 
-    return subvolume;
+    return subvolume_unique_ptr.release();
 }
 
 void SurfaceBoundedSubVolume::reinitialize(
