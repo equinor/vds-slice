@@ -39,6 +39,7 @@ int context_free(Context* ctx);
 /** Read out the last error msg set on the context */
 const char* errmsg(Context* ctx);
 
+response response_create();
 void response_delete(struct response*);
 
 struct DataHandle;

@@ -6,12 +6,16 @@
 #include "exceptions.hpp"
 #include "subvolume.hpp"
 
+response response_create() {
+    return response{nullptr, 0};
+}
+
 void response_delete(struct response* buf) {
     if (!buf)
         return;
 
     delete[] buf->data;
-    *buf = response {};
+    *buf = response_create();
 }
 
 struct Context {

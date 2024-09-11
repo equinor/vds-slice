@@ -37,7 +37,7 @@ func newCSliceBounds(bounds []Bound) ([]C.struct_Bound, error) {
 }
 
 func (v DSHandle) GetSlice(lineno, direction int, bounds []Bound) ([]byte, error) {
-	var result C.struct_response
+	var result C.struct_response = C.response_create()
 
 	cBounds, err := newCSliceBounds(bounds)
 	if err != nil {
@@ -73,7 +73,7 @@ func (v DSHandle) GetSliceMetadata(
 	direction int,
 	bounds []Bound,
 ) ([]byte, error) {
-	var result C.struct_response
+	var result C.struct_response = C.response_create()
 
 	cBounds, err := newCSliceBounds(bounds)
 	if err != nil {

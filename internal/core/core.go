@@ -492,7 +492,7 @@ func CreateDSHandle(connections []Connection, operator uint32) (DSHandle, error)
 }
 
 func (v DSHandle) GetMetadata() ([]byte, error) {
-	var result C.struct_response
+	var result C.struct_response = C.response_create()
 	cerr := C.metadata(v.context(), v.DataHandle(), &result)
 
 	defer C.response_delete(&result)

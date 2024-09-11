@@ -12,7 +12,7 @@ import (
 )
 
 func (v DSHandle) GetAttributeMetadata(data [][]float32) ([]byte, error) {
-	var result C.struct_response
+	var result C.struct_response = C.response_create()
 	cerr := C.attribute_metadata(
 		v.context(),
 		v.DataHandle(),

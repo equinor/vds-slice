@@ -35,7 +35,7 @@ func (v DSHandle) GetFence(
 		}
 	}
 
-	var result C.struct_response
+	var result C.struct_response = C.response_create()
 	cerr := C.fence(
 		v.context(),
 		v.DataHandle(),
@@ -58,7 +58,7 @@ func (v DSHandle) GetFence(
 }
 
 func (v DSHandle) GetFenceMetadata(coordinates [][]float32) ([]byte, error) {
-	var result C.struct_response
+	var result C.struct_response = C.response_create()
 	cerr := C.fence_metadata(
 		v.context(),
 		v.DataHandle(),
