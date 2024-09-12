@@ -229,3 +229,5 @@ but are set up to run on merge to master.
 If one wants to run e2e tests oneself, one must set up own fork with required
 secrets to dedicated test storage account. Then e2e tests run can be triggered
 either manually or by pushing code to a dedicated e2e_tests branch.
+
+The same applies to performance and memory tests.

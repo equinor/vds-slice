@@ -1,6 +1,11 @@
 name: Load openvds image
 description: Assures openvds docker image is loaded under OPENVDS_IMAGE_TAG environment variable. Image is either built anew or loaded from cache.
 
+inputs:
+  build_type:
+    description: Release or Debug build mode for openvds
+    default: Release
+
 runs:
   using: "composite"
   steps:
@@ -8,11 +13,13 @@ runs:
       shell: bash
       id: parameters-setter
       run: |
+        build_type=$(echo ${{ inputs.build_type }} | tr '[:upper:]' '[:lower:]')
         dockerfile_sha=$(sha1sum Dockerfile| head -c 40)
         echo "DOCKERFILE_SHA=$dockerfile_sha" >> $GITHUB_ENV
+        echo "BUILD_TYPE=$build_type" >> $GITHUB_ENV
         echo "OPENVDS_CACHE_DIR=~/openvds_image" >> $GITHUB_ENV
         echo "OPENVDS_CACHE_FILE=openvds.tar" >> $GITHUB_ENV
-        echo "OPENVDS_IMAGE_TAG=openvds:$dockerfile_sha" >> $GITHUB_ENV
+        echo "OPENVDS_IMAGE_TAG=openvds_$build_type:$dockerfile_sha" >> $GITHUB_ENV
 
     - name: Make openvds directory
       shell: bash
@@ -23,16 +30,16 @@ runs:
       id: openvds-cache
       with:
         path: ${{ env.OPENVDS_CACHE_DIR }}
-        key: openvds-cache-${{ env.DOCKERFILE_SHA }}
+        key: openvds-cache-${{ env.BUILD_TYPE }}-${{ env.DOCKERFILE_SHA }}
 
     - if: steps.openvds-cache.outputs.cache-hit != 'true'
       name: Build openvds image
       shell: bash
       run: |
-        echo "openvds image from dockerfile with sha ${{ env.DOCKERFILE_SHA }} not found in cache"
+        echo "openvds image from dockerfile with build type ${{ inputs.build_type }} and sha ${{ env.DOCKERFILE_SHA }} not found in cache"
         echo "making openvds image with tag: ${{ env.OPENVDS_IMAGE_TAG }}"
 
-        docker build -f Dockerfile --target openvds -t ${{ env.OPENVDS_IMAGE_TAG }} .
+        docker build -f Dockerfile --build-arg BUILD_TYPE=${{ inputs.build_type }} --target openvds -t ${{ env.OPENVDS_IMAGE_TAG }} .
         docker save -o ${{ env.OPENVDS_CACHE_DIR }}/${{ env.OPENVDS_CACHE_FILE }} ${{ env.OPENVDS_IMAGE_TAG }}
 
     - if: steps.openvds-cache.outputs.cache-hit == 'true'

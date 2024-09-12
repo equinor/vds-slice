@@ -1,0 +1,52 @@
+name: Memory tests
+
+on:
+  push:
+    branches: [master, memory_tests]
+  workflow_dispatch:
+
+jobs:
+  # The following secrets are required:
+  # STORAGE_ACCOUNT_NAME : name of the storage account with uploaded testdata (without blob.core.windows.net)
+  # STORAGE_ACCOUNT_KEY : key used to access storage
+  memory_tests:
+    name: Run memory tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load openvds image
+        uses: "./.github/actions/load_openvds_image"
+        with:
+          build_type: Debug
+
+      - name: Run memory tests
+        env:
+          STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
+          STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
+          LOGPATH: "/out"
+        run: |
+          tag=memory_tests
+          DOCKER_BUILDKIT=1 docker build \
+            -f tests/memory/Dockerfile \
+            --build-arg OPENVDS_IMAGE=${{ env.OPENVDS_IMAGE_TAG }} \
+            --tag $tag \
+            .
+          docker run \
+            -e STORAGE_ACCOUNT_NAME \
+            -e STORAGE_ACCOUNT_KEY \
+            -e LOGPATH \
+            -v $(pwd)/out:/out \
+            $tag
+
+      - name: Print stderr
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/stderr.txt
+
+      - name: Print stdout
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/stdout.txt
