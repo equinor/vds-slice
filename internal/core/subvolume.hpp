@@ -323,7 +323,6 @@ public:
         const float top_boundary,
         const float bottom_boundary,
         std::uint8_t top_margin,
-        std::uint8_t bottom_margin,
         std::vector<float>::const_iterator data_begin,
         std::vector<float>::const_iterator data_end,
         RawSegmentBlueprint const* blueprint
@@ -332,8 +331,7 @@ public:
           m_blueprint(blueprint),
           m_data_begin(data_begin),
           m_data_end(data_end),
-          m_top_margin(top_margin),
-          m_bottom_margin(bottom_margin)
+          m_top_margin(top_margin)
           {}
 
     void reinitialize(
@@ -341,13 +339,11 @@ public:
         float top_boundary,
         float bottom_boundary,
         std::uint8_t top_margin,
-        std::uint8_t bottom_margin,
         std::vector<float>::const_iterator data_begin,
         std::vector<float>::const_iterator data_end
     ) noexcept {
         Segment::reinitialize(reference, top_boundary, bottom_boundary);
         this->m_top_margin = top_margin;
-        this->m_bottom_margin = bottom_margin;
         this->m_data_begin = data_begin;
         this->m_data_end = data_end;
     }
@@ -380,7 +376,6 @@ private:
     std::vector<float>::const_iterator m_data_begin;
     std::vector<float>::const_iterator m_data_end;
     std::uint8_t m_top_margin;
-    std::uint8_t m_bottom_margin;
 };
 
 /**
@@ -476,19 +471,12 @@ public:
                    : this->m_segment_blueprint.preferred_margin();
     }
 
-    std::uint8_t bottom_margin(std::size_t index) const {
-        return this->m_segment_bottom_margins.count(index)
-                   ? this->m_segment_bottom_margins.at(index)
-                   : this->m_segment_blueprint.preferred_margin();
-    }
-
     RawSegment vertical_segment(std::size_t index) const noexcept {
         return RawSegment(
             this->m_ref[index],
             this->m_top[index],
             this->m_bottom[index],
             this->top_margin(index),
-            this->bottom_margin(index),
             m_data.begin() + m_segment_offsets[index],
             m_data.begin() + m_segment_offsets[index + 1],
             &this->m_segment_blueprint
@@ -551,7 +539,6 @@ private:
      * that are different from preferred blueprint margin.
      */
     std::unordered_map<std::size_t, std::uint8_t> m_segment_top_margins;
-    std::unordered_map<std::size_t, std::uint8_t> m_segment_bottom_margins;
 
     RegularSurface const& m_ref;
     RegularSurface const& m_top;

@@ -180,7 +180,7 @@ void SurfaceBoundedSubVolume::reinitialize(
 ) const {
     segment.reinitialize(
         m_ref[index], m_top[index], m_bottom[index],
-        top_margin(index), bottom_margin(index),
+        top_margin(index),
         m_data.begin() + m_segment_offsets[index], m_data.begin() + m_segment_offsets[index + 1]
     );
 }
