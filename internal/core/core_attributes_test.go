@@ -1301,7 +1301,6 @@ func TestAttributesInsufficientInterpolationSamples(t *testing.T) {
 		bottom      [][]float32
 		expectedMin [][]float32
 		expectedMax [][]float32
-		shouldFail  bool
 	}{
 		// top survey boundary at 4.0, bottom boundary at 40.0
 		{
@@ -1319,10 +1318,11 @@ func TestAttributesInsufficientInterpolationSamples(t *testing.T) {
 			expectedMax: [][]float32{{-2.75}},
 		},
 		{
-			name:       "No samples between top and bottom border, one to the top survey boundary",
-			top:        [][]float32{{6.00}},
-			bottom:     [][]float32{{7.00}},
-			shouldFail: true,
+			name:        "No samples between top and bottom border, one to the top survey boundary",
+			top:         [][]float32{{6.00}},
+			bottom:      [][]float32{{7.00}},
+			expectedMin: [][]float32{{-4.00}},
+			expectedMax: [][]float32{{-3.75}},
 		},
 		{
 			name:        "One sample between top and bottom border, one to the top survey boundary",
@@ -1332,10 +1332,11 @@ func TestAttributesInsufficientInterpolationSamples(t *testing.T) {
 			expectedMax: [][]float32{{-2.75}},
 		},
 		{
-			name:       "Top boundary on the top survey boundary, no additional samples between borders",
-			top:        [][]float32{{4.00}},
-			bottom:     [][]float32{{7.00}},
-			shouldFail: true,
+			name:        "Top boundary on the top survey boundary, no additional samples between borders",
+			top:         [][]float32{{4.00}},
+			bottom:      [][]float32{{7.00}},
+			expectedMin: [][]float32{{-4.50}},
+			expectedMax: [][]float32{{-3.75}},
 		},
 		{
 			name:        "Top boundary on the top survey boundary + additional sample between borders",
@@ -1345,10 +1346,11 @@ func TestAttributesInsufficientInterpolationSamples(t *testing.T) {
 			expectedMax: [][]float32{{-2.75}},
 		},
 		{
-			name:       "No samples between top and bottom border, one to the bottom survey boundary",
-			top:        [][]float32{{36.50}},
-			bottom:     [][]float32{{39.00}},
-			shouldFail: true,
+			name:        "No samples between top and bottom border, one to the bottom survey boundary",
+			top:         [][]float32{{36.50}},
+			bottom:      [][]float32{{39.00}},
+			expectedMin: [][]float32{{3.625}},
+			expectedMax: [][]float32{{4.25}},
 		},
 		{
 			name:        "One sample between top and bottom border, one to the bottom survey boundary",
@@ -1358,10 +1360,11 @@ func TestAttributesInsufficientInterpolationSamples(t *testing.T) {
 			expectedMax: [][]float32{{4.25}},
 		},
 		{
-			name:       "Bottom boundary on the bottom survey boundary, no additional samples between borders",
-			top:        [][]float32{{39.50}},
-			bottom:     [][]float32{{40.00}},
-			shouldFail: true,
+			name:        "Bottom boundary on the bottom survey boundary, no additional samples between borders",
+			top:         [][]float32{{39.50}},
+			bottom:      [][]float32{{40.00}},
+			expectedMin: [][]float32{{4.375}},
+			expectedMax: [][]float32{{4.5}},
 		},
 	}
 
@@ -1383,38 +1386,26 @@ func TestAttributesInsufficientInterpolationSamples(t *testing.T) {
 			interpolationMethod,
 		)
 
-		if !testcase.shouldFail {
-			require.NoErrorf(t, boundsErr,
-				"[%s] Expected enough samples between top %v and bottom %v",
-				testcase.name,
-				testcase.top,
-				testcase.bottom,
-			)
+		require.NoErrorf(t, boundsErr,
+			"[%s] Expected enough samples between top %v and bottom %v",
+			testcase.name,
+			testcase.top,
+			testcase.bottom,
+		)
 
-			require.Len(t, buf, len(targetAttributes), "Wrong number of attributes")
+		require.Len(t, buf, len(targetAttributes), "Wrong number of attributes")
 
-			checkAttributes := func(buf [][]byte, attrn int, expected [][]float32, label string) {
-				for i, attr := range buf[len(buf)/4*attrn : len(buf)/4*(attrn+1)] {
-					result, err := toFloat32(attr)
-					require.NoErrorf(t, err, "Couldn't convert to float32")
+		checkAttributes := func(buf [][]byte, attrn int, expected [][]float32, label string) {
+			for i, attr := range buf[len(buf)/4*attrn : len(buf)/4*(attrn+1)] {
+				result, err := toFloat32(attr)
+				require.NoErrorf(t, err, "Couldn't convert to float32")
 
-					require.Equalf(t, expected[i], *result, "[%v]: Wrong %s values", testcase.name, label)
-				}
-			}
-			expected := [][][]float32{testcase.top, testcase.expectedMin, testcase.bottom, testcase.expectedMax}
-			for i, attr := range targetAttributes {
-				checkAttributes(buf, i, expected[i], attr)
+				require.Equalf(t, expected[i], *result, "[%v]: Wrong %s values", testcase.name, label)
 			}
 		}
-
-		if testcase.shouldFail {
-			require.ErrorContainsf(t, boundsErr,
-				"Must be at least four data points",
-				"[%s] Expected not enough samples for makima interpolation between top %v and bottom %v",
-				testcase.name,
-				testcase.top,
-				testcase.bottom,
-			)
+		expected := [][][]float32{testcase.top, testcase.expectedMin, testcase.bottom, testcase.expectedMax}
+		for i, attr := range targetAttributes {
+			checkAttributes(buf, i, expected[i], attr)
 		}
 	}
 }

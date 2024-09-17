@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cmath>
 #include <stdexcept>
 
@@ -130,13 +131,39 @@ SurfaceBoundedSubVolume* make_subvolume(
         };
 
         std::int8_t top_margin = calculate_margin(Border::Top);
-        if (top_margin != segment_blueprint.preferred_margin()) {
-            subvolume->m_segment_top_margins.emplace(i, top_margin);
-        }
+        bool is_top_margin_atypical = (top_margin != segment_blueprint.preferred_margin());
 
         std::int8_t bottom_margin = calculate_margin(Border::Bottom);
-        if (bottom_margin != segment_blueprint.preferred_margin()) {
-            subvolume->m_segment_bottom_margins.emplace(i, bottom_margin);
+        bool is_bottom_margin_atypical = (bottom_margin != segment_blueprint.preferred_margin());
+
+        // limitation from makima samples interpolation algorithm
+        const int min_samples = 4;
+        assert(
+            (void("Current logic relies on relationship between min_samples and preferred_margin"),
+             min_samples == 2 * segment_blueprint.preferred_margin())
+        );
+        auto size = segment_blueprint.size(top_depth, bottom_depth, top_margin, bottom_margin);
+        if (size < min_samples) {
+            if (is_top_margin_atypical && is_bottom_margin_atypical) {
+                throw std::runtime_error(
+                    "Segment size is too small. Top margin: " +
+                    std::to_string(top_margin) + ", bottom margin: " +
+                    std::to_string(bottom_margin)
+                );
+            }
+
+            int diff = min_samples - size;
+            if (is_top_margin_atypical) {
+                bottom_margin += diff;
+                is_bottom_margin_atypical = true;
+            } else {
+                top_margin += diff;
+                is_top_margin_atypical = true;
+            }
+        }
+
+        if (is_top_margin_atypical) {
+            subvolume->m_segment_top_margins.emplace(i, top_margin);
         }
 
         subvolume->m_segment_offsets[i + 1] =
