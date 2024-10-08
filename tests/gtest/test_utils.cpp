@@ -258,7 +258,7 @@ void Datahandle10SamplesTest::check_attribute(
     // make exclusive
     high_index[0] += 1;
     high_index[1] += 1;
-    high_index[2] += subvolume.bottom_margin(0) + 1;
+    high_index[2] = low_index[2] + subvolume.vertical_segment(0).size();
 
     std::size_t nr_of_values = subvolume.nsamples(
         0, (high_index[0] - low_index[0]) * (high_index[1] - low_index[1])
