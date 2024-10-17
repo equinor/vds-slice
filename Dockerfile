@@ -9,7 +9,9 @@ RUN apk --no-cache add \
     cmake \
     boost-dev \
     util-linux-dev \
-    perl
+    perl \
+    libuv-dev \
+    zlib-dev
 
 ARG OPENVDS_VERSION=3.4.1
 WORKDIR /
@@ -25,11 +27,15 @@ RUN cmake -S . \
     -DBUILD_EXAMPLES=OFF \
     -DBUILD_TESTS=OFF \
     -DBUILD_DOCS=OFF \
-    -DDISABLE_AWS_IOMANAGER=ON \
+    -DDISABLE_STRICT_WARNINGS=OFF \
     -DDISABLE_AZURESDKFORCPP_IOMANAGER=OFF \
+    -DDISABLE_AWS_IOMANAGER=ON \
     -DDISABLE_GCP_IOMANAGER=ON \
-    -DDISABLE_DMS_IOMANAGER=OFF \
-    -DDISABLE_STRICT_WARNINGS=OFF
+    -DDISABLE_DMS_IOMANAGER=ON \
+    -DDISABLE_AZURE_PRESIGNED_IOMANAGER=ON \
+    -DDISABLE_CURL_IOMANAGER=ON \
+    -DBUILD_UV=OFF \
+    -DBUILD_ZLIB=OFF
 
 RUN cmake --build build --config ${BUILD_TYPE} --target install -j 8 --verbose
 
