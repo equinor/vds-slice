@@ -11,13 +11,18 @@ RUN apk --no-cache add \
     util-linux-dev \
     perl \
     libuv-dev \
-    zlib-dev
+    zlib-dev \
+    openssl-dev
 
 ARG OPENVDS_VERSION=3.4.1
 WORKDIR /
 RUN git clone --depth 1 --branch ${OPENVDS_VERSION} https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds.git
 WORKDIR /open-vds
 
+# for performance reasons open-vds should be build and run with new openssl
+# libssl is installed on alpine by default and would be used during runtime
+
+# it is unclear if curl version makes a difference and which one is better
 ARG BUILD_TYPE=Release
 RUN cmake -S . \
     -B build \
@@ -35,7 +40,9 @@ RUN cmake -S . \
     -DDISABLE_AZURE_PRESIGNED_IOMANAGER=ON \
     -DDISABLE_CURL_IOMANAGER=ON \
     -DBUILD_UV=OFF \
-    -DBUILD_ZLIB=OFF
+    -DBUILD_ZLIB=OFF \
+    -DBUILD_OPENSSL=OFF \
+    -DBUILD_CURL=ON
 
 RUN cmake --build build --config ${BUILD_TYPE} --target install -j 8 --verbose
 
