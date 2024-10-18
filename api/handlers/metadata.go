@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/equinor/vds-slice/internal/core"
+	"github.com/equinor/oneseismic-api/internal/core"
 )
 
 // MetadataGet godoc
@@ -82,4 +82,3 @@ func (m MetadataRequest) toString() (string, error) {
 		m.RequestedResource.toString(),
 	), nil
 }
-

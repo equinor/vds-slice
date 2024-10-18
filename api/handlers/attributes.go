@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/equinor/vds-slice/internal/cache"
-	"github.com/equinor/vds-slice/internal/core"
+	"github.com/equinor/oneseismic-api/internal/cache"
+	"github.com/equinor/oneseismic-api/internal/core"
 )
 
 // AttributesAlongSurfacePost godoc

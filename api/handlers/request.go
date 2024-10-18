@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/equinor/vds-slice/internal/core"
+	"github.com/equinor/oneseismic-api/internal/core"
 )
 
 type stringOrSlice []string

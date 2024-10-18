@@ -12,12 +12,12 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"github.com/equinor/vds-slice/api/handlers"
-	"github.com/equinor/vds-slice/api/middleware"
-	_ "github.com/equinor/vds-slice/docs"
-	"github.com/equinor/vds-slice/internal/cache"
-	"github.com/equinor/vds-slice/internal/core"
-	"github.com/equinor/vds-slice/internal/metrics"
+	"github.com/equinor/oneseismic-api/api/handlers"
+	"github.com/equinor/oneseismic-api/api/middleware"
+	"github.com/equinor/oneseismic-api/internal/cache"
+	"github.com/equinor/oneseismic-api/internal/core"
+	"github.com/equinor/oneseismic-api/internal/metrics"
+	_ "github.com/equinor/oneseismic-api/docs"
 )
 
 type opts struct {

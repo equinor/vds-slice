@@ -1,4 +1,4 @@
-module github.com/equinor/vds-slice
+module github.com/equinor/oneseismic-api
 
 go 1.22
 
