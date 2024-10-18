@@ -2,7 +2,7 @@
 # testing suite. In production everything is built through go.
 
 cmake_minimum_required(VERSION 3.14)
-project(vdsslice LANGUAGES C CXX)
+project(oneseismic-api LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

@@ -221,11 +221,11 @@ func setupApp(app *gin.Engine, endpoint *handlers.Endpoint, metric *metrics.Metr
 	app.LoadHTMLFiles("docs/index.html")
 }
 
-// @title        VDS-slice API
+// @title        oneseismic API
 // @version      0.0
 // @description  Serves seismic slices and fences from VDS files.
 // @contact.name Equinor ASA
-// @contact.url  https://github.com/equinor/vds-slice/issues
+// @contact.url  https://github.com/equinor/oneseismic-api/issues
 // @license.name GNU Affero General Public License
 // @license.url  https://www.gnu.org/licenses/agpl-3.0.en.html
 // @schemes      https

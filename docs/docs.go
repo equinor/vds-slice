@@ -11,7 +11,7 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "contact": {
             "name": "Equinor ASA",
-            "url": "https://github.com/equinor/vds-slice/issues"
+            "url": "https://github.com/equinor/oneseismic-api/issues"
         },
         "license": {
             "name": "GNU Affero General Public License",
@@ -30,7 +30,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{"https"},
-	Title:            "VDS-slice API",
+	Title:            "oneseismic API",
 	Description:      "Serves seismic slices and fences from VDS files.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

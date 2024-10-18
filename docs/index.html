@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head>
-      <title>Oneseismic</title>
+      <title>oneseismic API</title>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       
@@ -23,16 +23,16 @@
     
     
       <div class="crossnote markdown-preview  ">
-      <h1 id="vds-slice-span-stylecolorgreenrunningspan" data-source-line="7">VDS slice [<span style="color:green">Running</span>] </h1>
+      <h1 id="oneseismic-api-span-stylecolorgreenrunningspan" data-source-line="7">oneseismic API [<span style="color:green">Running</span>] </h1>
 <h2 id="motivation" data-source-line="9">Motivation </h2>
 <p data-source-line="10">Volume Data Storage (VDS) is a file format designed to store large multidimensional data sets. Storing data in a single flat file results in a solution where data requests in the first (primary) dimension are very fast, while requests in subsequent dimensions suffer a significant response time penalty.</p>
 <p data-source-line="12"><a href="https://community.opengroup.org/osdu/platform/domain-data-mgmt-services/seismic/open-vds">Open VDS</a> is an open source library designed for cloud storage, where the data set is partitioned into sub-cubes of fixed size in each dimension. One consequence of this is a normalization of the access time in different dimensions. Open VDS provides the user with an interface for the global cube, and thus the underlying data structure is hidden from the user.</p>
 <p data-source-line="14">In cases where the requested data set does not span all dimensions there will be a significant overhead in the data retrieved from the cloud storage. Examples here are <i>fence</i> and <i>slice</i> requests. If the VDS is stored using sub-cubes of size 64, then fence and slice requests to Open VDS will retrieve roughly 64 times more data than the user requested. Reducing the sub-cube size will reduce the overhead at the expense of the time Open VDS uses to manage the underlying data structure. Thus, there is a sweet spot balancing the two.</p>
-<p data-source-line="16"><a href="https://github.com/equinor/vds-slice">VDS-slice</a> addresses this issue by enabling the user to run the Open VDS instance in Azure or even better in the same data center as the cloud storage. In this way VDS-slice utilizes the data centers high internal data rate and minimizes the external data traffic.</p>
+<p data-source-line="16"><a href="https://github.com/equinor/oneseismic-api">oneseismic-api</a> addresses this issue by enabling the user to run the Open VDS instance in Azure or even better in the same data center as the cloud storage. In this way oneseismic-api utilizes the data centers high internal data rate and minimizes the external data traffic.</p>
 <h2 id="api-documentation" data-source-line="18">API documentation </h2>
 <p data-source-line="19">Swagger documentation is available <a href="swagger/index.html">here</a>.</p>
 <h2 id="source-code" data-source-line="21">Source code </h2>
-<p data-source-line="22">VDS-slice is an open project and the code is available <a href="https://github.com/equinor/vds-slice">here</a>.</p>
+<p data-source-line="22">oneseismic-api is an open project and the code is available <a href="https://github.com/equinor/oneseismic-api">here</a>.</p>
 <h2 id="a-simple-python-example" data-source-line="25">A simple python example </h2>
 <pre data-role="codeBlock" data-info="python" class="language-python python"><code><span class="token keyword keyword-import">import</span> requests
 <span class="token keyword keyword-import">import</span> json
