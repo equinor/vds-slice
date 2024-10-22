@@ -2,7 +2,7 @@ import { Trend } from "k6/metrics";
 
 export const responseLengthTrend = new Trend("response_length");
 export const requestTimeTrend = new Trend(
-  `request_time_${__ENV.TEST_NAME.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 127)}`,
+  `request_time_${(__ENV.TEST_NAME ? __ENV.TEST_NAME.replace(/[^a-zA-Z0-9_]/g, '_') : 'test').substring(0, 127)}`,
   true
 );
 
