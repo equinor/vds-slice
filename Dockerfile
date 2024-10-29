@@ -37,8 +37,8 @@ RUN cmake -S . \
     -DDISABLE_AWS_IOMANAGER=ON \
     -DDISABLE_GCP_IOMANAGER=ON \
     -DDISABLE_DMS_IOMANAGER=ON \
-    -DDISABLE_AZURE_PRESIGNED_IOMANAGER=ON \
-    -DDISABLE_CURL_IOMANAGER=ON \
+    -DDISABLE_AZURE_PRESIGNED_IOMANAGER=OFF \
+    -DDISABLE_CURL_IOMANAGER=OFF \
     -DBUILD_UV=OFF \
     -DBUILD_ZLIB=OFF \
     -DBUILD_OPENSSL=OFF \
@@ -94,7 +94,8 @@ RUN GOBIN=/server go install -a ./...
 
 FROM ${VDSSLICE_BASEIMAGE} as runner
 RUN apk --no-cache add \
-    jemalloc-dev
+    jemalloc-dev \
+    libuv
 
 WORKDIR /server
 COPY --from=installer /open-vds/Dist/OpenVDS/lib/* /open-vds/
