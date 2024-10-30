@@ -44,6 +44,7 @@ spec:
             VDSSLICE_TRUSTED_PROXIES: ""
             VDSSLICE_BLOCKED_IPS: ""
             VDSSLICE_BLOCKED_USER_AGENTS: ""
+            OPENVDS_AZURE_IOMANAGER_THREAD_COUNT: ""
           secretRefs:
             azureKeyVaults:
               - name: S067-RadixKeyvault
@@ -68,6 +69,7 @@ spec:
             VDSSLICE_TRUSTED_PROXIES: ""
             VDSSLICE_BLOCKED_IPS: ""
             VDSSLICE_BLOCKED_USER_AGENTS: ""
+            OPENVDS_AZURE_IOMANAGER_THREAD_COUNT: ""
           secretRefs:
             azureKeyVaults:
               - name: S067-RadixKeyvault
@@ -100,6 +102,7 @@ spec:
             VDSSLICE_TRUSTED_PROXIES: ""
             VDSSLICE_BLOCKED_IPS: ""
             VDSSLICE_BLOCKED_USER_AGENTS: ""
+            OPENVDS_AZURE_IOMANAGER_THREAD_COUNT: ""
           secretRefs:
             azureKeyVaults:
               - name: S067-RadixKeyvault
