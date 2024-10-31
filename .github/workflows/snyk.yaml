@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
 
 jobs:
+  # The following secrets are required:
+  # SNYK_TOKEN : token to run and upload data to snyk
   snyk_test:
     name: Snyk test
     runs-on: ubuntu-latest
@@ -40,3 +42,34 @@ jobs:
         args:
          --file=Dockerfile
          --severity-threshold=high
+
+  openvds_snyk_monitor:
+    name: openvds snyk test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Load openvds image
+      uses: "./.github/actions/load_openvds_image"
+
+    - name: Set tag name for openvds snyk monitor
+      run: |
+        tag=$(echo "${{ github.repository }}/openvds-source-${{ github.ref_name }}" \
+         | tr '[:upper:]' '[:lower:]')
+        echo "OPENVDS_SNYK_PROJECT_TAG=$tag" >> "$GITHUB_ENV"
+
+    - name: Build docker image
+      run: |
+        docker build \
+        -f Dockerfile \
+        --build-arg OPENVDS_IMAGE=${{ env.OPENVDS_IMAGE_TAG }} \
+        --target openvds_snyk_monitor \
+        --tag $OPENVDS_SNYK_PROJECT_TAG \
+        .
+
+    - name: Run Snyk to check openvds for vulnerabilities
+      run: |
+        docker run \
+        --env SNYK_TOKEN=${{ secrets.SNYK_TOKEN }} \
+        --env SNYK_PROJECT_TAG=${{ env.OPENVDS_SNYK_PROJECT_TAG }} \
+        ${{ env.OPENVDS_SNYK_PROJECT_TAG }}
