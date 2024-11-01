@@ -47,6 +47,15 @@ RUN cmake -S . \
 RUN cmake --build build --config ${BUILD_TYPE} --target install -j 8 --verbose
 
 
+FROM $OPENVDS_IMAGE as openvds_snyk_monitor
+WORKDIR /
+RUN apk --no-cache add curl
+RUN curl --compressed https://downloads.snyk.io/cli/stable/snyk-alpine -o snyk
+RUN chmod +x ./snyk
+WORKDIR /open-vds
+ENTRYPOINT /snyk monitor --unmanaged --remote-repo-url=${SNYK_PROJECT_TAG}
+
+
 FROM $OPENVDS_IMAGE as builder
 WORKDIR /src
 COPY go.mod go.sum ./
