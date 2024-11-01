@@ -88,14 +88,14 @@ func parseopts() opts {
 	help := getopt.BoolLong("help", 0, "print this help text")
 
 	opts := opts{
-		storageAccounts:   parseAsString("", os.Getenv("VDSSLICE_STORAGE_ACCOUNTS")),
-		port:              parseAsUint32(8080, os.Getenv("VDSSLICE_PORT")),
-		cacheSize:         parseAsUint64(0, os.Getenv("VDSSLICE_CACHE_SIZE")),
-		metrics:           parseAsBool(false, os.Getenv("VDSSLICE_METRICS")),
-		metricsPort:       parseAsUint32(8081, os.Getenv("VDSSLICE_METRICS_PORT")),
-		trustedProxies:    parseAsListOfStrings(nil, os.Getenv("VDSSLICE_TRUSTED_PROXIES")),
-		blockedIPs:        parseAsListOfStrings(nil, os.Getenv("VDSSLICE_BLOCKED_IPS")),
-		blockedUserAgents: parseAsListOfStrings(nil, os.Getenv("VDSSLICE_BLOCKED_USER_AGENTS")),
+		storageAccounts:   parseAsString("", os.Getenv("ONESEISMIC_API_STORAGE_ACCOUNTS")),
+		port:              parseAsUint32(8080, os.Getenv("ONESEISMIC_API_PORT")),
+		cacheSize:         parseAsUint64(0, os.Getenv("ONESEISMIC_API_CACHE_SIZE")),
+		metrics:           parseAsBool(false, os.Getenv("ONESEISMIC_API_METRICS")),
+		metricsPort:       parseAsUint32(8081, os.Getenv("ONESEISMIC_API_METRICS_PORT")),
+		trustedProxies:    parseAsListOfStrings(nil, os.Getenv("ONESEISMIC_API_TRUSTED_PROXIES")),
+		blockedIPs:        parseAsListOfStrings(nil, os.Getenv("ONESEISMIC_API_BLOCKED_IPS")),
+		blockedUserAgents: parseAsListOfStrings(nil, os.Getenv("ONESEISMIC_API_BLOCKED_USER_AGENTS")),
 	}
 
 	getopt.FlagLong(
@@ -104,7 +104,7 @@ func parseopts() opts {
 		0,
 		"Comma-separated list of storage accounts that should be accepted by the API.\n"+
 			"Example: 'https://<account1>.blob.core.windows.net,https://<account2>.blob.core.windows.net'\n"+
-			"Can also be set by environment variable 'VDSSLICE_STORAGE_ACCOUNTS'",
+			"Can also be set by environment variable 'ONESEISMIC_API_STORAGE_ACCOUNTS'",
 		"string",
 	)
 
@@ -113,7 +113,7 @@ func parseopts() opts {
 		"port",
 		0,
 		"Port to start server on. Defaults to 8080.\n"+
-			"Can also be set by environment variable 'VDSSLICE_PORT'",
+			"Can also be set by environment variable 'ONESEISMIC_API_PORT'",
 		"int",
 	)
 
@@ -123,7 +123,7 @@ func parseopts() opts {
 		0,
 		"Max size of the response cache. In megabytes. A value of zero effectively\n"+
 			"disables caching. Defaults to 0.\n"+
-			"Can also be set by environment variable 'VDSSLICE_CACHE_SIZE'",
+			"Can also be set by environment variable 'ONESEISMIC_API_CACHE_SIZE'",
 		"int",
 	)
 
@@ -133,7 +133,7 @@ func parseopts() opts {
 		0,
 		"Turn on server metrics. Metrics are posted to /metrics using the\n"+
 			"prometheus data model. Off by default.\n"+
-			"Can also be set by environment variable 'VDSSLICE_METRICS'",
+			"Can also be set by environment variable 'ONESEISMIC_API_METRICS'",
 	)
 
 	getopt.FlagLong(
@@ -144,7 +144,7 @@ func parseopts() opts {
 			"different port than the server itself. This allows for them to be kept\n"+
 			"private, if desirable. Defaults to 8081.\n"+
 			"Ignored if metrics are not turned on. (see --metrics)\n"+
-			"Can also be set by environment variable 'VDSSLICE_METRICS_PORT'",
+			"Can also be set by environment variable 'ONESEISMIC_API_METRICS_PORT'",
 		"int",
 	)
 
@@ -156,7 +156,7 @@ func parseopts() opts {
 			"IPv6 addresses or IPv6 CIDRs) from which to trust request's headers that\n"+
 			"contain alternative client IP. This will impact which IP is written \n"+
 			"to the log.\n"+
-			"Can also be set by environment variable 'VDSSLICE_TRUSTED_PROXIES'",
+			"Can also be set by environment variable 'ONESEISMIC_API_TRUSTED_PROXIES'",
 		"string",
 	)
 
@@ -165,7 +165,7 @@ func parseopts() opts {
 		"blocked-ips",
 		0,
 		"Comma-separated list of ips which shouldn't be allowed to access the application.\n"+
-			"Can also be set by environment variable 'VDSSLICE_BLOCKED_IPS'",
+			"Can also be set by environment variable 'ONESEISMIC_API_BLOCKED_IPS'",
 		"string",
 	)
 
@@ -174,7 +174,7 @@ func parseopts() opts {
 		"blocked-user-agents",
 		0,
 		"Comma-separated list of user agents which shouldn't be allowed to access the application"+
-			"Can also be set by environment variable 'VDSSLICE_BLOCKED_USER_AGENTS'",
+			"Can also be set by environment variable 'ONESEISMIC_API_BLOCKED_USER_AGENTS'",
 		"string",
 	)
 

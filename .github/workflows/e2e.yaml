@@ -20,10 +20,10 @@ jobs:
 
       - name: Build and Run server
         env:
-          VDSSLICE_STORAGE_ACCOUNTS: https://${{ secrets.STORAGE_ACCOUNT_NAME }}.blob.core.windows.net
+          ONESEISMIC_API_STORAGE_ACCOUNTS: https://${{ secrets.STORAGE_ACCOUNT_NAME }}.blob.core.windows.net
           # Keep cache size big enough so that cache is never full
           # thus tests can rely on the key to be accepted on the first try
-          VDSSLICE_CACHE_SIZE: 50
+          ONESEISMIC_API_CACHE_SIZE: 50
         run: |
           tag=server
           DOCKER_BUILDKIT=1 docker build \
@@ -33,8 +33,8 @@ jobs:
             --tag $tag \
             .
           docker run \
-            -e VDSSLICE_STORAGE_ACCOUNTS \
-            -e VDSSLICE_CACHE_SIZE \
+            -e ONESEISMIC_API_STORAGE_ACCOUNTS \
+            -e ONESEISMIC_API_CACHE_SIZE \
             -d \
             -p 8080:8080 \
             $tag

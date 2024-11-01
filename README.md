@@ -39,12 +39,12 @@ go run cmd/query/main.go --storage-accounts "https://<account>.blob.core.windows
 
 Or it can be installed first and then run
 ```
-export VDSSLICE_INSTALL_DIR=<where to install the server>
-GOBIN=$VDSSLICE_INSTALL_DIR  go install ./...
-VDSSLICE_STORAGE_ACCOUNTS="https://<account>.blob.core.windows.net" $VDSSLICE_INSTALL_DIR/query
+export ONESEISMIC_API_INSTALL_DIR=<where to install the server>
+GOBIN=$ONESEISMIC_API_INSTALL_DIR  go install ./...
+ONESEISMIC_API_STORAGE_ACCOUNTS="https://<account>.blob.core.windows.net" $ONESEISMIC_API_INSTALL_DIR/query
 ```
 
-Run `$VDSSLICE_INSTALL_DIR/query --help` to print available server options.
+Run `$ONESEISMIC_API_INSTALL_DIR/query --help` to print available server options.
 
 Note that for server to build and run properly `openvds` library should be
 reachable. For example:
