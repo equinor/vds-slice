@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_METADATAHANDLE_HPP
-#define VDS_SLICE_METADATAHANDLE_HPP
+#ifndef ONESEISMIC_API_METADATAHANDLE_HPP
+#define ONESEISMIC_API_METADATAHANDLE_HPP
 
 #include <OpenVDS/OpenVDS.h>
 #include <string>
@@ -85,4 +85,4 @@ private:
 
     std::string operator_string() const noexcept(false);
 };
-#endif /* VDS_SLICE_METADATAHANDLE_HPP */
+#endif /* ONESEISMIC_API_METADATAHANDLE_HPP */

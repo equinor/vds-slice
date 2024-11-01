@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_REGULAR_SURFACE_HPP
-#define VDS_SLICE_REGULAR_SURFACE_HPP
+#ifndef ONESEISMIC_API_REGULAR_SURFACE_HPP
+#define ONESEISMIC_API_REGULAR_SURFACE_HPP
 
 #include <array>
 
@@ -172,4 +172,4 @@ private:
 
 // } // namespace surface
 
-#endif /* VDS_SLICE_REGULAR_SURFACE_HPP */
+#endif /* ONESEISMIC_API_REGULAR_SURFACE_HPP */

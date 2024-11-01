@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_CPPAPI_HPP
-#define VDS_SLICE_CPPAPI_HPP
+#ifndef ONESEISMIC_API_CPPAPI_HPP
+#define ONESEISMIC_API_CPPAPI_HPP
 
 #include <vector>
 
@@ -105,4 +105,4 @@ void attributes_metadata(
 
 } // namespace cppapi
 
-#endif // VDS_SLICE_CPPAPI_HPP
+#endif // ONESEISMIC_API_CPPAPI_HPP

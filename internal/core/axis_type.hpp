@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_AXIS_TYPE_HPP
-#define VDS_SLICE_AXIS_TYPE_HPP
+#ifndef ONESEISMIC_API_AXIS_TYPE_HPP
+#define ONESEISMIC_API_AXIS_TYPE_HPP
 
 #include <string>
 
@@ -11,4 +11,4 @@ enum class AxisType {
 
 std::string axis_type_to_string(AxisType axis_type) noexcept(false);
 
-#endif /* VDS_SLICE_AXIS_TYPE_HPP */
+#endif /* ONESEISMIC_API_AXIS_TYPE_HPP */

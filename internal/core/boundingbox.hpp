@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_BOUNDINGBOX_HPP
-#define VDS_SLICE_BOUNDINGBOX_HPP
+#ifndef ONESEISMIC_API_BOUNDINGBOX_HPP
+#define ONESEISMIC_API_BOUNDINGBOX_HPP
 
 #include <utility>
 #include <vector>
@@ -26,4 +26,4 @@ private:
     CoordinateTransformer const& m_transformer;
 };
 
-#endif /* VDS_SLICE_BOUNDINGBOX_HPP */
+#endif /* ONESEISMIC_API_BOUNDINGBOX_HPP */

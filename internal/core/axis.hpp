@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_AXIS_HPP
-#define VDS_SLICE_AXIS_HPP
+#ifndef ONESEISMIC_API_AXIS_HPP
+#define ONESEISMIC_API_AXIS_HPP
 
 #include <memory>
 #include <string>
@@ -57,4 +57,4 @@ private:
     OpenVDS::VolumeDataAxisDescriptor m_axis_descriptor;
 };
 
-#endif /* VDS_SLICE_AXIS_HPP */
+#endif /* ONESEISMIC_API_AXIS_HPP */

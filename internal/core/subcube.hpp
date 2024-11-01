@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_SUBCUBE_HPP
-#define VDS_SLICE_SUBCUBE_HPP
+#ifndef ONESEISMIC_API_SUBCUBE_HPP
+#define ONESEISMIC_API_SUBCUBE_HPP
 
 #include <OpenVDS/OpenVDS.h>
 
@@ -27,4 +27,4 @@ struct SubCube {
     ) noexcept (false);
 };
 
-#endif /* VDS_SLICE_SUBCUBE_HPP */
+#endif /* ONESEISMIC_API_SUBCUBE_HPP */
