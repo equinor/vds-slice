@@ -2,7 +2,7 @@ name: Memory tests
 
 on:
   push:
-    branches: [master, memory_tests]
+    branches: [main, memory_tests]
   workflow_dispatch:
 
 jobs:

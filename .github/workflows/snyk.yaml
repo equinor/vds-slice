@@ -1,7 +1,7 @@
 name: Snyk test Docker image
 on: 
   push:
-    branches: [master, radix]
+    branches: [main, radix]
   workflow_dispatch:
 
 jobs:

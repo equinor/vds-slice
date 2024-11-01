@@ -224,7 +224,7 @@ Suite best be run using docker:
 
 E2E tests use secrets to access Azure environment and due to security reasons
 secrets are not accessible in pull requests. Thus e2e tests can't run on PRs,
-but are set up to run on merge to master.
+but are set up to run on merge to main.
 
 If one wants to run e2e tests oneself, one must set up own fork with required
 secrets to dedicated test storage account. Then e2e tests run can be triggered
