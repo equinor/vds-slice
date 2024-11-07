@@ -148,7 +148,7 @@ To locally run a file `<chosen_script>.js` from the suite:
     ```
     export PYTHONPATH=<path-to-the-repo>/oneseismic-api/tests:$PYTHONPATH
     ```
-4. Set all environment variables
+4. Set all required environment variables
     ```
     # set the 3 following variables needed to create sas
 
@@ -164,9 +164,9 @@ To locally run a file `<chosen_script>.js` from the suite:
     export ENDPOINT=<endpoint on which server is running>
     export VDS=<https://account.blob.core.windows.net/path-to-the-vds>
     export LOGPATH=<directory to store output files>
-    export MEDTIME=<maximum acceptable median response time (ms) against provided server>
-    export MAXTIME=<time (ms) in which 95% of all requests are expected to return against provided server>
     ```
+
+    Refer to github workflows for available optional environment variables.
 5. Run the script
     ```
     python tests/performance/performance.py tests/performance/<chosen_script>.js

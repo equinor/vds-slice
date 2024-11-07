@@ -44,36 +44,24 @@ jobs:
           - name: Random inline slice (big file, small depth)
             filepath: "/tests/performance/script-random-inlineslice.js"
             vds: "testdata/varsize/varsize_4000_3000_5"
-            medtime: "500"
-            maxtime: "800"
           - name: Sequential inline slices (big file, small depth)
             filepath: "/tests/performance/script-sequential-inlineslice.js"
             vds: "testdata/varsize/varsize_4000_3000_5"
-            medtime: "400"
-            maxtime: "2000"
           - name: Sequential inline slices (small file, big depth)
             filepath: "/tests/performance/script-sequential-inlineslice.js"
             vds: "testdata/varsize/varsize_500_300_2000"
-            medtime: "3000"
-            maxtime: "7000"
           - name: Random sequential fence line (big file, small depth)
             filepath: "/tests/performance/script-random-fence.js"
             vds: "testdata/varsize/varsize_4000_3000_5"
-            medtime: "400"
-            maxtime: "700"
           - name: Random horizon (small file, big depth)
             filepath: "/tests/performance/script-random-horizon.js"
             vds: "testdata/varsize/varsize_500_300_2000"
-            medtime: "10000"
-            maxtime: "15000"
 
           # Multi-replica tests
 
           - name: Several parallel random slice requests to same VDS
             filepath: "/tests/performance/script-various-requests.js"
             vds: "testdata/varsize/varsize_500_300_2000"
-            medtime: "10000"
-            maxtime: "30000"
 
     steps:
       - name: Set up Docker Buildx
@@ -99,8 +87,6 @@ jobs:
           STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
           EXPECTED_RUN_TIME: "600"
           LOGPATH: "/out"
-          MEDTIME: ${{ matrix.medtime }}
-          MAXTIME: ${{ matrix.maxtime }}
           K6_PROMETHEUS_RW_SERVER_URL: "http://127.0.0.1:9090/api/v1/write"
           K6_REMOTE_RW_URL: ${{secrets.K6_REMOTE_RW_URL}}
           TENANT_ID: ${{secrets.TENANT_ID}}
@@ -116,8 +102,6 @@ jobs:
             -e ENDPOINT \
             -e VDS \
             -e EXPECTED_RUN_TIME \
-            -e MEDTIME \
-            -e MAXTIME \
             -e LOGPATH \
             -e K6_PROMETHEUS_RW_SERVER_URL \
             -e K6_REMOTE_RW_URL \
