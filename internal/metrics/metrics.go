@@ -38,20 +38,20 @@ func NewMetrics() *Metrics {
 		registry: registry,
 
 		requestDurations: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Name:    "vdsslice_durations_histogram_seconds",
-			Help:    "VDSslice latency distributions.",
+			Name:    "oneseismic_api_durations_histogram_seconds",
+			Help:    "oneseismic-api latency distributions.",
 			Buckets: []float64{100*ms, 500*ms, 1*s, 2*s, 5*s, 20*s, 1*m, 2*m},
 		}, []string{"path", "status", "cachehit"}),
 
 		responseSizes: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Name:    "vdsslice_response_sizes_histogram_bytes",
-			Help:    "VDSslice response size distributions.",
+			Name:    "oneseismic_api_response_sizes_histogram_bytes",
+			Help:    "oneseismic-api response size distributions.",
 			Buckets: []float64{100*kb, 1*mb, 5*mb, 10*mb, 20*mb, 50*mb, 100*mb, 200*mb},
 		}, []string{"path", "status"}),
 
 		requestCount: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "vdsslice_requests_count",
-			Help: "VDSslice number of requests.",
+			Name: "oneseismic_api_requests_count",
+			Help: "oneseismic-api number of requests.",
 		}, []string{"method", "path", "storage_account"}),
 	}
 

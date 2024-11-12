@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_SUBVOLUME_HPP
-#define VDS_SLICE_SUBVOLUME_HPP
+#ifndef ONESEISMIC_API_SUBVOLUME_HPP
+#define ONESEISMIC_API_SUBVOLUME_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -563,4 +563,4 @@ SurfaceBoundedSubVolume* make_subvolume(
  */
 void resample(RawSegment const& src_segment, ResampledSegment& dst_segment);
 
-#endif /* VDS_SLICE_SUBVOLUME_HPP */
+#endif /* ONESEISMIC_API_SUBVOLUME_HPP */

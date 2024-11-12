@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_CTYPES_H
-#define VDS_SLICE_CTYPES_H
+#ifndef ONESEISMIC_API_CTYPES_H
+#define ONESEISMIC_API_CTYPES_H
 #include <stdlib.h>
 
 struct response {
@@ -68,4 +68,4 @@ struct Bound {
     enum axis_name name;
 };
 
-#endif // VDS_SLICE_CTYPES_H
+#endif // ONESEISMIC_API_CTYPES_H

@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_DATAHANDLE_HPP
-#define VDS_SLICE_DATAHANDLE_HPP
+#ifndef ONESEISMIC_API_DATAHANDLE_HPP
+#define ONESEISMIC_API_DATAHANDLE_HPP
 
 #include <memory>
 #include <string>
@@ -200,4 +200,4 @@ void inplace_division(
     std::size_t nsamples
 ) noexcept(true);
 
-#endif /* VDS_SLICE_DATAHANDLE_HPP */
+#endif /* ONESEISMIC_API_DATAHANDLE_HPP */

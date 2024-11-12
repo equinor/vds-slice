@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_EXCEPTIONS_H
-#define VDS_SLICE_EXCEPTIONS_H
+#ifndef ONESEISMIC_API_EXCEPTIONS_H
+#define ONESEISMIC_API_EXCEPTIONS_H
 
 #include <stdexcept>
 
@@ -15,4 +15,4 @@ struct bad_request : public std::runtime_error {
 
 } // namespace detail
 
-#endif // VDS_SLICE_EXCEPTIONS_H
+#endif // ONESEISMIC_API_EXCEPTIONS_H

@@ -1,11 +1,11 @@
 # Contributing
 
-The following is a set of guidelines for contributing to `vds-slice`.
+The following is a set of guidelines for contributing to `oneseismic-api`.
 
 Some of the ways you can help:
 
 - Submitting bug reports: see
-  [Issues](https://github.com/equinor/vds-slice/issues).
+  [Issues](https://github.com/equinor/oneseismic-api/issues).
 - Proposing code for bug fixes and new features, then [making a pull
   request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests).
 - Fixing typos and generally improving the documentation.

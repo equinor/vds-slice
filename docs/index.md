@@ -4,7 +4,7 @@
 [comment]: <> (Use "Markdown Preview Enhanced" to preview the index.md file.)
 [comment]: <> (Generate new file by right click -> "HTML" -> "HTML [cdn hosted]")
 
-# VDS slice [<span style="color:green">Running</span>]
+# oneseismic API [<span style="color:green">Running</span>]
 
 ## Motivation
 Volume Data Storage (VDS) is a file format designed to store large multidimensional data sets. Storing data in a single flat file results in a solution where data requests in the first (primary) dimension are very fast, while requests in subsequent dimensions suffer a significant response time penalty.
@@ -13,13 +13,13 @@ Volume Data Storage (VDS) is a file format designed to store large multidimensio
 
 In cases where the requested data set does not span all dimensions there will be a significant overhead in the data retrieved from the cloud storage. Examples here are <i>fence</i> and <i>slice</i> requests. If the VDS is stored using sub-cubes of size 64, then fence and slice requests to Open VDS will retrieve roughly 64 times more data than the user requested. Reducing the sub-cube size will reduce the overhead at the expense of the time Open VDS uses to manage the underlying data structure. Thus, there is a sweet spot balancing the two. 
 
-<a href="https://github.com/equinor/vds-slice">VDS-slice</a> addresses this issue by enabling the user to run the Open VDS instance in Azure or even better in the same data center as the cloud storage. In this way VDS-slice utilizes the data centers high internal data rate and minimizes the external data traffic. 
+<a href="https://github.com/equinor/oneseismic-api">oneseismic-api</a> addresses this issue by enabling the user to run the Open VDS instance in Azure or even better in the same data center as the cloud storage. In this way oneseismic-api utilizes the data centers high internal data rate and minimizes the external data traffic.
 
 ## API documentation
 Swagger documentation is available <a href="swagger/index.html">here</a>. 
 
 ## Source code
-VDS-slice is an open project and the code is available <a href="https://github.com/equinor/vds-slice">here</a>.
+oneseismic-api is an open project and the code is available <a href="https://github.com/equinor/oneseismic-api">here</a>.
 
 
 ## A simple python example

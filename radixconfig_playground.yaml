@@ -26,20 +26,20 @@ spec:
       environmentConfig:
         - environment: test
           variables:
-            VDSSLICE_PORT: "8080"
-            VDSSLICE_CACHE_SIZE: "0" # MB
-            VDSSLICE_METRICS: "true"
-            VDSSLICE_METRICS_PORT: "8081"
-            VDSSLICE_TRUSTED_PROXIES: ""
-            VDSSLICE_BLOCKED_IPS: ""
-            VDSSLICE_BLOCKED_USER_AGENTS: ""
+            ONESEISMIC_API_PORT: "8080"
+            ONESEISMIC_API_CACHE_SIZE: "0" # MB
+            ONESEISMIC_API_METRICS: "true"
+            ONESEISMIC_API_METRICS_PORT: "8081"
+            ONESEISMIC_API_TRUSTED_PROXIES: ""
+            ONESEISMIC_API_BLOCKED_IPS: ""
+            ONESEISMIC_API_BLOCKED_USER_AGENTS: ""
           secretRefs:
             azureKeyVaults:
               - name: S067-RadixKeyvault
                 useAzureIdentity: true
                 items:
                   - name: playground-test-allowlist
-                    envVar: VDSSLICE_STORAGE_ACCOUNTS
+                    envVar: ONESEISMIC_API_STORAGE_ACCOUNTS
           monitoring: true
           resources:
             requests:

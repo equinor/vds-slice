@@ -3,7 +3,7 @@ global:
   evaluation_interval: "${K6_PROMETHEUS_RW_PUSH_INTERVAL}"
 
 scrape_configs:
-  - job_name: "vdsslice_performance"
+  - job_name: "oneseismic_api_performance"
     track_timestamps_staleness: true
     static_configs:
       - targets: ["localhost:9090"]

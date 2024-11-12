@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_DIRECTION_HPP
-#define VDS_SLICE_DIRECTION_HPP
+#ifndef ONESEISMIC_API_DIRECTION_HPP
+#define ONESEISMIC_API_DIRECTION_HPP
 
 #include <string>
 
@@ -24,4 +24,4 @@ private:
 };
 
 
-#endif /* VDS_SLICE_DIRECTION_HPP */
+#endif /* ONESEISMIC_API_DIRECTION_HPP */

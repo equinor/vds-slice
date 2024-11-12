@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_UTILS_H
-#define VDS_SLICE_UTILS_H
+#ifndef ONESEISMIC_API_UTILS_H
+#define ONESEISMIC_API_UTILS_H
 
 #include <iomanip>
 #include <sstream>
@@ -14,4 +14,4 @@ std::string to_string_with_precision(const T val, const int n = 2) {
     return out.str();
 }
 }
-#endif //VDS_SLICE_UTILS_H
+#endif //ONESEISMIC_API_UTILS_H

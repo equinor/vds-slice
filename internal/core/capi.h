@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_CAPI_H
-#define VDS_SLICE_CAPI_H
+#ifndef ONESEISMIC_API_CAPI_H
+#define ONESEISMIC_API_CAPI_H
 
 #include "ctypes.h"
 
@@ -197,4 +197,4 @@ int align_surfaces(
 #ifdef __cplusplus
 }
 #endif
-#endif // VDS_SLICE_CAPI_H
+#endif // ONESEISMIC_API_CAPI_H

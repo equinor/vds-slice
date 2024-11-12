@@ -1,5 +1,5 @@
-#ifndef VDS_SLICE_ATTRIBUTE_HPP
-#define VDS_SLICE_ATTRIBUTE_HPP
+#ifndef ONESEISMIC_API_ATTRIBUTE_HPP
+#define ONESEISMIC_API_ATTRIBUTE_HPP
 
 #include "regularsurface.hpp"
 #include "subvolume.hpp"
@@ -167,4 +167,4 @@ void calc_attributes(
     std::size_t to
 ) noexcept (false);
 
-#endif /* VDS_SLICE_ATTRIBUTE_HPP */
+#endif /* ONESEISMIC_API_ATTRIBUTE_HPP */

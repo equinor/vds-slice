@@ -1,6 +1,6 @@
-# VDS slice
+# oneseismic-api
 
-VDS slice is a web API for accessing seismic slices and fences from VDS
+oneseismic-api is a web API for accessing seismic slices and fences from VDS
 files. It also serves basic metadata from the Survey.
 
 ## Motivation
@@ -19,10 +19,10 @@ With this API we move the resource use of OpenVDS away from your server, by
 serving you exactly the data you ask for and nothing more, keeping each request
 as lightweight as possible.
 
-## Should I use VDS Slice or the OpenVDS SDK?
+## Should I use oneseismic-api or the OpenVDS SDK?
 
 This API does not serve you any data that cannot be access directly through
-the OpenVDS SDK. As mentioned, the motivation for VDS Slice is to reduce
+the OpenVDS SDK. As mentioned, the motivation for oneseismic-api is to reduce
 resource use when fetching small amounts of data, such as slices or fences.
 However, if your use-case involve reading larger amounts of data, such as
 in a ML pipeline or other seismic processing you are better of using OpenVDS
@@ -39,12 +39,12 @@ go run cmd/query/main.go --storage-accounts "https://<account>.blob.core.windows
 
 Or it can be installed first and then run
 ```
-export VDSSLICE_INSTALL_DIR=<where to install the server>
-GOBIN=$VDSSLICE_INSTALL_DIR  go install ./...
-VDSSLICE_STORAGE_ACCOUNTS="https://<account>.blob.core.windows.net" $VDSSLICE_INSTALL_DIR/query
+export ONESEISMIC_API_INSTALL_DIR=<where to install the server>
+GOBIN=$ONESEISMIC_API_INSTALL_DIR  go install ./...
+ONESEISMIC_API_STORAGE_ACCOUNTS="https://<account>.blob.core.windows.net" $ONESEISMIC_API_INSTALL_DIR/query
 ```
 
-Run `$VDSSLICE_INSTALL_DIR/query --help` to print available server options.
+Run `$ONESEISMIC_API_INSTALL_DIR/query --help` to print available server options.
 
 Note that for server to build and run properly `openvds` library should be
 reachable. For example:
@@ -146,7 +146,7 @@ To locally run a file `<chosen_script>.js` from the suite:
 2. pip-install requirements under `tests/performance/requirements-dev.txt`
 3. Add test directory to python path
     ```
-    export PYTHONPATH=<path-to-the-repo>/vds-slice/tests:$PYTHONPATH
+    export PYTHONPATH=<path-to-the-repo>/oneseismic-api/tests:$PYTHONPATH
     ```
 4. Set all environment variables
     ```
@@ -224,7 +224,7 @@ Suite best be run using docker:
 
 E2E tests use secrets to access Azure environment and due to security reasons
 secrets are not accessible in pull requests. Thus e2e tests can't run on PRs,
-but are set up to run on merge to master.
+but are set up to run on merge to main.
 
 If one wants to run e2e tests oneself, one must set up own fork with required
 secrets to dedicated test storage account. Then e2e tests run can be triggered

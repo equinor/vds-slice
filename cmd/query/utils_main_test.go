@@ -15,9 +15,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 
-	"github.com/equinor/vds-slice/api/handlers"
-	"github.com/equinor/vds-slice/internal/cache"
-	"github.com/equinor/vds-slice/internal/core"
+	"github.com/equinor/oneseismic-api/api/handlers"
+	"github.com/equinor/oneseismic-api/internal/cache"
+	"github.com/equinor/oneseismic-api/internal/core"
 )
 
 const well_known = "../../testdata/well_known/well_known_default.vds"

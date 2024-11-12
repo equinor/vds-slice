@@ -37,13 +37,13 @@ spec:
       environmentConfig:
         - environment: prod
           variables:
-            VDSSLICE_PORT: "8080"
-            VDSSLICE_CACHE_SIZE: "512" # MB
-            VDSSLICE_METRICS: "true"
-            VDSSLICE_METRICS_PORT: "8081"
-            VDSSLICE_TRUSTED_PROXIES: ""
-            VDSSLICE_BLOCKED_IPS: ""
-            VDSSLICE_BLOCKED_USER_AGENTS: ""
+            ONESEISMIC_API_PORT: "8080"
+            ONESEISMIC_API_CACHE_SIZE: "512" # MB
+            ONESEISMIC_API_METRICS: "true"
+            ONESEISMIC_API_METRICS_PORT: "8081"
+            ONESEISMIC_API_TRUSTED_PROXIES: ""
+            ONESEISMIC_API_BLOCKED_IPS: ""
+            ONESEISMIC_API_BLOCKED_USER_AGENTS: ""
             OPENVDS_AZURE_IOMANAGER_THREAD_COUNT: ""
           secretRefs:
             azureKeyVaults:
@@ -51,7 +51,7 @@ spec:
                 useAzureIdentity: true
                 items:
                   - name: prod-allowlist
-                    envVar: VDSSLICE_STORAGE_ACCOUNTS
+                    envVar: ONESEISMIC_API_STORAGE_ACCOUNTS
           monitoring: true
           resources:
             requests:
@@ -62,13 +62,13 @@ spec:
             maxReplicas: 1
         - environment: test
           variables:
-            VDSSLICE_PORT: "8080"
-            VDSSLICE_CACHE_SIZE: "128" # MB
-            VDSSLICE_METRICS: "false"
-            VDSSLICE_METRICS_PORT: "8081"
-            VDSSLICE_TRUSTED_PROXIES: ""
-            VDSSLICE_BLOCKED_IPS: ""
-            VDSSLICE_BLOCKED_USER_AGENTS: ""
+            ONESEISMIC_API_PORT: "8080"
+            ONESEISMIC_API_CACHE_SIZE: "128" # MB
+            ONESEISMIC_API_METRICS: "false"
+            ONESEISMIC_API_METRICS_PORT: "8081"
+            ONESEISMIC_API_TRUSTED_PROXIES: ""
+            ONESEISMIC_API_BLOCKED_IPS: ""
+            ONESEISMIC_API_BLOCKED_USER_AGENTS: ""
             OPENVDS_AZURE_IOMANAGER_THREAD_COUNT: ""
           secretRefs:
             azureKeyVaults:
@@ -76,7 +76,7 @@ spec:
                 useAzureIdentity: true
                 items:
                   - name: test-allowlist
-                    envVar: VDSSLICE_STORAGE_ACCOUNTS
+                    envVar: ONESEISMIC_API_STORAGE_ACCOUNTS
           monitoring: true
           resources:
             requests:
@@ -95,13 +95,13 @@ spec:
         - environment: test-large
           replicas: 0
           variables:
-            VDSSLICE_PORT: "8080"
-            VDSSLICE_CACHE_SIZE: "0" # MB
-            VDSSLICE_METRICS: "false"
-            VDSSLICE_METRICS_PORT: "8081"
-            VDSSLICE_TRUSTED_PROXIES: ""
-            VDSSLICE_BLOCKED_IPS: ""
-            VDSSLICE_BLOCKED_USER_AGENTS: ""
+            ONESEISMIC_API_PORT: "8080"
+            ONESEISMIC_API_CACHE_SIZE: "0" # MB
+            ONESEISMIC_API_METRICS: "false"
+            ONESEISMIC_API_METRICS_PORT: "8081"
+            ONESEISMIC_API_TRUSTED_PROXIES: ""
+            ONESEISMIC_API_BLOCKED_IPS: ""
+            ONESEISMIC_API_BLOCKED_USER_AGENTS: ""
             OPENVDS_AZURE_IOMANAGER_THREAD_COUNT: ""
           secretRefs:
             azureKeyVaults:
@@ -109,7 +109,7 @@ spec:
                 useAzureIdentity: true
                 items:
                   - name: test-allowlist
-                    envVar: VDSSLICE_STORAGE_ACCOUNTS
+                    envVar: ONESEISMIC_API_STORAGE_ACCOUNTS
           monitoring: true
           resources:
             requests:

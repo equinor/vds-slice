@@ -1,6 +1,6 @@
 ARG OPENVDS_IMAGE=openvds
-ARG VDSSLICE_BASEIMAGE=golang:1.22-alpine
-FROM ${VDSSLICE_BASEIMAGE} as openvds
+ARG ONESEISMIC_BASEIMAGE=golang:1.22-alpine
+FROM ${ONESEISMIC_BASEIMAGE} as openvds
 RUN apk --no-cache add \
     git \
     g++ \
@@ -101,7 +101,7 @@ ARG CGO_LDFLAGS="-L/open-vds/Dist/OpenVDS/lib"
 ARG LD_LIBRARY_PATH=/open-vds/Dist/OpenVDS/lib:$LD_LIBRARY_PATH
 RUN GOBIN=/server go install -a ./...
 
-FROM ${VDSSLICE_BASEIMAGE} as runner
+FROM ${ONESEISMIC_BASEIMAGE} as runner
 RUN apk --no-cache add \
     jemalloc-dev \
     libuv
