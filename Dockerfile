@@ -1,5 +1,5 @@
 ARG OPENVDS_IMAGE=openvds
-ARG ONESEISMIC_BASEIMAGE=golang:1.22-alpine
+ARG ONESEISMIC_BASEIMAGE=docker.io/library/golang:1.22-alpine
 FROM ${ONESEISMIC_BASEIMAGE} as openvds
 RUN apk --no-cache add \
     git \

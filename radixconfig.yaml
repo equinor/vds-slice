@@ -6,6 +6,8 @@ kind: RadixApplication
 metadata:
   name: oneseismic
 spec:
+  build:
+    useBuildKit: true
   environments:
     # stable production branch users are supposed to use
     - name: prod
@@ -23,6 +25,8 @@ spec:
   components:
     - name: server
       dockerfileName: Dockerfile
+      runtime:
+        architecture: arm64
       ports:
         - name: http
           port: 8080
