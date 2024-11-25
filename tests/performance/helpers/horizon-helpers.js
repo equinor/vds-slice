@@ -1,6 +1,7 @@
 import {
   sendRequest,
   getAxisInDimension,
+  createEquidistantPoints
 } from "./request-helpers.js";
 
 export function sendHorizonRequest(
@@ -57,13 +58,28 @@ export function retrieveMetadataForHorizonRequest(metadata) {
 }
 
 /**
- * Sends horizon request of size rows/columns where every point is at provided depth.
+ * Creates horizon request of size rows/columns where points create a continuous
+ * depth plane.
  */
-export function sendConstantHorizonRequest(
-  rows, columns, depth, surface, above, below, stepsize, attributes
-){
-  let rowArray = new Array(columns).fill(depth);
-  let values = new Array(rows).fill(rowArray);
+function createFlatIncreasingHorizon(
+  rows, columns, depthMin, depthMax
+) {
+  function makeNoise(weight) {
+    return (Math.random() - 0.5) * weight;
+  }
+
+  let points = createEquidistantPoints(depthMin, depthMax, rows + columns - 1, false)
+  let values = Array.from({ length: rows }, (_, i) =>
+    Array.from({ length: columns }, (_, j) => points[i + j] + makeNoise(1))
+  );
+  return values
+}
+
+
+export function sendFlatIncreasingHorizonRequest(
+  rows, columns, depthMin, depthMax, surface, above, below, stepsize, attributes
+) {
+  let values = createFlatIncreasingHorizon(rows, columns, depthMin, depthMax)
   console.log(`Requesting horizon of size ${columns * rows}`);
   return sendHorizonRequest(values, surface, above, below, stepsize, attributes);
 }
