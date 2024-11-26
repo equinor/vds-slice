@@ -1,0 +1,158 @@
+name: Template setup for performance tests
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: "Job name"
+        required: true
+        type: string
+      vds:
+        description: "vds path (container/blob)"
+        required: true
+        type: string
+      filepath:
+        description: "File to run in form /tests/performance/script.js"
+        required: true
+        type: string
+      medtime:
+        description: "Limit in ms for median time for requests to succeed"
+        required: false
+        type: string
+      maxtime:
+        description: "Limit in ms for p(95) time for requests to succeed"
+        required: false
+        type: string
+      script_duration:
+        description: "For how long script should be run"
+        required: false
+        type: string
+      iteration_sleep_seconds:
+        description: "How long (s) to sleep between iterations"
+        required: false
+        type: string
+      scenario:
+        description: "Which scenario from filepath to run (string form)"
+        required: false
+        type: string
+      k6_remote:
+        description: "Store result metrics remotely?"
+        type: boolean
+        required: false
+        default: true
+
+    secrets:
+      ENDPOINT:
+        description: "Server URL"
+        required: true
+      STORAGE_ACCOUNT_NAME:
+        description: "Name of the storage account where vds is located (without blob.core.windows.net)"
+        required: true
+      STORAGE_ACCOUNT_KEY:
+        description: "Key used to access storage (auth option 1)"
+        required: false
+      SAS:
+        description: "SAS token (auth option 2)"
+        required: false
+      K6_REMOTE_RW_URL:
+        description: "Azure Monitor workspace instance prometheus URL (in form of .../api/v1/write)"
+        required: false
+      TENANT_ID:
+        description: "Tenant ID for K6 Azure Monitor workspace instance"
+        required: false
+      K6_REMOTE_RW_CLIENT_ID:
+        description: "Client ID for K6 Azure Monitor workspace instance"
+        required: false
+      K6_REMOTE_RW_CLIENT_SECRET:
+        description: "Client secret for K6 Azure Monitor workspace instance"
+        required: false
+
+# Expects performance_tests.tar be present (currently no nice setup with "needs")
+jobs:
+  performance_tests:
+    name: Run ${{ inputs.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: performance_tests
+          path: /tmp
+      - name: Load Docker image
+        run: |
+          docker load --input /tmp/performance_tests.tar
+          docker image ls -a
+
+      - uses: actions/checkout@v4
+
+      - name: Run "${{ inputs.name }}" test
+        env:
+          TEST_NAME: ${{ inputs.name }}
+          VDS: https://${{ secrets.STORAGE_ACCOUNT_NAME }}.blob.core.windows.net/${{ inputs.vds }}
+          ENDPOINT: ${{ secrets.ENDPOINT }}
+          STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
+          STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
+          SAS: ${{ secrets.SAS }}
+          EXPECTED_RUN_TIME: "600"
+          MEDTIME: ${{ inputs.medtime }}
+          MAXTIME: ${{ inputs.maxtime }}
+          LOGPATH: "/out"
+          SCRIPT_DURATION: ${{ inputs.script_duration }}
+          ITERATION_SLEEP_SECONDS: ${{ inputs.iteration_sleep_seconds }}
+          SCENARIO: ${{ inputs.scenario }}
+          K6_PROMETHEUS_RW_SERVER_URL: ${{ inputs.k6_remote && 'http://127.0.0.1:9090/api/v1/write' || '' }}
+          K6_REMOTE_RW_URL: ${{secrets.K6_REMOTE_RW_URL}}
+          TENANT_ID: ${{secrets.TENANT_ID}}
+          K6_REMOTE_RW_CLIENT_ID: ${{secrets.K6_REMOTE_RW_CLIENT_ID}}
+          K6_REMOTE_RW_CLIENT_SECRET: ${{secrets.K6_REMOTE_RW_CLIENT_SECRET}}
+          K6_PROMETHEUS_RW_PUSH_INTERVAL: "15s"
+        run: |
+          tag=performance_tests
+          docker run \
+            -e TEST_NAME \
+            -e STORAGE_ACCOUNT_NAME \
+            -e STORAGE_ACCOUNT_KEY \
+            -e SAS \
+            -e ENDPOINT \
+            -e VDS \
+            -e EXPECTED_RUN_TIME \
+            -e MEDTIME \
+            -e MAXTIME \
+            -e LOGPATH \
+            -e SCRIPT_DURATION \
+            -e ITERATION_SLEEP_SECONDS \
+            -e SCENARIO \
+            -e K6_PROMETHEUS_RW_SERVER_URL \
+            -e K6_REMOTE_RW_URL \
+            -e TENANT_ID \
+            -e K6_REMOTE_RW_CLIENT_ID \
+            -e K6_REMOTE_RW_CLIENT_SECRET \
+            -e K6_PROMETHEUS_RW_PUSH_INTERVAL \
+            -v $(pwd)/out:/out \
+            $tag \
+            /bin/bash -c '/tests/performance/execute.sh ${{ inputs.filepath }}'
+
+      - name: Print stderr
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/stderr.txt
+
+      - name: Print stdout
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/stdout.txt
+
+      - name: Print logs
+        if: always()
+        continue-on-error: true
+        run: |
+          cat out/loadtest.log

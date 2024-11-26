@@ -20,7 +20,6 @@ jobs:
     # STORAGE_ACCOUNT_NAME : name of the storage where server is assigned to (without blob.core.windows.net)
     # STORAGE_ACCOUNT_KEY : key used to access storage
     name: Pattern
-    runs-on: ubuntu-latest
     if: always()
     needs: prepare_env
 
@@ -51,70 +50,9 @@ jobs:
             filepath: "/tests/performance/script-various-requests.js"
             vds: "testdata/varsize/varsize_500_300_2000"
 
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: performance_tests
-          path: /tmp
-      - name: Load Docker image
-        run: |
-          docker load --input /tmp/performance_tests.tar
-          docker image ls -a
-
-      - uses: actions/checkout@v4
-
-      - name: Run "${{ matrix.name }}" test
-        env:
-          TEST_NAME: ${{ matrix.name }}
-          VDS: https://${{ secrets.STORAGE_ACCOUNT_NAME }}.blob.core.windows.net/${{ matrix.vds }}
-          ENDPOINT: ${{ secrets.ENDPOINT }}
-          STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
-          STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
-          EXPECTED_RUN_TIME: "600"
-          LOGPATH: "/out"
-          K6_PROMETHEUS_RW_SERVER_URL: "http://127.0.0.1:9090/api/v1/write"
-          K6_REMOTE_RW_URL: ${{secrets.K6_REMOTE_RW_URL}}
-          TENANT_ID: ${{secrets.TENANT_ID}}
-          K6_REMOTE_RW_CLIENT_ID: ${{secrets.K6_REMOTE_RW_CLIENT_ID}}
-          K6_REMOTE_RW_CLIENT_SECRET: ${{secrets.K6_REMOTE_RW_CLIENT_SECRET}}
-          K6_PROMETHEUS_RW_PUSH_INTERVAL: "15s"
-        run: |
-          tag=performance_tests
-          docker run \
-            -e TEST_NAME \
-            -e STORAGE_ACCOUNT_NAME \
-            -e STORAGE_ACCOUNT_KEY \
-            -e ENDPOINT \
-            -e VDS \
-            -e EXPECTED_RUN_TIME \
-            -e LOGPATH \
-            -e K6_PROMETHEUS_RW_SERVER_URL \
-            -e K6_REMOTE_RW_URL \
-            -e TENANT_ID \
-            -e K6_REMOTE_RW_CLIENT_ID \
-            -e K6_REMOTE_RW_CLIENT_SECRET \
-            -e K6_PROMETHEUS_RW_PUSH_INTERVAL \
-            -v $(pwd)/out:/out \
-            $tag \
-            /bin/bash -c '/tests/performance/execute.sh ${{ matrix.filepath }}'
-
-      - name: Print stderr
-        if: always()
-        continue-on-error: true
-        run: |
-          cat out/stderr.txt
-
-      - name: Print stdout
-        if: always()
-        continue-on-error: true
-        run: |
-          cat out/stdout.txt
-
-      - name: Print logs
-        if: always()
-        continue-on-error: true
-        run: |
-          cat out/loadtest.log
+    uses: ./.github/workflows/template_performance.yaml
+    secrets: inherit
+    with:
+      name: ${{ matrix.name }}
+      filepath: ${{ matrix.filepath }}
+      vds: ${{ matrix.vds }}
