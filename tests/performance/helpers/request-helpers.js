@@ -101,6 +101,7 @@ export function sendRequest(path, payload) {
   }
   metrics.responseLengthTrend.add(res.body.byteLength);
   metrics.requestTimeTrend.add(res.timings.duration);
+  metrics.waitTimeTrend.add(res.timings.waiting);
 
   // artificially wait after each request to create a sense of processing-delay
   sleep(0.1);
