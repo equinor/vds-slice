@@ -1,6 +1,5 @@
 import {
   sendRequest,
-  getRandom,
   getAxisInDimension,
 } from "./request-helpers.js";
 
@@ -69,20 +68,3 @@ export function sendConstantHorizonRequest(
   return sendHorizonRequest(values, surface, above, below, stepsize, attributes);
 }
 
-/**
- * Sends horizon request of size rows/columns where every point is at random depth.
- * Every point is expected to have data without need for interpolation in any dimension.
- */
-export function sendRandomHorizonRequest(
-  rows, columns, depth, surface, above, below, stepsize, attributes
-) {
-  const [depthMin, depthMax, depthStep] = depth;
-  const margin = 3; //margin to avoid hitting the borders and getting the error message
-  let values = Array.from({ length: rows }, () =>
-    Array.from({ length: columns }, () =>
-      getRandom(depthMin + margin*depthStep+above, depthMax - margin*depthStep-below, depthStep)
-    )
-  );
-  console.log(`Requesting horizon of size ${columns * rows}`);
-  return sendHorizonRequest(values, surface, above, below, stepsize, attributes);
-}
