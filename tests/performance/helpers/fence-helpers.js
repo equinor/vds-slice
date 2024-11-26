@@ -1,4 +1,4 @@
-import { sendRequest } from "./request-helpers.js";
+import { sendRequest, createEquidistantPoints } from "./request-helpers.js";
 
 export function sendFenceRequest(fence) {
   const vds = __ENV.VDS;
@@ -20,16 +20,6 @@ export function sendFenceRequest(fence) {
   sendRequest("fence", payload);
 }
 
-function createPoints(start, end, segmentCount) {
-  const length = end - start;
-  const segment = length / segmentCount;
-  var points = [];
-  for (let i = 0; i <= segmentCount; i++) {
-    const position = start + i * segment;
-    points.push(Math.floor(position));
-  }
-  return points;
-}
 
 /**
  * Sends fence request where points are roughly even-spaced between
@@ -38,8 +28,8 @@ function createPoints(start, end, segmentCount) {
  */
 export function sendSequentialFenceRequest(il1, il2, xl1, xl2) {
   const count = Math.max(Math.abs(il1 - il2), Math.abs(xl1 - xl2));
-  const pointsInline = createPoints(il1, il2, count);
-  const pointsCrossline = createPoints(xl1, xl2, count);
+  const pointsInline = createEquidistantPoints(il1, il2, count);
+  const pointsCrossline = createEquidistantPoints(xl1, xl2, count);
 
   const zip = (a, b) => a.map((k, i) => [k, b[i]]);
   const fence = zip(pointsInline, pointsCrossline);
