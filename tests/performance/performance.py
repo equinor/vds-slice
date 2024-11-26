@@ -1,8 +1,36 @@
 import os
+import re
 import sys
 import subprocess
 from datetime import datetime
 from utils.cloud import generate_account_signature
+
+
+def calculate_expected_script_runtime():
+    """
+    Very simple duration parse. Doesn't allow for combination of seconds,
+    minutes and hours.
+    """
+    default_duration = 600
+    duration = os.environ["SCRIPT_DURATION"]
+    match = re.match(r"(\d+)([smh])", duration)
+    if not match:
+        print("Script duration cannot be parsed, using default value")
+        return default_duration
+
+    value, unit = match.groups()
+    value = int(value)
+
+    if unit == "s":
+        seconds = value
+    elif unit == "m":
+        seconds = value * 60
+    elif unit == "h":
+        seconds = value * 3600
+    else:
+        raise ValueError(f"Unexpected value in switch case: {unit}")
+
+    return seconds + default_duration
 
 
 def runPerformanceTests(filepath):
@@ -10,7 +38,8 @@ def runPerformanceTests(filepath):
     if not sas:
         storage_account_name = os.environ["STORAGE_ACCOUNT_NAME"]
         storage_account_key = os.environ["STORAGE_ACCOUNT_KEY"]
-        expected_run_time = int(os.environ["EXPECTED_RUN_TIME"])
+        expected_run_time = calculate_expected_script_runtime()
+
         sas = generate_account_signature(
             storage_account_name, storage_account_key, expected_run_time)
         os.environ["SAS"] = sas

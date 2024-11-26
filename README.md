@@ -154,7 +154,7 @@ To locally run a file `<chosen_script>.js` from the suite:
 
     export STORAGE_ACCOUNT_NAME=<storage account name>
     export STORAGE_ACCOUNT_KEY="<storage account key>"
-    export EXPECTED_RUN_TIME=<validity of the sas token (seconds)>
+    export SCRIPT_DURATION=<validity of the sas token (seconds) - if unset, default is used>
 
     # or instead provide SAS itself
 

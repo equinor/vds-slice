@@ -100,7 +100,6 @@ jobs:
           STORAGE_ACCOUNT_NAME: ${{ secrets.STORAGE_ACCOUNT_NAME }}
           STORAGE_ACCOUNT_KEY: ${{ secrets.STORAGE_ACCOUNT_KEY }}
           SAS: ${{ secrets.SAS }}
-          EXPECTED_RUN_TIME: "600"
           MEDTIME: ${{ inputs.medtime }}
           MAXTIME: ${{ inputs.maxtime }}
           LOGPATH: "/out"
@@ -122,7 +121,6 @@ jobs:
             -e SAS \
             -e ENDPOINT \
             -e VDS \
-            -e EXPECTED_RUN_TIME \
             -e MEDTIME \
             -e MAXTIME \
             -e LOGPATH \
