@@ -2,13 +2,16 @@ import { getMaxIndexInDimension } from "./helpers/request-helpers.js";
 import { sendSetupMetadataRequest } from "./helpers/metadata-helpers.js";
 import { sendSequentialFenceRequest } from "./helpers/fence-helpers.js";
 import { createSummary, thresholds, summaryTrendStats } from "./helpers/report-helpers.js";
+import { sleep } from "k6";
+
+const duration = __ENV.SCRIPT_DURATION || "1m";
 
 export const options = {
   scenarios: {
     constantFence: {
       executor: "constant-vus",
       vus: 1,
-      duration: "1m",
+      duration: duration,
     },
   },
   thresholds: thresholds(),
@@ -23,6 +26,9 @@ export function setup() {
 export default function (params) {
   const [maxInline, maxCrossline] = params;
   sendSequentialFenceRequest(0, maxInline, 0, maxCrossline);
+
+  let sleepSeconds = __ENV.ITERATION_SLEEP_SECONDS || 0;
+  sleep(sleepSeconds);
 }
 
 export function handleSummary(data) {
