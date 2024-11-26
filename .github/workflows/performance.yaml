@@ -8,22 +8,10 @@ jobs:
     name: Prepare build environment for Performance tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./tests/performance/Dockerfile
-          tags: performance_tests:latest
-          outputs: type=docker,dest=/tmp/performance_tests.tar
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: performance_tests
-          path: /tmp/performance_tests.tar
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        uses: "./.github/actions/build_performance_tests_image"
 
   performance_tests:
     # Required secrets:
