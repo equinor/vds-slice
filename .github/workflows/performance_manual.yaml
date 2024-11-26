@@ -1,0 +1,66 @@
+name: Performance tests (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: "Server URL"
+        required: true
+      storage_account_name:
+        description: "Name of the storage account where vds is located (without blob.core.windows.net)"
+        required: true
+      vds:
+        description: "vds path (container/blob)"
+        required: true
+      sas:
+        description: "SAS with read privileges for vds"
+        required: true
+      filepath:
+        description: "File to run in form /tests/performance/script.js"
+        required: true
+      script_duration:
+        description: "For how long script should be run (string form)"
+        required: false
+      iteration_sleep_seconds:
+        description: "How long (s) to sleep between iterations"
+        required: false
+      scenario:
+        description: "Which scenario from filepath to run"
+        required: false
+      medtime:
+        description: "Limit in ms for median time for requests to succeed"
+        required: false
+      maxtime:
+        description: "Limit in ms for p(95) time for requests to succeed"
+        required: false
+
+# Warning: do not use secret inputs before they are explicitly passed to
+# reusable workflow as secrets. Otherwise values might get printed in plain text
+jobs:
+  prepare_env:
+    name: Prepare build environment for Performance tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        uses: "./.github/actions/build_performance_tests_image"
+
+  performance_tests_manual:
+    name: Test with user input
+    needs: prepare_env
+    uses: ./.github/workflows/template_performance.yaml
+    secrets:
+      STORAGE_ACCOUNT_NAME: ${{ inputs.storage_account_name }}
+      SAS: ${{ inputs.sas }}
+      ENDPOINT: ${{ inputs.endpoint }}
+    with:
+      name: "Manual execution"
+      filepath: ${{ inputs.filepath }}
+      vds: ${{ inputs.vds }}
+      medtime: ${{ inputs.medtime }}
+      maxtime: ${{ inputs.maxtime }}
+      script_duration: ${{ inputs.script_duration }}
+      iteration_sleep_seconds: ${{ inputs.iteration_sleep_seconds }}
+      scenario: ${{ inputs.scenario }}
+      k6_remote: false
