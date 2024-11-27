@@ -87,7 +87,10 @@ export function sendRequest(path, payload) {
     headers: { "Content-Type": "application/json", "Accept-Encoding": "gzip" },
     responseType: "binary",
   };
-  const res = http.post(url, JSON.stringify(payload), options);
+
+  const jsonPayload = JSON.stringify(payload)
+  console.log(`Sending payload of size: ${jsonPayload.length} bytes`);
+  const res = http.post(url, jsonPayload, options);
 
   const queryResStatusCheck = check(
     res,
