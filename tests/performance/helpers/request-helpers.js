@@ -42,6 +42,24 @@ export function getRandomIndexInDimension(metadata, annotationDimension) {
   return getRandom(0, getMaxIndexInDimension(metadata, annotationDimension), 1);
 }
 
+/**
+ * Creates set of segmentCount + 1 points that reach from start to end, may be
+ * integers and are relatively equally spaced.
+ */
+export function createEquidistantPoints(start, end, segmentCount, roundToSample = true, sampleStep = 1) {
+  const length = end - start;
+  const segment = length / segmentCount;
+  var points = [];
+  for (let i = 0; i <= segmentCount; i++) {
+    let position = start + i * segment;
+    if (roundToSample) {
+      position = Math.round((position - start) / sampleStep) * sampleStep + start;
+    }
+    points.push(position);
+  }
+  return points;
+}
+
 export function convertDimension(dimension) {
   let converted;
   switch (dimension) {
@@ -69,7 +87,10 @@ export function sendRequest(path, payload) {
     headers: { "Content-Type": "application/json", "Accept-Encoding": "gzip" },
     responseType: "binary",
   };
-  const res = http.post(url, JSON.stringify(payload), options);
+
+  const jsonPayload = JSON.stringify(payload)
+  console.log(`Sending payload of size: ${jsonPayload.length} bytes`);
+  const res = http.post(url, jsonPayload, options);
 
   const queryResStatusCheck = check(
     res,
@@ -83,6 +104,7 @@ export function sendRequest(path, payload) {
   }
   metrics.responseLengthTrend.add(res.body.byteLength);
   metrics.requestTimeTrend.add(res.timings.duration);
+  metrics.waitTimeTrend.add(res.timings.waiting);
 
   // artificially wait after each request to create a sense of processing-delay
   sleep(0.1);

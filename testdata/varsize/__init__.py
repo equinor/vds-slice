@@ -11,10 +11,10 @@ def cloudpath(ilines, xlines, samples):
     return f"testdata/varsize/varsize_{ilines}_{xlines}_{samples}"
 
 
-def defined_specification(ilines, xlines, samples):
+def defined_specification(ilines, xlines, samples, description="Used in performance testing"):
     return common.CommandSpecification(
         case=f"{ilines}_{xlines}_{samples}",
-        description="Used in performance testing",
+        description=description,
         filename=f"{ilines}_{xlines}_{samples}.vds",
         cloud_path=cloudpath(ilines, xlines, samples)
     )
@@ -44,8 +44,12 @@ class VarsizeCategory(common.Category):
                 filename="custom.vds",
                 custom_args=args
             ),
-            defined_specification(4000, 3000, 5),
-            defined_specification(500, 300, 2000),
+            # commented out specifications are for future reference only
+            defined_specification(1500, 600, 2400, description="8 GB, smaller survey"),
+            defined_specification(2200, 1500, 1700, description="20 GB, typical survey"),
+            #defined_specification(1000, 4000, 2500, description="37 GB, typical survey"),
+            #defined_specification(5000, 3000, 2500, description="140 GB, large survey"),
+            #defined_specification(15000, 20000, 3000, description="3300 GB, very large survey"),
         ]
 
     def generate_testdata(self, testdata: common.TestdataCase):

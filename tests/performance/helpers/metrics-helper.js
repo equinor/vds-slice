@@ -1,10 +1,18 @@
 import { Trend } from "k6/metrics";
 
+function createUniquelyNamedTrend(name) {
+  return new Trend(
+    `${name}_${(__ENV.TEST_NAME
+      ? __ENV.TEST_NAME.replace(/[^a-zA-Z0-9_]/g, "_")
+      : "test"
+    ).substring(0, 127)}`,
+    true
+  );
+}
+
 export const responseLengthTrend = new Trend("response_length");
-export const requestTimeTrend = new Trend(
-  `request_time_${(__ENV.TEST_NAME ? __ENV.TEST_NAME.replace(/[^a-zA-Z0-9_]/g, '_') : 'test').substring(0, 127)}`,
-  true
-);
+export const requestTimeTrend = createUniquelyNamedTrend("request_time");
+export const waitTimeTrend = createUniquelyNamedTrend("wait_time");
 
 export function request_time_med_threshold() {
   let medTime = __ENV.MEDTIME;

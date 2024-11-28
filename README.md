@@ -148,13 +148,13 @@ To locally run a file `<chosen_script>.js` from the suite:
     ```
     export PYTHONPATH=<path-to-the-repo>/oneseismic-api/tests:$PYTHONPATH
     ```
-4. Set all environment variables
+4. Set all required environment variables
     ```
     # set the 3 following variables needed to create sas
 
     export STORAGE_ACCOUNT_NAME=<storage account name>
     export STORAGE_ACCOUNT_KEY="<storage account key>"
-    export EXPECTED_RUN_TIME=<validity of the sas token (seconds)>
+    export SCRIPT_DURATION=<validity of the sas token (seconds) - if unset, default is used>
 
     # or instead provide SAS itself
 
@@ -164,9 +164,9 @@ To locally run a file `<chosen_script>.js` from the suite:
     export ENDPOINT=<endpoint on which server is running>
     export VDS=<https://account.blob.core.windows.net/path-to-the-vds>
     export LOGPATH=<directory to store output files>
-    export MEDTIME=<maximum acceptable median response time (ms) against provided server>
-    export MAXTIME=<time (ms) in which 95% of all requests are expected to return against provided server>
     ```
+
+    Refer to github workflows for available optional environment variables.
 5. Run the script
     ```
     python tests/performance/performance.py tests/performance/<chosen_script>.js

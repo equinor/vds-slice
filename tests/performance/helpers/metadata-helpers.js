@@ -15,3 +15,7 @@ export function sendSetupMetadataRequest() {
   const metadata = sendSetupRequest("metadata", payload);
   return JSON.parse(metadata.body);
 }
+
+export function getStepsize(axis) {
+  return (axis.max - axis.min) / (axis.samples - 1);
+}
